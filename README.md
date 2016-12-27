@@ -1,5 +1,5 @@
 # SoapCore
-SOAP extension for ASP.NET Core.
+SOAP protocol middleware for ASP.NET Core.
 
 Based on Microsoft article: [Custom ASP.NET Core Middleware Example](https://blogs.msdn.microsoft.com/dotnet/2016/09/19/custom-asp-net-core-middleware-example/).
 
