@@ -42,10 +42,12 @@ namespace SoapCore
 						value = SecurityElement.Escape(outResult.Value.ToString());
 					else if (outResult.Value is Enum)
 						value = outResult.Value.ToString();
+					else if (outResult.Value == null)
+						value = null;
 					else //for complex types
 					{
 						using (var ms = new MemoryStream())
-						using (BufferedStream stream = new BufferedStream(ms))
+						using (var stream = new BufferedStream(ms))
 						{
 							new XmlSerializer(outResult.Value.GetType()).Serialize(ms, outResult.Value);
 							stream.Position = 0;
@@ -57,7 +59,8 @@ namespace SoapCore
 						}
 					}
 
-					writer.WriteRaw(string.Format("<{0}>{1}</{0}>", outResult.Key, value));
+					if (value != null)
+						writer.WriteRaw(string.Format("<{0}>{1}</{0}>", outResult.Key, value));
 				}
 			}
 
