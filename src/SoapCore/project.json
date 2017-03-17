@@ -1,6 +1,23 @@
 ﻿{
-  "version": "0.2",
   "authors": [ "Digital Design" ],
+  "dependencies": {
+    "NETStandard.Library": "*",
+    "System.ServiceModel.Primitives": "*",
+    "System.ServiceModel.Http": "*",
+    "System.Xml.XmlSerializer": "*",
+    "System.Xml.XmlDocument": "*",
+    "Microsoft.AspNetCore.Mvc.Core": "*",
+    "Microsoft.NETCore.App": {
+      "version": "1.0.1",
+      "type": "platform"
+    }
+  },
+  "description": "SOAP protocol middleware for ASP.NET Core",
+  "frameworks": {
+    "netcoreapp1.0": {
+      "imports": "dnxcore50"
+    }
+  },
   "packOptions": {
     "repository": {
       "url": "https://github.com/DigDes/SoapCore",
@@ -10,20 +27,6 @@
     "summary": "Basic implementation of SOAP protocol for ASP.NET Core",
     "owners": [ "Digital Design" ]
   },
-  "description": "SOAP protocol middleware for ASP.NET Core",
   "projectUrl": "https://github.com/DigDes/SoapCore",
-  "dependencies": {
-    "NETStandard.Library": "*",
-    "System.ServiceModel.Primitives": "*",
-    "System.ServiceModel.Http": "*",
-    "System.Xml.XmlSerializer": "*",
-    "System.Xml.XmlDocument": "*",
-    "Microsoft.AspNetCore.Mvc.Core": "*"
-  },
-
-  "frameworks": {
-    "netstandard1.6": {
-      "imports": "dnxcore50"
-    }
-  }
+  "version": "0.3"
 }

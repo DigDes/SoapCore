@@ -136,7 +136,7 @@ namespace SoapCore
 			{
 				if (parameterInfo.ParameterType.Name == "Guid&")
 					outArgs[parameterInfo.Name] = Guid.Empty;
-				if (parameterInfo.ParameterType.Name == "String&")
+				else if (parameterInfo.ParameterType.Name == "String&" || parameterInfo.ParameterType.GetElementType().IsArray)
 					outArgs[parameterInfo.Name] = null;
 				else
 				{
