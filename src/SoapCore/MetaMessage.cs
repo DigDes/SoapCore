@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.ServiceModel.Channels;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace SoapCore
@@ -26,19 +23,10 @@ namespace SoapCore
         {
             writer.WriteStartElement("wsdl", "definitions", "http://schemas.xmlsoap.org/wsdl/");
             writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-            //writer.WriteAttributeString("xmlns:msc", "http://schemas.microsoft.com/ws/2005/12/wsdl/contract");
             writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
-            //writer.WriteAttributeString("xmlns:soap12", "http://schemas.xmlsoap.org/wsdl/soap12/");
-            //writer.WriteAttributeString("xmlns:soapenc", "http://schemas.xmlsoap.org/soap/encoding/");
-            //writer.WriteAttributeString("xmlns:wsa", "http://schemas.xmlsoap.org/ws/2004/08/addressing");
-            //writer.WriteAttributeString("xmlns:wsam", "http://www.w3.org/2007/05/addressing/metadata");
-            //writer.WriteAttributeString("xmlns:wsap", "http://schemas.xmlsoap.org/ws/2004/08/addressing/policy");
-            //writer.WriteAttributeString("xmlns:wsaw", "http://www.w3.org/2006/05/addressing/wsdl");
-            //writer.WriteAttributeString("xmlns:wsp", "http://schemas.xmlsoap.org/ws/2004/09/policy");
-            //writer.WriteAttributeString("xmlns:wsu", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd");
-            //writer.WriteAttributeString("xmlns:wsx", "http://schemas.xmlsoap.org/ws/2004/09/mex");
-            writer.WriteAttributeString("xmlns:tns", "http://tempuri.org/");
-            writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Name);
+            writer.WriteAttributeString("xmlns:wsaw", "http://www.w3.org/2006/05/addressing/wsdl");
+            writer.WriteAttributeString("xmlns:tns", _service.Contracts.First().Namespace);
+            writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
             writer.WriteAttributeString("name", _service.ServiceType.Name);
         }
 
