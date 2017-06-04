@@ -24,7 +24,6 @@ namespace SoapCore
             writer.WriteStartElement("wsdl", "definitions", "http://schemas.xmlsoap.org/wsdl/");
             writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
             writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
-            writer.WriteAttributeString("xmlns:wsaw", "http://www.w3.org/2006/05/addressing/wsdl");
             writer.WriteAttributeString("xmlns:tns", _service.Contracts.First().Namespace);
             writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
             writer.WriteAttributeString("name", _service.ServiceType.Name);

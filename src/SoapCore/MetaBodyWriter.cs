@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.ServiceModel.Channels;
 using System.Xml;
 
@@ -13,7 +15,10 @@ namespace SoapCore
         private readonly ServiceDescription _service;
         private readonly string _baseUrl;
 
-        private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private readonly Queue<Type> _complexTypeToBuild;
+		private readonly List<string> _builtComplexTypes;
+
+		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
         private string BindingType => _service.Contracts.First().Name;
         private string PortName => "BasicHttpBinding_" + _service.Contracts.First().Name;
         private string TargetNameSpace => _service.Contracts.First().Namespace;
@@ -22,7 +27,10 @@ namespace SoapCore
         {
             _service = service;
             _baseUrl = baseUrl;
-        }
+
+			_complexTypeToBuild = new Queue<Type>();
+			_builtComplexTypes = new List<string>();
+		}
 
         protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
         {
@@ -54,14 +62,8 @@ namespace SoapCore
 
                 foreach (var parameter in operation.DispatchMethod.GetParameters().Where(x => !x.IsOut && !x.ParameterType.IsByRef))
                 {
-                    string xsTypename = ResolveType(parameter.ParameterType.Name);
-                    writer.WriteStartElement("xs:element");
-                    writer.WriteAttributeString("name", parameter.Name);
-                    writer.WriteAttributeString("minOccurs", "0");
-                    writer.WriteAttributeString("nillable", "true");
-                    writer.WriteAttributeString("type", xsTypename);
-                    writer.WriteEndElement(); // xs:element
-                }
+					AddSchemaType(writer, parameter.ParameterType, parameter.Name);
+				}
 
                 writer.WriteEndElement(); // xs:sequence
                 writer.WriteEndElement(); // xs:complexType
@@ -73,20 +75,35 @@ namespace SoapCore
                 writer.WriteStartElement("xs:complexType");
                 writer.WriteStartElement("xs:sequence");
 
-                string xsReturnTypename = ResolveType(operation.DispatchMethod.ReturnType.Name);
-                writer.WriteStartElement("xs:element");
-                writer.WriteAttributeString("name", operation.Name + "Result");
-                writer.WriteAttributeString("minOccurs", "0");
-                writer.WriteAttributeString("nillable", "true");
-                writer.WriteAttributeString("type", xsReturnTypename);
-                writer.WriteEndElement(); // xs:element
+				AddSchemaType(writer, operation.DispatchMethod.ReturnType, operation.Name + "Result");
 
-                writer.WriteEndElement(); // xs:sequence
+				writer.WriteEndElement(); // xs:sequence
                 writer.WriteEndElement(); // xs:complexType
                 writer.WriteEndElement(); // xs:element
             }
 
-            writer.WriteEndElement(); // xs:schema
+			while (_complexTypeToBuild.Count > 0)
+			{
+				Type toBuild = _complexTypeToBuild.Dequeue();
+				if (!_builtComplexTypes.Contains(toBuild.Name))
+				{
+					writer.WriteStartElement("xs:complexType");
+					writer.WriteAttributeString("name", toBuild.Name);
+					writer.WriteStartElement("xs:sequence");
+
+					foreach (var property in toBuild.GetProperties())
+					{
+						AddSchemaType(writer, property.PropertyType, property.Name);
+					}
+
+					writer.WriteEndElement(); // xs:sequence
+					writer.WriteEndElement(); // xs:complexType
+
+					_builtComplexTypes.Add(toBuild.Name);
+				}
+			}
+
+			writer.WriteEndElement(); // xs:schema
 
             writer.WriteEndElement(); // wsdl:types
         }
@@ -123,11 +140,9 @@ namespace SoapCore
                 writer.WriteStartElement("wsdl:operation");
                 writer.WriteAttributeString("name", operation.Name);
                 writer.WriteStartElement("wsdl:input");
-                writer.WriteAttributeString("wsaw:Action", operation.SoapAction);
                 writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_InputMessage");
                 writer.WriteEndElement(); // wsdl:input
                 writer.WriteStartElement("wsdl:output");
-                writer.WriteAttributeString("wsaw:Action", operation.SoapAction + "Response");
                 writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
                 writer.WriteEndElement(); // wsdl:output
                 writer.WriteEndElement(); // wsdl:operation
@@ -190,28 +205,91 @@ namespace SoapCore
             writer.WriteEndElement(); // wsdl:port
         }
 
-        private string ResolveType(string typeName)
-        {
-            string resolvedType = null;
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name)
+		{
+			writer.WriteStartElement("xs:element");
+			if (type.Name == "String")
+			{
+				writer.WriteAttributeString("minOccurs", "0");
+				writer.WriteAttributeString("maxOccurs", "1");
+				writer.WriteAttributeString("name", name);
+				writer.WriteAttributeString("type", "xs:string");
+			}
+			else if (type.GetTypeInfo().IsValueType)
+			{
+				string xsTypename = ResolveType(type.Name);
+				writer.WriteAttributeString("minOccurs", "1");
+				writer.WriteAttributeString("maxOccurs", "1");
+				writer.WriteAttributeString("name", name);
+				writer.WriteAttributeString("type", xsTypename);
+			}
+			else
+			{
+				writer.WriteAttributeString("minOccurs", "0");
+				writer.WriteAttributeString("maxOccurs", "1");
+				writer.WriteAttributeString("name", name);
+				writer.WriteAttributeString("type", "tns:" + type.Name);
 
-            switch (typeName)
-            {
-                case "String":
-                    resolvedType = "xs:string";
-                    break;
+				_complexTypeToBuild.Enqueue(type);
+			}
+			writer.WriteEndElement(); // xs:element
+		}
 
-                case "Int32":
-                    resolvedType = "xs:int";
-                    break;
-            }
+		private string ResolveType(string typeName)
+		{
+			string resolvedType = null;
 
-            if (String.IsNullOrEmpty(resolvedType))
-            {
-                throw new ArgumentException($".NET type {typeName} cannot be resolved into XML schema type");
-            }
+			switch (typeName)
+			{
+				case "Boolean":
+					resolvedType = "xs:boolean";
+					break;
+				case "Byte":
+					resolvedType = "xs:unsignedByte";
+					break;
+				case "Int16":
+					resolvedType = "xs:short";
+					break;
+				case "Int32":
+					resolvedType = "xs:int";
+					break;
+				case "Int64":
+					resolvedType = "xs:long";
+					break;
+				case "SByte":
+					resolvedType = "xs:byte";
+					break;
+				case "UInt16":
+					resolvedType = "xs:unsignedShort";
+					break;
+				case "UInt32":
+					resolvedType = "xs:unsignedInt";
+					break;
+				case "UInt64":
+					resolvedType = "xs:unsignedLong";
+					break;
+				case "Decimal":
+					resolvedType = "xs:decimal";
+					break;
+				case "Double":
+					resolvedType = "xs:double";
+					break;
+				case "Single":
+					resolvedType = "xs:float";
+					break;
+				case "DateTime":
+					resolvedType = "xs:dateTime";
+					break;
+			}
 
-            return resolvedType;
-        }
+			if (String.IsNullOrEmpty(resolvedType))
+			{
+				throw new ArgumentException($".NET type {typeName} cannot be resolved into XML schema type");
+			}
 
-    }
+			return resolvedType;
+		}
+
+	}
+
 }
