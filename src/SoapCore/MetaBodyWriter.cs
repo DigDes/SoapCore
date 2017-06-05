@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,8 +18,8 @@ namespace SoapCore
 
 		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<Type> _complexTypeToBuild;
-		private readonly List<string> _builtEnumTypes;
-		private readonly List<string> _builtComplexTypes;
+		private readonly HashSet<string> _builtEnumTypes;
+		private readonly HashSet<string> _builtComplexTypes;
 
 		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
         private string BindingType => _service.Contracts.First().Name;
@@ -32,8 +33,8 @@ namespace SoapCore
 
 			_enumToBuild = new Queue<Type>();
 			_complexTypeToBuild = new Queue<Type>();
-			_builtEnumTypes = new List<string>();
-			_builtComplexTypes = new List<string>();
+			_builtEnumTypes = new HashSet<string>();
+			_builtComplexTypes = new HashSet<string>();
 		}
 
         protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
@@ -92,12 +93,41 @@ namespace SoapCore
 				if (!_builtComplexTypes.Contains(toBuild.Name))
 				{
 					writer.WriteStartElement("xs:complexType");
-					writer.WriteAttributeString("name", toBuild.Name);
+					if (toBuild.IsArray)
+					{
+						writer.WriteAttributeString("name", "ArrayOf" + toBuild.Name.Replace("[]",string.Empty));
+					}
+					else
+					{
+						writer.WriteAttributeString("name", toBuild.Name);
+					}
 					writer.WriteStartElement("xs:sequence");
 
-					foreach (var property in toBuild.GetProperties())
+					if (toBuild.IsArray)
 					{
-						AddSchemaType(writer, property.PropertyType, property.Name);
+						var elementType = toBuild.GetElementType();
+						AddSchemaType(writer, elementType, null, true);
+					}
+					else if (typeof(IEnumerable).IsAssignableFrom(toBuild))
+					{
+						
+						// Recursively look through the base class to find the Generic Type of the Enumerable
+						var baseType = toBuild;
+						var baseTypeInfo = toBuild.GetTypeInfo();
+						while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
+						{
+							baseType = baseTypeInfo.BaseType;
+							baseTypeInfo = baseType.GetTypeInfo();
+						}
+						var generic = baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+						AddSchemaType(writer, generic, null, true);
+					}
+					else
+					{
+						foreach (var property in toBuild.GetProperties())
+						{
+							AddSchemaType(writer, property.PropertyType, property.Name);
+						}
 					}
 
 					writer.WriteEndElement(); // xs:sequence
@@ -233,46 +263,95 @@ namespace SoapCore
             writer.WriteEndElement(); // wsdl:port
         }
 
-		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name)
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false)
 		{
+			var typeInfo = type.GetTypeInfo();
 			writer.WriteStartElement("xs:element");
-			if (type.Name == "String")
+
+			if (typeInfo.IsValueType)
 			{
-				writer.WriteAttributeString("minOccurs", "0");
-				writer.WriteAttributeString("maxOccurs", "1");
-				writer.WriteAttributeString("name", name);
-				writer.WriteAttributeString("type", "xs:string");
-			}
-			else
-			{
-				var typeInfo = type.GetTypeInfo();
-				if (typeInfo.IsValueType)
+				string xsTypename;
+				if (typeInfo.IsEnum)
 				{
-					string xsTypename;
-					if (typeInfo.IsEnum)
-					{
-						xsTypename = "tns:" + type.Name;
-						_enumToBuild.Enqueue(type);
-					}
-					else
-					{
-						xsTypename = ResolveType(type.Name);
-					}
-					writer.WriteAttributeString("minOccurs", "1");
-					writer.WriteAttributeString("maxOccurs", "1");
-					writer.WriteAttributeString("name", name);
-					writer.WriteAttributeString("type", xsTypename);
+					xsTypename = "tns:" + type.Name;
+					_enumToBuild.Enqueue(type);
 				}
 				else
 				{
+					xsTypename = ResolveType(type.Name);
+				}
+				if (isArray)
+				{
 					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("maxOccurs", "unbounded");
+					writer.WriteAttributeString("nillable", "true");
+				}
+				else
+				{
+					writer.WriteAttributeString("minOccurs", "1");
 					writer.WriteAttributeString("maxOccurs", "1");
+				}
+				if (string.IsNullOrEmpty(name))
+				{
+					name = xsTypename.Split(':')[1];
+				}
+				writer.WriteAttributeString("name", name);
+				writer.WriteAttributeString("type", xsTypename);
+			}
+			else
+			{
+				writer.WriteAttributeString("minOccurs", "0");
+				if (isArray)
+				{
+					writer.WriteAttributeString("maxOccurs", "unbounded");
+					writer.WriteAttributeString("nillable", "true");
+				}
+				else
+				{
+					writer.WriteAttributeString("maxOccurs", "1");
+				}
+				if (type.Name == "String")
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = "string";
+					}
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "xs:string");
+				}
+				else if (type.Name == "Byte[]")
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = "base64Binary";
+					}
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "xs:base64Binary");
+				}
+				else if (type.IsArray)
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = type.Name;
+					}
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "tns:ArrayOf" + type.Name.Replace("[]",string.Empty));
+
+					_complexTypeToBuild.Enqueue(type);
+				}
+				else
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = type.Name;
+					}
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "tns:" + type.Name);
 
 					_complexTypeToBuild.Enqueue(type);
 				}
 			}
+
 			writer.WriteEndElement(); // xs:element
 		}
 
