@@ -15,7 +15,9 @@ namespace SoapCore
         private readonly ServiceDescription _service;
         private readonly string _baseUrl;
 
+		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<Type> _complexTypeToBuild;
+		private readonly List<string> _builtEnumTypes;
 		private readonly List<string> _builtComplexTypes;
 
 		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
@@ -28,7 +30,9 @@ namespace SoapCore
             _service = service;
             _baseUrl = baseUrl;
 
+			_enumToBuild = new Queue<Type>();
 			_complexTypeToBuild = new Queue<Type>();
+			_builtEnumTypes = new List<string>();
 			_builtComplexTypes = new List<string>();
 		}
 
@@ -100,6 +104,30 @@ namespace SoapCore
 					writer.WriteEndElement(); // xs:complexType
 
 					_builtComplexTypes.Add(toBuild.Name);
+				}
+			}
+
+			while (_enumToBuild.Count > 0)
+			{
+				Type toBuild = _enumToBuild.Dequeue();
+				if (!_builtEnumTypes.Contains(toBuild.Name))
+				{
+					writer.WriteStartElement("xs:simpleType");
+					writer.WriteAttributeString("name", toBuild.Name);
+					writer.WriteStartElement("xs:restriction ");
+					writer.WriteAttributeString("base", "xs:string");
+
+					foreach (var value in Enum.GetValues(toBuild))
+					{
+						writer.WriteStartElement("xs:enumeration ");
+						writer.WriteAttributeString("value", value.ToString());
+						writer.WriteEndElement(); // xs:enumeration
+					}
+
+					writer.WriteEndElement(); // xs:restriction
+					writer.WriteEndElement(); // xs:simpleType
+
+					_builtEnumTypes.Add(toBuild.Name);
 				}
 			}
 
@@ -215,22 +243,35 @@ namespace SoapCore
 				writer.WriteAttributeString("name", name);
 				writer.WriteAttributeString("type", "xs:string");
 			}
-			else if (type.GetTypeInfo().IsValueType)
-			{
-				string xsTypename = ResolveType(type.Name);
-				writer.WriteAttributeString("minOccurs", "1");
-				writer.WriteAttributeString("maxOccurs", "1");
-				writer.WriteAttributeString("name", name);
-				writer.WriteAttributeString("type", xsTypename);
-			}
 			else
 			{
-				writer.WriteAttributeString("minOccurs", "0");
-				writer.WriteAttributeString("maxOccurs", "1");
-				writer.WriteAttributeString("name", name);
-				writer.WriteAttributeString("type", "tns:" + type.Name);
+				var typeInfo = type.GetTypeInfo();
+				if (typeInfo.IsValueType)
+				{
+					string xsTypename;
+					if (typeInfo.IsEnum)
+					{
+						xsTypename = "tns:" + type.Name;
+						_enumToBuild.Enqueue(type);
+					}
+					else
+					{
+						xsTypename = ResolveType(type.Name);
+					}
+					writer.WriteAttributeString("minOccurs", "1");
+					writer.WriteAttributeString("maxOccurs", "1");
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", xsTypename);
+				}
+				else
+				{
+					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("maxOccurs", "1");
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "tns:" + type.Name);
 
-				_complexTypeToBuild.Enqueue(type);
+					_complexTypeToBuild.Enqueue(type);
+				}
 			}
 			writer.WriteEndElement(); // xs:element
 		}
