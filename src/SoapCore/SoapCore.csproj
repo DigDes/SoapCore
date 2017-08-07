@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+<PropertyGroup>
+    <Description>SOAP protocol middleware for ASP.NET Core</Description>
+    <VersionPrefix>0.7</VersionPrefix>
+    <Authors>Digital Design</Authors>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>SoapCore</AssemblyName>
+    <PackageId>SoapCore</PackageId>
+    <PackageTags>SOAP;ASP.NET Core</PackageTags>
+    <PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/DigDes/SoapCore</RepositoryUrl>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.3.0" />
+    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
+    <PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.0.0-preview2-final" />
+  </ItemGroup>
+</Project>
