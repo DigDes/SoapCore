@@ -39,7 +39,7 @@ namespace SoapCore
 				}
 				else
 				{
-					responseMessage = ProcessOperation(httpContext, serviceProvider);
+					responseMessage = await ProcessOperation(httpContext, serviceProvider);
 				}
 			}
 			else
@@ -65,7 +65,7 @@ namespace SoapCore
 			return responseMessage;
 		}
 
-		private Message ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
+		private async Task<Message> ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			Message responseMessage;
 
@@ -97,6 +97,13 @@ namespace SoapCore
 			try
 			{
 				var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
+				var responseType = responseObject.GetType();
+				if (responseType.IsConstructedGenericType && responseType.GetGenericTypeDefinition() == typeof(Task<>))
+				{
+					var responseTask = (Task)responseObject;
+					await responseTask;
+					responseObject = responseTask.GetType().GetProperty("Result").GetValue(responseTask);
+				}
 				int i = arguments.Length;
 				var resultOutDictionary = new Dictionary<string, object>();
 				foreach (var outArg in outArgs)

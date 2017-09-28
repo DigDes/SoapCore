@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace SoapCore
@@ -80,7 +81,12 @@ namespace SoapCore
                 writer.WriteStartElement("xs:complexType");
                 writer.WriteStartElement("xs:sequence");
 
-				AddSchemaType(writer, operation.DispatchMethod.ReturnType, operation.Name + "Result");
+				var returnType = operation.DispatchMethod.ReturnType;
+				if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+				{
+					returnType = returnType.GetGenericArguments().First();
+				}
+				AddSchemaType(writer, returnType, operation.Name + "Result");
 
 				writer.WriteEndElement(); // xs:sequence
                 writer.WriteEndElement(); // xs:complexType
