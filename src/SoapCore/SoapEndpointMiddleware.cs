@@ -72,7 +72,7 @@ namespace SoapCore
 			// Read request message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
-			var soapAction = httpContext.Request.Headers["SOAPAction"].ToString().Trim('\"');
+			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? requestMessage.GetReaderAtBodyContents().LocalName).Trim('\"');
 			if (!string.IsNullOrEmpty(soapAction))
 			{
 				requestMessage.Headers.Action = soapAction;
@@ -80,7 +80,7 @@ namespace SoapCore
 
 			var operation =
 				_service.Operations.FirstOrDefault(
-					o => o.SoapAction.Equals(requestMessage.Headers.Action, StringComparison.Ordinal));
+					o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 			if (operation == null)
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
