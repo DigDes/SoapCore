@@ -13,20 +13,26 @@ namespace SoapCore
 		public IEnumerable<OperationDescription> Operations => Contracts.SelectMany(c => c.Operations);
 
 		public ServiceDescription(Type serviceType)
-		{
-			ServiceType = serviceType;
+	    {
+	        ServiceType = serviceType;
 
-			var contracts = new List<ContractDescription>();
+	        var types = Enumerable.Empty<Type>().Concat(ServiceType.GetInterfaces());
 
-			foreach (var contractType in ServiceType.GetInterfaces())
-			{
-				foreach (var serviceContract in contractType.GetTypeInfo().GetCustomAttributes<ServiceContractAttribute>())
-				{
-					contracts.Add(new ContractDescription(this, contractType, serviceContract));
-				}
-			}
+	        var contracts = new List<ContractDescription>();
+	        if (ServiceType.GetTypeInfo().IsInterface)
+	        {
+	            types = types.Concat(new[] {ServiceType});
+	        }
 
-			Contracts = contracts;
-		}
+	        foreach (var contractType in types)
+	        {
+	            foreach (var serviceContract in contractType.GetTypeInfo().GetCustomAttributes<ServiceContractAttribute>())
+	            {
+	                contracts.Add(new ContractDescription(this, contractType, serviceContract));
+	            }
+	        }
+
+	        Contracts = contracts;
+	    }
 	}
 }
