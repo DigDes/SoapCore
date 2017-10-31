@@ -16,3 +16,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 {
     app.UseSoapEndpoint<ServiceContractImpl>("ServicePath.asmx", new BasicHttpBinding());
 }
+```
+
+### References:
+* https://stackify.com/soap-net-core/
