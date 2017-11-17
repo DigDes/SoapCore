@@ -52,7 +52,7 @@ namespace SoapCore
 		{
 			Message responseMessage = null;
 
-			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host.ToString() + httpContext.Request.Path;
+			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host.ToString() + httpContext.Request.PathBase + httpContext.Request.Path;
 
 			var bodyWriter = new MetaBodyWriter(_service, baseUrl);
 

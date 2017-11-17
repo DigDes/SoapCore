@@ -49,7 +49,7 @@ namespace SoapCore
 						using (var ms = new MemoryStream())
 						using (var stream = new BufferedStream(ms))
 						{
-							new XmlSerializer(outResult.Value.GetType()).Serialize(ms, outResult.Value);
+							new XmlSerializer(outResult.Value.GetType(), _serviceNamespace).Serialize(ms, outResult.Value);
 							stream.Position = 0;
 							using (var reader = XmlReader.Create(stream))
 							{
