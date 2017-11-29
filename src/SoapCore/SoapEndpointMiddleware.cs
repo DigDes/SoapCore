@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace SoapCore
@@ -28,6 +31,7 @@ namespace SoapCore
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
+			httpContext.Request.EnableRewind();
 			Console.WriteLine($"Request for {httpContext.Request.Path} received ({httpContext.Request.ContentLength ?? 0} bytes)");
 			if (httpContext.Request.Path.Equals(_endpointPath, StringComparison.Ordinal))
 			{
@@ -69,7 +73,15 @@ namespace SoapCore
 		{
 			Message responseMessage;
 
-			// Read request message
+			//Reload the body to ensure we have the full message
+			var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
+			var requestData = Encoding.UTF8.GetBytes(body);
+			httpContext.Request.Body = new MemoryStream(requestData);
+
+			//Return metadata if no request
+			if (httpContext.Request.Body.Length == 0) return ProcessMeta(httpContext, serviceProvider);
+
+			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
 			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? requestMessage.GetReaderAtBodyContents().LocalName).Trim('\"');
@@ -85,15 +97,16 @@ namespace SoapCore
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 			}
-			// Get service type
-			var serviceInstance = serviceProvider.GetService(_service.ServiceType);
+
+			//Create an instance of the service class
+			var serviceInstance = _service.ServiceType.IsAbstract ? serviceProvider.GetService(_service.ServiceType) : Activator.CreateInstance(_service.ServiceType);
 
 			// Get operation arguments from message
 			Dictionary<string, object> outArgs = new Dictionary<string, object>();
 			var arguments = GetRequestArguments(requestMessage, operation, ref outArgs);
 			var allArgs = arguments.Concat(outArgs.Values).ToArray();
-			// Invoke Operation method
 
+			// Invoke Operation method
 			try
 			{
 				var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
@@ -126,7 +139,7 @@ namespace SoapCore
 			catch (Exception exception)
 			{
 				// Create response message
-				var errorText = exception.InnerException.Message;
+				var errorText = exception.InnerException?.Message;
 				var transformer = serviceProvider.GetService<ExceptionTransformer>();
 				if (transformer != null)
 					errorText = transformer.Transform(exception.InnerException);
