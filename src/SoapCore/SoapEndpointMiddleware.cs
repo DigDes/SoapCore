@@ -35,15 +35,13 @@ namespace SoapCore
 			Console.WriteLine($"Request for {httpContext.Request.Path} received ({httpContext.Request.ContentLength ?? 0} bytes)");
 			if (httpContext.Request.Path.Equals(_endpointPath, StringComparison.Ordinal))
 			{
-				Message responseMessage;
-
 				if (httpContext.Request.Query.ContainsKey("wsdl"))
 				{
-					responseMessage = ProcessMeta(httpContext, serviceProvider);
+					ProcessMeta(httpContext);
 				}
 				else
 				{
-					responseMessage = await ProcessOperation(httpContext, serviceProvider);
+					await ProcessOperation(httpContext, serviceProvider);
 				}
 			}
 			else
@@ -52,15 +50,13 @@ namespace SoapCore
 			}
 		}
 
-		private Message ProcessMeta(HttpContext httpContext, IServiceProvider serviceProvider)
+		private Message ProcessMeta(HttpContext httpContext)
 		{
-			Message responseMessage = null;
-
-			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host.ToString() + httpContext.Request.PathBase + httpContext.Request.Path;
+			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
 			var bodyWriter = new MetaBodyWriter(_service, baseUrl);
 
-			responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
+			var responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service);
 
 			httpContext.Response.ContentType = _messageEncoder.ContentType;
@@ -79,7 +75,8 @@ namespace SoapCore
 			httpContext.Request.Body = new MemoryStream(requestData);
 
 			//Return metadata if no request
-			if (httpContext.Request.Body.Length == 0) return ProcessMeta(httpContext, serviceProvider);
+			if (httpContext.Request.Body.Length == 0)
+				return ProcessMeta(httpContext);
 
 			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
@@ -90,16 +87,14 @@ namespace SoapCore
 				requestMessage.Headers.Action = soapAction;
 			}
 
-			var operation =
-				_service.Operations.FirstOrDefault(
-					o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
+			var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 			if (operation == null)
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 			}
 
 			//Create an instance of the service class
-			var serviceInstance = _service.ServiceType.IsAbstract ? serviceProvider.GetService(_service.ServiceType) : Activator.CreateInstance(_service.ServiceType);
+			var serviceInstance = _service.ServiceType.GetTypeInfo().IsAbstract ? serviceProvider.GetService(_service.ServiceType) : Activator.CreateInstance(_service.ServiceType);
 
 			// Get operation arguments from message
 			Dictionary<string, object> outArgs = new Dictionary<string, object>();
