@@ -105,8 +105,7 @@ namespace SoapCore
 			try
 			{
 				var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
-				var responseType = responseObject.GetType();
-				if (responseType.IsConstructedGenericType && responseType.GetGenericTypeDefinition() == typeof(Task<>))
+				if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
 				{
 					var responseTask = (Task)responseObject;
 					await responseTask;
