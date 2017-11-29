@@ -12,5 +12,15 @@ namespace Server
 			Console.WriteLine("Exec ping method");
 			return s;
 		}
+
+		public ComplexModelResponse PingComplexModel(ComplexModelInput inputModel)
+		{
+			Console.WriteLine("Input data. IntProperty: {0}, StringProperty: {1}", inputModel.IntProperty, inputModel.StringProperty);
+			return new ComplexModelResponse
+			{
+				FloatProperty = float.MaxValue / 2,
+				StringProperty = Guid.NewGuid().ToString()
+			};
+		}
 	}
 }

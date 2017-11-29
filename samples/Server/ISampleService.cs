@@ -11,5 +11,8 @@ namespace Server
 	{
 		[OperationContract]
 		string Ping(string s);
+
+		[OperationContract]
+		ComplexModelResponse PingComplexModel(ComplexModelInput inputModel);
 	}
 }
