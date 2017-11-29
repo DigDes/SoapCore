@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SoapCore" Version="0.9.1" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.0-preview2-final" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0-preview2-final" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0-preview2-final" />
@@ -17,5 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="**\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SoapCore\SoapCore.csproj" />
   </ItemGroup>
 </Project>

@@ -25,6 +25,13 @@ namespace Client
 			};
 			var complexResult = serviceClient.PingComplexModel(complexModel);
 			Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}", complexResult.FloatProperty, complexResult.StringProperty);
+
+			serviceClient.VoidMethod(out var stringValue);
+			Console.WriteLine("Void method result: {0}", stringValue);
+
+			var asyncMethodResult = serviceClient.AsyncMethod().Result;
+			Console.WriteLine("Async method result: {0}", asyncMethodResult);
+
 			Console.ReadKey();
 		}
 	}

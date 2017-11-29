@@ -14,5 +14,11 @@ namespace Server
 
 		[OperationContract]
 		ComplexModelResponse PingComplexModel(ComplexModelInput inputModel);
+
+		[OperationContract]
+		void VoidMethod(out string s);
+
+		[OperationContract]
+		Task<int> AsyncMethod();
 	}
 }
