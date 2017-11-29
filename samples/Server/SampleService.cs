@@ -32,5 +32,10 @@ namespace Server
 		{
 			return Task.Run(() => 42);
 		}
+
+		public int? NullableMethod(bool? arg)
+		{
+			return null;
+		}
 	}
 }

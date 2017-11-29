@@ -20,5 +20,8 @@ namespace Server
 
 		[OperationContract]
 		Task<int> AsyncMethod();
+
+		[OperationContract]
+		int? NullableMethod(bool? arg);
 	}
 }
