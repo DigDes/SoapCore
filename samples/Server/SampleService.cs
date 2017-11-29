@@ -22,5 +22,15 @@ namespace Server
 				StringProperty = Guid.NewGuid().ToString()
 			};
 		}
+
+		public void VoidMethod(out string s)
+		{
+			s = "Value from server";
+		}
+
+		public Task<int> AsyncMethod()
+		{
+			return Task.Run(() => 42);
+		}
 	}
 }
