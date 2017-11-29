@@ -288,7 +288,16 @@ namespace SoapCore
 				}
 				else
 				{
-					xsTypename = ResolveType(type.Name);
+					var underlyingType = Nullable.GetUnderlyingType(type);
+					if (underlyingType != null)
+					{
+						xsTypename = ResolveType(underlyingType.Name);
+						writer.WriteAttributeString("nillable", "true");
+					}
+					else
+					{
+						xsTypename = ResolveType(type.Name);
+					}
 				}
 				if (isArray)
 				{
