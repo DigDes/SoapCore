@@ -92,11 +92,11 @@ namespace SoapCore
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 			}
-
+		
 			try
 			{
 				//Create an instance of the service class
-				var serviceInstance = _service.ServiceType.GetTypeInfo().IsAbstract ? serviceProvider.GetService(_service.ServiceType) : Activator.CreateInstance(_service.ServiceType);
+				var serviceInstance = serviceProvider.GetService(_service.ServiceType);
 
 				// Get operation arguments from message
 				Dictionary<string, object> outArgs = new Dictionary<string, object>();
@@ -104,7 +104,6 @@ namespace SoapCore
 				var allArgs = arguments.Concat(outArgs.Values).ToArray();
 
 				// Invoke Operation method
-
 				var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
 				if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
 				{
@@ -134,7 +133,11 @@ namespace SoapCore
 			catch (Exception exception)
 			{
 				// Create response message
-				var errorText = exception.InnerException?.Message;
+				while (exception.InnerException != null)
+					exception = exception.InnerException;
+
+				var errorText = exception.Message;
+
 				var transformer = serviceProvider.GetService<ExceptionTransformer>();
 				if (transformer != null)
 					errorText = transformer.Transform(exception.InnerException);
