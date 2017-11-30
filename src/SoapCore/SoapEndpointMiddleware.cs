@@ -92,7 +92,7 @@ namespace SoapCore
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 			}
-		
+
 			try
 			{
 				//Create an instance of the service class
@@ -168,16 +168,25 @@ namespace SoapCore
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					var parameterName = parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
-					xmlReader.MoveToStartElement(parameterName, operation.Contract.Namespace);
+
 					if (xmlReader.IsStartElement(parameterName, operation.Contract.Namespace))
 					{
-						var elementType = parameters[i].ParameterType.GetElementType();
-						if (elementType == null || parameters[i].ParameterType.IsArray)
-							elementType = parameters[i].ParameterType;
-						string objectNamespace = operation.Contract.Namespace;
+						xmlReader.MoveToStartElement(parameterName, operation.Contract.Namespace);
 
-						var serializer = new DataContractSerializer(elementType, parameterName, objectNamespace);
-						arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
+						if (xmlReader.IsStartElement(parameterName, operation.Contract.Namespace))
+						{
+							var elementType = parameters[i].ParameterType.GetElementType();
+							if (elementType == null || parameters[i].ParameterType.IsArray)
+								elementType = parameters[i].ParameterType;
+							string objectNamespace = operation.Contract.Namespace;
+
+							var serializer = new DataContractSerializer(elementType, parameterName, objectNamespace);
+							arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
+						}
+					}
+					else
+					{
+						arguments.Add(null);
 					}
 				}
 			}
