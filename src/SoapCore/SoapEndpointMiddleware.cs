@@ -93,17 +93,18 @@ namespace SoapCore
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 			}
 
-			//Create an instance of the service class
-			var serviceInstance = _service.ServiceType.GetTypeInfo().IsAbstract ? serviceProvider.GetService(_service.ServiceType) : Activator.CreateInstance(_service.ServiceType);
-
-			// Get operation arguments from message
-			Dictionary<string, object> outArgs = new Dictionary<string, object>();
-			var arguments = GetRequestArguments(requestMessage, operation, ref outArgs);
-			var allArgs = arguments.Concat(outArgs.Values).ToArray();
-
-			// Invoke Operation method
 			try
 			{
+				//Create an instance of the service class
+				var serviceInstance = _service.ServiceType.GetTypeInfo().IsAbstract ? serviceProvider.GetService(_service.ServiceType) : Activator.CreateInstance(_service.ServiceType);
+
+				// Get operation arguments from message
+				Dictionary<string, object> outArgs = new Dictionary<string, object>();
+				var arguments = GetRequestArguments(requestMessage, operation, ref outArgs);
+				var allArgs = arguments.Concat(outArgs.Values).ToArray();
+
+				// Invoke Operation method
+
 				var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
 				if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
 				{
