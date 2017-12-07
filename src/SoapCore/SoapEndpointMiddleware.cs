@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace SoapCore
 {
-    public class SoapEndpointMiddleware
+	public class SoapEndpointMiddleware
 	{
 		private readonly RequestDelegate _next;
 		private readonly ServiceDescription _service;
@@ -168,8 +168,11 @@ namespace SoapCore
 
 				for (int i = 0; i < parameters.Length; i++)
 				{
-					var parameterName = parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
-					var parameterNs = parameters[i].GetCustomAttribute<XmlElementAttribute>()?.Namespace ?? operation.Contract.Namespace;
+					var elementAttribute = parameters[i].GetCustomAttribute<XmlElementAttribute>();
+					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+						                    ? elementAttribute.ElementName
+						                    : parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
+					var parameterNs = elementAttribute?.Namespace ?? operation.Contract.Namespace;
 
 					if (xmlReader.IsStartElement(parameterName, parameterNs))
 					{
