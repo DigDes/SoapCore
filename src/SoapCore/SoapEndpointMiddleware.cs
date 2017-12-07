@@ -8,13 +8,14 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace SoapCore
 {
-	public class SoapEndpointMiddleware
+    public class SoapEndpointMiddleware
 	{
 		private readonly RequestDelegate _next;
 		private readonly ServiceDescription _service;
@@ -168,19 +169,19 @@ namespace SoapCore
 				for (int i = 0; i < parameters.Length; i++)
 				{
 					var parameterName = parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
+					var parameterNs = parameters[i].GetCustomAttribute<XmlElementAttribute>()?.Namespace ?? operation.Contract.Namespace;
 
-					if (xmlReader.IsStartElement(parameterName, operation.Contract.Namespace))
+					if (xmlReader.IsStartElement(parameterName, parameterNs))
 					{
-						xmlReader.MoveToStartElement(parameterName, operation.Contract.Namespace);
+						xmlReader.MoveToStartElement(parameterName, parameterNs);
 
-						if (xmlReader.IsStartElement(parameterName, operation.Contract.Namespace))
+						if (xmlReader.IsStartElement(parameterName, parameterNs))
 						{
 							var elementType = parameters[i].ParameterType.GetElementType();
 							if (elementType == null || parameters[i].ParameterType.IsArray)
 								elementType = parameters[i].ParameterType;
-							string objectNamespace = operation.Contract.Namespace;
 
-							var serializer = new DataContractSerializer(elementType, parameterName, objectNamespace);
+							var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
 							arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
 						}
 					}
