@@ -71,9 +71,12 @@ namespace SoapCore
 			Message responseMessage;
 
 			//Reload the body to ensure we have the full message
-			var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
-			var requestData = Encoding.UTF8.GetBytes(body);
-			httpContext.Request.Body = new MemoryStream(requestData);
+			using (var reader = new StreamReader(httpContext.Request.Body))
+			{
+				var body = await reader.ReadToEndAsync();
+				var requestData = Encoding.UTF8.GetBytes(body);
+				httpContext.Request.Body = new MemoryStream(requestData);
+			}
 
 			//Return metadata if no request
 			if (httpContext.Request.Body.Length == 0)
