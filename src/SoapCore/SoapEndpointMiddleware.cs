@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +8,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.DependencyInjection;
@@ -167,20 +168,23 @@ namespace SoapCore
 
 				for (int i = 0; i < parameters.Length; i++)
 				{
-					var parameterName = parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
+					var elementAttribute = parameters[i].GetCustomAttribute<XmlElementAttribute>();
+					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+						                    ? elementAttribute.ElementName
+						                    : parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
+					var parameterNs = elementAttribute?.Namespace ?? operation.Contract.Namespace;
 
-					if (xmlReader.IsStartElement(parameterName, operation.Contract.Namespace))
+					if (xmlReader.IsStartElement(parameterName, parameterNs))
 					{
-						xmlReader.MoveToStartElement(parameterName, operation.Contract.Namespace);
+						xmlReader.MoveToStartElement(parameterName, parameterNs);
 
-						if (xmlReader.IsStartElement(parameterName, operation.Contract.Namespace))
+						if (xmlReader.IsStartElement(parameterName, parameterNs))
 						{
 							var elementType = parameters[i].ParameterType.GetElementType();
 							if (elementType == null || parameters[i].ParameterType.IsArray)
 								elementType = parameters[i].ParameterType;
-							string objectNamespace = operation.Contract.Namespace;
 
-							var serializer = new DataContractSerializer(elementType, parameterName, objectNamespace);
+							var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
 							arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
 						}
 					}

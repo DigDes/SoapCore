@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,9 +6,12 @@ using System.Reflection;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Serialization;
 
 namespace SoapCore
 {
+	using System.ServiceModel;
+
 	public class MetaBodyWriter : BodyWriter
 	{
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
@@ -68,7 +71,11 @@ namespace SoapCore
 
 				foreach (var parameter in operation.DispatchMethod.GetParameters().Where(x => !x.IsOut && !x.ParameterType.IsByRef))
 				{
-					AddSchemaType(writer, parameter.ParameterType, parameter.Name);
+					var elementAttribute = parameter.GetCustomAttribute<XmlElementAttribute>();
+					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+						                    ? elementAttribute.ElementName
+						                    : parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameter.Name;
+					AddSchemaType(writer, parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
 				}
 
 				writer.WriteEndElement(); // xs:sequence
@@ -273,11 +280,17 @@ namespace SoapCore
 			writer.WriteEndElement(); // wsdl:port
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false)
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null)
 		{
 			var typeInfo = type.GetTypeInfo();
 			writer.WriteStartElement("xs:element");
 
+			// Check for null, since we may use empty NS
+			if (@namespace != null)
+			{
+				writer.WriteAttributeString("targetNamespace", @namespace);
+			}
+			
 			if (typeInfo.IsValueType)
 			{
 				string xsTypename;
