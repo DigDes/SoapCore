@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "Server\Server.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore", "..\src\SoapCore\SoapCore.csproj", "{D2C578F8-4684-4B7C-BA1E-9EDF1F98823E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Models\Models.csproj", "{DFF0AC9A-391D-475D-BDE7-F54271C39886}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "Models\Models.csproj", "{DFF0AC9A-391D-475D-BDE7-F54271C39886}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client461", "Client461\Client461.csproj", "{47274EEA-FCA2-4ACA-9837-4C70316BE472}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{DFF0AC9A-391D-475D-BDE7-F54271C39886}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFF0AC9A-391D-475D-BDE7-F54271C39886}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFF0AC9A-391D-475D-BDE7-F54271C39886}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47274EEA-FCA2-4ACA-9837-4C70316BE472}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47274EEA-FCA2-4ACA-9837-4C70316BE472}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47274EEA-FCA2-4ACA-9837-4C70316BE472}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47274EEA-FCA2-4ACA-9837-4C70316BE472}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

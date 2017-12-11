@@ -25,7 +25,8 @@ namespace Server
 			loggerFactory.AddConsole();
 			loggerFactory.AddDebug();
 
-			app.UseSoapEndpoint<SampleService>("/Service.svc", new BasicHttpBinding());
+			app.UseSoapEndpoint<SampleService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+			app.UseSoapEndpoint<SampleService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 			app.UseMvc();
 		}
 	}
