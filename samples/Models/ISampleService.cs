@@ -4,7 +4,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.Threading.Tasks;
 
-namespace Server
+namespace Models
 {
 	[ServiceContract]
 	public interface ISampleService

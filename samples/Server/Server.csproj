@@ -19,5 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\SoapCore\SoapCore.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
   </ItemGroup>
 </Project>

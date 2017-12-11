@@ -6,16 +6,16 @@
     <OutputType>Exe</OutputType>
     <PackageId>Client</PackageId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Server\Server.csproj" />
-  </ItemGroup>
     <ItemGroup>
     <Compile Remove="**\AssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.ServiceModel.Http" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Server\Server.csproj" />
   </ItemGroup>
 
 </Project>
