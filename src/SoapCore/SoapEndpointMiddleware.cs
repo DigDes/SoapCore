@@ -22,6 +22,7 @@ namespace SoapCore
 		private readonly ServiceDescription _service;
 		private readonly string _endpointPath;
 		private readonly MessageEncoder _messageEncoder;
+		private readonly ILogger<SoapEndpointMiddleware> _logger;
 
 		public SoapEndpointMiddleware(RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, ILogger<SoapEndpointMiddleware> logger)
 		{
