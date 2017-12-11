@@ -12,6 +12,7 @@ using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace SoapCore
 {
@@ -22,12 +23,13 @@ namespace SoapCore
 		private readonly string _endpointPath;
 		private readonly MessageEncoder _messageEncoder;
 
-		public SoapEndpointMiddleware(RequestDelegate next, Type serviceType, string path, MessageEncoder encoder)
+		public SoapEndpointMiddleware(RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, ILogger<SoapEndpointMiddleware> logger)
 		{
 			_next = next;
 			_endpointPath = path;
 			_messageEncoder = encoder;
 			_service = new ServiceDescription(serviceType);
+			_logger = logger;
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -96,6 +98,7 @@ namespace SoapCore
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 			}
+			_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
 
 			try
 			{
@@ -136,6 +139,8 @@ namespace SoapCore
 			}
 			catch (Exception exception)
 			{
+				_logger.LogWarning(0, exception, exception.Message);
+				
 				// Create response message
 				while (exception.InnerException != null)
 					exception = exception.InnerException;
