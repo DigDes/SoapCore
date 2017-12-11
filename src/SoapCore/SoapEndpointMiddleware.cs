@@ -21,12 +21,14 @@ namespace SoapCore
 		private readonly ServiceDescription _service;
 		private readonly string _endpointPath;
 		private readonly MessageEncoder _messageEncoder;
+		private readonly SoapSerializer _serializer;
 
-		public SoapEndpointMiddleware(RequestDelegate next, Type serviceType, string path, MessageEncoder encoder)
+		public SoapEndpointMiddleware(RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer)
 		{
 			_next = next;
 			_endpointPath = path;
 			_messageEncoder = encoder;
+            _serializer = serializer;
 			_service = new ServiceDescription(serviceType);
 		}
 
@@ -125,7 +127,7 @@ namespace SoapCore
 
 				// Create response message
 				var resultName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
-				var bodyWriter = new ServiceBodyWriter(operation.Contract.Namespace, operation.Name + "Response", resultName, responseObject, resultOutDictionary);
+				var bodyWriter = new ServiceBodyWriter(_serializer, operation.Contract.Namespace, operation.Name + "Response", resultName, responseObject, resultOutDictionary);
 				responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 				responseMessage = new CustomMessage(responseMessage);
 
@@ -187,8 +189,23 @@ namespace SoapCore
 							if (elementType == null || parameters[i].ParameterType.IsArray)
 								elementType = parameters[i].ParameterType;
 
-							var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
-							arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
+                            switch (_serializer)
+                            {
+                                case SoapSerializer.XmlSerializer:
+                                    {
+                                        // see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
+                                        var serializer = new XmlSerializer(elementType, null, new Type[0], new XmlRootAttribute(parameterName), parameterNs);
+                                        arguments.Add(serializer.Deserialize(xmlReader));
+                                    }
+                                    break;
+                                case SoapSerializer.DataContractSerializer:
+                                    {
+                                        var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
+                                        arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
+                                    }
+                                    break;
+                                default: throw new NotImplementedException();
+                            }
 						}
 					}
 					else

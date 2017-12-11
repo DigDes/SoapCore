@@ -10,15 +10,17 @@ namespace SoapCore
 {
 	public class ServiceBodyWriter : BodyWriter
 	{
+		private readonly SoapSerializer _serializer;
 		private readonly string _serviceNamespace;
 		private readonly string _envelopeName;
 		private readonly string _resultName;
 		private readonly object _result;
 		private readonly Dictionary<string, object> _outResults;
 
-		public ServiceBodyWriter(string serviceNamespace, string envelopeName, string resultName, object result, Dictionary<string, object> outResults) : base(isBuffered: true)
+		public ServiceBodyWriter(SoapSerializer serializer, string serviceNamespace, string envelopeName, string resultName, object result, Dictionary<string, object> outResults) : base(isBuffered: true)
 		{
-			_serviceNamespace = serviceNamespace;
+            _serializer = serializer;
+            _serviceNamespace = serviceNamespace;
 			_envelopeName = envelopeName;
 			_resultName = resultName;
 			_result = result;
@@ -66,11 +68,26 @@ namespace SoapCore
 
 			if (_result != null)
 			{
-				var serializer = new DataContractSerializer(_result.GetType(), _resultName, _serviceNamespace);
-				serializer.WriteObject(writer, _result);
-			}
+                switch (_serializer)
+                {
+                    case SoapSerializer.XmlSerializer:
+                        {
+                            // see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
+                            var serializer = new XmlSerializer(_result.GetType(), null, new Type[0], new XmlRootAttribute(_resultName), _serviceNamespace);
+                            serializer.Serialize(writer, _result);
+                        }
+                        break;
+                    case SoapSerializer.DataContractSerializer:
+                        {
+                            var serializer = new DataContractSerializer(_result.GetType(), _resultName, _serviceNamespace);
+                            serializer.WriteObject(writer, _result);
+                        }
+                        break;
+                    default: throw new NotImplementedException();
+                }
+            }
 
-			writer.WriteEndElement();
+            writer.WriteEndElement();
 		}
 	}
 }
