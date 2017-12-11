@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://tempuri.org/" name="SampleService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xs:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <xs:element name="Ping">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="1" name="s" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="PingResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="1" name="PingResult" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="PingComplexModel">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="1" name="inputModel" type="tns:ComplexModelInput" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="PingComplexModelResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="1" name="PingComplexModelResult" type="tns:ComplexModelResponse" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="VoidMethod">
+        <xs:complexType>
+          <xs:sequence />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="VoidMethodResponse">
+        <xs:complexType>
+          <xs:sequence />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="AsyncMethod">
+        <xs:complexType>
+          <xs:sequence />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="AsyncMethodResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="AsyncMethodResult" type="xs:int" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="NullableMethod">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="arg" nillable="true" type="xs:boolean" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="NullableMethodResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="NullableMethodResult" nillable="true" type="xs:int" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:complexType name="ComplexModelInput">
+        <xs:sequence>
+          <xs:element minOccurs="0" maxOccurs="1" name="StringProperty" type="xs:string" />
+          <xs:element minOccurs="1" maxOccurs="1" name="IntProperty" type="xs:int" />
+        </xs:sequence>
+      </xs:complexType>
+      <xs:complexType name="ComplexModelResponse">
+        <xs:sequence>
+          <xs:element minOccurs="1" maxOccurs="1" name="FloatProperty" type="xs:float" />
+          <xs:element minOccurs="0" maxOccurs="1" name="StringProperty" type="xs:string" />
+        </xs:sequence>
+      </xs:complexType>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="ISampleService_Ping_InputMessage">
+    <wsdl:part name="parameters" element="tns:Ping" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_Ping_OutputMessage">
+    <wsdl:part name="parameters" element="tns:PingResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_PingComplexModel_InputMessage">
+    <wsdl:part name="parameters" element="tns:PingComplexModel" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_PingComplexModel_OutputMessage">
+    <wsdl:part name="parameters" element="tns:PingComplexModelResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_VoidMethod_InputMessage">
+    <wsdl:part name="parameters" element="tns:VoidMethod" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_VoidMethod_OutputMessage">
+    <wsdl:part name="parameters" element="tns:VoidMethodResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_AsyncMethod_InputMessage">
+    <wsdl:part name="parameters" element="tns:AsyncMethod" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_AsyncMethod_OutputMessage">
+    <wsdl:part name="parameters" element="tns:AsyncMethodResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_NullableMethod_InputMessage">
+    <wsdl:part name="parameters" element="tns:NullableMethod" />
+  </wsdl:message>
+  <wsdl:message name="ISampleService_NullableMethod_OutputMessage">
+    <wsdl:part name="parameters" element="tns:NullableMethodResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ISampleService">
+    <wsdl:operation name="Ping">
+      <wsdl:input message="tns:ISampleService_Ping_InputMessage" />
+      <wsdl:output message="tns:ISampleService_Ping_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="PingComplexModel">
+      <wsdl:input message="tns:ISampleService_PingComplexModel_InputMessage" />
+      <wsdl:output message="tns:ISampleService_PingComplexModel_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="VoidMethod">
+      <wsdl:input message="tns:ISampleService_VoidMethod_InputMessage" />
+      <wsdl:output message="tns:ISampleService_VoidMethod_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="AsyncMethod">
+      <wsdl:input message="tns:ISampleService_AsyncMethod_InputMessage" />
+      <wsdl:output message="tns:ISampleService_AsyncMethod_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="NullableMethod">
+      <wsdl:input message="tns:ISampleService_NullableMethod_InputMessage" />
+      <wsdl:output message="tns:ISampleService_NullableMethod_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_ISampleService" type="tns:ISampleService">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="Ping">
+      <soap:operation soapAction="http://tempuri.org/ISampleService/Ping" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="PingComplexModel">
+      <soap:operation soapAction="http://tempuri.org/ISampleService/PingComplexModel" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="VoidMethod">
+      <soap:operation soapAction="http://tempuri.org/ISampleService/VoidMethod" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="AsyncMethod">
+      <soap:operation soapAction="http://tempuri.org/ISampleService/AsyncMethod" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="NullableMethod">
+      <soap:operation soapAction="http://tempuri.org/ISampleService/NullableMethod" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SampleService">
+    <wsdl:port name="BasicHttpBinding_ISampleService" binding="tns:BasicHttpBinding_ISampleService">
+      <soap:address location="http://localhost:5050/Service.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
