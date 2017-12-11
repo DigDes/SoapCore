@@ -38,9 +38,10 @@ namespace SoapCore
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableRewind();
-			Console.WriteLine($"Request for {httpContext.Request.Path} received ({httpContext.Request.ContentLength ?? 0} bytes)");
 			if (httpContext.Request.Path.Equals(_endpointPath, StringComparison.Ordinal))
 			{
+				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
+
 				if (httpContext.Request.Query.ContainsKey("wsdl"))
 				{
 					ProcessMeta(httpContext);
