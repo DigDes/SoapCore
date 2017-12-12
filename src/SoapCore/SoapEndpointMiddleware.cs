@@ -136,7 +136,7 @@ namespace SoapCore
 				responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 				responseMessage = new CustomMessage(responseMessage);
 
-				httpContext.Response.ContentType = httpContext.Request.ContentType; // _messageEncoder.ContentType;
+				httpContext.Response.ContentType = httpContext.Request.ContentType;
 				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 
 				_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
@@ -144,24 +144,8 @@ namespace SoapCore
 			catch (Exception exception)
 			{
 				_logger.LogWarning(0, exception, exception.Message);
+				responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
 
-				// Create response message
-				while (exception.InnerException != null)
-					exception = exception.InnerException;
-
-				var errorText = exception.Message;
-
-				var transformer = serviceProvider.GetService<ExceptionTransformer>();
-				if (transformer != null)
-					errorText = transformer.Transform(exception.InnerException);
-				var bodyWriter = new FaultBodyWriter(new Fault { FaultString = errorText });
-				responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
-				responseMessage = new CustomMessage(responseMessage);
-
-				httpContext.Response.ContentType = httpContext.Request.ContentType; // _messageEncoder.ContentType;
-				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
-				httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-				_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 			}
 
 			return responseMessage;
@@ -236,6 +220,52 @@ namespace SoapCore
 				}
 			}
 			return arguments.ToArray();
+		}
+
+		/// <summary>
+		/// Helper message to write an error response message in case of an exception.
+		/// </summary>
+		/// <param name="exception">
+		/// The exception that caused the failure.
+		/// </param>
+		/// <param name="statusCode">
+		/// The HTTP status code that shall be returned to the caller.
+		/// </param>
+		/// <param name="serviceProvider">
+		/// The DI container.
+		/// </param>
+		/// <param name="httpContext">
+		/// The HTTP context that received the response message.
+		/// </param>
+		/// <returns>
+		/// Returns the constructed message (which is implicitly written to the response
+		/// and therefore must not be handled by the caller).
+		/// </returns>
+		private Message WriteErrorResponseMessage(
+			Exception exception,
+			int statusCode,
+			IServiceProvider serviceProvider,
+			HttpContext httpContext)
+		{
+			Message responseMessage;
+
+			// Create response message
+			var errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message;
+
+			var transformer = serviceProvider.GetService<ExceptionTransformer>();
+			if (transformer != null)
+				errorText = transformer.Transform(exception.InnerException);
+
+			var bodyWriter = new FaultBodyWriter(new Fault { FaultString = errorText });
+			responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
+			responseMessage = new CustomMessage(responseMessage);
+
+			httpContext.Response.ContentType = httpContext.Request.ContentType;
+			httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+			httpContext.Response.StatusCode = statusCode;
+			_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+
+			return responseMessage;
 		}
 	}
 }
