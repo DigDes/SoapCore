@@ -8,17 +8,17 @@ namespace SoapCore
 {
 	public static class SoapEndpointExtensions
 	{
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer)
 		{
-			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder);
+			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer)
 		{
 			var element = binding.CreateBindingElements().Find<MessageEncodingBindingElement>();
 			var factory = element.CreateMessageEncoderFactory();
 			var encoder = factory.Encoder;
-			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder);
+			return builder.UseSoapEndpoint<T>(path, encoder, serializer);
 		}
 
 		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer)
