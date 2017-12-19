@@ -42,7 +42,8 @@ namespace SoapCore
 			{
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
-				if (httpContext.Request.Query.ContainsKey("wsdl"))
+				if (httpContext.Request.Query.ContainsKey("wsdl")
+				    && httpContext.Request.Method?.ToLower() == "get")
 				{
 					ProcessMeta(httpContext);
 				}
