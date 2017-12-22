@@ -109,6 +109,12 @@ namespace SoapCore
 				//Create an instance of the service class
 				var serviceInstance = serviceProvider.GetService(_service.ServiceType);
 
+				var headerProperty = _service.ServiceType.GetProperty("MessageHeaders");
+				if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
+				{
+					headerProperty.SetValue(serviceInstance,requestMessage.Headers);
+				}
+
 				// Get operation arguments from message
 				Dictionary<string, object> outArgs = new Dictionary<string, object>();
 				var arguments = GetRequestArguments(requestMessage, operation, ref outArgs);
