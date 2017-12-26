@@ -304,12 +304,12 @@ namespace SoapCore
 					var underlyingType = Nullable.GetUnderlyingType(type);
 					if (underlyingType != null)
 					{
-						xsTypename = ResolveType(underlyingType.Name);
+						xsTypename = ResolveType(underlyingType);
 						writer.WriteAttributeString("nillable", "true");
 					}
 					else
 					{
-						xsTypename = ResolveType(type.Name);
+						xsTypename = ResolveType(type);
 					}
 				}
 				if (isArray)
@@ -387,9 +387,10 @@ namespace SoapCore
 			writer.WriteEndElement(); // xs:element
 		}
 
-		private string ResolveType(string typeName)
-		{
-			string resolvedType = null;
+	    private string ResolveType(Type type)
+	    {
+	        string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
+            string resolvedType = null;
 
 			switch (typeName)
 			{
