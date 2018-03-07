@@ -21,7 +21,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
-    app.UseSoapEndpoint<ServiceContractImpl>("ServicePath.asmx", new BasicHttpBinding());
+    app.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
 }
 ```
 
