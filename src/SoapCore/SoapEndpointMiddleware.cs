@@ -129,6 +129,12 @@ namespace SoapCore
 					await responseTask;
 					responseObject = responseTask.GetType().GetProperty("Result").GetValue(responseTask);
 				}
+				else if(responseObject is Task responseTask)
+				{
+					await responseTask;
+					// VoidTaskResult
+					responseObject = null;
+				}
 				int i = arguments.Length;
 				var resultOutDictionary = new Dictionary<string, object>();
 				foreach (var outArg in outArgs)
