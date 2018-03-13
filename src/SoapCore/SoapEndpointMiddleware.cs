@@ -90,9 +90,11 @@ namespace SoapCore
 				return ProcessMeta(httpContext);
 
 			//Get the message
-			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+			var requestBuffer = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType).CreateBufferedCopy(Int32.MaxValue);
+			var requestMessage = requestBuffer.CreateMessage();
+			var messageCopy = requestBuffer.CreateMessage();
 
-			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? requestMessage.GetReaderAtBodyContents().LocalName).Trim('\"');
+			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? messageCopy.GetReaderAtBodyContents().LocalName).Trim('\"');
 			if (!string.IsNullOrEmpty(soapAction))
 			{
 				requestMessage.Headers.Action = soapAction;
