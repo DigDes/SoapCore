@@ -92,6 +92,10 @@ namespace SoapCore
 			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
+			//Invoke AfterReceiveRequest if there is a message inspector registered
+			var messageInspector = serviceProvider.GetService<IMessageInspector>();
+			messageInspector?.AfterReceiveRequest(requestMessage);
+
 			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? requestMessage.GetReaderAtBodyContents().LocalName).Trim('\"');
 			if (!string.IsNullOrEmpty(soapAction))
 			{
@@ -145,6 +149,8 @@ namespace SoapCore
 
 				httpContext.Response.ContentType = httpContext.Request.ContentType;
 				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+				messageInspector?.BeforeSendReply(responseMessage);
 
 				_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 			}

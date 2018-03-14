@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
 using System.ServiceModel;
 using System.Threading.Tasks;
 

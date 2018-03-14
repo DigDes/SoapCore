@@ -1,17 +1,18 @@
-using System.ServiceModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using System.ServiceModel;
 
-namespace SoapCore.Tests
+namespace SoapCore.Tests.MessageInspector
 {
 	public class Startup
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.TryAddSingleton<TestService>();
+			services.AddSoapMessageInspector(new MessageInspectorMock());
 			services.AddMvc();
 		}
 
