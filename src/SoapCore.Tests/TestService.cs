@@ -29,5 +29,10 @@ namespace SoapCore.Tests
 		{
 			return !d.HasValue;
 		}
+
+		public void ThrowException()
+		{
+			throw new Exception();
+		}
 	}
 }

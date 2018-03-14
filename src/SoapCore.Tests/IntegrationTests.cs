@@ -72,5 +72,15 @@ namespace SoapCore.Tests
 			Assert.IsFalse(client.IsNull(5.0d));
 			Assert.IsTrue(client.IsNull(null));
 		}
+
+		[TestMethod]
+		public void ThrowsFaultException()
+		{
+			var client = CreateClient();
+			Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowException();
+			});
+		}
 	}
 }

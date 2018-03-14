@@ -20,5 +20,8 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		bool IsNull(double? d);
+
+		[OperationContract]
+		void ThrowException();
 	}
 }

@@ -92,7 +92,6 @@ namespace SoapCore
 			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
-			//Invoke AfterReceiveRequest if there is a message inspector registered
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
 			messageInspector?.AfterReceiveRequest(requestMessage);
 

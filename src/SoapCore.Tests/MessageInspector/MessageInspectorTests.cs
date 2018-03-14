@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace SoapCore.Tests.MessageInspector
 {
 	[TestClass]
-	public class Tests
+	public class MessageInspectorTests
 	{
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
