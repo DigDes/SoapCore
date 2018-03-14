@@ -74,6 +74,39 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void OverloadedMethod()
+		{
+			var client = CreateClient();
+			Assert.AreEqual("Overload(double)", client.Overload(5.0d));
+			Assert.AreEqual("Overload(string)", client.Overload("hello, world"));
+		}
+
+		[TestMethod]
+		public void OperationNameOverride()
+		{
+			var client = CreateClient();
+			Assert.IsTrue(client.OperationName());
+		}
+
+		[TestMethod]
+		public void OutParam()
+		{
+			var client = CreateClient();
+			string message;
+			client.OutParam(out message);
+			Assert.AreEqual("hello, world", message);
+		}
+
+		[TestMethod]
+		public void RefParam()
+		{
+			var client = CreateClient();
+			string message = string.Empty;
+			client.RefParam(ref message);
+			Assert.AreEqual("hello, world", message);
+		}
+
+		[TestMethod]
 		public void ThrowsFaultException()
 		{
 			var client = CreateClient();

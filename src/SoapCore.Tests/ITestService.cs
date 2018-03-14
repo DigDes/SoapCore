@@ -21,6 +21,21 @@ namespace SoapCore.Tests
 		[OperationContract]
 		bool IsNull(double? d);
 
+		[OperationContract(Name = "OperationNameTest")]
+		bool OperationName();
+
+		[OperationContract]
+		string Overload(string s);
+
+		[OperationContract(Name = "OverloadDouble")]
+		string Overload(double d);
+
+		[OperationContract]
+		void OutParam(out string message);
+
+		[OperationContract]
+		void RefParam(ref string message);
+
 		[OperationContract]
 		void ThrowException();
 
