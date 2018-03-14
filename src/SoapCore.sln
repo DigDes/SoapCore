@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26510.0
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore", "SoapCore\SoapCore.csproj", "{576F47D4-97EC-4D42-8CD5-89648EEAB688}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.Tests", "SoapCore.Tests\SoapCore.Tests.csproj", "{2B200D78-B473-4590-9E4C-532AD0219BA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{576F47D4-97EC-4D42-8CD5-89648EEAB688}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{576F47D4-97EC-4D42-8CD5-89648EEAB688}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{576F47D4-97EC-4D42-8CD5-89648EEAB688}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B200D78-B473-4590-9E4C-532AD0219BA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B200D78-B473-4590-9E4C-532AD0219BA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B200D78-B473-4590-9E4C-532AD0219BA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B200D78-B473-4590-9E4C-532AD0219BA9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C6A59687-F181-4D2C-9470-9E93963271BF}
 	EndGlobalSection
 EndGlobal
