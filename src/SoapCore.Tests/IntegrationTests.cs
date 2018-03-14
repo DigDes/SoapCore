@@ -82,5 +82,16 @@ namespace SoapCore.Tests
 				client.ThrowException();
 			});
 		}
+
+		[TestMethod]
+		public void ExceptionMessage()
+		{
+			var client = CreateClient();
+			var e = Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowExceptionWithMessage("Your error message here");
+			});
+			Assert.AreEqual("Your error message here", e.Message);
+		}
 	}
 }

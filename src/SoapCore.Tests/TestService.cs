@@ -34,5 +34,10 @@ namespace SoapCore.Tests
 		{
 			throw new Exception();
 		}
+
+		public void ThrowExceptionWithMessage(string message)
+		{
+			throw new Exception(message);
+		}
 	}
 }

@@ -23,5 +23,8 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		void ThrowException();
+
+		[OperationContract]
+		void ThrowExceptionWithMessage(string message);
 	}
 }
