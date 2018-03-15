@@ -200,13 +200,8 @@ namespace SoapCore
 									break;
 								case SoapSerializer.DataContractSerializer:
 									{
-										// Hacky workaround: using XmlSerializer only until we find out why the hell DataContractSerializer is not working
-										var serializer = new XmlSerializer(elementType, null, new Type[0], new XmlRootAttribute(parameterName), parameterNs);
-										arguments.Add(serializer.Deserialize(xmlReader));
-
-										//var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
-										//arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
-
+										var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
+										arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
 									}
 									break;
 								default: throw new NotImplementedException();
