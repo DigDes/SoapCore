@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
 using System.ServiceModel;
 using System.Threading.Tasks;
 
@@ -72,6 +71,60 @@ namespace SoapCore.Tests
 			var client = CreateClient();
 			Assert.IsFalse(client.IsNull(5.0d));
 			Assert.IsTrue(client.IsNull(null));
+		}
+
+		[TestMethod]
+		public void OverloadedMethod()
+		{
+			var client = CreateClient();
+			Assert.AreEqual("Overload(double)", client.Overload(5.0d));
+			Assert.AreEqual("Overload(string)", client.Overload("hello, world"));
+		}
+
+		[TestMethod]
+		public void OperationNameOverride()
+		{
+			var client = CreateClient();
+			Assert.IsTrue(client.OperationName());
+		}
+
+		[TestMethod]
+		public void OutParam()
+		{
+			var client = CreateClient();
+			string message;
+			client.OutParam(out message);
+			Assert.AreEqual("hello, world", message);
+		}
+
+		[TestMethod]
+		public void RefParam()
+		{
+			var client = CreateClient();
+			string message = string.Empty;
+			client.RefParam(ref message);
+			Assert.AreEqual("hello, world", message);
+		}
+
+		[TestMethod]
+		public void ThrowsFaultException()
+		{
+			var client = CreateClient();
+			Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowException();
+			});
+		}
+
+		[TestMethod]
+		public void ExceptionMessage()
+		{
+			var client = CreateClient();
+			var e = Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowExceptionWithMessage("Your error message here");
+			});
+			Assert.AreEqual("Your error message here", e.Message);
 		}
 	}
 }
