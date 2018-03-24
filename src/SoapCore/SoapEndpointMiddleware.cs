@@ -94,7 +94,10 @@ namespace SoapCore
 			var requestMessage = requestBuffer.CreateMessage();
 			var messageCopy = requestBuffer.CreateMessage();
 
-			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? messageCopy.GetReaderAtBodyContents().LocalName).Trim('\"');
+			var messageInspector = serviceProvider.GetService<IMessageInspector>();
+			messageInspector?.AfterReceiveRequest(requestMessage);
+
+			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? requestMessage.GetReaderAtBodyContents().LocalName).Trim('\"');
 			if (!string.IsNullOrEmpty(soapAction))
 			{
 				requestMessage.Headers.Action = soapAction;
@@ -147,6 +150,8 @@ namespace SoapCore
 
 				httpContext.Response.ContentType = httpContext.Request.ContentType;
 				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+				messageInspector?.BeforeSendReply(responseMessage);
 
 				_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 			}
