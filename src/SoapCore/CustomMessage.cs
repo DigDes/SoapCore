@@ -1,4 +1,5 @@
 ﻿using System.ServiceModel.Channels;
+using System.ServiceModel;
 using System.Xml;
 
 namespace SoapCore
@@ -15,7 +16,14 @@ namespace SoapCore
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
 			writer.WriteStartDocument();
-			writer.WriteStartElement("s", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
+			if(_message.Version.Envelope == EnvelopeVersion.Soap11)
+			{
+				writer.WriteStartElement("s", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
+			}
+			else
+			{
+				writer.WriteStartElement("s", "Envelope", "http://www.w3.org/2003/05/soap-envelope");
+			}
 			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
 			writer.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 		}

@@ -43,7 +43,7 @@ namespace SoapCore
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
 				if (httpContext.Request.Query.ContainsKey("wsdl")
-				    && httpContext.Request.Method?.ToLower() == "get")
+					&& httpContext.Request.Method?.ToLower() == "get")
 				{
 					ProcessMeta(httpContext);
 				}
@@ -95,126 +95,133 @@ namespace SoapCore
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
 			messageInspector?.AfterReceiveRequest(requestMessage);
 
-			var soapAction = (httpContext.Request.Headers["SOAPAction"].FirstOrDefault() ?? requestMessage.GetReaderAtBodyContents().LocalName).Trim('\"');
-			if (!string.IsNullOrEmpty(soapAction))
+			// for getting soapaction and parameters in body
+			// GetReaderAtBodyContents must not be called twice in one request
+			using (var reader = requestMessage.GetReaderAtBodyContents())
 			{
-				requestMessage.Headers.Action = soapAction;
-			}
-
-			var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
-			if (operation == null)
-			{
-				throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
-			}
-			_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
-
-			try
-			{
-				//Create an instance of the service class
-				var serviceInstance = serviceProvider.GetService(_service.ServiceType);
-
-				var headerProperty = _service.ServiceType.GetProperty("MessageHeaders");
-				if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
+				var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
+				if (string.IsNullOrEmpty(soapAction))
 				{
-					headerProperty.SetValue(serviceInstance,requestMessage.Headers);
+					// action name is in body soap1.2
+					soapAction = reader.LocalName;
+				}
+				if (!string.IsNullOrEmpty(soapAction))
+				{
+					soapAction = soapAction.Trim('/', '"');
+					requestMessage.Headers.Action = soapAction;
 				}
 
-				// Get operation arguments from message
-				Dictionary<string, object> outArgs = new Dictionary<string, object>();
-				var arguments = GetRequestArguments(requestMessage, operation, ref outArgs);
-				var allArgs = arguments.Concat(outArgs.Values).ToArray();
-
-				// Invoke Operation method
-				var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
-				if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
+				if (operation == null)
 				{
-					var responseTask = (Task)responseObject;
-					await responseTask;
-					responseObject = responseTask.GetType().GetProperty("Result").GetValue(responseTask);
+					throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 				}
-				int i = arguments.Length;
-				var resultOutDictionary = new Dictionary<string, object>();
-				foreach (var outArg in outArgs)
+				_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
+
+				try
 				{
-					resultOutDictionary[outArg.Key] = allArgs[i];
-					i++;
+					//Create an instance of the service class
+					var serviceInstance = serviceProvider.GetService(_service.ServiceType);
+
+					var headerProperty = _service.ServiceType.GetProperty("MessageHeaders");
+					if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
+					{
+						headerProperty.SetValue(serviceInstance, requestMessage.Headers);
+					}
+
+					// Get operation arguments from message
+					Dictionary<string, object> outArgs = new Dictionary<string, object>();
+					var arguments = GetRequestArguments(requestMessage, reader, operation, ref outArgs);
+					var allArgs = arguments.Concat(outArgs.Values).ToArray();
+
+					// Invoke Operation method
+					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
+					if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+					{
+						var responseTask = (Task)responseObject;
+						await responseTask;
+						responseObject = responseTask.GetType().GetProperty("Result").GetValue(responseTask);
+					}
+					int i = arguments.Length;
+					var resultOutDictionary = new Dictionary<string, object>();
+					foreach (var outArg in outArgs)
+					{
+						resultOutDictionary[outArg.Key] = allArgs[i];
+						i++;
+					}
+
+					// Create response message
+					var resultName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+					var bodyWriter = new ServiceBodyWriter(_serializer, operation.Contract.Namespace, operation.Name + "Response", resultName, responseObject, resultOutDictionary);
+					responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
+					responseMessage = new CustomMessage(responseMessage);
+
+					httpContext.Response.ContentType = httpContext.Request.ContentType;
+					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+					messageInspector?.BeforeSendReply(responseMessage);
+
+					_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 				}
+				catch (Exception exception)
+				{
+					_logger.LogWarning(0, exception, exception.Message);
+					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
 
-				// Create response message
-				var resultName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
-				var bodyWriter = new ServiceBodyWriter(_serializer, operation.Contract.Namespace, operation.Name + "Response", resultName, responseObject, resultOutDictionary);
-				responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
-				responseMessage = new CustomMessage(responseMessage);
-
-				httpContext.Response.ContentType = httpContext.Request.ContentType;
-				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
-
-				messageInspector?.BeforeSendReply(responseMessage);
-
-				_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
-			}
-			catch (Exception exception)
-			{
-				_logger.LogWarning(0, exception, exception.Message);
-				responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
-
+				}
 			}
 
 			return responseMessage;
 		}
 
-		private object[] GetRequestArguments(Message requestMessage, OperationDescription operation, ref Dictionary<string, object> outArgs)
+		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation, ref Dictionary<string, object> outArgs)
 		{
 			var parameters = operation.DispatchMethod.GetParameters().Where(x => !x.IsOut && !x.ParameterType.IsByRef).ToArray();
 			var arguments = new List<object>();
 
-			// Deserialize request wrapper and object
-			using (var xmlReader = requestMessage.GetReaderAtBodyContents())
-			{
-				// Find the element for the operation's data
-				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
+			// Find the element for the operation's data
+			xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 
-				for (int i = 0; i < parameters.Length; i++)
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				var elementAttribute = parameters[i].GetCustomAttribute<XmlElementAttribute>();
+				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+										? elementAttribute.ElementName
+										: parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
+				var parameterNs = elementAttribute?.Namespace ?? operation.Contract.Namespace;
+
+				if (xmlReader.IsStartElement(parameterName, parameterNs))
 				{
-					var elementAttribute = parameters[i].GetCustomAttribute<XmlElementAttribute>();
-					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
-						                    ? elementAttribute.ElementName
-						                    : parameters[i].GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameters[i].Name;
-					var parameterNs = elementAttribute?.Namespace ?? operation.Contract.Namespace;
+					xmlReader.MoveToStartElement(parameterName, parameterNs);
 
 					if (xmlReader.IsStartElement(parameterName, parameterNs))
 					{
-						xmlReader.MoveToStartElement(parameterName, parameterNs);
+						var elementType = parameters[i].ParameterType.GetElementType();
+						if (elementType == null || parameters[i].ParameterType.IsArray)
+							elementType = parameters[i].ParameterType;
 
-						if (xmlReader.IsStartElement(parameterName, parameterNs))
+						switch (_serializer)
 						{
-							var elementType = parameters[i].ParameterType.GetElementType();
-							if (elementType == null || parameters[i].ParameterType.IsArray)
-								elementType = parameters[i].ParameterType;
-
-							switch (_serializer)
-							{
-								case SoapSerializer.XmlSerializer:
-									{
-										// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-										var serializer = new XmlSerializer(elementType, null, new Type[0], new XmlRootAttribute(parameterName), parameterNs);
-										arguments.Add(serializer.Deserialize(xmlReader));
-									}
-									break;
-								case SoapSerializer.DataContractSerializer:
-									{
-										var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
-										arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
-									}
-									break;
-								default: throw new NotImplementedException();
-							}
+							case SoapSerializer.XmlSerializer:
+								{
+									// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
+									var serializer = new XmlSerializer(elementType, null, new Type[0], new XmlRootAttribute(parameterName), parameterNs);
+									arguments.Add(serializer.Deserialize(xmlReader));
+								}
+								break;
+							case SoapSerializer.DataContractSerializer:
+								{
+									var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
+									arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
+								}
+								break;
+							default: throw new NotImplementedException();
 						}
 					}
-					else
-					{
-						arguments.Add(null);
-					}
+				}
+				else
+				{
+					arguments.Add(null);
 				}
 			}
 
