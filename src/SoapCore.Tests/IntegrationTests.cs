@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using System.ServiceModel.Channels;
 
 namespace SoapCore.Tests
 {
@@ -31,6 +32,25 @@ namespace SoapCore.Tests
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
+		}
+
+		ITestService CreateSoap12Client()
+		{
+			var transport = new HttpTransportBindingElement();
+			var textencoding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
+			var binding = new CustomBinding(textencoding, transport);
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/ServiceSoap12.svc", Environment.MachineName)));
+			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+			var serviceClient = channelFactory.CreateChannel();
+			return serviceClient;
+		}
+
+		[TestMethod]
+		public void PingSoap12()
+		{
+			var client = CreateSoap12Client();
+			var result = client.Ping("hello, world");
+			Assert.AreEqual("hello, world", result);
 		}
 
 		[TestMethod]
