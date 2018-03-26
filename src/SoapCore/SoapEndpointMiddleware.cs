@@ -91,17 +91,24 @@ namespace SoapCore
 
 			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+
+			var messageInspector = serviceProvider.GetService<IMessageInspector>();
+			messageInspector?.AfterReceiveRequest(requestMessage);
+
+			// for getting soapaction and parameters in body
+			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
 			{
 				var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
 				if (string.IsNullOrEmpty(soapAction))
 				{
 					// action name is in body soap1.2
-					soapAction = string.Join("/", reader.NamespaceURI, reader.LocalName);
+					soapAction = reader.LocalName;
 				}
 				if (!string.IsNullOrEmpty(soapAction))
 				{
-					requestMessage.Headers.Action = soapAction.Trim('\"');
+					soapAction = soapAction.Trim('/', '"');
+					requestMessage.Headers.Action = soapAction;
 				}
 
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
@@ -152,6 +159,8 @@ namespace SoapCore
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 
+					messageInspector?.BeforeSendReply(responseMessage);
+
 					_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 				}
 				catch (Exception exception)
@@ -160,8 +169,8 @@ namespace SoapCore
 					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
 
 				}
-
 			}
+
 			return responseMessage;
 		}
 
