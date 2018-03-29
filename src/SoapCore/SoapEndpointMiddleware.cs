@@ -42,8 +42,7 @@ namespace SoapCore
 			{
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
-				if (httpContext.Request.Query.ContainsKey("wsdl")
-					&& httpContext.Request.Method?.ToLower() == "get")
+				if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
 				{
 					ProcessMeta(httpContext);
 				}
@@ -269,11 +268,11 @@ namespace SoapCore
 			Message responseMessage;
 
 			// Create response message
-			var errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message;
 
+			string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message; ;
 			var transformer = serviceProvider.GetService<ExceptionTransformer>();
 			if (transformer != null)
-				errorText = transformer.Transform(exception.InnerException);
+				errorText = transformer.Transform(exception);
 
 			var bodyWriter = new FaultBodyWriter(new Fault { FaultString = errorText });
 			responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
