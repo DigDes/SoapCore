@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Runtime.CompilerServices;
 
 namespace SoapCore
 {
@@ -71,6 +72,79 @@ namespace SoapCore
 
 			return responseMessage;
 		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		string GetSoapAction(HttpContext httpContext, Message requestMessage, System.Xml.XmlDictionaryReader reader)
+		{
+			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
+			if (string.IsNullOrEmpty(soapAction))
+			{
+				foreach (var headerItem in httpContext.Request.Headers["Content-Type"])
+				{
+					// I want to avoid allocation as possible as I can(I hope to use Span<T> or Utf8String)
+					// soap1.2: action name is in Content-Type(like 'action="[action url]"') or body
+					int i = 0;
+					// skip whitespace
+					while (i < headerItem.Length && headerItem[i] == ' ')
+					{
+						i++;
+					}
+					if(headerItem.Length - i < 6)
+					{
+						continue;
+					}
+					// find 'action'
+					if (headerItem[i + 0] == 'a'
+						&& headerItem[i + 1] == 'c'
+						&& headerItem[i + 2] == 't'
+						&& headerItem[i + 3] == 'i'
+						&& headerItem[i + 4] == 'o'
+						&& headerItem[i + 5] == 'n')
+					{
+						i += 6;
+						// skip white space
+						while (i < headerItem.Length && headerItem[i] == ' ')
+						{
+							i++;
+						}
+						if (headerItem[i] == '=')
+						{
+							i++;
+							// skip whitespace
+							while (i < headerItem.Length && headerItem[i] == ' ')
+							{
+								i++;
+							}
+							// action value should be surrounded by '"'
+							if (headerItem[i] == '"')
+							{
+								i++;
+								int offset = i;
+								while (i < headerItem.Length && headerItem[i] != '"')
+								{
+									i++;
+								}
+								if (i < headerItem.Length && headerItem[i] == '"')
+								{
+									var charray = headerItem.ToCharArray();
+									soapAction = new string(charray, offset, i - offset);
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (string.IsNullOrEmpty(soapAction))
+				{
+					soapAction = reader.LocalName;
+				}
+			}
+			if (!string.IsNullOrEmpty(soapAction))
+			{
+				// soapAction may have '"' in some cases.
+				soapAction = soapAction.Trim('"');
+			}
+			return soapAction;
+		}
 
 		private async Task<Message> ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
@@ -98,18 +172,8 @@ namespace SoapCore
 			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
 			{
-				var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
-				if (string.IsNullOrEmpty(soapAction))
-				{
-					// action name is in body soap1.2
-					soapAction = reader.LocalName;
-				}
-				if (!string.IsNullOrEmpty(soapAction))
-				{
-					soapAction = soapAction.Trim('/', '"');
-					requestMessage.Headers.Action = soapAction;
-				}
-
+				var soapAction = GetSoapAction(httpContext, requestMessage, reader);
+				requestMessage.Headers.Action = soapAction;
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 				if (operation == null)
 				{
