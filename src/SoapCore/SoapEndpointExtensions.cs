@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ServiceModel.Channels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +24,12 @@ namespace SoapCore
 		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer)
 		{
 			serviceCollection.TryAddSingleton(new ExceptionTransformer(transformer));
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector)
+		{
+			serviceCollection.TryAddSingleton(messageInspector);
 			return serviceCollection;
 		}
 	}
