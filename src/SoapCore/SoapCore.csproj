@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-<PropertyGroup>
+  <PropertyGroup>
     <Description>SOAP protocol middleware for ASP.NET Core</Description>
     <VersionPrefix>0.7</VersionPrefix>
     <Authors>Digital Design</Authors>
@@ -14,7 +14,7 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>0.9.5</Version>
+    <Version>0.9.7</Version>
   </PropertyGroup>
 
   <ItemGroup>

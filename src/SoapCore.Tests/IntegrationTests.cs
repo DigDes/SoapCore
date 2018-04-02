@@ -118,6 +118,14 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void OutComplexParam()
+		{
+			var client = CreateClient();
+			client.OutComplexParam(out ComplexModelInput test);
+			Assert.AreEqual(test.IntProperty, 10);
+		}
+
+		[TestMethod]
 		public void RefParam()
 		{
 			var client = CreateClient();
