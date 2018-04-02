@@ -57,6 +57,13 @@ namespace SoapCore.Tests
 			message = "hello, world";
 		}
 
+		public void OutComplexParam(out ComplexModelInput test)
+		{
+			test = new ComplexModelInput();
+			test.StringProperty = "test message";
+			test.IntProperty = 10;
+		}
+
 		public void RefParam(ref string message)
 		{
 			message = "hello, world";

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
@@ -51,7 +51,16 @@ namespace SoapCore
 						using (var ms = new MemoryStream())
 						using (var stream = new BufferedStream(ms))
 						{
-							new XmlSerializer(outResult.Value.GetType(), _serviceNamespace).Serialize(ms, outResult.Value);
+							switch (_serializer)
+							{
+								case SoapSerializer.XmlSerializer:
+									new XmlSerializer(outResult.Value.GetType()).Serialize(ms, outResult.Value);
+									break;
+								case SoapSerializer.DataContractSerializer:
+									new DataContractSerializer(outResult.Value.GetType()).WriteObject(ms, outResult.Value);
+									break;
+								default: throw new NotImplementedException();
+							}
 							stream.Position = 0;
 							using (var reader = XmlReader.Create(stream))
 							{

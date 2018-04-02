@@ -34,6 +34,9 @@ namespace SoapCore.Tests
 		void OutParam(out string message);
 
 		[OperationContract]
+		void OutComplexParam(out ComplexModelInput test);
+
+		[OperationContract]
 		void RefParam(ref string message);
 
 		[OperationContract]
