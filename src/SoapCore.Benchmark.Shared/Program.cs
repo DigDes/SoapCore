@@ -21,7 +21,7 @@ namespace SoapCore.Benchmark
 	public class EchoBench
 	{
 		// 0 measures overhead of creating host
-		[Params(0, 100)]
+		[Params(100)]
 		public int LoopNum;
 		static string EchoContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
