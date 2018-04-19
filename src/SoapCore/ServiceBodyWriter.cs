@@ -82,8 +82,9 @@ namespace SoapCore
 					case SoapSerializer.XmlSerializer:
 						{
 							// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-							var serializer = new XmlSerializer(_result.GetType(), null, new Type[0], new XmlRootAttribute(_resultName), _serviceNamespace);
-							serializer.Serialize(writer, _result);
+							var serializer = CachedXmlSerializer.GetXmlSerializer(_result.GetType(), _resultName, _serviceNamespace);
+							lock (serializer)
+								serializer.Serialize(writer, _result);
 						}
 						break;
 					case SoapSerializer.DataContractSerializer:
