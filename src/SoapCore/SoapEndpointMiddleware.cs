@@ -2,18 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using System.ServiceModel;
+using System.Security.Authentication;
 using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
 
 namespace SoapCore
 {
@@ -163,6 +160,18 @@ namespace SoapCore
 			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
+			// Get MessageFilters
+			var messageFilters = serviceProvider.GetServices<IMessageFilter>();
+
+			// Execute request message filters
+			try {
+				foreach (var messageFilter in messageFilters) messageFilter.OnRequestExecuting(requestMessage);
+			}
+			catch (Exception ex) {
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
+				return responseMessage;
+			}
+
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
 			var correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
 
@@ -235,8 +244,16 @@ namespace SoapCore
 				{
 					_logger.LogWarning(0, exception, exception.Message);
 					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
-
 				}
+			}
+
+			// Execute response message filters			
+			try {
+				foreach (var messageFilter in messageFilters) messageFilter.OnResponseExecuting(responseMessage);
+			}
+			catch (Exception ex) {
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
+				return responseMessage;
 			}
 
 			return responseMessage;
@@ -337,12 +354,7 @@ namespace SoapCore
 
 			// Create response message
 
-			string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message; ;
-			var transformer = serviceProvider.GetService<ExceptionTransformer>();
-			if (transformer != null)
-				errorText = transformer.Transform(exception);
-
-			var bodyWriter = new FaultBodyWriter(new Fault { FaultString = errorText });
+			var bodyWriter = new FaultBodyWriter(GetFaultFromExceptionType(exception, serviceProvider));
 			responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new CustomMessage(responseMessage);
 
@@ -353,5 +365,20 @@ namespace SoapCore
 
 			return responseMessage;
 		}
+
+		private Fault GetFaultFromExceptionType(Exception exception, IServiceProvider serviceProvider) {
+			string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message; ;
+			var transformer = serviceProvider.GetService<ExceptionTransformer>();
+			if (transformer != null)
+				errorText = transformer.Transform(exception);
+
+			if (exception is AuthenticationException)
+				return new Fault { FaultCode = "wsse:SecurityTokenUnavailable", FaultString = errorText };
+			else if (exception is InvalidCredentialException)
+				return new Fault { FaultCode = "wsse:FailedAuthentication", FaultString = errorText };
+			else
+				return new Fault { FaultString = errorText };
+		}
+
 	}
 }

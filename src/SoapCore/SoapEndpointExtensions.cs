@@ -4,33 +4,39 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace SoapCore
-{
-	public static class SoapEndpointExtensions
-	{
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer)
-		{
+namespace SoapCore {
+	public static class SoapEndpointExtensions {
+
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer) {
 			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer)
-		{
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer) {
 			var element = binding.CreateBindingElements().Find<MessageEncodingBindingElement>();
 			var factory = element.CreateMessageEncoderFactory();
 			var encoder = factory.Encoder;
 			return builder.UseSoapEndpoint<T>(path, encoder, serializer);
 		}
 
-		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer)
-		{
+		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer) {
 			serviceCollection.TryAddSingleton(new ExceptionTransformer(transformer));
 			return serviceCollection;
 		}
 
-		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector)
-		{
+		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector) {
 			serviceCollection.TryAddSingleton(messageInspector);
 			return serviceCollection;
 		}
+
+		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IMessageFilter messageFilter) {
+			serviceCollection.TryAddSingleton(messageFilter);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password) {
+			serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
+			return serviceCollection;
+		}
+
 	}
 }
