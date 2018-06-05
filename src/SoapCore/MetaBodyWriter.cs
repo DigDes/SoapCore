@@ -154,6 +154,15 @@ namespace SoapCore
 					{
 						foreach (var property in toBuild.GetProperties())
 						{
+							var ignore = false;
+							foreach (var customAttr in property.CustomAttributes) {
+								if (customAttr.AttributeType.Name == "XmlIgnoreAttribute") {
+									ignore = true;
+									break;
+								}
+							}
+							if (ignore) continue;
+
 							AddSchemaType(writer, property.PropertyType, property.Name);
 						}
 					}
