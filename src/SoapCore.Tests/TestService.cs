@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SoapCore.Tests
@@ -62,6 +63,7 @@ namespace SoapCore.Tests
 			test = new ComplexModelInput();
 			test.StringProperty = "test message";
 			test.IntProperty = 10;
+			test.ListProperty = new List<string> { "test", "list", "of", "strings" };
 		}
 
 		public void RefParam(ref string message)
