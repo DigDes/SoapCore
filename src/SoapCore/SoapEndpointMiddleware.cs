@@ -9,6 +9,8 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -204,6 +206,16 @@ namespace SoapCore
 					var arguments = GetRequestArguments(requestMessage, reader, operation, ref outArgs);
 					// avoid Concat() and ToArray() cost when no out args(this may be heavy operation)
 					var allArgs = outArgs.Count != 0 ? arguments.Concat(outArgs.Values).ToArray() : arguments;
+
+					// Invoke Mvc ActionFilters
+					foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute")) {
+						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
+
+						//ActionContext actionContext = new ActionContext(;
+						//ActionExecutingContext context = new ActionExecutingContext();
+
+						actionFilter.GetType().GetMethod("OnActionExecuting").Invoke(actionFilter, new object[1]);
+					}
 
 					// Invoke Operation method
 					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
