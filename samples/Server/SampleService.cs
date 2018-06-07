@@ -20,7 +20,8 @@ namespace Server
 			return new ComplexModelResponse
 			{
 				FloatProperty = float.MaxValue / 2,
-				StringProperty = Guid.NewGuid().ToString()
+				StringProperty = Guid.NewGuid().ToString(),
+				ListProperty = new List<string> { "test", "list", "of", "strings" }
 			};
 		}
 

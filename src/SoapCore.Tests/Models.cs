@@ -13,5 +13,8 @@ namespace SoapCore.Tests
 
 		[DataMember]
 		public int IntProperty { get; set; }
+
+		[DataMember]
+		public List<string> ListProperty { get; set; }
 	}
 }

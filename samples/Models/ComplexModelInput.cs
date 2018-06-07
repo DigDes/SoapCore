@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 namespace Models
 {
@@ -14,5 +11,8 @@ namespace Models
 
 		[DataMember]
 		public int IntProperty { get; set; }
-    }
+
+		[DataMember]
+		public List<string> ListProperty { get; set; }
+	}
 }

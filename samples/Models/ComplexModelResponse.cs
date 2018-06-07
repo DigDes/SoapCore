@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Models
 {
@@ -9,5 +6,6 @@ namespace Models
     {
 		public float FloatProperty { get; set; }
 		public string StringProperty { get; set; }
-    }
+		public List<string> ListProperty { get; set; }
+	}
 }

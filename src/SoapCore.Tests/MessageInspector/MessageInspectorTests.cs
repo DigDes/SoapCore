@@ -84,7 +84,11 @@ namespace SoapCore.Tests.MessageInspector
 		{
 			var client = CreateClient(new Dictionary<string, object>() {
 				{
-					"complex", new ComplexModelInput() { StringProperty = "hello, world", IntProperty = 1000 }
+					"complex", new ComplexModelInput() {
+						StringProperty = "hello, world",
+						IntProperty = 1000,
+						ListProperty = new List<string> { "test", "list", "of", "strings" }
+					}
 				}
 			});
 
@@ -93,6 +97,7 @@ namespace SoapCore.Tests.MessageInspector
 			var complex = msg.Headers.GetHeader<ComplexModelInput>(msg.Headers.FindHeader("complex", "SoapCore"));
 			Assert.AreEqual(complex.StringProperty, "hello, world");
 			Assert.AreEqual(complex.IntProperty, 1000);
+			Assert.AreEqual(complex.ListProperty, new List<string> { "test", "list", "of", "strings" });
 		}
 	}
 }
