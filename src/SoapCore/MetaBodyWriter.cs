@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
@@ -10,8 +11,6 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	using System.ServiceModel;
-
 	public class MetaBodyWriter : BodyWriter
 	{
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
@@ -106,38 +105,36 @@ namespace SoapCore
 
 			while (_complexTypeToBuild.Count > 0)
 			{
-				Type toBuild = _complexTypeToBuild.Dequeue();
-				if (!_builtComplexTypes.Contains(toBuild.Name))
+				var toBuild = _complexTypeToBuild.Dequeue();
+
+				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
+					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name
+					: toBuild.Name;
+
+				if (!_builtComplexTypes.Contains(toBuildName))
 				{
 					writer.WriteStartElement("xs:complexType");
 					if (toBuild.IsArray)
 					{
-						writer.WriteAttributeString("name", "ArrayOf" + toBuild.Name.Replace("[]", string.Empty));
+						writer.WriteAttributeString("name", toBuildName);
+					}
+					else if (typeof(IEnumerable).IsAssignableFrom(toBuild))
+					{
+						writer.WriteAttributeString("name", toBuildName);
 					}
 					else
 					{
-						writer.WriteAttributeString("name", toBuild.Name);
+						writer.WriteAttributeString("name", toBuildName);
 					}
 					writer.WriteStartElement("xs:sequence");
 
 					if (toBuild.IsArray)
 					{
-						var elementType = toBuild.GetElementType();
-						AddSchemaType(writer, elementType, null, true);
+						AddSchemaType(writer, toBuild.GetElementType(), null, true);
 					}
 					else if (typeof(IEnumerable).IsAssignableFrom(toBuild))
 					{
-
-						// Recursively look through the base class to find the Generic Type of the Enumerable
-						var baseType = toBuild;
-						var baseTypeInfo = toBuild.GetTypeInfo();
-						while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
-						{
-							baseType = baseTypeInfo.BaseType;
-							baseTypeInfo = baseType.GetTypeInfo();
-						}
-						var generic = baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
-						AddSchemaType(writer, generic, null, true);
+						AddSchemaType(writer, GetGenericType(toBuild), null, true);
 					}
 					else
 					{
@@ -150,7 +147,7 @@ namespace SoapCore
 					writer.WriteEndElement(); // xs:sequence
 					writer.WriteEndElement(); // xs:complexType
 
-					_builtComplexTypes.Add(toBuild.Name);
+					_builtComplexTypes.Add(toBuildName);
 				}
 			}
 
@@ -371,6 +368,17 @@ namespace SoapCore
 
 					_complexTypeToBuild.Enqueue(type);
 				}
+				else if (typeof(IEnumerable).IsAssignableFrom(type))
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = type.Name;
+					}
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "tns:ArrayOf" + GetGenericType(type).Name);
+					
+					_complexTypeToBuild.Enqueue(type);
+				}
 				else
 				{
 					if (string.IsNullOrEmpty(name))
@@ -443,6 +451,19 @@ namespace SoapCore
 			return resolvedType;
 		}
 
-	}
+		private Type GetGenericType(Type collectionType)
+		{
+			// Recursively look through the base class to find the Generic Type of the Enumerable
+			var baseType = collectionType;
+			var baseTypeInfo = collectionType.GetTypeInfo();
+			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
+			{
+				baseType = baseTypeInfo.BaseType;
+				baseTypeInfo = baseType.GetTypeInfo();
+			}
 
+			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+	}
 }
