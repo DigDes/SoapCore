@@ -21,10 +21,12 @@ namespace Client
 			var complexModel = new ComplexModelInput
 			{
 				StringProperty = Guid.NewGuid().ToString(),
-				IntProperty = int.MaxValue / 2
+				IntProperty = int.MaxValue / 2,
+				ListProperty = new List<string> { "test", "list", "of", "strings" }
 			};
 			var complexResult = serviceClient.PingComplexModel(complexModel);
-			Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}", complexResult.FloatProperty, complexResult.StringProperty);
+			Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}, ListProperty: {2}",
+				complexResult.FloatProperty, complexResult.StringProperty, string.Join(", ", complexResult.ListProperty));
 
 			serviceClient.VoidMethod(out var stringValue);
 			Console.WriteLine("Void method result: {0}", stringValue);
