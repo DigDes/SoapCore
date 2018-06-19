@@ -97,7 +97,7 @@ namespace SoapCore.Tests.MessageInspector
 			var complex = msg.Headers.GetHeader<ComplexModelInput>(msg.Headers.FindHeader("complex", "SoapCore"));
 			Assert.AreEqual(complex.StringProperty, "hello, world");
 			Assert.AreEqual(complex.IntProperty, 1000);
-			Assert.AreEqual(complex.ListProperty, new List<string> { "test", "list", "of", "strings" });
+			CollectionAssert.AreEqual(complex.ListProperty, new List<string> { "test", "list", "of", "strings" });
 		}
 	}
 }
