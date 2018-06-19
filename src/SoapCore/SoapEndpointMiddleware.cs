@@ -164,7 +164,7 @@ namespace SoapCore
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
-			messageInspector?.AfterReceiveRequest(requestMessage);
+			var correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
 
 			// for getting soapaction and parameters in body
 			// GetReaderAtBodyContents must not be called twice in one request
@@ -227,7 +227,7 @@ namespace SoapCore
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 
-					messageInspector?.BeforeSendReply(responseMessage);
+					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 
 					_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 				}
