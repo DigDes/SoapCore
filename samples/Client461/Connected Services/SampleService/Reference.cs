@@ -32,6 +32,9 @@ namespace ConsoleApp1.SampleService {
         
         private System.DateTimeOffset DateTimeOffsetPropertyField;
         
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private System.Collections.Generic.List<ConsoleApp1.SampleService.ComplexObject> ComplexListPropertyField;
+        
         [global::System.ComponentModel.BrowsableAttribute(false)]
         public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
             get {
@@ -90,6 +93,79 @@ namespace ConsoleApp1.SampleService {
                 if ((this.DateTimeOffsetPropertyField.Equals(value) != true)) {
                     this.DateTimeOffsetPropertyField = value;
                     this.RaisePropertyChanged("DateTimeOffsetProperty");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(Order=4)]
+        public System.Collections.Generic.List<ConsoleApp1.SampleService.ComplexObject> ComplexListProperty {
+            get {
+                return this.ComplexListPropertyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.ComplexListPropertyField, value) != true)) {
+                    this.ComplexListPropertyField = value;
+                    this.RaisePropertyChanged("ComplexListProperty");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="ComplexObject", Namespace="http://tempuri.org/")]
+    [System.SerializableAttribute()]
+    public partial class ComplexObject : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+        
+        [System.NonSerializedAttribute()]
+        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string StringPropertyField;
+        
+        private int IntPropertyField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+            get {
+                return this.extensionDataField;
+            }
+            set {
+                this.extensionDataField = value;
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(EmitDefaultValue=false)]
+        public string StringProperty {
+            get {
+                return this.StringPropertyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.StringPropertyField, value) != true)) {
+                    this.StringPropertyField = value;
+                    this.RaisePropertyChanged("StringProperty");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true, Order=1)]
+        public int IntProperty {
+            get {
+                return this.IntPropertyField;
+            }
+            set {
+                if ((this.IntPropertyField.Equals(value) != true)) {
+                    this.IntPropertyField = value;
+                    this.RaisePropertyChanged("IntProperty");
                 }
             }
         }

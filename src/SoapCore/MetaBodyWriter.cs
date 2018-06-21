@@ -122,7 +122,7 @@ namespace SoapCore
 				var toBuild = _complexTypeToBuild.Dequeue();
 
 				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
-					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name.ToLower()
+					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name
 					: toBuild.Name;
 
 				if (!_builtComplexTypes.Contains(toBuildName))
@@ -160,6 +160,12 @@ namespace SoapCore
 
 					writer.WriteEndElement(); // xs:sequence				
 					writer.WriteEndElement(); // xs:complexType
+
+					writer.WriteStartElement("xs:element");
+					writer.WriteAttributeString("name", toBuildName);
+					writer.WriteAttributeString("nillable", "true");
+					writer.WriteAttributeString("type", "tns:" + toBuildName);
+					writer.WriteEndElement(); // xs:element
 
 					_builtComplexTypes.Add(toBuildName);
 				}
@@ -470,19 +476,34 @@ namespace SoapCore
 				}
 				else if (typeof(IEnumerable).IsAssignableFrom(type))
 				{
-					if (string.IsNullOrEmpty(name))
+					if (GetGenericType(type).Name == "String")
 					{
-						name = type.Name;
+						if (string.IsNullOrEmpty(name))
+						{
+							name = type.Name;
+						}
+						var ns = $"q{namespaceCounter++}";
+
+						writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+						writer.WriteAttributeString("name", name);
+						writer.WriteAttributeString("nillable", "true");
+						writer.WriteAttributeString("type", $"{ns}:ArrayOf{GetGenericType(type).Name.ToLower()}");
+
+						_arrayToBuild.Enqueue(type);
 					}
-					var ns = $"q{namespaceCounter++}"; 
+					else
+					{
+						if (string.IsNullOrEmpty(name))
+						{
+							name = type.Name;
+						}
 
-					writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
-					writer.WriteAttributeString("name", name);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteAttributeString("type", $"{ns}:ArrayOf{GetGenericType(type).Name.ToLower()}");
+						writer.WriteAttributeString("name", name);
+						writer.WriteAttributeString("nillable", "true");
+						writer.WriteAttributeString("type", "tns:ArrayOf" + GetGenericType(type).Name);
 
-					//_complexTypeToBuild.Enqueue(type);
-					_arrayToBuild.Enqueue(type);
+						_complexTypeToBuild.Enqueue(type);
+					}
 				}
 				else
 				{

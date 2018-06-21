@@ -22,7 +22,8 @@ namespace ConsoleApp1
                 StringProperty = Guid.NewGuid().ToString(),
                 IntProperty = int.MaxValue / 2,
                 ListProperty = new List<string> { "test", "list", "of", "strings" },
-                DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+                DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1)),
+                ComplexListProperty = new List<SampleService.ComplexObject>()
             };
 
             var complexResult = serviceClient.PingComplexModel(complexModel);

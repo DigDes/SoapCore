@@ -63,7 +63,7 @@
     <None Include="Connected Services\SampleService\ConsoleApp1.SampleService.PingResponse.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Connected Services\SampleService\SampleService1.wsdl" />
+    <None Include="Connected Services\SampleService\SampleService.wsdl" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
