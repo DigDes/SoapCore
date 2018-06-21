@@ -17,12 +17,14 @@ namespace Server
 		public ComplexModelResponse PingComplexModel(ComplexModelInput inputModel)
 		{
 			Console.WriteLine("Input data. IntProperty: {0}, StringProperty: {1}", inputModel.IntProperty, inputModel.StringProperty);
-			return new ComplexModelResponse
+
+            return new ComplexModelResponse
 			{
 				FloatProperty = float.MaxValue / 2,
-				StringProperty = Guid.NewGuid().ToString(),
-				ListProperty = new List<string> { "test", "list", "of", "strings" }
-			};
+				StringProperty = inputModel.StringProperty,
+				ListProperty = inputModel.ListProperty,
+                //DateTimeOffsetProperty = inputModel.DateTimeOffsetProperty
+            };
 		}
 
 		public void VoidMethod(out string s)

@@ -22,8 +22,10 @@ namespace Client
 			{
 				StringProperty = Guid.NewGuid().ToString(),
 				IntProperty = int.MaxValue / 2,
-				ListProperty = new List<string> { "test", "list", "of", "strings" }
-			};
+				ListProperty = new List<string> { "test", "list", "of", "strings" },
+                //DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+            };
+
 			var complexResult = serviceClient.PingComplexModel(complexModel);
 			Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}, ListProperty: {2}",
 				complexResult.FloatProperty, complexResult.StringProperty, string.Join(", ", complexResult.ListProperty));

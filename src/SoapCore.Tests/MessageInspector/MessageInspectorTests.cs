@@ -87,7 +87,8 @@ namespace SoapCore.Tests.MessageInspector
 					"complex", new ComplexModelInput() {
 						StringProperty = "hello, world",
 						IntProperty = 1000,
-						ListProperty = new List<string> { "test", "list", "of", "strings" }
+						ListProperty = new List<string> { "test", "list", "of", "strings" },
+						DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
 					}
 				}
 			});

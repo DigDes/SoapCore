@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Models
@@ -14,5 +15,8 @@ namespace Models
 
 		[DataMember]
 		public List<string> ListProperty { get; set; }
-	}
+
+        [DataMember]
+        public DateTimeOffset DateTimeOffsetProperty { get; set; }
+    }
 }
