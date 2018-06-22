@@ -18,11 +18,15 @@ namespace SoapCore
 
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
+		private bool _buildDateTimeOffset;
 
 		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<Type> _complexTypeToBuild;
+		private readonly Queue<Type> _arrayToBuild;
+
 		private readonly HashSet<string> _builtEnumTypes;
 		private readonly HashSet<string> _builtComplexTypes;
+		private readonly HashSet<string> _buildArrayTypes;
 
 		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
 		private string BindingType => _service.Contracts.First().Name;
@@ -36,8 +40,10 @@ namespace SoapCore
 
 			_enumToBuild = new Queue<Type>();
 			_complexTypeToBuild = new Queue<Type>();
+			_arrayToBuild = new Queue<Type>();
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
+			_buildArrayTypes = new HashSet<string>();
 		}
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
@@ -59,6 +65,14 @@ namespace SoapCore
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
 			writer.WriteAttributeString("elementFormDefault", "qualified");
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
+
+			writer.WriteStartElement("xs:import");
+			writer.WriteAttributeString("namespace", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+			writer.WriteEndElement();
+
+			writer.WriteStartElement("xs:import");
+			writer.WriteAttributeString("namespace", "http://schemas.datacontract.org/2004/07/System");
+			writer.WriteEndElement();
 
 			foreach (var operation in _service.Operations)
 			{
@@ -144,8 +158,14 @@ namespace SoapCore
 						}
 					}
 
-					writer.WriteEndElement(); // xs:sequence
+					writer.WriteEndElement(); // xs:sequence				
 					writer.WriteEndElement(); // xs:complexType
+
+					writer.WriteStartElement("xs:element");
+					writer.WriteAttributeString("name", toBuildName);
+					writer.WriteAttributeString("nillable", "true");
+					writer.WriteAttributeString("type", "tns:" + toBuildName);
+					writer.WriteEndElement(); // xs:element
 
 					_builtComplexTypes.Add(toBuildName);
 				}
@@ -176,6 +196,79 @@ namespace SoapCore
 			}
 
 			writer.WriteEndElement(); // xs:schema
+
+			while (_arrayToBuild.Count > 0)
+			{
+				var toBuild = _arrayToBuild.Dequeue();
+				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
+					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name.ToLower()
+					: toBuild.Name;
+
+				if (!_buildArrayTypes.Contains(toBuildName))
+				{
+					writer.WriteStartElement("xs:schema");
+					writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
+					writer.WriteAttributeString("xmlns:tns", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+					writer.WriteAttributeString("elementFormDefault", "qualified");
+					writer.WriteAttributeString("targetNamespace", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+
+					writer.WriteStartElement("xs:complexType");
+					writer.WriteAttributeString("name", toBuildName);
+
+					writer.WriteStartElement("xs:sequence");
+					AddSchemaType(writer, GetGenericType(toBuild), null, true);
+					writer.WriteEndElement(); // xs:sequence
+
+					writer.WriteEndElement(); // xs:complexType
+
+					writer.WriteStartElement("xs:element");
+					writer.WriteAttributeString("name", toBuildName);
+					writer.WriteAttributeString("nillable", "true");
+					writer.WriteAttributeString("type", "tns:" + toBuildName);
+					writer.WriteEndElement(); // xs:element
+
+					writer.WriteEndElement(); // xs:schema
+
+					_buildArrayTypes.Add(toBuildName);
+				}
+			}
+
+			if (_buildDateTimeOffset)
+			{
+				writer.WriteStartElement("xs:schema");
+				writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
+				writer.WriteAttributeString("xmlns:tns", "http://schemas.datacontract.org/2004/07/System");
+				writer.WriteAttributeString("elementFormDefault", "qualified");
+				writer.WriteAttributeString("targetNamespace", "http://schemas.datacontract.org/2004/07/System");
+
+				writer.WriteStartElement("xs:import");
+				writer.WriteAttributeString("namespace", "http://schemas.microsoft.com/2003/10/Serialization/");
+				writer.WriteEndElement();
+
+				writer.WriteStartElement("xs:complexType");
+				writer.WriteAttributeString("name", "DateTimeOffset");
+				writer.WriteStartElement("xs:annotation");
+				writer.WriteStartElement("xs:appinfo");
+
+				writer.WriteElementString("IsValueType", "http://schemas.microsoft.com/2003/10/Serialization/", "true");
+				writer.WriteEndElement(); // xs:appinfo
+				writer.WriteEndElement(); // xs:annotation
+
+				writer.WriteStartElement("xs:sequence");
+				AddSchemaType(writer, typeof(DateTime), "DateTime", false);
+				AddSchemaType(writer, typeof(short), "OffsetMinutes", false);
+				writer.WriteEndElement(); // xs:sequence
+
+				writer.WriteEndElement(); // xs:complexType
+
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", "DateTimeOffset");
+				writer.WriteAttributeString("nillable", "true");
+				writer.WriteAttributeString("type", "tns:DateTimeOffset");
+				writer.WriteEndElement();
+
+				writer.WriteEndElement(); // xs:schema
+			}
 
 			writer.WriteEndElement(); // wsdl:types
 		}
@@ -277,6 +370,8 @@ namespace SoapCore
 			writer.WriteEndElement(); // wsdl:port
 		}
 
+		private static int namespaceCounter = 1;
+
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null)
 		{
 			var typeInfo = type.GetTypeInfo();
@@ -287,11 +382,22 @@ namespace SoapCore
 			{
 				writer.WriteAttributeString("targetNamespace", @namespace);
 			}
-			
-			if (typeInfo.IsValueType)
+			else if (typeInfo.IsValueType)
 			{
 				string xsTypename;
-				if (typeInfo.IsEnum)
+				if (typeof(DateTimeOffset).IsAssignableFrom(type))
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = type.Name;
+					}
+
+					xsTypename = "nsdto:" + type.Name;
+					writer.WriteAttributeString("xmlns:nsdto", "http://schemas.datacontract.org/2004/07/System");
+
+					_buildDateTimeOffset = true;
+				}
+				else if (typeInfo.IsEnum)
 				{
 					xsTypename = "tns:" + type.Name;
 					_enumToBuild.Enqueue(type);
@@ -370,14 +476,34 @@ namespace SoapCore
 				}
 				else if (typeof(IEnumerable).IsAssignableFrom(type))
 				{
-					if (string.IsNullOrEmpty(name))
+					if (GetGenericType(type).Name == "String")
 					{
-						name = type.Name;
+						if (string.IsNullOrEmpty(name))
+						{
+							name = type.Name;
+						}
+						var ns = $"q{namespaceCounter++}";
+
+						writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+						writer.WriteAttributeString("name", name);
+						writer.WriteAttributeString("nillable", "true");
+						writer.WriteAttributeString("type", $"{ns}:ArrayOf{GetGenericType(type).Name.ToLower()}");
+
+						_arrayToBuild.Enqueue(type);
 					}
-					writer.WriteAttributeString("name", name);
-					writer.WriteAttributeString("type", "tns:ArrayOf" + GetGenericType(type).Name);
-					
-					_complexTypeToBuild.Enqueue(type);
+					else
+					{
+						if (string.IsNullOrEmpty(name))
+						{
+							name = type.Name;
+						}
+
+						writer.WriteAttributeString("name", name);
+						writer.WriteAttributeString("nillable", "true");
+						writer.WriteAttributeString("type", "tns:ArrayOf" + GetGenericType(type).Name);
+
+						_complexTypeToBuild.Enqueue(type);
+					}
 				}
 				else
 				{
@@ -464,6 +590,5 @@ namespace SoapCore
 
 			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
 		}
-
 	}
 }

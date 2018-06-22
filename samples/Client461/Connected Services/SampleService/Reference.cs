@@ -9,11 +9,11 @@
 //------------------------------------------------------------------------------
 
 namespace ConsoleApp1.SampleService {
-	using System;
-	using System.Collections.Generic;
-	using System.Runtime.Serialization;
-
-	[System.Diagnostics.DebuggerStepThroughAttribute()]
+    using System.Runtime.Serialization;
+    using System;
+    
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="ComplexModelInput", Namespace="http://tempuri.org/")]
     [System.SerializableAttribute()]
@@ -26,10 +26,16 @@ namespace ConsoleApp1.SampleService {
         private string StringPropertyField;
         
         private int IntPropertyField;
-
-		private List<string> ListPropertyField;
-
-		[global::System.ComponentModel.BrowsableAttribute(false)]
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private System.Collections.Generic.List<string> ListPropertyField;
+        
+        private System.DateTimeOffset DateTimeOffsetPropertyField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private System.Collections.Generic.List<ConsoleApp1.SampleService.ComplexObject> ComplexListPropertyField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
         public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
             get {
                 return this.extensionDataField;
@@ -64,21 +70,107 @@ namespace ConsoleApp1.SampleService {
                 }
             }
         }
-
-		[System.Runtime.Serialization.DataMemberAttribute(IsRequired = true, Order = 2)]
-		public List<string> ListProperty {
-			get {
-				return this.ListPropertyField;
-			}
-			set {
-				if ((this.ListPropertyField.Equals(value) != true)) {
-					this.ListPropertyField = value;
-					this.RaisePropertyChanged("ListProperty");
-				}
-			}
-		}
-
-		public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        [System.Runtime.Serialization.DataMemberAttribute(Order=2)]
+        public System.Collections.Generic.List<string> ListProperty {
+            get {
+                return this.ListPropertyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.ListPropertyField, value) != true)) {
+                    this.ListPropertyField = value;
+                    this.RaisePropertyChanged("ListProperty");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true, Order=3)]
+        public System.DateTimeOffset DateTimeOffsetProperty {
+            get {
+                return this.DateTimeOffsetPropertyField;
+            }
+            set {
+                if ((this.DateTimeOffsetPropertyField.Equals(value) != true)) {
+                    this.DateTimeOffsetPropertyField = value;
+                    this.RaisePropertyChanged("DateTimeOffsetProperty");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(Order=4)]
+        public System.Collections.Generic.List<ConsoleApp1.SampleService.ComplexObject> ComplexListProperty {
+            get {
+                return this.ComplexListPropertyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.ComplexListPropertyField, value) != true)) {
+                    this.ComplexListPropertyField = value;
+                    this.RaisePropertyChanged("ComplexListProperty");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="ComplexObject", Namespace="http://tempuri.org/")]
+    [System.SerializableAttribute()]
+    public partial class ComplexObject : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+        
+        [System.NonSerializedAttribute()]
+        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string StringPropertyField;
+        
+        private int IntPropertyField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+            get {
+                return this.extensionDataField;
+            }
+            set {
+                this.extensionDataField = value;
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(EmitDefaultValue=false)]
+        public string StringProperty {
+            get {
+                return this.StringPropertyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.StringPropertyField, value) != true)) {
+                    this.StringPropertyField = value;
+                    this.RaisePropertyChanged("StringProperty");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true, Order=1)]
+        public int IntProperty {
+            get {
+                return this.IntPropertyField;
+            }
+            set {
+                if ((this.IntPropertyField.Equals(value) != true)) {
+                    this.IntPropertyField = value;
+                    this.RaisePropertyChanged("IntProperty");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         
         protected void RaisePropertyChanged(string propertyName) {
             System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
@@ -101,10 +193,13 @@ namespace ConsoleApp1.SampleService {
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string StringPropertyField;
-
-		private List<string> ListPropertyField;
-
-		[global::System.ComponentModel.BrowsableAttribute(false)]
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private System.Collections.Generic.List<string> ListPropertyField;
+        
+        private System.DateTimeOffset DateTimeOffsetPropertyField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
         public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
             get {
                 return this.extensionDataField;
@@ -139,21 +234,34 @@ namespace ConsoleApp1.SampleService {
                 }
             }
         }
-
-		[System.Runtime.Serialization.DataMemberAttribute(EmitDefaultValue=false)]
-		public List<string> ListProperty {
-			get {
-				return this.ListPropertyField;
-			}
-			set {
-				if ((this.ListPropertyField.Equals(value) != true)) {
-					this.ListPropertyField = value;
-					this.RaisePropertyChanged("ListProperty");
-				}
-			}
-		}
-
-		public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        [System.Runtime.Serialization.DataMemberAttribute(Order=2)]
+        public System.Collections.Generic.List<string> ListProperty {
+            get {
+                return this.ListPropertyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.ListPropertyField, value) != true)) {
+                    this.ListPropertyField = value;
+                    this.RaisePropertyChanged("ListProperty");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true, Order=3)]
+        public System.DateTimeOffset DateTimeOffsetProperty {
+            get {
+                return this.DateTimeOffsetPropertyField;
+            }
+            set {
+                if ((this.DateTimeOffsetPropertyField.Equals(value) != true)) {
+                    this.DateTimeOffsetPropertyField = value;
+                    this.RaisePropertyChanged("DateTimeOffsetProperty");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         
         protected void RaisePropertyChanged(string propertyName) {
             System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;

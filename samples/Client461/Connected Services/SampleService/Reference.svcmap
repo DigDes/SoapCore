@@ -9,7 +9,9 @@
     <GenerateInternalTypes>false</GenerateInternalTypes>
     <GenerateMessageContracts>false</GenerateMessageContracts>
     <NamespaceMappings />
-    <CollectionMappings />
+    <CollectionMappings>
+      <CollectionMapping TypeName="System.Collections.Generic.List`1" Category="List" />
+    </CollectionMappings>
     <GenerateSerializableTypes>true</GenerateSerializableTypes>
     <Serializer>Auto</Serializer>
     <UseSerializerForFaults>true</UseSerializerForFaults>
@@ -22,7 +24,7 @@
     <MetadataSource Address="http://localhost:5050/Service.asmx" Protocol="http" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="SampleService1.wsdl" MetadataType="Wsdl" ID="8463766f-16ff-4ea8-9f56-8ae759d877ce" SourceId="1" SourceUrl="http://localhost:5050/Service.asmx" />
+    <MetadataFile FileName="SampleService.wsdl" MetadataType="Wsdl" ID="86fda3c8-f134-4ce1-a3d3-98e2a2e7d46f" SourceId="1" SourceUrl="http://localhost:5050/Service.asmx" />
   </Metadata>
   <Extensions>
     <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
