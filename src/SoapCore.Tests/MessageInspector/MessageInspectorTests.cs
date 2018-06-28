@@ -17,7 +17,7 @@ namespace SoapCore.Tests.MessageInspector
 			{
 				var host = new WebHostBuilder()
 					.UseKestrel()
-					.UseUrls("http://*:5051")
+					.UseUrls("http://localhost:5051")
 					.UseStartup<Startup>()
 					.Build();
 
@@ -34,7 +34,7 @@ namespace SoapCore.Tests.MessageInspector
 		public ITestService CreateClient(Dictionary<string, object> headers = null)
 		{
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5051/Service.svc", Environment.MachineName)));
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5051/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			channelFactory.Endpoint.EndpointBehaviors.Add(new CustomHeadersEndpointBehavior(headers));
 			var serviceClient = channelFactory.CreateChannel();
