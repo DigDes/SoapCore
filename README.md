@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
+
 # SoapCore
 
 SOAP protocol middleware for ASP.NET Core.
