@@ -4,4 +4,4 @@ dotnet: 2.1
 script:
  - dotnet restore src
  - dotnet build -f netcoreapp2.0 src
- - dotnet test -f netcoreapp2.0 src/SoapCore.Tests
+ #- dotnet test -f netcoreapp2.0 src/SoapCore.Tests
