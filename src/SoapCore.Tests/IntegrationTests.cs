@@ -17,29 +17,29 @@ namespace SoapCore.Tests
 			{
 				var host = new WebHostBuilder()
 					.UseKestrel()
-					.UseUrls("http://*:5050")
+					.UseUrls("http://localhost:5050")
 					.UseStartup<Startup>()
 					.Build();
 
 				host.Run();
-			});
+			}).Wait(1000);
 		}
 
-		public ITestService CreateClient()
+		private ITestService CreateClient()
 		{
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", Environment.MachineName)));
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
 		}
 
-		ITestService CreateSoap12Client()
+		private ITestService CreateSoap12Client()
 		{
 			var transport = new HttpTransportBindingElement();
 			var textencoding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
 			var binding = new CustomBinding(textencoding, transport);
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", Environment.MachineName)));
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
