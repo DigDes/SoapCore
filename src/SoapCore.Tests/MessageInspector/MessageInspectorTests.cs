@@ -22,7 +22,7 @@ namespace SoapCore.Tests.MessageInspector
 					.Build();
 
 				host.Run();
-			});
+			}).Wait(1000);
 		}
 
 		[TestInitialize]
