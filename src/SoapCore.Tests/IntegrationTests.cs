@@ -22,7 +22,7 @@ namespace SoapCore.Tests
 					.Build();
 
 				host.Run();
-			});
+			}).Wait(1000);
 		}
 
 		public ITestService CreateClient()
