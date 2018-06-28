@@ -1,6 +1,7 @@
 language: csharp
 mono: none
-dotnet: 2.1.0
+dotnet: 2.1
 script:
- - dotnet restore
- - dotnet build
+ - dotnet restore src
+ - dotnet build src
+ - dotnet test src/SoapCore.Tests
