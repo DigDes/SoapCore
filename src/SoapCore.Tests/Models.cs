@@ -16,5 +16,8 @@ namespace SoapCore.Tests
 
 		[DataMember]
 		public List<string> ListProperty { get; set; }
+
+		[DataMember]
+		public DateTimeOffset DateTimeOffsetProperty { get; set; }
 	}
 }
