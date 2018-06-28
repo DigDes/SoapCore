@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
-
 # SoapCore
 
 SOAP protocol middleware for ASP.NET Core.
@@ -30,3 +28,5 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 ### References
 
 * [stackify.com/soap-net-core](https://stackify.com/soap-net-core/)
+
+[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
