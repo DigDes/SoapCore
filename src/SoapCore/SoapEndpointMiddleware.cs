@@ -250,7 +250,6 @@ namespace SoapCore
 				{
 					_logger.LogWarning(0, exception, exception.Message);
 					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
-
 				}
 			}
 
