@@ -14,11 +14,9 @@ namespace Server
 {
 	public class Startup
 	{
-
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.TryAddSingleton<SampleService>();
-			//services.AddSoapWsSecurityFilter("yourusername", "yourpassword"); // Uncomment to require wsse:UsernameToken validation
 			services.AddMvc();
 		}
 
