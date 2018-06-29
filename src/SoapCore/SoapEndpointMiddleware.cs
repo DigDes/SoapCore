@@ -72,6 +72,7 @@ namespace SoapCore
 
 			return responseMessage;
 		}
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		string GetSoapAction(HttpContext httpContext, Message requestMessage, System.Xml.XmlDictionaryReader reader)
 		{
@@ -162,6 +163,20 @@ namespace SoapCore
 
 			//Get the message
 			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+
+			// Get MessageFilters
+			var messageFilters = serviceProvider.GetServices<IMessageFilter>();
+
+			// Execute request message filters
+			try
+			{
+				foreach (var messageFilter in messageFilters) messageFilter.OnRequestExecuting(requestMessage);
+			}
+			catch (Exception ex)
+			{
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
+				return responseMessage;
+			}
 
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
 			var correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
