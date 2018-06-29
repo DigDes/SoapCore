@@ -32,5 +32,16 @@ namespace SoapCore
 			serviceCollection.TryAddSingleton(messageInspector);
 			return serviceCollection;
 		}
+
+		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IMessageFilter messageFilter)
+		{
+			serviceCollection.TryAddSingleton(messageFilter);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password) {
+			serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
+			return serviceCollection;
+		}
 	}
 }
