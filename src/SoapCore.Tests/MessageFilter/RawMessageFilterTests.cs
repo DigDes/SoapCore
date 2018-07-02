@@ -23,7 +23,8 @@ namespace SoapCore.Tests.MessageFilter
 			RawMessageFilterTests.host = new TestServer(host);
 		}
 
-		public ITestService CreateClient(Dictionary<string, object> headers = null) {
+		public ITestService CreateClient(Dictionary<string, object> headers = null)
+		{
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5051/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);

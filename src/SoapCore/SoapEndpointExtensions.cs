@@ -43,5 +43,10 @@ namespace SoapCore
 			serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
 			return serviceCollection;
 		}
+
+		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter) {
+			serviceCollection.TryAddSingleton(modelBindingFilter);
+			return serviceCollection;
+		}
 	}
 }

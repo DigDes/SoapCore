@@ -66,6 +66,16 @@ namespace SoapCore.Tests
 			test.ListProperty = new List<string> { "test", "list", "of", "strings" };
 		}
 
+		public ComplexModelInput ComplexParam(ComplexModelInput test)
+		{
+			return test;
+		}
+
+		public ComplexModelInputForModelBindingFilter ComplexParamWithModelBindingFilter(ComplexModelInputForModelBindingFilter test)
+		{
+			return test;
+		}
+
 		public void RefParam(ref string message)
 		{
 			message = "hello, world";

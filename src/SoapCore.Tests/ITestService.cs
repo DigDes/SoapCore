@@ -37,6 +37,12 @@ namespace SoapCore.Tests
 		void OutComplexParam(out ComplexModelInput test);
 
 		[OperationContract]
+		ComplexModelInput ComplexParam(ComplexModelInput test);
+
+		[OperationContract]
+		ComplexModelInputForModelBindingFilter ComplexParamWithModelBindingFilter(ComplexModelInputForModelBindingFilter test);
+
+		[OperationContract]
 		void RefParam(ref string message);
 
 		[OperationContract]
