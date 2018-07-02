@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SoapCore.Tests
 {
@@ -79,6 +80,12 @@ namespace SoapCore.Tests
 		public void RefParam(ref string message)
 		{
 			message = "hello, world";
+		}
+
+		[ServiceFilter(typeof(ActionFilter.TestActionFilter))]
+		public ComplexModelInput ComplexParamWithActionFilter(ComplexModelInput test)
+		{
+			return test;
 		}
 	}
 }

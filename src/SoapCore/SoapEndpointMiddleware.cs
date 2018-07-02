@@ -224,6 +224,13 @@ namespace SoapCore
 					// avoid Concat() and ToArray() cost when no out args(this may be heavy operation)
 					var allArgs = outArgs.Count != 0 ? arguments.Concat(outArgs.Values).ToArray() : arguments;
 
+					// Execute Mvc ActionFilters
+					foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute"))
+					{
+						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
+						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, allArgs, httpContext, modelBindingOutput });
+					}
+
 					// Invoke Operation method
 					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
 					if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))

@@ -1,5 +1,6 @@
 using System.ServiceModel;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SoapCore.Tests
 {
@@ -50,5 +51,9 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		void ThrowExceptionWithMessage(string message);
+
+		[OperationContract]
+		[ServiceFilter(typeof(ActionFilter.TestActionFilter))]
+		ComplexModelInput ComplexParamWithActionFilter(ComplexModelInput test);
 	}
 }
