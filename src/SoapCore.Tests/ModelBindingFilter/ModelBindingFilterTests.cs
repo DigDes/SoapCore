@@ -16,7 +16,7 @@ namespace SoapCore.Tests.ModelBindingFilter
 			Task.Run(() => {
 				var host = new WebHostBuilder()
 					.UseKestrel()
-					.UseUrls("http://localhost:5051")
+					.UseUrls("http://localhost:5053")
 					.UseStartup<Startup>()
 					.Build();
 				host.Run();
@@ -26,7 +26,7 @@ namespace SoapCore.Tests.ModelBindingFilter
 		public ITestService CreateClient(Dictionary<string, object> headers = null)
 		{
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5051/Service.svc", "localhost")));
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5053/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
