@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using Microsoft.AspNetCore.Builder;
@@ -13,6 +15,10 @@ namespace SoapCore.Tests
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.TryAddSingleton<TestService>();
+			services.AddSoapModelBindingFilter(
+				new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) })
+			);
+			services.AddScoped<ActionFilter.TestActionFilter>();
 			services.AddMvc();
 		}
 
