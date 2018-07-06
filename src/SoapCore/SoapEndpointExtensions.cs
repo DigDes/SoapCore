@@ -8,17 +8,20 @@ namespace SoapCore
 {
 	public static class SoapEndpointExtensions
 	{
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path,
+			MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer,
+			bool caseInsensitivePath = false)
 		{
-			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer);
+			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer, caseInsensitivePath);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer,
+			bool caseInsensitivePath = false)
 		{
 			var element = binding.CreateBindingElements().Find<MessageEncodingBindingElement>();
 			var factory = element.CreateMessageEncoderFactory();
 			var encoder = factory.Encoder;
-			return builder.UseSoapEndpoint<T>(path, encoder, serializer);
+			return builder.UseSoapEndpoint<T>(path, encoder, serializer, caseInsensitivePath);
 		}
 
 		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer)
