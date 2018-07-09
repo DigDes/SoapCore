@@ -28,6 +28,14 @@ namespace SoapCore.Tests
 			{
 				app2.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			});
+
+			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
+			{
+				// For case insensitive path test 
+				app2.UseSoapEndpoint<TestService>("/ServiceCI.svc", new BasicHttpBinding(),
+					SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
+			});
+
 			app.UseWhen(ctx => !ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
 				var transportBinding = new HttpTransportBindingElement();

@@ -25,10 +25,11 @@ namespace SoapCore.Tests
 			}).Wait(1000);
 		}
 
-		private ITestService CreateClient()
+		private ITestService CreateClient(bool caseInsensitivePath = false)
 		{
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
+			var endpoint = new EndpointAddress(new Uri(
+				string.Format("http://{0}:5050/{1}.svc", "localhost", caseInsensitivePath ? "serviceci" : "Service")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
@@ -43,6 +44,14 @@ namespace SoapCore.Tests
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
+		}
+
+		[TestMethod]
+		public void PingWithCaseInsensitivePath()
+		{
+			var client = CreateClient(caseInsensitivePath: true);
+			var result = client.Ping("hello, world");
+			Assert.AreEqual("hello, world", result);
 		}
 
 		[TestMethod]

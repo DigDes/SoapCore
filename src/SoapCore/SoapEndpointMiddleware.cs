@@ -25,21 +25,23 @@ namespace SoapCore
 		private readonly string _endpointPath;
 		private readonly MessageEncoder _messageEncoder;
 		private readonly SoapSerializer _serializer;
+		private readonly StringComparison _pathComparisonStrategy;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath)
 		{
 			_logger = logger;
 			_next = next;
 			_endpointPath = path;
 			_messageEncoder = encoder;
 			_serializer = serializer;
+			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableRewind();
-			if (httpContext.Request.Path.Equals(_endpointPath, StringComparison.Ordinal))
+			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
