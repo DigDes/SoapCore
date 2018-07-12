@@ -6,7 +6,7 @@
     <Authors>Digital Design</Authors>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp2.0</TargetFrameworks>
     <AssemblyName>SoapCore</AssemblyName>
-    <PackageId>SoapCore</PackageId>
+    <PackageId>BPM.SoapCore</PackageId>
     <PackageTags>SOAP;ASP.NET Core</PackageTags>
     <PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
@@ -14,7 +14,9 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>0.9.7</Version>
+    <Version>1.0.1</Version>
+    <FileVersion>1.0.9.0</FileVersion>
+    <AssemblyVersion>0.0.1.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

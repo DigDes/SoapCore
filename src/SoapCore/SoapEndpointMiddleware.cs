@@ -26,8 +26,9 @@ namespace SoapCore
 		private readonly MessageEncoder _messageEncoder;
 		private readonly SoapSerializer _serializer;
 		private readonly StringComparison _pathComparisonStrategy;
+		private readonly ISoapModelValidator _soapModelValidator;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelValidator soapModelValidator = null)
 		{
 			_logger = logger;
 			_next = next;
@@ -36,6 +37,7 @@ namespace SoapCore
 			_serializer = serializer;
 			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
+			_soapModelValidator = soapModelValidator;
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -232,6 +234,9 @@ namespace SoapCore
 						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
 						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, allArgs, httpContext, modelBindingOutput });
 					}
+
+					// Invoke OnModelBound
+					_soapModelValidator?.OnModelBound(operation.DispatchMethod, allArgs);
 
 					// Invoke Operation method
 					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
