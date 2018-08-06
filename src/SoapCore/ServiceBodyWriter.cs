@@ -58,13 +58,20 @@ namespace SoapCore
 							switch (_serializer)
 							{
 								case SoapSerializer.XmlSerializer:
-									// todo: write element with outResult.Key name and type information outResultType
+									// write element with name as outResult.Key and type information as outResultType
 									// i.e. <outResult.Key xsi:type="outResultType" ... />
-									// upd: custom element name is ok, missing type info
 									var outResultType = outResult.Value.GetType();
 									var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
 									lock (serializer)
-										serializer.Serialize(writer, outResult.Value);
+										serializer.Serialize(stream, outResult.Value);
+									// add outResultType. ugly, but working
+									stream.Position = 0;
+									XmlDocument xdoc = new XmlDocument();
+									xdoc.Load(stream);
+									var attr = xdoc.CreateAttribute("xsi", "type", "http://www.w3.org/2001/XMLSchema-instance");
+									attr.Value = outResultType.Name;
+									xdoc.DocumentElement.Attributes.Prepend(attr);
+									writer.WriteRaw(xdoc.DocumentElement.OuterXml);
 									break;
 								case SoapSerializer.DataContractSerializer:
 									new DataContractSerializer(outResult.Value.GetType()).WriteObject(ms, outResult.Value);
