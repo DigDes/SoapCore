@@ -60,8 +60,9 @@ namespace SoapCore
 								case SoapSerializer.XmlSerializer:
 									// todo: write element with outResult.Key name and type information outResultType
 									// i.e. <outResult.Key xsi:type="outResultType" ... />
+									// upd: custom element name is ok, missing type info
 									var outResultType = outResult.Value.GetType();
-									var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResultType.Name, _serviceNamespace);
+									var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
 									lock (serializer)
 										serializer.Serialize(writer, outResult.Value);
 									break;
