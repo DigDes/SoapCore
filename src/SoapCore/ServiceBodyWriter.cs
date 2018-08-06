@@ -39,7 +39,7 @@ namespace SoapCore
 			{
 				foreach (var outResult in _outResults)
 				{
-					string value;
+					string value = null;
 					if (outResult.Value is Guid)
 						value = outResult.Value.ToString();
 					else if (outResult.Value is bool)
@@ -58,18 +58,23 @@ namespace SoapCore
 							switch (_serializer)
 							{
 								case SoapSerializer.XmlSerializer:
-									new XmlSerializer(outResult.Value.GetType()).Serialize(ms, outResult.Value);
+									// todo: write element with outResult.Key name and type information outResultType
+									// i.e. <outResult.Key xsi:type="outResultType" ... />
+									var outResultType = outResult.Value.GetType();
+									var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResultType.Name, _serviceNamespace);
+									lock (serializer)
+										serializer.Serialize(writer, outResult.Value);
 									break;
 								case SoapSerializer.DataContractSerializer:
 									new DataContractSerializer(outResult.Value.GetType()).WriteObject(ms, outResult.Value);
+									stream.Position = 0;
+									using (var reader = XmlReader.Create(stream))
+									{
+										reader.MoveToContent();
+										value = reader.ReadInnerXml();
+									}
 									break;
 								default: throw new NotImplementedException();
-							}
-							stream.Position = 0;
-							using (var reader = XmlReader.Create(stream))
-							{
-								reader.MoveToContent();
-								value = reader.ReadInnerXml();
 							}
 						}
 					}
