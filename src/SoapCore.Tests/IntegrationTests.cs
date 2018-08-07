@@ -163,5 +163,17 @@ namespace SoapCore.Tests
 			});
 			Assert.AreEqual("Your error message here", e.Message);
 		}
+
+		[TestMethod]
+		public void ThrowsDetailedFault()
+		{
+			var client = CreateClient();
+			var e = Assert.ThrowsException<FaultException<FaultDetail>>(() =>
+			{
+				client.ThrowDetailedFault("Detail message");
+			});
+			Assert.IsNotNull(e.Detail);
+			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
+		}
 	}
 }
