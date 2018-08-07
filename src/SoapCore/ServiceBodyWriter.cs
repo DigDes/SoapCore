@@ -29,7 +29,11 @@ namespace SoapCore
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
-			writer.WriteStartElement(_envelopeName, _serviceNamespace);
+			// do not wrap old-style single element response into additional xml element for xml serializer
+			var needResponseEnvelope = _serializer != SoapSerializer.XmlSerializer || _result == null || (_outResults != null && _outResults.Count > 0);
+
+			if (needResponseEnvelope)
+				writer.WriteStartElement(_envelopeName, _serviceNamespace);
 
 			if (_outResults != null)
 			{
@@ -82,7 +86,8 @@ namespace SoapCore
 					case SoapSerializer.XmlSerializer:
 						{
 							// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-							var serializer = CachedXmlSerializer.GetXmlSerializer(_result.GetType(), _resultName, _serviceNamespace);
+							var resultType = _result.GetType();
+							var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, needResponseEnvelope ? _resultName : resultType.Name, _serviceNamespace);
 							lock (serializer)
 								serializer.Serialize(writer, _result);
 						}
@@ -97,7 +102,8 @@ namespace SoapCore
 				}
 			}
 
-			writer.WriteEndElement();
+			if (needResponseEnvelope)
+				writer.WriteEndElement();
 		}
 	}
 }
