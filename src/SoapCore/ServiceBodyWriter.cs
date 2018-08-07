@@ -39,7 +39,7 @@ namespace SoapCore
 			{
 				foreach (var outResult in _outResults)
 				{
-					string value;
+					string value = null;
 					if (outResult.Value is Guid)
 						value = outResult.Value.ToString();
 					else if (outResult.Value is bool)
@@ -58,18 +58,31 @@ namespace SoapCore
 							switch (_serializer)
 							{
 								case SoapSerializer.XmlSerializer:
-									new XmlSerializer(outResult.Value.GetType()).Serialize(ms, outResult.Value);
+									// write element with name as outResult.Key and type information as outResultType
+									// i.e. <outResult.Key xsi:type="outResultType" ... />
+									var outResultType = outResult.Value.GetType();
+									var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
+									lock (serializer)
+										serializer.Serialize(stream, outResult.Value);
+									// add outResultType. ugly, but working
+									stream.Position = 0;
+									XmlDocument xdoc = new XmlDocument();
+									xdoc.Load(stream);
+									var attr = xdoc.CreateAttribute("xsi", "type", "http://www.w3.org/2001/XMLSchema-instance");
+									attr.Value = outResultType.Name;
+									xdoc.DocumentElement.Attributes.Prepend(attr);
+									writer.WriteRaw(xdoc.DocumentElement.OuterXml);
 									break;
 								case SoapSerializer.DataContractSerializer:
 									new DataContractSerializer(outResult.Value.GetType()).WriteObject(ms, outResult.Value);
+									stream.Position = 0;
+									using (var reader = XmlReader.Create(stream))
+									{
+										reader.MoveToContent();
+										value = reader.ReadInnerXml();
+									}
 									break;
 								default: throw new NotImplementedException();
-							}
-							stream.Position = 0;
-							using (var reader = XmlReader.Create(stream))
-							{
-								reader.MoveToContent();
-								value = reader.ReadInnerXml();
 							}
 						}
 					}
