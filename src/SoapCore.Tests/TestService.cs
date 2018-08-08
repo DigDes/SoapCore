@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ServiceModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,6 +41,11 @@ namespace SoapCore.Tests
 		public void ThrowExceptionWithMessage(string message)
 		{
 			throw new Exception(message);
+		}
+
+		public void ThrowDetailedFault(string detailMessage)
+		{
+			throw new FaultException<FaultDetail>(new FaultDetail { ExceptionProperty = detailMessage }, new FaultReason("test"), new FaultCode("test"), "test");
 		}
 
 		public string Overload(double d)

@@ -382,12 +382,13 @@ namespace SoapCore
 
 			// Create response message
 
+			object faultDetail = ExtractFaultDetail(exception.InnerException);
 			string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message; ;
 			var transformer = serviceProvider.GetService<ExceptionTransformer>();
 			if (transformer != null)
 				errorText = transformer.Transform(exception);
 
-			var bodyWriter = new FaultBodyWriter(new Fault { FaultString = errorText });
+			var bodyWriter = new FaultBodyWriter(new Fault(faultDetail) { FaultString = errorText});
 			responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new CustomMessage(responseMessage);
 
@@ -397,6 +398,35 @@ namespace SoapCore
 			_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 
 			return responseMessage;
+		}
+
+		/// <summary>
+		/// Helper to extract object of a detailed fault.
+		/// </summary>
+		/// <param name="exception">
+		/// The exception that caused the failure.
+		/// </param>
+		/// <returns>
+		/// Returns instance of T if the exception is of type FaultException<T>
+		/// otherwise returns null
+		/// </returns>
+		private object ExtractFaultDetail(
+			Exception exception) {
+			try
+			{
+				var type = exception.GetType();			
+				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FaultException<>))
+				{
+					var detailInfo = type.GetProperty("Detail");
+					return detailInfo?.GetValue(exception);
+				}
+			}
+			catch
+			{
+				return null;
+			}
+
+			return null;
 		}
 	}
 }
