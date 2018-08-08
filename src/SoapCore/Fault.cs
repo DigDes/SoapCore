@@ -1,3 +1,5 @@
+using System.IO;
+using System.Runtime.Serialization;
 using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.Extensions.ObjectPool;
@@ -28,14 +30,16 @@ namespace SoapCore
 		private XmlElement SerializeDetails(object detailObject)
 		{
 			if (detailObject == null) return null;
-
-			XmlDocument doc = new XmlDocument();
-			using (XmlWriter writer = doc.CreateNavigator().AppendChild())
+			
+			using (var ms = new MemoryStream())
 			{
-				new XmlSerializer(detailObject.GetType()).Serialize(writer, detailObject);
+				var serializer = new DataContractSerializer(detailObject.GetType());
+				serializer.WriteObject(ms, detailObject);
+				ms.Position = 0;
+				var doc = new XmlDocument();
+				doc.Load(ms);
+				return doc.DocumentElement;
 			}
-
-			return doc.DocumentElement;
 		}
 	}
 }

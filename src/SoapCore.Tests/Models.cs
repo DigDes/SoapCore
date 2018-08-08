@@ -23,7 +23,7 @@ namespace SoapCore.Tests
 	[DataContract]
 	public class ComplexModelInputForModelBindingFilter : ComplexModelInput { }
 
-	[DataContract(Namespace = "")]
+	[DataContract]
 	public class FaultDetail
 	{
 		[DataMember]
