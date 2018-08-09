@@ -11,6 +11,14 @@ namespace Client
 	{
 		public static void Main(string[] args)
 		{
+			Newtonsoft.Json.JsonConvert.DefaultSettings = (() =>
+			{
+				var settings = new Newtonsoft.Json.JsonSerializerSettings();
+				settings.Formatting = Newtonsoft.Json.Formatting.Indented;
+				settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter { CamelCaseText = true });
+				return settings;
+			});
+
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", Environment.MachineName)));
 			var channelFactory = new ChannelFactory<ISampleService>(binding, endpoint);
@@ -23,12 +31,30 @@ namespace Client
 				StringProperty = Guid.NewGuid().ToString(),
 				IntProperty = int.MaxValue / 2,
 				ListProperty = new List<string> { "test", "list", "of", "strings" },
-                //DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
-            };
+				//DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+			};
 
 			var complexResult = serviceClient.PingComplexModel(complexModel);
 			Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}, ListProperty: {2}",
 				complexResult.FloatProperty, complexResult.StringProperty, string.Join(", ", complexResult.ListProperty));
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(complexResult));
+
+			serviceClient.EnumMethod(out var enumValue);
+			Console.WriteLine("Enum method result: {0}", enumValue);
+
+			var responseModelRef = new ComplexModelResponse { };
+			var pingComplexModelOutAndRefResult =
+				serviceClient.PingComplexModelOutAndRef(
+					complexModel,
+					ref responseModelRef,
+					new ComplexObject(),
+					out var responseModelOut,
+					new ComplexObject());
+			Console.WriteLine($"{nameof(pingComplexModelOutAndRefResult)}:{pingComplexModelOutAndRefResult}");
+			Console.WriteLine($"{nameof(responseModelRef)}:");
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef));
+			Console.WriteLine($"{nameof(responseModelOut)}:");
+			Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(responseModelOut));
 
 			serviceClient.VoidMethod(out var stringValue);
 			Console.WriteLine("Void method result: {0}", stringValue);
