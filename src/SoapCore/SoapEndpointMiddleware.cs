@@ -300,6 +300,8 @@ namespace SoapCore
 				var parameterName = parameterInfo.Name;
 				var parameterNs = parameterInfo.Namespace;
 
+				// todo: still some issue here with ordering or something similar
+
 				if (xmlReader.IsStartElement(parameterName, parameterNs))
 				{
 					xmlReader.MoveToStartElement(parameterName, parameterNs);
