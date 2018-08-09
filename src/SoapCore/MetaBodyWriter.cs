@@ -82,6 +82,7 @@ namespace SoapCore
 				writer.WriteStartElement("xs:complexType");
 				writer.WriteStartElement("xs:sequence");
 
+				// todo: fix here ref params also as in? (use already parsed params)
 				foreach (var parameter in operation.DispatchMethod.GetParameters().Where(x => !x.IsOut && !x.ParameterType.IsByRef))
 				{
 					var elementAttribute = parameter.GetCustomAttribute<XmlElementAttribute>();
@@ -96,6 +97,7 @@ namespace SoapCore
 				writer.WriteEndElement(); // xs:element
 
 				// output parameter / return of operation
+				// todo: add here out params as output? (use already parsed params)
 
 				writer.WriteStartElement("xs:element");
 				writer.WriteAttributeString("name", operation.Name + "Response");
