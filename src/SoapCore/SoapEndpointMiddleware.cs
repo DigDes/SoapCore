@@ -295,12 +295,24 @@ namespace SoapCore
 			// Find the element for the operation's data
 			xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 
+			// if any ordering issues, possible to rewrite like:
+			/*while (!xmlReader.EOF)
+			{
+				var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName && p.Namespace == xmlReader.NamespaceURI);
+				if (parameterInfo == null)
+				{
+					xmlReader.Skip();
+					continue;
+				}
+				var parameterName = parameterInfo.Name;
+				var parameterNs = parameterInfo.Namespace;
+				...
+			}*/
+
 			foreach (var parameterInfo in operation.InParameters)
 			{
 				var parameterName = parameterInfo.Name;
 				var parameterNs = parameterInfo.Namespace;
-
-				// todo: still some issue here with ordering or something similar
 
 				if (xmlReader.IsStartElement(parameterName, parameterNs))
 				{
