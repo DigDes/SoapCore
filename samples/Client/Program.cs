@@ -11,7 +11,16 @@ namespace Client
 	{
 		public static void Main(string[] args)
 		{
+			Newtonsoft.Json.JsonConvert.DefaultSettings = (() =>
+			{
+				var settings = new Newtonsoft.Json.JsonSerializerSettings();
+				settings.Formatting = Newtonsoft.Json.Formatting.Indented;
+				settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter { CamelCaseText = true });
+				return settings;
+			});
+
 			var binding = new BasicHttpBinding();
+			// todo: why DataContractSerializer not working?
 			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", Environment.MachineName)));
 			var channelFactory = new ChannelFactory<ISampleService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
@@ -23,12 +32,31 @@ namespace Client
 				StringProperty = Guid.NewGuid().ToString(),
 				IntProperty = int.MaxValue / 2,
 				ListProperty = new List<string> { "test", "list", "of", "strings" },
-                //DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
-            };
+				//DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+			};
 
-			var complexResult = serviceClient.PingComplexModel(complexModel);
-			Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}, ListProperty: {2}",
-				complexResult.FloatProperty, complexResult.StringProperty, string.Join(", ", complexResult.ListProperty));
+			var pingComplexModelResult = serviceClient.PingComplexModel(complexModel);
+			Console.WriteLine($"{nameof(pingComplexModelResult)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(pingComplexModelResult)}\n");
+
+			serviceClient.EnumMethod(out var enumValue);
+			Console.WriteLine("Enum method result: {0}", enumValue);
+
+			var responseModelRef1 = ComplexModelResponse.CreateSample1();
+			var responseModelRef2 = ComplexModelResponse.CreateSample2();
+			var pingComplexModelOutAndRefResult =
+				serviceClient.PingComplexModelOutAndRef(
+					ComplexModelInput.CreateSample1(),
+					ref responseModelRef1,
+					ComplexObject.CreateSample1(),
+					ref responseModelRef2,
+					ComplexObject.CreateSample2(),
+					out var responseModelOut1,
+					out var responseModelOut2);
+			Console.WriteLine($"{nameof(pingComplexModelOutAndRefResult)}: {pingComplexModelOutAndRefResult}\n");
+			Console.WriteLine($"{nameof(responseModelRef1)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef1)}\n");
+			Console.WriteLine($"{nameof(responseModelRef2)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef2)}\n");
+			Console.WriteLine($"{nameof(responseModelOut1)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelOut1)}\n");
+			Console.WriteLine($"{nameof(responseModelOut2)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelOut2)}\n");
 
 			serviceClient.VoidMethod(out var stringValue);
 			Console.WriteLine("Void method result: {0}", stringValue);

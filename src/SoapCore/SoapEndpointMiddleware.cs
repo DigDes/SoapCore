@@ -209,8 +209,7 @@ namespace SoapCore
 					}
 
 					// Get operation arguments from message
-					Dictionary<string, object> outArgs = new Dictionary<string, object>();
-					var arguments = GetRequestArguments(requestMessage, reader, operation, ref outArgs);
+					var arguments = GetRequestArguments(requestMessage, reader, operation);
 
 					// Execute model binding filters
 					object modelBindingOutput = null;
@@ -218,23 +217,24 @@ namespace SoapCore
 					{
 						foreach (var modelType in modelBindingFilter.ModelTypes)
 						{
-							foreach (var arg in arguments)
-								if (arg != null && arg.GetType() == modelType) modelBindingFilter.OnModelBound(arg, serviceProvider, out modelBindingOutput);
+							foreach (var parameterInfo in operation.InParameters)
+							{
+								var arg = arguments[parameterInfo.Index];
+								if (arg != null && arg.GetType() == modelType)
+									modelBindingFilter.OnModelBound(arg, serviceProvider, out modelBindingOutput);
+							}
 						}
 					}
-
-					// avoid Concat() and ToArray() cost when no out args(this may be heavy operation)
-					var allArgs = outArgs.Count != 0 ? arguments.Concat(outArgs.Values).ToArray() : arguments;
 
 					// Execute Mvc ActionFilters
 					foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute"))
 					{
 						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
-						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, allArgs, httpContext, modelBindingOutput });
+						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, arguments, httpContext, modelBindingOutput });
 					}
 
 					// Invoke Operation method
-					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, allArgs);
+					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, arguments);
 					if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
 					{
 						var responseTask = (Task)responseObject;
@@ -247,12 +247,11 @@ namespace SoapCore
 						// VoidTaskResult
 						responseObject = null;
 					}
-					int i = arguments.Length;
+
 					var resultOutDictionary = new Dictionary<string, object>();
-					foreach (var outArg in outArgs)
+					foreach (var parameterInfo in operation.OutParameters)
 					{
-						resultOutDictionary[outArg.Key] = allArgs[i];
-						i++;
+						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 					}
 
 					// Create response message
@@ -275,8 +274,9 @@ namespace SoapCore
 				}
 			}
 
-			// Execute response message filters			
-			try {
+			// Execute response message filters
+			try
+			{
 				foreach (var messageFilter in messageFilters) messageFilter.OnResponseExecuting(responseMessage);
 			}
 			catch (Exception ex) {
@@ -288,19 +288,31 @@ namespace SoapCore
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation, ref Dictionary<string, object> outArgs)
+		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation)
 		{
-			var parameters = operation.NormalParameters;
-			// avoid reallocation
-			var arguments = new List<object>(parameters.Length + operation.OutParameters.Length);
+			var arguments = new object[operation.AllParameters.Length];
 
 			// Find the element for the operation's data
 			xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 
-			for (int i = 0; i < parameters.Length; i++)
+			// if any ordering issues, possible to rewrite like:
+			/*while (!xmlReader.EOF)
 			{
-				var parameterName = parameters[i].Name;
-				var parameterNs = parameters[i].Namespace;
+				var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName && p.Namespace == xmlReader.NamespaceURI);
+				if (parameterInfo == null)
+				{
+					xmlReader.Skip();
+					continue;
+				}
+				var parameterName = parameterInfo.Name;
+				var parameterNs = parameterInfo.Namespace;
+				...
+			}*/
+
+			foreach (var parameterInfo in operation.InParameters)
+			{
+				var parameterName = parameterInfo.Name;
+				var parameterNs = parameterInfo.Namespace;
 
 				if (xmlReader.IsStartElement(parameterName, parameterNs))
 				{
@@ -308,9 +320,9 @@ namespace SoapCore
 
 					if (xmlReader.IsStartElement(parameterName, parameterNs))
 					{
-						var elementType = parameters[i].Parameter.ParameterType.GetElementType();
-						if (elementType == null || parameters[i].Parameter.ParameterType.IsArray)
-							elementType = parameters[i].Parameter.ParameterType;
+						var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
+						if (elementType == null || parameterInfo.Parameter.ParameterType.IsArray)
+							elementType = parameterInfo.Parameter.ParameterType;
 
 						switch (_serializer)
 						{
@@ -319,13 +331,13 @@ namespace SoapCore
 									// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
 									var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
 									lock (serializer)
-										arguments.Add(serializer.Deserialize(xmlReader));
+										arguments[parameterInfo.Index] = serializer.Deserialize(xmlReader);
 								}
 								break;
 							case SoapSerializer.DataContractSerializer:
 								{
 									var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
-									arguments.Add(serializer.ReadObject(xmlReader, verifyObjectName: true));
+									arguments[parameterInfo.Index] = serializer.ReadObject(xmlReader, verifyObjectName: true);
 								}
 								break;
 							default: throw new NotImplementedException();
@@ -334,23 +346,30 @@ namespace SoapCore
 				}
 				else
 				{
-					arguments.Add(null);
+					arguments[parameterInfo.Index] = null;
 				}
 			}
 
 			foreach (var parameterInfo in operation.OutParameters)
 			{
+				if (arguments[parameterInfo.Index] != null)
+				{
+					// do not overwrite input ref parameters
+					continue;
+				}
+
 				if (parameterInfo.Parameter.ParameterType.Name == "Guid&")
-					outArgs[parameterInfo.Name] = Guid.Empty;
+					arguments[parameterInfo.Index] = Guid.Empty;
 				else if (parameterInfo.Parameter.ParameterType.Name == "String&" || parameterInfo.Parameter.ParameterType.GetElementType().IsArray)
-					outArgs[parameterInfo.Name] = null;
+					arguments[parameterInfo.Index] = null;
 				else
 				{
 					var type = parameterInfo.Parameter.ParameterType.GetElementType();
-					outArgs[parameterInfo.Name] = Activator.CreateInstance(type);
+					arguments[parameterInfo.Index] = Activator.CreateInstance(type);
 				}
 			}
-			return arguments.ToArray();
+
+			return arguments;
 		}
 
 		/// <summary>
