@@ -17,10 +17,12 @@ namespace SoapCore.Tests.Serialization
 
 		delegate void PingComplexModelOutAndRefCallback(
 			ComplexModelInput inputModel,
-			ref ComplexModelResponse responseModelRef,
+			ref ComplexModelResponse responseModelRef1,
 			ComplexObject data1,
-			out ComplexModelResponse responseModelOut,
-			ComplexObject data2);
+			ref ComplexModelResponse responseModelRef2,
+			ComplexObject data2,
+			out ComplexModelResponse responseModelOut1,
+			out ComplexModelResponse responseModelOut2);
 
 		[Fact]
 		public void TestPingComplexModelOutAndRefSerialization()
@@ -30,40 +32,52 @@ namespace SoapCore.Tests.Serialization
 					It.IsAny<ComplexModelInput>(),
 					ref It.Ref<ComplexModelResponse>.IsAny,
 					It.IsAny<ComplexObject>(),
+					ref It.Ref<ComplexModelResponse>.IsAny,
+					It.IsAny<ComplexObject>(),
 					out It.Ref<ComplexModelResponse>.IsAny,
-					It.IsAny<ComplexObject>()))
+					out It.Ref<ComplexModelResponse>.IsAny))
 				.Callback(new PingComplexModelOutAndRefCallback(
 					(ComplexModelInput inputModel_service,
-						ref ComplexModelResponse responseModelRef_service,
+						ref ComplexModelResponse responseModelRef1_service,
 						ComplexObject data1_service,
-						out ComplexModelResponse responseModelOut_service,
-						ComplexObject data2_service) =>
+						ref ComplexModelResponse responseModelRef2_service,
+						ComplexObject data2_service,
+						out ComplexModelResponse responseModelOut1_service,
+						out ComplexModelResponse responseModelOut2_service) =>
 					{
 						// check input paremeters serialization
 						inputModel_service.ShouldDeepEqual(ComplexModelInput.CreateSample1());
-						responseModelRef_service.ShouldDeepEqual(ComplexModelResponse.CreateSample1());
+						responseModelRef1_service.ShouldDeepEqual(ComplexModelResponse.CreateSample1());
+						responseModelRef2_service.ShouldDeepEqual(ComplexModelResponse.CreateSample2());
 						data1_service.ShouldDeepEqual(ComplexObject.CreateSample1());
 						data2_service.ShouldDeepEqual(ComplexObject.CreateSample2());
 						// sample response
-						responseModelRef_service = ComplexModelResponse.CreateSample2();
-						responseModelOut_service = ComplexModelResponse.CreateSample3();
+						responseModelRef1_service = ComplexModelResponse.CreateSample2();
+						responseModelRef2_service = ComplexModelResponse.CreateSample1();
+						responseModelOut1_service = ComplexModelResponse.CreateSample3();
+						responseModelOut2_service = ComplexModelResponse.CreateSample1();
 					}))
 				.Returns(true);
 
-			var responseModelRef_client = ComplexModelResponse.CreateSample1();
+			var responseModelRef1_client = ComplexModelResponse.CreateSample1();
+			var responseModelRef2_client = ComplexModelResponse.CreateSample2();
 
 			var pingComplexModelOutAndRefResult_client =
 				this.fixture.sampleServiceClient.PingComplexModelOutAndRef(
 					ComplexModelInput.CreateSample1(),
-					ref responseModelRef_client,
+					ref responseModelRef1_client,
 					ComplexObject.CreateSample1(),
-					out var responseModelOut_client,
-					ComplexObject.CreateSample2());
+					ref responseModelRef2_client,
+					ComplexObject.CreateSample2(),
+					out var responseModelOut1_client,
+					out var responseModelOut2_client);
 
 			// check output paremeters serialization
 			pingComplexModelOutAndRefResult_client.ShouldBeTrue();
-			responseModelRef_client.ShouldDeepEqual(ComplexModelResponse.CreateSample2());
-			responseModelOut_client.ShouldDeepEqual(ComplexModelResponse.CreateSample3());
+			responseModelRef1_client.ShouldDeepEqual(ComplexModelResponse.CreateSample2());
+			responseModelRef2_client.ShouldDeepEqual(ComplexModelResponse.CreateSample1());
+			responseModelOut1_client.ShouldDeepEqual(ComplexModelResponse.CreateSample3());
+			responseModelOut2_client.ShouldDeepEqual(ComplexModelResponse.CreateSample1());
 		}
 	}
 }

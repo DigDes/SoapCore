@@ -16,15 +16,25 @@ namespace Models
 
 		// ref (in and out) param, present both in request and response
 		[MessageBodyMember(Namespace = ServiceNamespace.Value, Order = 1)]
-		public ComplexModelResponse responseModelRef;
+		public ComplexModelResponse responseModelRef1;
 
-		// pure input value
-		// not present in response
+		// pure input value, not present in response
 		// ComplexObject data1
 
-		// pure output param, present only in response
+		// ref (in and out) param, present both in request and response
 		[MessageBodyMember(Namespace = ServiceNamespace.Value, Order = 2)]
-		public ComplexModelResponse responseModelOut;
+		public ComplexModelResponse responseModelRef2;
+
+		// pure input value, not present in response
+		// ComplexObject data2
+
+		// pure output param, present only in response
+		[MessageBodyMember(Namespace = ServiceNamespace.Value, Order = 3)]
+		public ComplexModelResponse responseModelOut1;
+
+		// pure output param, present only in response
+		[MessageBodyMember(Namespace = ServiceNamespace.Value, Order = 4)]
+		public ComplexModelResponse responseModelOut2;
 
 		// pure input value
 		// not present in response

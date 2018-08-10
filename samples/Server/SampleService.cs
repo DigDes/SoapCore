@@ -41,23 +41,30 @@ namespace Server
 
 		private bool PingComplexModelOutAndRefImplementation(
 			ComplexModelInput inputModel,
-			ref ComplexModelResponse responseModelRef,
+			ref ComplexModelResponse responseModelRef1,
 			ComplexObject data1,
-			out ComplexModelResponse responseModelOut,
-			ComplexObject data2)
+			ref ComplexModelResponse responseModelRef2,
+			ComplexObject data2,
+			out ComplexModelResponse responseModelOut1,
+			out ComplexModelResponse responseModelOut2)
 		{
 			Console.WriteLine("input params:\n");
 			Console.WriteLine($"{nameof(inputModel)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(inputModel)}\n");
-			Console.WriteLine($"{nameof(responseModelRef)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef)}\n");
+			Console.WriteLine($"{nameof(responseModelRef1)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef1)}\n");
+			Console.WriteLine($"{nameof(responseModelRef2)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef2)}\n");
 			Console.WriteLine($"{nameof(data1)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(data1)}\n");
 			Console.WriteLine($"{nameof(data2)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(data2)}\n");
 
-			responseModelRef = ComplexModelResponse.CreateSample2();
-			responseModelOut = ComplexModelResponse.CreateSample3();
+			responseModelRef1 = ComplexModelResponse.CreateSample2();
+			responseModelRef2 = ComplexModelResponse.CreateSample1();
+			responseModelOut1 = ComplexModelResponse.CreateSample3();
+			responseModelOut2 = ComplexModelResponse.CreateSample1();
 
 			Console.WriteLine("output params:\n");
-			Console.WriteLine($"{nameof(responseModelRef)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef)}\n");
-			Console.WriteLine($"{nameof(responseModelOut)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelOut)}\n");
+			Console.WriteLine($"{nameof(responseModelRef1)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef1)}\n");
+			Console.WriteLine($"{nameof(responseModelRef2)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelRef2)}\n");
+			Console.WriteLine($"{nameof(responseModelOut1)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelOut1)}\n");
+			Console.WriteLine($"{nameof(responseModelOut2)}:\n{Newtonsoft.Json.JsonConvert.SerializeObject(responseModelOut2)}\n");
 
 			Console.WriteLine("done.\n");
 
@@ -66,13 +73,22 @@ namespace Server
 
 		public bool PingComplexModelOutAndRef(
 			ComplexModelInput inputModel,
-			ref ComplexModelResponse responseModelRef,
+			ref ComplexModelResponse responseModelRef1,
 			ComplexObject data1,
-			out ComplexModelResponse responseModelOut,
-			ComplexObject data2)
+			ref ComplexModelResponse responseModelRef2,
+			ComplexObject data2,
+			out ComplexModelResponse responseModelOut1,
+			out ComplexModelResponse responseModelOut2)
 		{
 			Console.WriteLine($"{nameof(PingComplexModelOutAndRef)}:");
-			return PingComplexModelOutAndRefImplementation(inputModel, ref responseModelRef, data1, out responseModelOut, data2);
+			return PingComplexModelOutAndRefImplementation(
+				inputModel,
+				ref responseModelRef1,
+				data1,
+				ref responseModelRef2,
+				data2,
+				out responseModelOut1,
+				out responseModelOut2);
 		}
 
 		public PingComplexModelOldStyleResponse PingComplexModelOldStyle(
@@ -80,8 +96,16 @@ namespace Server
 		{
 			Console.WriteLine($"{nameof(PingComplexModelOldStyle)}:");
 			var response = new PingComplexModelOldStyleResponse();
-			var result = PingComplexModelOutAndRefImplementation(request.inputModel, ref request.responseModelRef, request.data1, out response.responseModelOut, request.data2);
-			response.responseModelRef = request.responseModelRef;
+			var result = PingComplexModelOutAndRefImplementation(
+				request.inputModel,
+				ref request.responseModelRef1,
+				request.data1,
+				ref request.responseModelRef2,
+				request.data2,
+				out response.responseModelOut1,
+				out response.responseModelOut2);
+			response.responseModelRef1 = request.responseModelRef1;
+			response.responseModelRef2 = request.responseModelRef2;
 			return response;
 		}
 
