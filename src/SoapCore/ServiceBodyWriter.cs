@@ -11,17 +11,19 @@ namespace SoapCore
 	public class ServiceBodyWriter : BodyWriter
 	{
 		private readonly SoapSerializer _serializer;
+		private readonly OperationDescription _operation;
 		private readonly string _serviceNamespace;
 		private readonly string _envelopeName;
 		private readonly string _resultName;
 		private readonly object _result;
 		private readonly Dictionary<string, object> _outResults;
 
-		public ServiceBodyWriter(SoapSerializer serializer, string serviceNamespace, string envelopeName, string resultName, object result, Dictionary<string, object> outResults) : base(isBuffered: true)
+		public ServiceBodyWriter(SoapSerializer serializer, OperationDescription operation, string resultName, object result, Dictionary<string, object> outResults) : base(isBuffered: true)
 		{
 			_serializer = serializer;
-			_serviceNamespace = serviceNamespace;
-			_envelopeName = envelopeName;
+			_operation = operation;
+			_serviceNamespace = operation.Contract.Namespace;
+			_envelopeName = operation.Name + "Response";
 			_resultName = resultName;
 			_result = result;
 			_outResults = outResults;
@@ -30,7 +32,7 @@ namespace SoapCore
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
 			// do not wrap old-style single element response into additional xml element for xml serializer
-			var needResponseEnvelope = _serializer != SoapSerializer.XmlSerializer || _result == null || (_outResults != null && _outResults.Count > 0);
+			var needResponseEnvelope = _serializer != SoapSerializer.XmlSerializer || _result == null || (_outResults != null && _outResults.Count > 0) || !_operation.IsMessageContractResponse;
 
 			if (needResponseEnvelope)
 				writer.WriteStartElement(_envelopeName, _serviceNamespace);

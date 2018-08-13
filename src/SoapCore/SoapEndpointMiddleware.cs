@@ -256,7 +256,7 @@ namespace SoapCore
 
 					// Create response message
 					var resultName = operation.ReturnName;
-					var bodyWriter = new ServiceBodyWriter(_serializer, operation.Contract.Namespace, operation.Name + "Response", resultName, responseObject, resultOutDictionary);
+					var bodyWriter = new ServiceBodyWriter(_serializer, operation, resultName, responseObject, resultOutDictionary);
 					responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 					responseMessage = new CustomMessage(responseMessage);
 
@@ -293,7 +293,10 @@ namespace SoapCore
 			var arguments = new object[operation.AllParameters.Length];
 
 			// Find the element for the operation's data
-			xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
+			if (!operation.IsMessageContractRequest)
+			{
+				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
+			}
 
 			// if any ordering issues, possible to rewrite like:
 			/*while (!xmlReader.EOF)
