@@ -181,6 +181,9 @@ namespace SoapCore
 			while (_enumToBuild.Count > 0)
 			{
 				Type toBuild = _enumToBuild.Dequeue();
+				if (toBuild.IsByRef)
+					toBuild = toBuild.GetElementType();
+
 				if (!_builtEnumTypes.Contains(toBuild.Name))
 				{
 					writer.WriteStartElement("xs:simpleType");
@@ -382,6 +385,9 @@ namespace SoapCore
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null)
 		{
 			var typeInfo = type.GetTypeInfo();
+			if (typeInfo.IsByRef)
+				type = typeInfo.GetElementType();
+
 			writer.WriteStartElement("xs:element");
 
 			// Check for null, since we may use empty NS
@@ -528,10 +534,10 @@ namespace SoapCore
 			writer.WriteEndElement(); // xs:element
 		}
 
-	    private string ResolveType(Type type)
-	    {
-	        string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
-            string resolvedType = null;
+		private string ResolveType(Type type)
+		{
+			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
+			string resolvedType = null;
 
 			switch (typeName)
 			{
