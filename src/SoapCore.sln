@@ -10,10 +10,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.Benchmark", "SoapC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.BenchmarkOld", "SoapCore.BenchmarkOld\SoapCore.BenchmarkOld.csproj", "{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.Tests.Serialization", "SoapCore.Tests.Serialization\SoapCore.Tests.Serialization.csproj", "{529CE850-C05F-4193-A67D-F552BD265939}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "..\samples\Models\Models.csproj", "{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,30 +68,6 @@ Global
 		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x64.Build.0 = Release|Any CPU
 		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x86.ActiveCfg = Release|Any CPU
 		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x86.Build.0 = Release|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Debug|x64.Build.0 = Debug|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Debug|x86.Build.0 = Debug|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Release|Any CPU.Build.0 = Release|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Release|x64.ActiveCfg = Release|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Release|x64.Build.0 = Release|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Release|x86.ActiveCfg = Release|Any CPU
-		{529CE850-C05F-4193-A67D-F552BD265939}.Release|x86.Build.0 = Release|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Debug|x64.Build.0 = Debug|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Debug|x86.Build.0 = Debug|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Release|x64.ActiveCfg = Release|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Release|x64.Build.0 = Release|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Release|x86.ActiveCfg = Release|Any CPU
-		{DE427C57-CBD7-4D9E-8C1C-5983AA6424F2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

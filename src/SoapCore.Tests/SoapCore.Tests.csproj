@@ -14,10 +14,28 @@
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
     <PackageReference Include="System.ServiceModel.Http" Version="4.4.1" />
+    <PackageReference Include="DeepEqual" Version="1.6.0.0" />
+    <PackageReference Include="Moq" Version="4.9.0" />
+    <PackageReference Include="Shouldly" Version="3.0.0" />
+    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="xunit.runner.console" Version="2.4.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Serialization\" />
+    <Folder Include="Serialization\Models.DataContract\" />
+    <Folder Include="Serialization\Models.Models.Xml\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SoapCore\SoapCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ContentWithTargetPath Include="Serialization\xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>xunit.runner.json</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
 </Project>

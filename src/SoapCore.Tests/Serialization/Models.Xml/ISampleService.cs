@@ -1,0 +1,66 @@
+using System.ServiceModel;
+using System.Threading.Tasks;
+
+namespace SoapCore.Tests.Serialization.Models.Xml
+{
+	[ServiceContract(Namespace = ServiceNamespace.Value, ConfigurationName = "SampleService.SampleServiceSoap")]
+	public interface ISampleService
+	{
+		[OperationContract(Action = ServiceNamespace.Value + nameof(Ping), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		string Ping(string s);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		ComplexModel1 PingComplexModel(ComplexModel2 inputModel);
+
+		// new style call with multiple out/ref/value params
+		//   instead of packing them into single request/response class
+		// produced/consumed xml response is compatible with legacy wcf/ws
+		// not sure that this operation contract can be consumed in legacy wcf/ws sources, you may check
+		// attention! out params should be last to work correctly! (no idea why)
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModelOutAndRef), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		bool PingComplexModelOutAndRef(
+			ComplexModel1 inputModel,
+			ref ComplexModel2 responseModelRef1,
+			ComplexObject data1,
+			ref ComplexModel1 responseModelRef2,
+			ComplexObject data2,
+			out ComplexModel2 responseModelOut1,
+			out ComplexModel1 responseModelOut2);
+
+		// old style call, when all in/out params are packed into single request/response params
+		// both styles are completely compatible, if we have same method name
+		//   and req/resp classes as {MethodName}{Request|Response}
+		// produced/consumed xml response is compatible with legacy wcf/ws
+		// this operation contract is exactly as in legacy wcf/ws sources and can be consumed there
+		// to avoid extra envelope element, mark request/reponse type as [MessageContract] and do not use ref/out params
+		//   otherwise compatibility will be broken
+		//   (effective only for XmlSerializer)
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModelOldStyle), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		PingComplexModelOldStyleResponse PingComplexModelOldStyle(
+			PingComplexModelOldStyleRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		bool EnumMethod(out SampleEnum e);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(VoidMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		void VoidMethod(out string s);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(AsyncMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		Task<int> AsyncMethod();
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NullableMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		int? NullableMethod(bool? arg);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(EmptyParamsMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		ComplexModel1 EmptyParamsMethod();
+	}
+}

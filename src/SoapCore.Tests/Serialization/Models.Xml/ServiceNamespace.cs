@@ -1,4 +1,4 @@
-﻿namespace Models
+namespace SoapCore.Tests.Serialization.Models.Xml
 {
 	public static class ServiceNamespace
 	{
