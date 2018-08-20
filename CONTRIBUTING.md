@@ -1,3 +1,4 @@
+# Contributing
 We are greating for all improvements, bug fixes and new features if it not break exists behaviour.
 
 ## Code style
