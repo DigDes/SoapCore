@@ -17,17 +17,18 @@ namespace ConsoleApp1
             var result = serviceClient.Ping("hey");
             Console.WriteLine("Ping method result: {0}", result);
 
-            var complexModel = new SampleService.ComplexModelInput
-            {
-                StringProperty = Guid.NewGuid().ToString(),
-                IntProperty = int.MaxValue / 2,
-                ListProperty = new List<string> { "test", "list", "of", "strings" },
-                DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1)),
-                ComplexListProperty = new List<SampleService.ComplexObject>()
-            };
+			// TODO: DateTimeOffsetProperty not working
+			//var complexModel = new SampleService.ComplexModelInput
+			//{
+			//	StringProperty = Guid.NewGuid().ToString(),
+			//	IntProperty = int.MaxValue / 2,
+			//	ListProperty = new List<string> { "test", "list", "of", "strings" },
+			//	DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+			//};
 
-            var complexResult = serviceClient.PingComplexModel(complexModel);
-            Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}", complexResult.FloatProperty, complexResult.StringProperty);
+			//var complexResult = serviceClient.PingComplexModel(complexModel);
+			//Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}, ListProperty: {2}, DateTimeOffsetProperty: {3}",
+			//	complexResult.FloatProperty, complexResult.StringProperty, string.Join(", ", complexResult.ListProperty), complexResult.DateTimeOffsetProperty);
 
             // see https://github.com/DigDes/SoapCore/issues/38
             //serviceClient.VoidMethod(out var stringValue);
