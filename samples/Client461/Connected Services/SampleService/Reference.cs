@@ -289,11 +289,12 @@ namespace ConsoleApp1.SampleService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ISampleService/PingComplexModel", ReplyAction="*")]
         System.Threading.Tasks.Task<ConsoleApp1.SampleService.PingComplexModelResponse> PingComplexModelAsync(ConsoleApp1.SampleService.PingComplexModelRequest request);
         
+        // CODEGEN: Generating message contract since element name s from namespace http://tempuri.org/ is not marked nillable
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ISampleService/VoidMethod", ReplyAction="*")]
-        void VoidMethod();
+        ConsoleApp1.SampleService.VoidMethodResponse VoidMethod(ConsoleApp1.SampleService.VoidMethodRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ISampleService/VoidMethod", ReplyAction="*")]
-        System.Threading.Tasks.Task VoidMethodAsync();
+        System.Threading.Tasks.Task<ConsoleApp1.SampleService.VoidMethodResponse> VoidMethodAsync(ConsoleApp1.SampleService.VoidMethodRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ISampleService/AsyncMethod", ReplyAction="*")]
         int AsyncMethod();
@@ -444,6 +445,67 @@ namespace ConsoleApp1.SampleService {
         }
     }
     
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+    [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
+    public partial class VoidMethodRequest {
+        
+        [System.ServiceModel.MessageBodyMemberAttribute(Name="VoidMethod", Namespace="http://tempuri.org/", Order=0)]
+        public ConsoleApp1.SampleService.VoidMethodRequestBody Body;
+        
+        public VoidMethodRequest() {
+        }
+        
+        public VoidMethodRequest(ConsoleApp1.SampleService.VoidMethodRequestBody Body) {
+            this.Body = Body;
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+    [System.Runtime.Serialization.DataContractAttribute()]
+    public partial class VoidMethodRequestBody {
+        
+        public VoidMethodRequestBody() {
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+    [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
+    public partial class VoidMethodResponse {
+        
+        [System.ServiceModel.MessageBodyMemberAttribute(Name="VoidMethodResponse", Namespace="http://tempuri.org/", Order=0)]
+        public ConsoleApp1.SampleService.VoidMethodResponseBody Body;
+        
+        public VoidMethodResponse() {
+        }
+        
+        public VoidMethodResponse(ConsoleApp1.SampleService.VoidMethodResponseBody Body) {
+            this.Body = Body;
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+    [System.Runtime.Serialization.DataContractAttribute(Namespace="http://tempuri.org/")]
+    public partial class VoidMethodResponseBody {
+        
+        [System.Runtime.Serialization.DataMemberAttribute(EmitDefaultValue=false, Order=0)]
+        public string s;
+        
+        public VoidMethodResponseBody() {
+        }
+        
+        public VoidMethodResponseBody(string s) {
+            this.s = s;
+        }
+    }
+    
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     public interface ISampleServiceChannel : ConsoleApp1.SampleService.ISampleService, System.ServiceModel.IClientChannel {
     }
@@ -521,12 +583,27 @@ namespace ConsoleApp1.SampleService {
             return ((ConsoleApp1.SampleService.ISampleService)(this)).PingComplexModelAsync(inValue);
         }
         
-        public void VoidMethod() {
-            base.Channel.VoidMethod();
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        ConsoleApp1.SampleService.VoidMethodResponse ConsoleApp1.SampleService.ISampleService.VoidMethod(ConsoleApp1.SampleService.VoidMethodRequest request) {
+            return base.Channel.VoidMethod(request);
         }
         
-        public System.Threading.Tasks.Task VoidMethodAsync() {
-            return base.Channel.VoidMethodAsync();
+        public string VoidMethod() {
+            ConsoleApp1.SampleService.VoidMethodRequest inValue = new ConsoleApp1.SampleService.VoidMethodRequest();
+            inValue.Body = new ConsoleApp1.SampleService.VoidMethodRequestBody();
+            ConsoleApp1.SampleService.VoidMethodResponse retVal = ((ConsoleApp1.SampleService.ISampleService)(this)).VoidMethod(inValue);
+            return retVal.Body.s;
+        }
+        
+        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        System.Threading.Tasks.Task<ConsoleApp1.SampleService.VoidMethodResponse> ConsoleApp1.SampleService.ISampleService.VoidMethodAsync(ConsoleApp1.SampleService.VoidMethodRequest request) {
+            return base.Channel.VoidMethodAsync(request);
+        }
+        
+        public System.Threading.Tasks.Task<ConsoleApp1.SampleService.VoidMethodResponse> VoidMethodAsync() {
+            ConsoleApp1.SampleService.VoidMethodRequest inValue = new ConsoleApp1.SampleService.VoidMethodRequest();
+            inValue.Body = new ConsoleApp1.SampleService.VoidMethodRequestBody();
+            return ((ConsoleApp1.SampleService.ISampleService)(this)).VoidMethodAsync(inValue);
         }
         
         public int AsyncMethod() {
