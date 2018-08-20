@@ -25,7 +25,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 }
 ```
 
-### Using with legacy wcf/ws
+### Using with legacy WCF/WS
 
 It is possible to use SoapCore with .net legacy WCF and Web Services, both as client and service.
 
@@ -34,5 +34,9 @@ Primary point here is to use XmlSerializer and properly markup messages and oper
 ### References
 
 * [stackify.com/soap-net-core](https://stackify.com/soap-net-core/)
+
+### Contributing
+
+See [Contributin guide] (Contributing.md)
 
 [![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
