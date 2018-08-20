@@ -30,9 +30,8 @@ namespace ConsoleApp1
 			//Console.WriteLine("PingComplexModel result. FloatProperty: {0}, StringProperty: {1}, ListProperty: {2}, DateTimeOffsetProperty: {3}",
 			//	complexResult.FloatProperty, complexResult.StringProperty, string.Join(", ", complexResult.ListProperty), complexResult.DateTimeOffsetProperty);
 
-            // see https://github.com/DigDes/SoapCore/issues/38
-            //serviceClient.VoidMethod(out var stringValue);
-            //Console.WriteLine("Void method result: {0}", stringValue);
+			var stringValue = serviceClient.VoidMethod();
+			Console.WriteLine("Void method result: {0}", stringValue);
 
             var asyncMethodResult = serviceClient.AsyncMethodAsync().Result;
             Console.WriteLine("Async method result: {0}", asyncMethodResult);
