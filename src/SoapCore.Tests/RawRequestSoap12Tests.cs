@@ -1,24 +1,18 @@
+using System;
+using System.Net.Http;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.ServiceModel;
-using System.Threading.Tasks;
-using System.ServiceModel.Channels;
-using System.Net.Http;
-using System.Text;
 
 namespace SoapCore.Tests
 {
 	[TestClass]
 	public class RawRequestSoap12Tests
 	{
-		TestServer CreateTestHost()
-		{
-			var webHostBuilder = new WebHostBuilder()
-				.UseStartup<Startup>();
-			return new TestServer(webHostBuilder);
-		}
 		[TestMethod]
 		public void Soap12PingWithActionInHeader()
 		{
@@ -37,15 +31,13 @@ namespace SoapCore.Tests
 			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
 			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using(var res = host.CreateRequest("/Service.svc")
-					.And(msg => msg.Content = content)
-					.PostAsync().Result
-				)
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
 				{
 					res.EnsureSuccessStatusCode();
 				}
 			}
 		}
+
 		[TestMethod]
 		public void Soap12PingNoActionInHeader()
 		{
@@ -63,14 +55,18 @@ namespace SoapCore.Tests
 			using (var client = host.CreateClient())
 			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
 			{
-				using(var res = host.CreateRequest("/Service.svc")
-					.And(msg => msg.Content = content)
-					.PostAsync().Result
-				)
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
 				{
 					res.EnsureSuccessStatusCode();
 				}
 			}
+		}
+
+		private TestServer CreateTestHost()
+		{
+			var webHostBuilder = new WebHostBuilder()
+				.UseStartup<Startup>();
+			return new TestServer(webHostBuilder);
 		}
 	}
 }

@@ -1,5 +1,5 @@
-﻿using System.ServiceModel.Channels;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.Xml;
 
 namespace SoapCore
@@ -11,26 +11,6 @@ namespace SoapCore
 		public CustomMessage(Message message)
 		{
 			_message = message;
-		}
-
-		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
-		{
-			writer.WriteStartDocument();
-			if(_message.Version.Envelope == EnvelopeVersion.Soap11)
-			{
-				writer.WriteStartElement("s", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
-			}
-			else
-			{
-				writer.WriteStartElement("s", "Envelope", "http://www.w3.org/2003/05/soap-envelope");
-			}
-			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-			writer.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-		}
-
-		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
-		{
-			_message.WriteBodyContents(writer);
 		}
 
 		public override MessageHeaders Headers
@@ -46,6 +26,27 @@ namespace SoapCore
 		public override MessageVersion Version
 		{
 			get { return _message.Version; }
+		}
+
+		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
+		{
+			writer.WriteStartDocument();
+			if (_message.Version.Envelope == EnvelopeVersion.Soap11)
+			{
+				writer.WriteStartElement("s", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
+			}
+			else
+			{
+				writer.WriteStartElement("s", "Envelope", "http://www.w3.org/2003/05/soap-envelope");
+			}
+
+			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+			writer.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+		}
+
+		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
+		{
+			_message.WriteBodyContents(writer);
 		}
 	}
 }

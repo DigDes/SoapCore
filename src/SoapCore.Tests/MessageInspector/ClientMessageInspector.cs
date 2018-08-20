@@ -8,7 +8,7 @@ namespace SoapCore.Tests.MessageInspector
 {
 	public class ClientMessageInspector : IClientMessageInspector
 	{
-		private Dictionary<string, object> _customHeaders;
+		private readonly Dictionary<string, object> _customHeaders;
 
 		public ClientMessageInspector(Dictionary<string, object> customHeaders)
 		{
@@ -26,6 +26,7 @@ namespace SoapCore.Tests.MessageInspector
 				var header = MessageHeader.CreateHeader(kvp.Key, "SoapCore", kvp.Value);
 				request.Headers.Add(header);
 			}
+
 			return Guid.NewGuid();
 		}
 	}

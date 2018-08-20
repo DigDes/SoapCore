@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
 {
@@ -23,27 +24,6 @@ namespace SoapCore.Tests
 
 				host.Run();
 			}).Wait(1000);
-		}
-
-		private ITestService CreateClient(bool caseInsensitivePath = false)
-		{
-			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(
-				string.Format("http://{0}:5050/{1}.svc", "localhost", caseInsensitivePath ? "serviceci" : "Service")));
-			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
-			var serviceClient = channelFactory.CreateChannel();
-			return serviceClient;
-		}
-
-		private ITestService CreateSoap12Client()
-		{
-			var transport = new HttpTransportBindingElement();
-			var textencoding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
-			var binding = new CustomBinding(textencoding, transport);
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
-			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
-			var serviceClient = channelFactory.CreateChannel();
-			return serviceClient;
 		}
 
 		[TestMethod]
@@ -174,6 +154,27 @@ namespace SoapCore.Tests
 			});
 			Assert.IsNotNull(e.Detail);
 			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
+		}
+
+		private ITestService CreateClient(bool caseInsensitivePath = false)
+		{
+			var binding = new BasicHttpBinding();
+			var endpoint = new EndpointAddress(new Uri(
+				string.Format("http://{0}:5050/{1}.svc", "localhost", caseInsensitivePath ? "serviceci" : "Service")));
+			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+			var serviceClient = channelFactory.CreateChannel();
+			return serviceClient;
+		}
+
+		private ITestService CreateSoap12Client()
+		{
+			var transport = new HttpTransportBindingElement();
+			var textencoding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
+			var binding = new CustomBinding(textencoding, transport);
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
+			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+			var serviceClient = channelFactory.CreateChannel();
+			return serviceClient;
 		}
 	}
 }

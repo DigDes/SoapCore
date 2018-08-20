@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests.ModelBindingFilter
 {
 	public class TestModelBindingFilter : IModelBindingFilter
 	{
-		public List<Type> ModelTypes { get; set; }
-
 		public TestModelBindingFilter(List<Type> modelTypes)
 		{
 			ModelTypes = modelTypes;
 		}
+
+		public List<Type> ModelTypes { get; set; }
 
 		public void OnModelBound(object model, IServiceProvider serviceProvider, out object result)
 		{

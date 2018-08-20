@@ -8,14 +8,21 @@ namespace SoapCore
 {
 	public static class SoapEndpointExtensions
 	{
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path,
-			MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer,
+		public static IApplicationBuilder UseSoapEndpoint<T>(
+			this IApplicationBuilder builder,
+			string path,
+			MessageEncoder encoder,
+			SoapSerializer serializer = SoapSerializer.DataContractSerializer,
 			bool caseInsensitivePath = false)
 		{
 			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer, caseInsensitivePath);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer,
+		public static IApplicationBuilder UseSoapEndpoint<T>(
+			this IApplicationBuilder builder,
+			string path,
+			Binding binding,
+			SoapSerializer serializer = SoapSerializer.DataContractSerializer,
 			bool caseInsensitivePath = false)
 		{
 			var element = binding.CreateBindingElements().Find<MessageEncodingBindingElement>();
@@ -42,12 +49,14 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
-		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password) {
+		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password)
+		{
 			serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
 			return serviceCollection;
 		}
 
-		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter) {
+		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter)
+		{
 			serviceCollection.TryAddSingleton(modelBindingFilter);
 			return serviceCollection;
 		}
