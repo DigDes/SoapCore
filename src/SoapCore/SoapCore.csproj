@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
@@ -18,12 +18,30 @@
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
+		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
+	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	  <WarningsAsErrors />
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="stylecop.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AdditionalFiles Include="stylecop.json" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.0.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.1" />
+		<PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="System.ServiceModel.Primitives" Version="4.5.0" />
 		<PackageReference Include="System.ServiceModel.Http" Version="4.4.0" />
 		<PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />

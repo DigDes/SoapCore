@@ -8,8 +8,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.Tests", "SoapCore.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.Benchmark", "SoapCore.Benchmark\SoapCore.Benchmark.csproj", "{B54A69DB-ADA2-48E0-A0D7-7649EDA987E1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoapCore.BenchmarkOld", "SoapCore.BenchmarkOld\SoapCore.BenchmarkOld.csproj", "{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,18 +54,6 @@ Global
 		{B54A69DB-ADA2-48E0-A0D7-7649EDA987E1}.Release|x64.Build.0 = Release|Any CPU
 		{B54A69DB-ADA2-48E0-A0D7-7649EDA987E1}.Release|x86.ActiveCfg = Release|Any CPU
 		{B54A69DB-ADA2-48E0-A0D7-7649EDA987E1}.Release|x86.Build.0 = Release|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Debug|x64.Build.0 = Debug|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Debug|x86.Build.0 = Debug|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x64.ActiveCfg = Release|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x64.Build.0 = Release|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x86.ActiveCfg = Release|Any CPU
-		{B7C65BEC-2CD6-49AD-BCD0-F9D12BF1BF91}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -13,7 +13,6 @@ namespace SoapCore.Tests.MessageFilter
 	[TestClass]
 	public class RawMessageFilterTests
 	{
-
 		private static TestServer host;
 
 		[ClassInitialize]
@@ -45,14 +44,14 @@ namespace SoapCore.Tests.MessageFilter
 </soapenv:Envelope>
 ";
 			using (var client = host.CreateClient())
-			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml")) {
+			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
+			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using (var res = host.CreateRequest("/Service.svc")
-					.And(msg => msg.Content = content)
-					.PostAsync().Result
-				) {
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				{
 					Assert.IsFalse(res.IsSuccessStatusCode);
-					Task.Run(async () => {
+					Task.Run(async () =>
+					{
 						var response = await res.Content.ReadAsStringAsync();
 						Assert.IsTrue(response.Contains("faultcode"));
 						Assert.IsTrue(response.Contains("faultstring"));
@@ -62,7 +61,8 @@ namespace SoapCore.Tests.MessageFilter
 		}
 
 		[TestMethod]
-		public void PingWithWsSecurity() {
+		public void PingWithWsSecurity()
+		{
 			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soapenv:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Header>
@@ -81,14 +81,14 @@ namespace SoapCore.Tests.MessageFilter
 </soapenv:Envelope>
 ";
 			using (var client = host.CreateClient())
-			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml")) {
+			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
+			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using (var res = host.CreateRequest("/Service.svc")
-					.And(msg => msg.Content = content)
-					.PostAsync().Result
-				) {
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				{
 					Assert.IsTrue(res.IsSuccessStatusCode);
-					Task.Run(async () => {
+					Task.Run(async () =>
+					{
 						var response = await res.Content.ReadAsStringAsync();
 						Assert.IsFalse(response.Contains("faultcode"));
 						Assert.IsFalse(response.Contains("faultstring"));
@@ -98,7 +98,8 @@ namespace SoapCore.Tests.MessageFilter
 		}
 
 		[TestMethod]
-		public void PingWithInvalidWsSecurity() {
+		public void PingWithInvalidWsSecurity()
+		{
 			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soapenv:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Header>
@@ -117,14 +118,14 @@ namespace SoapCore.Tests.MessageFilter
 </soapenv:Envelope>
 ";
 			using (var client = host.CreateClient())
-			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml")) {
+			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
+			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using (var res = host.CreateRequest("/Service.svc")
-					.And(msg => msg.Content = content)
-					.PostAsync().Result
-				) {
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				{
 					Assert.IsFalse(res.IsSuccessStatusCode);
-					Task.Run(async () => {
+					Task.Run(async () =>
+					{
 						var response = await res.Content.ReadAsStringAsync();
 						Assert.IsTrue(response.Contains("faultcode"));
 						Assert.IsTrue(response.Contains("faultstring"));
@@ -132,6 +133,5 @@ namespace SoapCore.Tests.MessageFilter
 				}
 			}
 		}
-
 	}
 }

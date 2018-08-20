@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.ServiceModel;
@@ -7,12 +7,6 @@ namespace SoapCore
 {
 	public class ContractDescription
 	{
-		public ServiceDescription Service { get; private set; }
-		public string Name { get; private set; }
-		public string Namespace { get; private set; }
-		public Type ContractType { get; private set; }
-		public IEnumerable<OperationDescription> Operations { get; private set; }
-
 		public ContractDescription(ServiceDescription service, Type contractType, ServiceContractAttribute attribute)
 		{
 			Service = service;
@@ -28,7 +22,14 @@ namespace SoapCore
 					operations.Add(new OperationDescription(this, operationMethodInfo, operationContract));
 				}
 			}
+
 			Operations = operations;
 		}
+
+		public ServiceDescription Service { get; private set; }
+		public string Name { get; private set; }
+		public string Namespace { get; private set; }
+		public Type ContractType { get; private set; }
+		public IEnumerable<OperationDescription> Operations { get; private set; }
 	}
 }

@@ -1,41 +1,58 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+	<PropertyGroup>
+		<TargetFramework>netcoreapp2.0</TargetFramework>
+		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
 
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.0.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
-    <PackageReference Include="System.ServiceModel.Http" Version="4.4.1" />
-    <PackageReference Include="DeepEqual" Version="1.6.0.0" />
-    <PackageReference Include="Moq" Version="4.9.0" />
-    <PackageReference Include="Shouldly" Version="3.0.0" />
-    <PackageReference Include="xunit" Version="2.4.0" />
-    <PackageReference Include="xunit.runner.console" Version="2.4.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="stylecop.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Serialization\" />
-    <Folder Include="Serialization\Models.DataContract\" />
-    <Folder Include="Serialization\Models.Models.Xml\" />
-  </ItemGroup>
+	<ItemGroup>
+		<AdditionalFiles Include="stylecop.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SoapCore\SoapCore.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="DeepEqual.SuperJMN" Version="2.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.0.2" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
+		<PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="System.ServiceModel.Http" Version="4.4.1" />
+		<PackageReference Include="Moq" Version="4.9.0" />
+		<PackageReference Include="Shouldly" Version="3.0.0" />
+		<PackageReference Include="xunit" Version="2.4.0" />
+		<PackageReference Include="xunit.runner.console" Version="2.4.0" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ContentWithTargetPath Include="Serialization\xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <TargetPath>xunit.runner.json</TargetPath>
-    </ContentWithTargetPath>
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Serialization\" />
+		<Folder Include="Serialization\Models.DataContract\" />
+		<Folder Include="Serialization\Models.Models.Xml\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SoapCore\SoapCore.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ContentWithTargetPath Include="Serialization\xunit.runner.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>xunit.runner.json</TargetPath>
+		</ContentWithTargetPath>
+	</ItemGroup>
 </Project>

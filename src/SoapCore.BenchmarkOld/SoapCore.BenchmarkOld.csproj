@@ -5,11 +5,19 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <CodeAnalysisRuleSet />
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <CodeAnalysisRuleSet />
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="SoapCore" Version="0.9.7" />
   </ItemGroup>
 	<ItemGroup>
-		<Compile Include="../SoapCore.Benchmark.Shared/*.cs"/>
+		<Compile Include="../SoapCore.Benchmark.Shared/*.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Include="BenchmarkDotNet" Version="0.10.13" />

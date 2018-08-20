@@ -4,7 +4,6 @@ using System.Runtime.Serialization;
 namespace SoapCore.Tests.Serialization.Models.DataContract
 {
 	// same as ComplexModel1, just for testing
-
 	[DataContract]
 	public class ComplexModel2
 	{
@@ -35,7 +34,7 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 				StringProperty = $"{nameof(ComplexModel2)} sample one",
 				FloatProperty = 1.11F,
 				IntProperty = 11,
-				ListProperty = new List<string> {"one2"},
+				ListProperty = new List<string> { "one2" },
 				EnumProperty = SampleEnum.D,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample1(),
 				ComplexListProperty = new List<ComplexObject>
@@ -50,7 +49,7 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 				StringProperty = $"{nameof(ComplexModel2)} sample two",
 				FloatProperty = 2.22F,
 				IntProperty = 22,
-				ListProperty = new List<string> {"one2", "two2"},
+				ListProperty = new List<string> { "one2", "two2" },
 				EnumProperty = SampleEnum.B,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample2(),
 				ComplexListProperty = new List<ComplexObject>
@@ -66,7 +65,7 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 				StringProperty = $"{nameof(ComplexModel2)} sample three",
 				FloatProperty = 3.33F,
 				IntProperty = 33,
-				ListProperty = new List<string> {"one2", "two2", "three2"},
+				ListProperty = new List<string> { "one2", "two2", "three2" },
 				EnumProperty = SampleEnum.C,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample3(),
 				ComplexListProperty = new List<ComplexObject>

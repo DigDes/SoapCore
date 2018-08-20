@@ -2,32 +2,44 @@ using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Moq;
 using Shouldly;
-using Xunit;
-
 using SoapCore.Tests.Serialization.Models.Xml;
+using Xunit;
 
 namespace SoapCore.Tests.Serialization
 {
 	[Collection("serialization")]
 	public class XmlSerializationTests : IClassFixture<ServiceFixture<ISampleService>>
 	{
-		private readonly ServiceFixture<ISampleService> fixture;
+		private readonly ServiceFixture<ISampleService> _fixture;
 
 		public XmlSerializationTests(ServiceFixture<ISampleService> fixture)
 		{
-			this.fixture = fixture;
+			_fixture = fixture;
 		}
+
+		private delegate void PingComplexModelOutAndRefCallback(
+			ComplexModel1 inputModel,
+			ref ComplexModel2 responseModelRef1,
+			ComplexObject data1,
+			ref ComplexModel1 responseModelRef2,
+			ComplexObject data2,
+			out ComplexModel2 responseModelOut1,
+			out ComplexModel1 responseModelOut2);
+
+		private delegate void EnumMethodCallback(out SampleEnum e);
+
+		private delegate void VoidMethodCallback(out string s);
 
 		[Theory]
 		[MemberData(nameof(ServiceFixture<ISampleService>.SoapSerializersList), MemberType = typeof(ServiceFixture<ISampleService>))]
 		public void TestPingSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
 			const string input_value = "input_value";
 			const string output_value = "output_value";
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.Ping(It.IsAny<string>()))
 				.Callback(
 					(string s_service) =>
@@ -43,17 +55,15 @@ namespace SoapCore.Tests.Serialization
 			pingResult_client.ShouldBe(output_value);
 		}
 
-		delegate void EnumMethodCallback(out SampleEnum e);
-
 		[Theory]
 		[MemberData(nameof(ServiceFixture<ISampleService>.SoapSerializersList), MemberType = typeof(ServiceFixture<ISampleService>))]
 		public void TestEnumMethodSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
 			const SampleEnum output_value = SampleEnum.C;
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.EnumMethod(out It.Ref<SampleEnum>.IsAny))
 				.Callback(new EnumMethodCallback(
 					(out SampleEnum e_service) =>
@@ -70,17 +80,15 @@ namespace SoapCore.Tests.Serialization
 			e_client.ShouldBe(output_value);
 		}
 
-		delegate void VoidMethodCallback(out string s);
-
 		[Theory]
 		[MemberData(nameof(ServiceFixture<ISampleService>.SoapSerializersList), MemberType = typeof(ServiceFixture<ISampleService>))]
 		public void TestVoidMethodSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
 			const string output_value = "output_value";
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.VoidMethod(out It.Ref<string>.IsAny))
 				.Callback(new VoidMethodCallback(
 					(out string s_service) =>
@@ -99,11 +107,11 @@ namespace SoapCore.Tests.Serialization
 		[MemberData(nameof(ServiceFixture<ISampleService>.SoapSerializersList), MemberType = typeof(ServiceFixture<ISampleService>))]
 		public async Task TestAsyncMethodSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
 			const int output_value = 123;
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.AsyncMethod())
 				.Returns(() => Task.Run(() => output_value));
 
@@ -122,9 +130,9 @@ namespace SoapCore.Tests.Serialization
 		[InlineData(SoapSerializer.DataContractSerializer, false, 2)]
 		public void TestNullableMethodSerialization(SoapSerializer soapSerializer, bool? input_value, int? output_value)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.NullableMethod(It.IsAny<bool?>()))
 				.Callback(
 					(bool? arg_service) =>
@@ -140,14 +148,14 @@ namespace SoapCore.Tests.Serialization
 			nullableMethodResult_client.ShouldBe(output_value);
 		}
 
-		[Theory]
 		// not compatible with DataContractSerializer
+		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingComplexModelSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.PingComplexModel(It.IsAny<ComplexModel2>()))
 				.Callback(
 					(ComplexModel2 inputModel_service) =>
@@ -165,23 +173,14 @@ namespace SoapCore.Tests.Serialization
 			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel1.CreateSample3());
 		}
 
-		delegate void PingComplexModelOutAndRefCallback(
-			ComplexModel1 inputModel,
-			ref ComplexModel2 responseModelRef1,
-			ComplexObject data1,
-			ref ComplexModel1 responseModelRef2,
-			ComplexObject data2,
-			out ComplexModel2 responseModelOut1,
-			out ComplexModel1 responseModelOut2);
-
+		//not compatible with DataContractSerializer
 		[Theory]
-		// not compatible with DataContractSerializer
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingComplexModelOutAndRefSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.PingComplexModelOutAndRef(
 					It.IsAny<ComplexModel1>(),
 					ref It.Ref<ComplexModel2>.IsAny,
@@ -191,7 +190,8 @@ namespace SoapCore.Tests.Serialization
 					out It.Ref<ComplexModel2>.IsAny,
 					out It.Ref<ComplexModel1>.IsAny))
 				.Callback(new PingComplexModelOutAndRefCallback(
-					(ComplexModel1 inputModel_service,
+					(
+						ComplexModel1 inputModel_service,
 						ref ComplexModel2 responseModelRef1_service,
 						ComplexObject data1_service,
 						ref ComplexModel1 responseModelRef2_service,
@@ -205,7 +205,8 @@ namespace SoapCore.Tests.Serialization
 						responseModelRef2_service.ShouldDeepEqual(ComplexModel1.CreateSample2());
 						data1_service.ShouldDeepEqual(ComplexObject.CreateSample1());
 						data2_service.ShouldDeepEqual(ComplexObject.CreateSample2());
-						// sample response
+
+						//sample response
 						responseModelRef1_service = ComplexModel2.CreateSample2();
 						responseModelRef2_service = ComplexModel1.CreateSample1();
 						responseModelOut1_service = ComplexModel2.CreateSample3();
@@ -234,45 +235,45 @@ namespace SoapCore.Tests.Serialization
 			responseModelOut2_client.ShouldDeepEqual(ComplexModel1.CreateSample1());
 		}
 
+		//not compatible with DataContractSerializer
 		[Theory]
-		// not compatible with DataContractSerializer
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingComplexModelOldStyleSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.PingComplexModelOldStyle(It.IsAny<PingComplexModelOldStyleRequest>()))
 				.Callback(
 					(PingComplexModelOldStyleRequest request_service) =>
 					{
 						// check input paremeters serialization
-						request_service.inputModel.ShouldDeepEqual(ComplexModel1.CreateSample2());
-						request_service.responseModelRef1.ShouldDeepEqual(ComplexModel2.CreateSample1());
-						request_service.responseModelRef2.ShouldDeepEqual(ComplexModel1.CreateSample2());
-						request_service.data1.ShouldDeepEqual(ComplexObject.CreateSample1());
-						request_service.data2.ShouldDeepEqual(ComplexObject.CreateSample2());
+						request_service.InputModel.ShouldDeepEqual(ComplexModel1.CreateSample2());
+						request_service.ResponseModelRef1.ShouldDeepEqual(ComplexModel2.CreateSample1());
+						request_service.ResponseModelRef2.ShouldDeepEqual(ComplexModel1.CreateSample2());
+						request_service.Data1.ShouldDeepEqual(ComplexObject.CreateSample1());
+						request_service.Data2.ShouldDeepEqual(ComplexObject.CreateSample2());
 					})
 				.Returns(
 					() => new PingComplexModelOldStyleResponse
 					{
 						// sample response
 						PingComplexModelOldStyleResult = true,
-						responseModelRef1 = ComplexModel2.CreateSample2(),
-						responseModelRef2 = ComplexModel1.CreateSample1(),
-						responseModelOut1 = ComplexModel2.CreateSample3(),
-						responseModelOut2 = ComplexModel1.CreateSample1()
+						ResponseModelRef1 = ComplexModel2.CreateSample2(),
+						ResponseModelRef2 = ComplexModel1.CreateSample1(),
+						ResponseModelOut1 = ComplexModel2.CreateSample3(),
+						ResponseModelOut2 = ComplexModel1.CreateSample1()
 					});
 
 			var pingComplexModelOldStyleResult_client =
 				sampleServiceClient.PingComplexModelOldStyle(
 					new PingComplexModelOldStyleRequest
 					{
-						inputModel = ComplexModel1.CreateSample2(),
-						responseModelRef1 = ComplexModel2.CreateSample1(),
-						data1 = ComplexObject.CreateSample1(),
-						responseModelRef2 = ComplexModel1.CreateSample2(),
-						data2 = ComplexObject.CreateSample2(),
+						InputModel = ComplexModel1.CreateSample2(),
+						ResponseModelRef1 = ComplexModel2.CreateSample1(),
+						Data1 = ComplexObject.CreateSample1(),
+						ResponseModelRef2 = ComplexModel1.CreateSample2(),
+						Data2 = ComplexObject.CreateSample2()
 					});
 
 			// check output paremeters serialization
@@ -280,27 +281,27 @@ namespace SoapCore.Tests.Serialization
 				.PingComplexModelOldStyleResult
 				.ShouldBeTrue();
 			pingComplexModelOldStyleResult_client
-				.responseModelRef1
+				.ResponseModelRef1
 				.ShouldDeepEqual(ComplexModel2.CreateSample2());
 			pingComplexModelOldStyleResult_client
-				.responseModelRef2
+				.ResponseModelRef2
 				.ShouldDeepEqual(ComplexModel1.CreateSample1());
 			pingComplexModelOldStyleResult_client
-				.responseModelOut1
+				.ResponseModelOut1
 				.ShouldDeepEqual(ComplexModel2.CreateSample3());
 			pingComplexModelOldStyleResult_client
-				.responseModelOut2
+				.ResponseModelOut2
 				.ShouldDeepEqual(ComplexModel1.CreateSample1());
 		}
 
+		//not compatible with DataContractSerializer
 		[Theory]
-		// not compatible with DataContractSerializer
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestEmptyParamsMethodSerialization(SoapSerializer soapSerializer)
 		{
-			var sampleServiceClient = this.fixture.GetSampleServiceClient(soapSerializer);
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
-			this.fixture.serviceMock
+			_fixture.ServiceMock
 				.Setup(x => x.EmptyParamsMethod())
 				.Returns(ComplexModel1.CreateSample2);
 

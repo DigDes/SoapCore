@@ -8,6 +8,16 @@ namespace SoapCore
 {
 	public class Fault
 	{
+		public Fault(object detailObject) : this()
+		{
+			Details = SerializeDetails(detailObject);
+		}
+
+		public Fault()
+		{
+			FaultCode = "s:Client";
+		}
+
 		[XmlElement(ElementName = "faultcode")]
 		public string FaultCode { get; set; }
 
@@ -17,20 +27,13 @@ namespace SoapCore
 		[XmlElement(ElementName = "detail")]
 		public XmlElement Details { get; set; }
 
-		public Fault()
-		{
-			FaultCode = "s:Client";
-		}
-
-		public Fault(object detailObject) : this()
-		{
-			Details = SerializeDetails(detailObject);
-		}
-
 		private XmlElement SerializeDetails(object detailObject)
 		{
-			if (detailObject == null) return null;
-			
+			if (detailObject == null)
+			{
+				return null;
+			}
+
 			using (var ms = new MemoryStream())
 			{
 				var serializer = new DataContractSerializer(detailObject.GetType());
