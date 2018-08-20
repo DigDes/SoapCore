@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Sockets;
 using System.ServiceModel;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
@@ -30,7 +31,10 @@ namespace SoapCore.Tests.Serialization
 			= new Dictionary<SoapSerializer, IService>();
 
 		public IService GetSampleServiceClient(SoapSerializer soapSerializer)
-			=> sampleServiceClients[soapSerializer];
+		{
+			WaitForServerStarted();
+			return sampleServiceClients[soapSerializer];
+		}
 
 		public ServiceFixture()
 		{
@@ -56,7 +60,7 @@ namespace SoapCore.Tests.Serialization
 				.Build();
 
 #pragma warning disable 4014
-			host.RunAsync().Wait(1000);
+			host.RunAsync();
 #pragma warning restore 4014
 
 			// make service client
@@ -78,6 +82,22 @@ namespace SoapCore.Tests.Serialization
 		public void Dispose()
 		{
 			this.host.StopAsync().GetAwaiter().GetResult();
+		}
+
+		private void WaitForServerStarted()
+		{
+			using (var client = new TcpClient())
+			{
+				for (var i = 0; i < 10 && !client.Connected; i++)
+					try
+					{
+						client.Connect("localhost", Port);
+					}
+					catch
+					{
+						Thread.Sleep(1000);
+					}
+			}
 		}
 	}
 }
