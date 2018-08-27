@@ -23,8 +23,8 @@ namespace Server
 				FloatProperty = float.MaxValue / 2,
 				StringProperty = inputModel.StringProperty,
 				ListProperty = inputModel.ListProperty,
-                //DateTimeOffsetProperty = inputModel.DateTimeOffsetProperty
-            };
+				DateTimeOffsetProperty = inputModel.DateTimeOffsetProperty
+			};
 		}
 
 		public void VoidMethod(out string s)

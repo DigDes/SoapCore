@@ -10,10 +10,19 @@ namespace SoapCore.Tests.MessageInspector
 		public static bool BeforeSendReplyCalled { get; private set; }
 		public static Message LastReceivedMessage { get; private set; }
 
+		public static void Reset()
+		{
+			LastReceivedMessage = null;
+			AfterReceivedRequestCalled = false;
+			BeforeSendReplyCalled = false;
+		}
+
 		public object AfterReceiveRequest(ref Message message)
 		{
 			if (message == null)
+			{
 				throw new System.ArgumentNullException(nameof(message));
+			}
 
 			LastReceivedMessage = message;
 			AfterReceivedRequestCalled = true;
@@ -47,10 +56,14 @@ namespace SoapCore.Tests.MessageInspector
 		public void BeforeSendReply(ref Message reply, object correlationState)
 		{
 			if (reply == null)
+			{
 				throw new System.ArgumentNullException(nameof(reply));
+			}
 
 			if (correlationState == null)
+			{
 				throw new System.ArgumentNullException(nameof(correlationState));
+			}
 
 			if (correlationState is CorrelationStateMessage state)
 			{
@@ -61,13 +74,6 @@ namespace SoapCore.Tests.MessageInspector
 			}
 
 			BeforeSendReplyCalled = true;
-		}
-
-		public static void Reset()
-		{
-			LastReceivedMessage = null;
-			AfterReceivedRequestCalled = false;
-			BeforeSendReplyCalled = false;
 		}
 
 		internal class CorrelationStateMessage

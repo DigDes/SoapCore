@@ -4,6 +4,7 @@ using System.ServiceModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests.ModelBindingFilter
 {
@@ -13,7 +14,8 @@ namespace SoapCore.Tests.ModelBindingFilter
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
 		{
-			Task.Run(() => {
+			Task.Run(() =>
+			{
 				var host = new WebHostBuilder()
 					.UseKestrel()
 					.UseUrls("http://localhost:5053")
@@ -35,7 +37,8 @@ namespace SoapCore.Tests.ModelBindingFilter
 		[TestMethod]
 		public void ModelWasAlteredInModelBindingFilter()
 		{
-			var inputModel = new ComplexModelInputForModelBindingFilter {
+			var inputModel = new ComplexModelInputForModelBindingFilter
+			{
 				StringProperty = "string property test value",
 				IntProperty = 123,
 				ListProperty = new List<string> { "test", "list", "of", "strings" },
@@ -51,7 +54,8 @@ namespace SoapCore.Tests.ModelBindingFilter
 		[TestMethod]
 		public void ModelWasNotAlteredInModelBindingFilter()
 		{
-			var inputModel = new ComplexModelInput {
+			var inputModel = new ComplexModelInput
+			{
 				StringProperty = "string property test value",
 				IntProperty = 123,
 				ListProperty = new List<string> { "test", "list", "of", "strings" },

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,10 +8,6 @@ namespace SoapCore
 {
 	public class ServiceDescription
 	{
-		public Type ServiceType { get; private set; }
-		public IEnumerable<ContractDescription> Contracts { get; private set; }
-		public IEnumerable<OperationDescription> Operations => Contracts.SelectMany(c => c.Operations);
-
 		public ServiceDescription(Type serviceType)
 		{
 			ServiceType = serviceType;
@@ -30,5 +26,9 @@ namespace SoapCore
 
 			Contracts = contracts;
 		}
+
+		public Type ServiceType { get; private set; }
+		public IEnumerable<ContractDescription> Contracts { get; private set; }
+		public IEnumerable<OperationDescription> Operations => Contracts.SelectMany(c => c.Operations);
 	}
 }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace SoapCore.Tests
+namespace SoapCore.Tests.Model
 {
 	[DataContract]
 	public class ComplexModelInput
@@ -19,7 +19,4 @@ namespace SoapCore.Tests
 		[DataMember]
 		public DateTimeOffset DateTimeOffsetProperty { get; set; }
 	}
-
-	[DataContract]
-	public class ComplexModelInputForModelBindingFilter : ComplexModelInput { }
 }

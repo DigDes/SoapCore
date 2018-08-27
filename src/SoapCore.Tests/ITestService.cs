@@ -1,6 +1,7 @@
 using System.ServiceModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
 {
@@ -51,6 +52,10 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		void ThrowExceptionWithMessage(string message);
+
+		[OperationContract]
+		[FaultContract(typeof(FaultDetail))]
+		void ThrowDetailedFault(string detailMessage);
 
 		[OperationContract]
 		[ServiceFilter(typeof(ActionFilter.TestActionFilter))]

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://tempuri.org/" name="SampleService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://tempuri.org/" name="ISampleService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
   <wsdl:types>
     <xs:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
       <xs:import namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
@@ -39,7 +39,9 @@
       </xs:element>
       <xs:element name="VoidMethodResponse">
         <xs:complexType>
-          <xs:sequence />
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="1" name="s" type="xs:string" />
+          </xs:sequence>
         </xs:complexType>
       </xs:element>
       <xs:element name="AsyncMethod">
@@ -72,7 +74,7 @@
         <xs:sequence>
           <xs:element minOccurs="0" maxOccurs="1" name="StringProperty" type="xs:string" />
           <xs:element minOccurs="1" maxOccurs="1" name="IntProperty" type="xs:int" />
-          <xs:element xmlns:q3="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" maxOccurs="1" name="ListProperty" nillable="true" type="q3:ArrayOfstring" />
+          <xs:element xmlns:q1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" maxOccurs="1" name="ListProperty" nillable="true" type="q1:ArrayOfstring" />
           <xs:element xmlns:nsdto="http://schemas.datacontract.org/2004/07/System" minOccurs="1" maxOccurs="1" name="DateTimeOffsetProperty" type="nsdto:DateTimeOffset" />
           <xs:element minOccurs="0" maxOccurs="1" name="ComplexListProperty" nillable="true" type="tns:ArrayOfComplexObject" />
         </xs:sequence>
@@ -82,7 +84,7 @@
         <xs:sequence>
           <xs:element minOccurs="1" maxOccurs="1" name="FloatProperty" type="xs:float" />
           <xs:element minOccurs="0" maxOccurs="1" name="StringProperty" type="xs:string" />
-          <xs:element xmlns:q4="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" maxOccurs="1" name="ListProperty" nillable="true" type="q4:ArrayOfstring" />
+          <xs:element xmlns:q2="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" maxOccurs="1" name="ListProperty" nillable="true" type="q2:ArrayOfstring" />
           <xs:element xmlns:nsdto="http://schemas.datacontract.org/2004/07/System" minOccurs="1" maxOccurs="1" name="DateTimeOffsetProperty" type="nsdto:DateTimeOffset" />
         </xs:sequence>
       </xs:complexType>
@@ -225,7 +227,7 @@
       </wsdl:output>
     </wsdl:operation>
   </wsdl:binding>
-  <wsdl:service name="SampleService">
+  <wsdl:service name="ISampleService">
     <wsdl:port name="BasicHttpBinding_ISampleService" binding="tns:BasicHttpBinding_ISampleService">
       <soap:address location="http://localhost:5050/Service.asmx" />
     </wsdl:port>

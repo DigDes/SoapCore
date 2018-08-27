@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.ServiceModel.Channels;
 using System.Xml;
 using System.Xml.Serialization;
@@ -29,6 +29,7 @@ namespace SoapCore
 					writer.WriteRaw(value);
 				}
 			}
+
 			writer.WriteEndElement();
 		}
 	}

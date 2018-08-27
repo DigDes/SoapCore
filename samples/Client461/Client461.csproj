@@ -63,6 +63,9 @@
     <None Include="Connected Services\SampleService\ConsoleApp1.SampleService.PingResponse.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Connected Services\SampleService\ConsoleApp1.SampleService.VoidMethodResponse.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Connected Services\SampleService\SampleService.wsdl" />
   </ItemGroup>
   <ItemGroup>

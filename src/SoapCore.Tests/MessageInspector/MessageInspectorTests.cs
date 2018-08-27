@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests.MessageInspector
 {
@@ -82,9 +83,11 @@ namespace SoapCore.Tests.MessageInspector
 		[TestMethod]
 		public void ComplexSoapHeader()
 		{
-			var client = CreateClient(new Dictionary<string, object>() {
+			var client = CreateClient(new Dictionary<string, object>()
+			{
 				{
-					"complex", new ComplexModelInput() {
+					"complex", new ComplexModelInput()
+					{
 						StringProperty = "hello, world",
 						IntProperty = 1000,
 						ListProperty = new List<string> { "test", "list", "of", "strings" },

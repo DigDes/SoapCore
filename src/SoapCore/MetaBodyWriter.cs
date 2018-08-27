@@ -13,12 +13,15 @@ namespace SoapCore
 {
 	public class MetaBodyWriter : BodyWriter
 	{
+#pragma warning disable SA1310 // Field names must not contain underscore
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
 		private const string TRANSPORT_SCHEMA = "http://schemas.xmlsoap.org/soap/http";
+#pragma warning restore SA1310 // Field names must not contain underscore
+
+		private static int _namespaceCounter = 1;
 
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
-		private bool _buildDateTimeOffset;
 
 		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<Type> _complexTypeToBuild;
@@ -28,10 +31,7 @@ namespace SoapCore
 		private readonly HashSet<string> _builtComplexTypes;
 		private readonly HashSet<string> _buildArrayTypes;
 
-		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
-		private string BindingType => _service.Contracts.First().Name;
-		private string PortName => "BasicHttpBinding_" + _service.Contracts.First().Name;
-		private string TargetNameSpace => _service.Contracts.First().Namespace;
+		private bool _buildDateTimeOffset;
 
 		public MetaBodyWriter(ServiceDescription service, string baseUrl) : base(isBuffered: true)
 		{
@@ -46,6 +46,11 @@ namespace SoapCore
 			_buildArrayTypes = new HashSet<string>();
 		}
 
+		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private string BindingType => _service.Contracts.First().Name;
+		private string PortName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private string TargetNameSpace => _service.Contracts.First().Namespace;
+
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
 			AddTypes(writer);
@@ -57,6 +62,18 @@ namespace SoapCore
 			AddBinding(writer);
 
 			AddService(writer);
+		}
+
+		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos)
+		{
+			foreach (var parameterInfo in parameterInfos)
+			{
+				var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
+				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+										? elementAttribute.ElementName
+										: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
+				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
+			}
 		}
 
 		private void AddTypes(XmlDictionaryWriter writer)
@@ -82,21 +99,13 @@ namespace SoapCore
 				writer.WriteStartElement("xs:complexType");
 				writer.WriteStartElement("xs:sequence");
 
-				foreach (var parameter in operation.DispatchMethod.GetParameters().Where(x => !x.IsOut && !x.ParameterType.IsByRef))
-				{
-					var elementAttribute = parameter.GetCustomAttribute<XmlElementAttribute>();
-					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
-						                    ? elementAttribute.ElementName
-						                    : parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameter.Name;
-					AddSchemaType(writer, parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
-				}
+				WriteParameters(writer, operation.InParameters);
 
 				writer.WriteEndElement(); // xs:sequence
 				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:element
 
 				// output parameter / return of operation
-
 				writer.WriteStartElement("xs:element");
 				writer.WriteAttributeString("name", operation.Name + "Response");
 				writer.WriteStartElement("xs:complexType");
@@ -109,8 +118,11 @@ namespace SoapCore
 					{
 						returnType = returnType.GetGenericArguments().First();
 					}
+
 					AddSchemaType(writer, returnType, operation.Name + "Result");
 				}
+
+				WriteParameters(writer, operation.OutParameters);
 
 				writer.WriteEndElement(); // xs:sequence
 				writer.WriteEndElement(); // xs:complexType
@@ -140,6 +152,7 @@ namespace SoapCore
 					{
 						writer.WriteAttributeString("name", toBuildName);
 					}
+
 					writer.WriteStartElement("xs:sequence");
 
 					if (toBuild.IsArray)
@@ -158,7 +171,7 @@ namespace SoapCore
 						}
 					}
 
-					writer.WriteEndElement(); // xs:sequence				
+					writer.WriteEndElement(); // xs:sequence
 					writer.WriteEndElement(); // xs:complexType
 
 					writer.WriteStartElement("xs:element");
@@ -174,6 +187,11 @@ namespace SoapCore
 			while (_enumToBuild.Count > 0)
 			{
 				Type toBuild = _enumToBuild.Dequeue();
+				if (toBuild.IsByRef)
+				{
+					toBuild = toBuild.GetElementType();
+				}
+
 				if (!_builtEnumTypes.Contains(toBuild.Name))
 				{
 					writer.WriteStartElement("xs:simpleType");
@@ -312,6 +330,7 @@ namespace SoapCore
 				writer.WriteEndElement(); // wsdl:output
 				writer.WriteEndElement(); // wsdl:operation
 			}
+
 			writer.WriteEndElement(); // wsdl:portType
 		}
 
@@ -370,11 +389,14 @@ namespace SoapCore
 			writer.WriteEndElement(); // wsdl:port
 		}
 
-		private static int namespaceCounter = 1;
-
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null)
 		{
 			var typeInfo = type.GetTypeInfo();
+			if (typeInfo.IsByRef)
+			{
+				type = typeInfo.GetElementType();
+			}
+
 			writer.WriteStartElement("xs:element");
 
 			// Check for null, since we may use empty NS
@@ -415,6 +437,7 @@ namespace SoapCore
 						xsTypename = ResolveType(type);
 					}
 				}
+
 				if (isArray)
 				{
 					writer.WriteAttributeString("minOccurs", "0");
@@ -426,10 +449,12 @@ namespace SoapCore
 					writer.WriteAttributeString("minOccurs", "1");
 					writer.WriteAttributeString("maxOccurs", "1");
 				}
+
 				if (string.IsNullOrEmpty(name))
 				{
 					name = xsTypename.Split(':')[1];
 				}
+
 				writer.WriteAttributeString("name", name);
 				writer.WriteAttributeString("type", xsTypename);
 			}
@@ -445,12 +470,14 @@ namespace SoapCore
 				{
 					writer.WriteAttributeString("maxOccurs", "1");
 				}
+
 				if (type.Name == "String" || type.Name == "String&")
 				{
 					if (string.IsNullOrEmpty(name))
 					{
 						name = "string";
 					}
+
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:string");
 				}
@@ -460,6 +487,7 @@ namespace SoapCore
 					{
 						name = "base64Binary";
 					}
+
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:base64Binary");
 				}
@@ -469,6 +497,7 @@ namespace SoapCore
 					{
 						name = type.Name;
 					}
+
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "tns:ArrayOf" + type.Name.Replace("[]", string.Empty));
 
@@ -482,7 +511,8 @@ namespace SoapCore
 						{
 							name = type.Name;
 						}
-						var ns = $"q{namespaceCounter++}";
+
+						var ns = $"q{_namespaceCounter++}";
 
 						writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
 						writer.WriteAttributeString("name", name);
@@ -511,6 +541,7 @@ namespace SoapCore
 					{
 						name = type.Name;
 					}
+
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "tns:" + type.Name);
 
@@ -521,10 +552,10 @@ namespace SoapCore
 			writer.WriteEndElement(); // xs:element
 		}
 
-	    private string ResolveType(Type type)
-	    {
-	        string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
-            string resolvedType = null;
+		private string ResolveType(Type type)
+		{
+			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
+			string resolvedType = null;
 
 			switch (typeName)
 			{
@@ -569,7 +600,7 @@ namespace SoapCore
 					break;
 			}
 
-			if (String.IsNullOrEmpty(resolvedType))
+			if (string.IsNullOrEmpty(resolvedType))
 			{
 				throw new ArgumentException($".NET type {typeName} cannot be resolved into XML schema type");
 			}

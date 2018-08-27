@@ -42,12 +42,14 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
-		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password) {
+		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password)
+		{
 			serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
 			return serviceCollection;
 		}
 
-		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter) {
+		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter)
+		{
 			serviceCollection.TryAddSingleton(modelBindingFilter);
 			return serviceCollection;
 		}
