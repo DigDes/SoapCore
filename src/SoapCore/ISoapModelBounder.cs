@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace SoapCore
 {
-	public interface ISoapModelValidator
+	public interface ISoapModelBounder
 	{
 		void OnModelBound(MethodInfo methodInfo, object[] prms);
 	}
