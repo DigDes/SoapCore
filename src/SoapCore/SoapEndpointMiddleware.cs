@@ -23,8 +23,9 @@ namespace SoapCore
 		private readonly MessageEncoder _messageEncoder;
 		private readonly SoapSerializer _serializer;
 		private readonly StringComparison _pathComparisonStrategy;
+		private readonly ISoapModelBounder _soapModelBounder;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder = null)
 		{
 			_logger = logger;
 			_next = next;
@@ -33,6 +34,7 @@ namespace SoapCore
 			_serializer = serializer;
 			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
+			_soapModelBounder = soapModelBounder;
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -248,6 +250,9 @@ namespace SoapCore
 						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
 						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, arguments, httpContext, modelBindingOutput });
 					}
+
+					// Invoke OnModelBound
+					_soapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
 
 					// Invoke Operation method
 					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, arguments);
