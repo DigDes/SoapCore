@@ -165,7 +165,7 @@ namespace SoapCore
 					}
 					else
 					{
-						foreach (var property in toBuild.GetProperties())
+						foreach (var property in toBuild.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType.Name == "IgnoreDataMemberAttribute")))
 						{
 							AddSchemaType(writer, property.PropertyType, property.Name);
 						}
