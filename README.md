@@ -37,6 +37,6 @@ Primary point here is to use XmlSerializer and properly markup messages and oper
 
 ### Contributing
 
-See [Contributin guide](CONTRIBUTING.md)
+See [Contributing guide](CONTRIBUTING.md)
 
 [![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
