@@ -601,6 +601,9 @@ namespace SoapCore
 				case "Guid":
 					resolvedType = "xs:string";
 					break;
+				case "Char":
+					resolvedType = "xs:string";
+					break;
 			}
 
 			if (string.IsNullOrEmpty(resolvedType))
