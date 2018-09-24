@@ -78,6 +78,11 @@ namespace SoapCore
 		private string GetSoapAction(HttpContext httpContext, Message requestMessage, System.Xml.XmlDictionaryReader reader)
 		{
 			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
+			if (soapAction == "\"\"")
+			{
+				soapAction = string.Empty;
+			}
+
 			if (string.IsNullOrEmpty(soapAction))
 			{
 				foreach (var headerItem in httpContext.Request.Headers["Content-Type"])
