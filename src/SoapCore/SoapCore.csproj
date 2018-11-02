@@ -4,7 +4,7 @@
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<VersionPrefix>0.9.8.2</VersionPrefix>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0</TargetFrameworks>
+		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
