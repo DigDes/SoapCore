@@ -481,6 +481,18 @@ namespace SoapCore
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:string");
 				}
+				else if (type == typeof(System.Xml.Linq.XElement))
+				{
+					writer.WriteAttributeString("name", name);
+
+					writer.WriteStartElement("xs:complexType");
+					writer.WriteAttributeString("mixed", "true");
+					writer.WriteStartElement("xs:sequence");
+					writer.WriteStartElement("xs:any");
+					writer.WriteEndElement();
+					writer.WriteEndElement();
+					writer.WriteEndElement();
+				}
 				else if (type.Name == "Byte[]")
 				{
 					if (string.IsNullOrEmpty(name))
