@@ -10,7 +10,7 @@ namespace SoapCore
 		public OperationDescription(ContractDescription contract, MethodInfo operationMethod, OperationContractAttribute contractAttribute)
 		{
 			Contract = contract;
-			Name = contractAttribute.Name ?? operationMethod.Name;
+			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? operationMethod.Name;
 			SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
 			IsOneWay = contractAttribute.IsOneWay;
 			IsMessageContractResponse =
@@ -64,6 +64,14 @@ namespace SoapCore
 				info.Name;
 			var parameterNs = elementAttribute?.Namespace ?? contract.Namespace;
 			return new SoapMethodParameterInfo(info, index, parameterName, parameterNs);
+		}
+
+		private static string GetNameByAction(string action)
+		{
+			var index = action?.LastIndexOf("/");
+			return (index ?? -1) > -1
+				? action.Substring(index.Value + 1, action.Length - index.Value - 1)
+				: null;
 		}
 	}
 }
