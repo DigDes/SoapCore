@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Server
 {
@@ -41,5 +42,10 @@ namespace Server
 		{
 			return null;
 		}
-	}
+
+		public void XmlMethod(XElement xml)
+		{
+			Console.WriteLine(xml.ToString());
+		}
+    }
 }
