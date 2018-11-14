@@ -1,0 +1,38 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
+using SoapCore;
+
+namespace SoapCore.Tests.ServiceOperationTuner
+{
+	public class TestServiceOperationTuner : IServiceOperationTuner
+	{
+		public static bool IsCalled { get; private set; }
+		public static bool IsSetPingValue { get; private set; }
+
+		public static void Reset()
+		{
+			IsCalled = false;
+			IsSetPingValue = false;
+		}
+
+		public void Tune(HttpContext httpContext, object serviceInstance, SoapCore.OperationDescription operation)
+		{
+			IsCalled = true;
+			if ((serviceInstance != null) && (serviceInstance is TestService)
+				&& operation.Name.Equals("PingWithServiceOperationTuning"))
+			{
+				TestService service = serviceInstance as TestService;
+				string result = string.Empty;
+
+				StringValues pingValue;
+				if (httpContext.Request.Headers.TryGetValue("ping_value", out pingValue))
+				{
+					result = pingValue[0];
+				}
+
+				service.SetPingResult(result);
+				IsSetPingValue = true;
+			}
+		}
+	}
+}
