@@ -13,6 +13,11 @@ namespace SoapCore
             Contract = contract;
             Name = contractAttribute.Name ?? operationMethod.Name;
             SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
+            if (string.IsNullOrEmpty(contract.Name))
+            {
+                SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{Name}";
+            }
+
             IsOneWay = contractAttribute.IsOneWay;
             ReplyAction = contractAttribute.ReplyAction;
             DispatchMethod = operationMethod;
