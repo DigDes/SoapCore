@@ -55,5 +55,11 @@ namespace SoapCore
 			serviceCollection.TryAddSingleton(modelBindingFilter);
 			return serviceCollection;
 		}
+
+		public static IServiceCollection AddSoapServiceOperationTuner(this IServiceCollection serviceCollection, IServiceOperationTuner serviceOperationTuner)
+		{
+			serviceCollection.TryAddSingleton(serviceOperationTuner);
+			return serviceCollection;
+		}
 	}
 }
