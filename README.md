@@ -40,3 +40,69 @@ Primary point here is to use XmlSerializer and properly markup messages and oper
 See [Contributing guide](CONTRIBUTING.md)
 
 [![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
+
+### Tips and Tricks
+
+#### How to get custom HTTP header in SopaCore service
+
+Use interface IServiceOperationTuner to tune each operation call.
+
+Create class that implements IServiceOperationTuner.
+Parameters in Tune method:
+* httpContext - current HttpContext. Can be used to get http headers or body.
+* serviceInstance - instance of your service.
+* operation - information about called operation.
+
+```csharp
+public class MyServiceOperationTuner : IServiceOperationTuner
+{
+    public void Tune(HttpContext httpContext, object serviceInstance, SoapCore.OperationDescription operation)
+    {
+        if (operation.Name.Equals("SomeOperationName"))
+        {
+            TestService service = serviceInstance as MyService;
+            string result = string.Empty;
+
+            StringValues paramValue;
+            if (httpContext.Request.Headers.TryGetValue("some_parameter", out paramValue))
+            {
+                result = paramValue[0];
+            }
+
+            service.SetParameterForSomeOperation(result);
+        }
+    }
+}
+```
+
+Register MyServiceOperationTunre in Startup class:
+
+```csharp
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // ...
+        services.AddSoapServiceOperationTuner(new MyServiceOperationTuner());
+        //...
+    }
+    // ...
+}
+```
+
+Change your service to get possibility to store information from http header:
+
+```csharp
+public class MyService : IMyServiceService
+{
+    // Use ThreadLocal or some of thread sinchronization stuff if service registered as singleton.
+    private ThreadLocal<string> _paramValue = new ThreadLocal<string>() { Value = string.Empty };
+
+    // ...
+
+    public string SomeOperationName()
+    {
+        return "Param value from http header: " + _paramValue.Value;
+    }
+}
+```
