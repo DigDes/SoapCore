@@ -99,6 +99,11 @@ public class MyService : IMyServiceService
     private ThreadLocal<string> _paramValue = new ThreadLocal<string>() { Value = string.Empty };
 
     // ...
+    
+    public void SetParameterForSomeOperation(string paramValue)
+    {
+        _paramValue.Value = paramValue;
+    }
 
     public string SomeOperationName()
     {
