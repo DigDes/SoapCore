@@ -60,7 +60,7 @@ public class MyServiceOperationTuner : IServiceOperationTuner
     {
         if (operation.Name.Equals("SomeOperationName"))
         {
-            TestService service = serviceInstance as MyService;
+            MyService service = serviceInstance as MyService;
             string result = string.Empty;
 
             StringValues paramValue;
@@ -99,6 +99,11 @@ public class MyService : IMyServiceService
     private ThreadLocal<string> _paramValue = new ThreadLocal<string>() { Value = string.Empty };
 
     // ...
+    
+    public void SetParameterForSomeOperation(string paramValue)
+    {
+        _paramValue.Value = paramValue;
+    }
 
     public string SomeOperationName()
     {
