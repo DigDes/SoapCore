@@ -56,7 +56,7 @@ namespace SoapCore
 
 		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector2 messageInspector)
 		{
-			serviceCollection.TryAddSingleton(messageInspector);
+			serviceCollection.AddSingleton(messageInspector);
 			return serviceCollection;
 		}
 

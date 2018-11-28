@@ -271,7 +271,7 @@ namespace SoapCore
 						operationTuner.Tune(httpContext, serviceInstance, operation);
 					}
 
-					var invoker = serviceProvider.GetRequiredService<IOperationInvoker>();
+					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
 					var resultOutDictionary = new Dictionary<string, object>();

@@ -17,6 +17,7 @@ In Startup.cs:
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
+    services.AddSoapCore();
     services.TryAddSingleton<ServiceContractImpl>();
 }
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -42,6 +43,12 @@ See [Contributing guide](CONTRIBUTING.md)
 [![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
 
 ### Tips and Tricks
+
+#### Extending the pipeline
+
+In your ConfigureServices method, you can register some additional items to extend the pipeline:
+* services.AddSoapMessageInspector() - add a custom MessageInspector. These function similarly to the `IDispatchMessageInspector` in WCF. The newer `IMessageInspector2` interface allows you to register multiple inspectors, and to know which service was being called.
+* services.AddSingleton<MyOperatorInvoker>() - add a custom OperationInvoker. Similar to WCF's `IOperationInvoker` this allows you to override the invoking of a service operation, commonly to add custom logging or exception handling logic around it.
 
 #### How to get custom HTTP header in SopaCore service
 
