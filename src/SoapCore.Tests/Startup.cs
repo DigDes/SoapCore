@@ -15,6 +15,7 @@ namespace SoapCore.Tests
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSoapModelBindingFilter(new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) }));
 			services.AddScoped<ActionFilter.TestActionFilter>();

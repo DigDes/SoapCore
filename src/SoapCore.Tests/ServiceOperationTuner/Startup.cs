@@ -11,6 +11,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSoapServiceOperationTuner(new TestServiceOperationTuner());
 			services.AddMvc();

@@ -36,6 +36,12 @@ namespace SoapCore
 			return builder.UseSoapEndpoint(type, path, encoder, serializer, caseInsensitivePath, soapModelBounder);
 		}
 
+		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)
+		{
+			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
+			return serviceCollection;
+		}
+
 		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer)
 		{
 			serviceCollection.TryAddSingleton(new ExceptionTransformer(transformer));
