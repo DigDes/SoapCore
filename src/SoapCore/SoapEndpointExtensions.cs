@@ -10,20 +10,30 @@ namespace SoapCore
 	{
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
+			return builder.UseSoapEndpoint(typeof(T), path, encoder, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		{
 			if (soapModelBounder == null)
 			{
-				return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer, caseInsensitivePath);
+				return builder.UseMiddleware<SoapEndpointMiddleware>(type, path, encoder, serializer, caseInsensitivePath);
 			}
 
-			return builder.UseMiddleware<SoapEndpointMiddleware>(typeof(T), path, encoder, serializer, caseInsensitivePath, soapModelBounder);
+			return builder.UseMiddleware<SoapEndpointMiddleware>(type, path, encoder, serializer, caseInsensitivePath, soapModelBounder);
 		}
 
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
+			return builder.UseSoapEndpoint(typeof(T), path, binding, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		{
 			var element = binding.CreateBindingElements().Find<MessageEncodingBindingElement>();
 			var factory = element.CreateMessageEncoderFactory();
 			var encoder = factory.Encoder;
-			return builder.UseSoapEndpoint<T>(path, encoder, serializer, caseInsensitivePath, soapModelBounder);
+			return builder.UseSoapEndpoint(type, path, encoder, serializer, caseInsensitivePath, soapModelBounder);
 		}
 
 		public static IServiceCollection AddSoapExceptionTransformer(this IServiceCollection serviceCollection, Func<Exception, string> transformer)
@@ -33,6 +43,12 @@ namespace SoapCore
 		}
 
 		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector)
+		{
+			serviceCollection.TryAddSingleton(messageInspector);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector2 messageInspector)
 		{
 			serviceCollection.TryAddSingleton(messageInspector);
 			return serviceCollection;
