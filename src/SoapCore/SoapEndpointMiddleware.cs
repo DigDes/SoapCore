@@ -204,6 +204,11 @@ namespace SoapCore
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
 			var correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
 
+			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
+#pragma warning disable SA1008 // StyleCop has not yet been updated to support tuples
+			var correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service)));
+#pragma warning restore SA1008
+
 			// for getting soapaction and parameters in body
 			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
@@ -296,6 +301,11 @@ namespace SoapCore
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+					foreach (var correlationObj2 in correlationObjects2)
+					{
+						correlationObj2.inspector.BeforeSendReply(ref responseMessage, _service, correlationObj2.correlationObject);
+					}
 
 					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 
