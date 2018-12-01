@@ -28,6 +28,7 @@ namespace SoapCore.Tests.Serialization
 					// init SampleService service mock
 					ServiceMock = new Mock<IService>();
 					services.AddSingleton(ServiceMock.Object);
+					services.AddSoapCore();
 					services.AddMvc();
 				})
 				.Configure(appBuilder =>

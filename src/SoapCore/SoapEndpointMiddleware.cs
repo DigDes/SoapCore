@@ -271,21 +271,8 @@ namespace SoapCore
 						operationTuner.Tune(httpContext, serviceInstance, operation);
 					}
 
-					// Invoke Operation method
-					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, arguments);
-					if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
-					{
-						var responseTask = (Task)responseObject;
-						await responseTask;
-						responseObject = responseTask.GetType().GetProperty("Result").GetValue(responseTask);
-					}
-					else if (responseObject is Task responseTask)
-					{
-						await responseTask;
-
-						//VoidTaskResult
-						responseObject = null;
-					}
+					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
+					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
 					var resultOutDictionary = new Dictionary<string, object>();
 					foreach (var parameterInfo in operation.OutParameters)

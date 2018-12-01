@@ -11,6 +11,7 @@ namespace SoapCore.Tests.MessageFilter
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSoapWsSecurityFilter("yourusername", "yourpassword");
 			services.AddMvc();
