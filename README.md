@@ -36,12 +36,6 @@ Primary point here is to use XmlSerializer and properly markup messages and oper
 
 * [stackify.com/soap-net-core](https://stackify.com/soap-net-core/)
 
-### Contributing
-
-See [Contributing guide](CONTRIBUTING.md)
-
-[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
-
 ### Tips and Tricks
 
 #### Extending the pipeline
@@ -118,3 +112,8 @@ public class MyService : IMyServiceService
     }
 }
 ```
+### Contributing
+
+See [Contributing guide](CONTRIBUTING.md)
+
+[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
