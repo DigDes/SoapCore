@@ -50,7 +50,7 @@ In your ConfigureServices method, you can register some additional items to exte
 * services.AddSoapMessageInspector() - add a custom MessageInspector. These function similarly to the `IDispatchMessageInspector` in WCF. The newer `IMessageInspector2` interface allows you to register multiple inspectors, and to know which service was being called.
 * services.AddSingleton<MyOperatorInvoker>() - add a custom OperationInvoker. Similar to WCF's `IOperationInvoker` this allows you to override the invoking of a service operation, commonly to add custom logging or exception handling logic around it.
 
-#### How to get custom HTTP header in SopaCore service
+#### How to get custom HTTP header in SoapCore service
 
 Use interface IServiceOperationTuner to tune each operation call.
 
