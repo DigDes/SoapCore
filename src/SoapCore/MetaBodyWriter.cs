@@ -78,6 +78,7 @@ namespace SoapCore
 
 		private void AddTypes(XmlDictionaryWriter writer)
 		{
+			writer.WriteStartElement("wsdl:types");
 			writer.WriteStartElement("xs:schema");
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
 			writer.WriteAttributeString("elementFormDefault", "qualified");
@@ -119,7 +120,8 @@ namespace SoapCore
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					AddSchemaType(writer, returnType, operation.Name + "Result");
+					var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+					AddSchemaType(writer, returnType, returnName);
 				}
 
 				WriteParameters(writer, operation.OutParameters);

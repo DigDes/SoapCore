@@ -36,13 +36,13 @@ namespace SoapCore
 			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
 			writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
 			writer.WriteAttributeString("xmlns:tns", _service.Contracts.First().Namespace);
+			writer.WriteAttributeString("xmlns:wsam", "http://www.w3.org/2007/05/addressing/metadata");
 			writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
 			writer.WriteAttributeString("name", _service.ServiceType.Name);
 		}
 
 		protected override void OnWriteStartBody(XmlDictionaryWriter writer)
 		{
-			writer.WriteStartElement("wsdl:types");
 		}
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
