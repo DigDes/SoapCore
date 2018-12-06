@@ -16,6 +16,9 @@ namespace SoapCore
 #pragma warning disable SA1310 // Field names must not contain underscore
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
 		private const string TRANSPORT_SCHEMA = "http://schemas.xmlsoap.org/soap/http";
+		private const string ARRAYS_NS = "http://schemas.microsoft.com/2003/10/Serialization/Arrays";
+		private const string SYSTEM_NS = "http://schemas.datacontract.org/2004/07/System";
+		private const string SERIALIZATION_NS = "http://schemas.microsoft.com/2003/10/Serialization/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
 		private static int _namespaceCounter = 1;
@@ -139,53 +142,23 @@ namespace SoapCore
 			AddOperations(writer);
 			AddMSSerialization(writer);
 			AddComplexTypes(writer);
+			AddArrayTypes(writer);
+			AddSystemTypes(writer);
+			writer.WriteEndElement(); // wsdl:types
+		}
 
-			writer.WriteStartElement("xs:schema");
-			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
-			writer.WriteAttributeString("xmlns:tns", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
-			writer.WriteAttributeString("elementFormDefault", "qualified");
-			writer.WriteAttributeString("targetNamespace", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
-			_namespaceCounter = 1;
-			_schemaNamespace = "http://schemas.microsoft.com/2003/10/Serialization/Arrays";
-			while (_arrayToBuild.Count > 0)
-			{
-				var toBuild = _arrayToBuild.Dequeue();
-				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
-					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name.ToLower()
-					: toBuild.Name;
-
-				if (!_buildArrayTypes.Contains(toBuildName))
-				{
-					writer.WriteStartElement("xs:complexType");
-					writer.WriteAttributeString("name", toBuildName);
-
-					writer.WriteStartElement("xs:sequence");
-					AddSchemaType(writer, GetGenericType(toBuild), null, true);
-					writer.WriteEndElement(); // xs:sequence
-
-					writer.WriteEndElement(); // xs:complexType
-
-					writer.WriteStartElement("xs:element");
-					writer.WriteAttributeString("name", toBuildName);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteAttributeString("type", "tns:" + toBuildName);
-					writer.WriteEndElement(); // xs:element
-					_buildArrayTypes.Add(toBuildName);
-				}
-			}
-
-			writer.WriteEndElement(); // xs:schema
-
+		private void AddSystemTypes(XmlDictionaryWriter writer)
+		{
 			if (_buildDateTimeOffset)
 			{
 				writer.WriteStartElement("xs:schema");
 				writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
-				writer.WriteAttributeString("xmlns:tns", "http://schemas.datacontract.org/2004/07/System");
+				writer.WriteAttributeString("xmlns:tns", SYSTEM_NS);
 				writer.WriteAttributeString("elementFormDefault", "qualified");
-				writer.WriteAttributeString("targetNamespace", "http://schemas.datacontract.org/2004/07/System");
+				writer.WriteAttributeString("targetNamespace", SYSTEM_NS);
 
 				writer.WriteStartElement("xs:import");
-				writer.WriteAttributeString("namespace", "http://schemas.microsoft.com/2003/10/Serialization/");
+				writer.WriteAttributeString("namespace", SERIALIZATION_NS);
 				writer.WriteEndElement();
 
 				writer.WriteStartElement("xs:complexType");
@@ -193,7 +166,7 @@ namespace SoapCore
 				writer.WriteStartElement("xs:annotation");
 				writer.WriteStartElement("xs:appinfo");
 
-				writer.WriteElementString("IsValueType", "http://schemas.microsoft.com/2003/10/Serialization/", "true");
+				writer.WriteElementString("IsValueType", SERIALIZATION_NS, "true");
 				writer.WriteEndElement(); // xs:appinfo
 				writer.WriteEndElement(); // xs:annotation
 
@@ -212,8 +185,51 @@ namespace SoapCore
 
 				writer.WriteEndElement(); // xs:schema
 			}
+		}
 
-			writer.WriteEndElement(); // wsdl:types
+		private void AddArrayTypes(XmlDictionaryWriter writer)
+		{
+			writer.WriteStartElement("xs:schema");
+			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
+			writer.WriteAttributeString("xmlns:tns", ARRAYS_NS);
+			writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
+			writer.WriteAttributeString("elementFormDefault", "qualified");
+			writer.WriteAttributeString("targetNamespace", ARRAYS_NS);
+			_namespaceCounter = 1;
+			_schemaNamespace = ARRAYS_NS;
+
+			writer.WriteStartElement("xs:import");
+			writer.WriteAttributeString("namespace", SERIALIZATION_NS);
+			writer.WriteEndElement();
+
+			while (_arrayToBuild.Count > 0)
+			{
+				var toBuild = _arrayToBuild.Dequeue();
+				var elType = toBuild.IsArray ? toBuild.GetElementType() : GetGenericType(toBuild);
+				var sysType = ResolveSystemType(elType);
+				var toBuildName = "ArrayOf" + sysType.name;
+
+				if (!_buildArrayTypes.Contains(toBuildName))
+				{
+					writer.WriteStartElement("xs:complexType");
+					writer.WriteAttributeString("name", toBuildName);
+
+					writer.WriteStartElement("xs:sequence");
+					AddSchemaType(writer, elType, null, true);
+					writer.WriteEndElement(); // :sequence
+
+					writer.WriteEndElement(); // xs:complexType
+
+					writer.WriteStartElement("xs:element");
+					writer.WriteAttributeString("name", toBuildName);
+					writer.WriteAttributeString("nillable", "true");
+					writer.WriteAttributeString("type", "tns:" + toBuildName);
+					writer.WriteEndElement(); // xs:element
+					_buildArrayTypes.Add(toBuildName);
+				}
+			}
+
+			writer.WriteEndElement(); // xs:schema
 		}
 
 		private void AddMSSerialization(XmlDictionaryWriter writer)
@@ -221,9 +237,9 @@ namespace SoapCore
 			writer.WriteStartElement("xs:schema");
 			writer.WriteAttributeString("attributeFormDefault", "qualified");
 			writer.WriteAttributeString("elementFormDefault", "qualified");
-			writer.WriteAttributeString("targetNamespace", "http://schemas.microsoft.com/2003/10/Serialization/");
+			writer.WriteAttributeString("targetNamespace", SERIALIZATION_NS);
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
-			writer.WriteAttributeString("xmlns:tns", "http://schemas.microsoft.com/2003/10/Serialization/");
+			writer.WriteAttributeString("xmlns:tns", SERIALIZATION_NS);
 			WriteSerializationElement(writer, "anyType", "xs:anyType", true);
 			WriteSerializationElement(writer, "anyURI", "xs:anyURI", true);
 			WriteSerializationElement(writer, "base64Binary", "xs:base64Binary", true);
@@ -317,11 +333,11 @@ namespace SoapCore
 			_schemaNamespace = ModelNameSpace;
 
 			writer.WriteStartElement("xs:import");
-			writer.WriteAttributeString("namespace", "http://schemas.datacontract.org/2004/07/System");
+			writer.WriteAttributeString("namespace", SYSTEM_NS);
 			writer.WriteEndElement();
 
 			writer.WriteStartElement("xs:import");
-			writer.WriteAttributeString("namespace", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+			writer.WriteAttributeString("namespace", ARRAYS_NS);
 			writer.WriteEndElement();
 
 			while (_complexTypeToBuild.Count > 0)
@@ -532,7 +548,7 @@ namespace SoapCore
 
 					var ns = $"q{_namespaceCounter++}";
 					xsTypename = $"{ns}:{type.Name}";
-					writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.datacontract.org/2004/07/System");
+					writer.WriteAttributeString($"xmlns:{ns}", SYSTEM_NS);
 
 					_buildDateTimeOffset = true;
 				}
@@ -541,25 +557,21 @@ namespace SoapCore
 					var underlyingType = Nullable.GetUnderlyingType(type);
 					if (underlyingType != null)
 					{
-						xsTypename = ResolveType(underlyingType);
+						var sysType = ResolveSystemType(underlyingType);
+						xsTypename = $"{(sysType.ns == SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
 						writer.WriteAttributeString("nillable", "true");
 					}
 					else
 					{
-						xsTypename = ResolveType(type);
+						var sysType = ResolveSystemType(type);
+						xsTypename = $"{(sysType.ns == SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
 					}
 				}
 
+				writer.WriteAttributeString("minOccurs", "0");
 				if (isArray)
 				{
-					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
-					writer.WriteAttributeString("nillable", "true");
-				}
-				else
-				{
-					writer.WriteAttributeString("minOccurs", "1");
-					writer.WriteAttributeString("maxOccurs", "1");
 				}
 
 				if (string.IsNullOrEmpty(name))
@@ -592,11 +604,12 @@ namespace SoapCore
 				else if (type == typeof(System.Xml.Linq.XElement))
 				{
 					writer.WriteAttributeString("name", name);
-
+					writer.WriteAttributeString("nillable", "true");
 					writer.WriteStartElement("xs:complexType");
-					writer.WriteAttributeString("mixed", "true");
 					writer.WriteStartElement("xs:sequence");
 					writer.WriteStartElement("xs:any");
+					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("processContents", "lax");
 					writer.WriteEndElement();
 					writer.WriteEndElement();
 					writer.WriteEndElement();
@@ -611,21 +624,11 @@ namespace SoapCore
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:base64Binary");
 				}
-				else if (type.IsArray)
-				{
-					if (string.IsNullOrEmpty(name))
-					{
-						name = type.Name;
-					}
-
-					writer.WriteAttributeString("name", name);
-					WriteComplexElementType(writer, $"ArrayOf{type.GetElementType().Name}", _schemaNamespace, objectNamespace);
-					_complexTypeToBuild.Enqueue(type);
-				}
 				else if (typeof(IEnumerable).IsAssignableFrom(type))
 				{
-					var typeName = GetGenericType(type).Name;
-					if (typeName == "String")
+					var elType = type.IsArray ? type.GetElementType() : GetGenericType(type);
+					var sysType = ResolveSystemType(elType);
+					if (sysType.name != null)
 					{
 						if (string.IsNullOrEmpty(name))
 						{
@@ -634,10 +637,10 @@ namespace SoapCore
 
 						var ns = $"q{_namespaceCounter++}";
 
-						writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+						writer.WriteAttributeString($"xmlns:{ns}", ARRAYS_NS);
 						writer.WriteAttributeString("name", name);
 						writer.WriteAttributeString("nillable", "true");
-						writer.WriteAttributeString("type", $"{ns}:ArrayOfstring");
+						writer.WriteAttributeString("type", $"{ns}:ArrayOf{sysType.name}");
 
 						_arrayToBuild.Enqueue(type);
 					}
@@ -649,7 +652,7 @@ namespace SoapCore
 						}
 
 						writer.WriteAttributeString("name", name);
-						WriteComplexElementType(writer, $"ArrayOf{typeName}", _schemaNamespace, objectNamespace);
+						WriteComplexElementType(writer, $"ArrayOf{elType.Name}", _schemaNamespace, objectNamespace);
 						_complexTypeToBuild.Enqueue(type);
 					}
 				}
@@ -684,67 +687,41 @@ namespace SoapCore
 			}
 		}
 
-		private string ResolveType(Type type)
+#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
+#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
+		private (string name, string ns) ResolveSystemType(Type type)
 		{
-			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
-			string resolvedType = null;
+			type = type.IsEnum ? type.GetEnumUnderlyingType() : type;
 
-			switch (typeName)
+			var dic = new Dictionary<string, (string, string)>()
 			{
-				case "Boolean":
-					resolvedType = "xs:boolean";
-					break;
-				case "Byte":
-					resolvedType = "xs:unsignedByte";
-					break;
-				case "Int16":
-					resolvedType = "xs:short";
-					break;
-				case "Int32":
-					resolvedType = "xs:int";
-					break;
-				case "Int64":
-					resolvedType = "xs:long";
-					break;
-				case "SByte":
-					resolvedType = "xs:byte";
-					break;
-				case "UInt16":
-					resolvedType = "xs:unsignedShort";
-					break;
-				case "UInt32":
-					resolvedType = "xs:unsignedInt";
-					break;
-				case "UInt64":
-					resolvedType = "xs:unsignedLong";
-					break;
-				case "Decimal":
-					resolvedType = "xs:decimal";
-					break;
-				case "Double":
-					resolvedType = "xs:double";
-					break;
-				case "Single":
-					resolvedType = "xs:float";
-					break;
-				case "DateTime":
-					resolvedType = "xs:dateTime";
-					break;
-				case "Guid":
-					resolvedType = "xs:string";
-					break;
-				case "Char":
-					resolvedType = "xs:string";
-					break;
+				["System.String"] = ("string", SYSTEM_NS),
+				["System.Boolean"] = ("boolean", SYSTEM_NS),
+				["System.Int16"] = ("short", SYSTEM_NS),
+				["System.Int32"] = ("int", SYSTEM_NS),
+				["System.Int64"] = ("long", SYSTEM_NS),
+				["System.SByte"] = ("byte", SYSTEM_NS),
+				["System.UInt16"] = ("unsignedShort", SYSTEM_NS),
+				["System.UInt32"] = ("unsignedInt", SYSTEM_NS),
+				["System.UInt64"] = ("unsignedLong", SYSTEM_NS),
+				["System.Decimal"] = ("decimal", SYSTEM_NS),
+				["System.Double"] = ("double", SYSTEM_NS),
+				["System.Single"] = ("float", SYSTEM_NS),
+				["System.DateTime"] = ("dateTime", SYSTEM_NS),
+				["System.Decimal"] = ("decimal", SYSTEM_NS),
+				["System.Guid"] = ("guid", SERIALIZATION_NS),
+				["System.Char"] = ("char", SERIALIZATION_NS),
+				["System.TimeSpan"] = ("duration", SERIALIZATION_NS)
+			};
+			if (dic.ContainsKey(type.FullName))
+			{
+				return dic[type.FullName];
 			}
 
-			if (string.IsNullOrEmpty(resolvedType))
-			{
-				throw new ArgumentException($".NET type {typeName} cannot be resolved into XML schema type");
-			}
-
-			return resolvedType;
+			throw new ArgumentException($".NET type {type} cannot be resolved into XML schema type");
 		}
+#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
+#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
 
 		private Type GetGenericType(Type collectionType)
 		{
