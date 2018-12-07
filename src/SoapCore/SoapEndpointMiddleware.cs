@@ -63,7 +63,7 @@ namespace SoapCore
 		{
 			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
-			var bodyWriter = new MetaBodyWriter(_service, baseUrl);
+			BodyWriter bodyWriter = _serializer == SoapSerializer.XmlSerializer ? (BodyWriter)new MetaBodyWriter(_service, baseUrl) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl);
 
 			var responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service);
