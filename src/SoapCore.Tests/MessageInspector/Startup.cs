@@ -11,6 +11,7 @@ namespace SoapCore.Tests.MessageInspector
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSoapMessageInspector(new MessageInspectorMock());
 			services.AddMvc();

@@ -78,6 +78,7 @@ namespace SoapCore
 
 		private void AddTypes(XmlDictionaryWriter writer)
 		{
+			writer.WriteStartElement("wsdl:types");
 			writer.WriteStartElement("xs:schema");
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
 			writer.WriteAttributeString("elementFormDefault", "qualified");
@@ -119,7 +120,8 @@ namespace SoapCore
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					AddSchemaType(writer, returnType, operation.Name + "Result");
+					var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+					AddSchemaType(writer, returnType, returnName);
 				}
 
 				WriteParameters(writer, operation.OutParameters);
@@ -480,6 +482,18 @@ namespace SoapCore
 
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:string");
+				}
+				else if (type == typeof(System.Xml.Linq.XElement))
+				{
+					writer.WriteAttributeString("name", name);
+
+					writer.WriteStartElement("xs:complexType");
+					writer.WriteAttributeString("mixed", "true");
+					writer.WriteStartElement("xs:sequence");
+					writer.WriteStartElement("xs:any");
+					writer.WriteEndElement();
+					writer.WriteEndElement();
+					writer.WriteEndElement();
 				}
 				else if (type.Name == "Byte[]")
 				{

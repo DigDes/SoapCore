@@ -20,5 +20,8 @@ namespace Models
 
 		[OperationContract]
 		int? NullableMethod(bool? arg);
+
+		[OperationContract]
+		void XmlMethod(System.Xml.Linq.XElement xml);
 	}
 }

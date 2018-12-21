@@ -36,6 +36,9 @@ namespace Client
 			var asyncMethodResult = serviceClient.AsyncMethod().Result;
 			Console.WriteLine("Async method result: {0}", asyncMethodResult);
 
+			var xmlelement = System.Xml.Linq.XElement.Parse("<test>string</test>");
+			serviceClient.XmlMethod(xmlelement);
+
 			Console.ReadKey();
 		}
 	}

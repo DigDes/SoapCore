@@ -39,8 +39,10 @@ namespace SoapCore
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
-			httpContext.Request.EnableRewind();
-			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
+			httpContext.Request.EnableRewind();			
+			string servicePathPart = httpContext.Request.Path.Value.Substring(httpContext.Request.Path.Value.LastIndexOf('/'));
+			
+			if (servicePathPart.Equals(_endpointPath, _pathComparisonStrategy))
 			{
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
@@ -63,7 +65,7 @@ namespace SoapCore
 		{
 			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
-			var bodyWriter = new MetaBodyWriter(_service, baseUrl);
+			BodyWriter bodyWriter = _serializer == SoapSerializer.XmlSerializer ? (BodyWriter)new MetaBodyWriter(_service, baseUrl) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl);
 
 			var responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service);
@@ -204,6 +206,11 @@ namespace SoapCore
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
 			var correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
 
+			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
+#pragma warning disable SA1008 // StyleCop has not yet been updated to support tuples
+			var correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
+#pragma warning restore SA1008
+
 			// for getting soapaction and parameters in body
 			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
@@ -259,21 +266,15 @@ namespace SoapCore
 					// Invoke OnModelBound
 					_soapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
 
-					// Invoke Operation method
-					var responseObject = operation.DispatchMethod.Invoke(serviceInstance, arguments);
-					if (operation.DispatchMethod.ReturnType.IsConstructedGenericType && operation.DispatchMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+					// Tune service instance for operation call
+					var serviceOperationTuners = serviceProvider.GetServices<IServiceOperationTuner>();
+					foreach (var operationTuner in serviceOperationTuners)
 					{
-						var responseTask = (Task)responseObject;
-						await responseTask;
-						responseObject = responseTask.GetType().GetProperty("Result").GetValue(responseTask);
+						operationTuner.Tune(httpContext, serviceInstance, operation);
 					}
-					else if (responseObject is Task responseTask)
-					{
-						await responseTask;
 
-						//VoidTaskResult
-						responseObject = null;
-					}
+					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
+					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
 					var resultOutDictionary = new Dictionary<string, object>();
 					foreach (var parameterInfo in operation.OutParameters)
@@ -289,6 +290,8 @@ namespace SoapCore
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+					correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
 
 					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 

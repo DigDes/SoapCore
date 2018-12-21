@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace SoapCore.Tests.MessageFilter
+namespace SoapCore.Tests.ServiceOperationTuner
 {
 	public class Startup
 	{
@@ -13,7 +13,7 @@ namespace SoapCore.Tests.MessageFilter
 		{
 			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
-			services.AddSoapWsSecurityFilter("yourusername", "yourpassword");
+			services.AddSoapServiceOperationTuner(new TestServiceOperationTuner());
 			services.AddMvc();
 		}
 

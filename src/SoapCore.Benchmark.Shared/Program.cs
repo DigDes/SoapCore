@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using System.Threading.Tasks;
@@ -9,10 +9,8 @@ using System.Net;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Attributes.Jobs;
 using BenchmarkDotNet.Diagnosers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace SoapCore.Benchmark
 {

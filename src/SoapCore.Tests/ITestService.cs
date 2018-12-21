@@ -60,5 +60,8 @@ namespace SoapCore.Tests
 		[OperationContract]
 		[ServiceFilter(typeof(ActionFilter.TestActionFilter))]
 		ComplexModelInput ComplexParamWithActionFilter(ComplexModelInput test);
+
+		[OperationContract]
+		string PingWithServiceOperationTuning();
 	}
 }
