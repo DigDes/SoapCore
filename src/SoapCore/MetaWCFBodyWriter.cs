@@ -21,6 +21,31 @@ namespace SoapCore
 		private const string SERIALIZATION_NS = "http://schemas.microsoft.com/2003/10/Serialization/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
+#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
+#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
+		private static readonly Dictionary<string, (string, string)> SysTypeDic = new Dictionary<string, (string, string)>()
+		{
+			["System.String"] = ("string", SYSTEM_NS),
+			["System.Boolean"] = ("boolean", SYSTEM_NS),
+			["System.Int16"] = ("short", SYSTEM_NS),
+			["System.Int32"] = ("int", SYSTEM_NS),
+			["System.Int64"] = ("long", SYSTEM_NS),
+			["System.SByte"] = ("byte", SYSTEM_NS),
+			["System.UInt16"] = ("unsignedShort", SYSTEM_NS),
+			["System.UInt32"] = ("unsignedInt", SYSTEM_NS),
+			["System.UInt64"] = ("unsignedLong", SYSTEM_NS),
+			["System.Decimal"] = ("decimal", SYSTEM_NS),
+			["System.Double"] = ("double", SYSTEM_NS),
+			["System.Single"] = ("float", SYSTEM_NS),
+			["System.DateTime"] = ("dateTime", SYSTEM_NS),
+			["System.Decimal"] = ("decimal", SYSTEM_NS),
+			["System.Guid"] = ("guid", SERIALIZATION_NS),
+			["System.Char"] = ("char", SERIALIZATION_NS),
+			["System.TimeSpan"] = ("duration", SERIALIZATION_NS)
+		};
+#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
+#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
+
 		private static int _namespaceCounter = 1;
 
 		private readonly ServiceDescription _service;
@@ -692,33 +717,12 @@ namespace SoapCore
 		private (string name, string ns) ResolveSystemType(Type type)
 		{
 			type = type.IsEnum ? type.GetEnumUnderlyingType() : type;
-
-			var dic = new Dictionary<string, (string, string)>()
+			if (SysTypeDic.ContainsKey(type.FullName))
 			{
-				["System.String"] = ("string", SYSTEM_NS),
-				["System.Boolean"] = ("boolean", SYSTEM_NS),
-				["System.Int16"] = ("short", SYSTEM_NS),
-				["System.Int32"] = ("int", SYSTEM_NS),
-				["System.Int64"] = ("long", SYSTEM_NS),
-				["System.SByte"] = ("byte", SYSTEM_NS),
-				["System.UInt16"] = ("unsignedShort", SYSTEM_NS),
-				["System.UInt32"] = ("unsignedInt", SYSTEM_NS),
-				["System.UInt64"] = ("unsignedLong", SYSTEM_NS),
-				["System.Decimal"] = ("decimal", SYSTEM_NS),
-				["System.Double"] = ("double", SYSTEM_NS),
-				["System.Single"] = ("float", SYSTEM_NS),
-				["System.DateTime"] = ("dateTime", SYSTEM_NS),
-				["System.Decimal"] = ("decimal", SYSTEM_NS),
-				["System.Guid"] = ("guid", SERIALIZATION_NS),
-				["System.Char"] = ("char", SERIALIZATION_NS),
-				["System.TimeSpan"] = ("duration", SERIALIZATION_NS)
-			};
-			if (dic.ContainsKey(type.FullName))
-			{
-				return dic[type.FullName];
+				return SysTypeDic[type.FullName];
 			}
 
-			throw new ArgumentException($".NET type {type} cannot be resolved into XML schema type");
+			return (null, null);
 		}
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 #pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
