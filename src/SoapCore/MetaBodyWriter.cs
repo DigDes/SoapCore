@@ -406,7 +406,7 @@ namespace SoapCore
 			{
 				writer.WriteAttributeString("targetNamespace", @namespace);
 			}
-			else if (typeInfo.IsValueType)
+			else if (typeInfo.IsValueType && typeInfo.Namespace.StartsWith("System"))
 			{
 				string xsTypename;
 				if (typeof(DateTimeOffset).IsAssignableFrom(type))
