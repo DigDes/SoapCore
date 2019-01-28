@@ -39,13 +39,13 @@ namespace SoapCore
 			{
 				writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
             }
-			else if(Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004) // Soap12
+			else if (Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004) // Soap12
 			{
 				writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap12/");
             }
 			else
 			{
-				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
+				throw new Exception("Unsupported MessageVersion encountered while writing envelope: " + Version);
 			}
 
 			writer.WriteAttributeString("xmlns:tns", _service.Contracts.First().Namespace);
