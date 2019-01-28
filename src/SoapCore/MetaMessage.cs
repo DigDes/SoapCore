@@ -34,7 +34,20 @@ namespace SoapCore
 		{
 			writer.WriteStartElement("wsdl", "definitions", "http://schemas.xmlsoap.org/wsdl/");
 			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-			writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
+
+			if (Version == MessageVersion.Soap11 || Version == MessageVersion.Soap11WSAddressingAugust2004 || Version == MessageVersion.Soap11WSAddressingAugust2004) // Soap11
+			{
+				writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
+            }
+			else if(Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004) // Soap12
+			{
+				writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap12/");
+            }
+			else
+			{
+				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
+			}
+
 			writer.WriteAttributeString("xmlns:tns", _service.Contracts.First().Namespace);
 			writer.WriteAttributeString("xmlns:wsam", "http://www.w3.org/2007/05/addressing/metadata");
 			writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
