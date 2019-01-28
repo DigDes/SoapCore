@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.ServiceModel.Channels;
 using System.Xml;
@@ -45,7 +46,7 @@ namespace SoapCore
             }
 			else
 			{
-				throw new Exception("Unsupported MessageVersion encountered while writing envelope: " + Version);
+				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
 			}
 
 			writer.WriteAttributeString("xmlns:tns", _service.Contracts.First().Namespace);
