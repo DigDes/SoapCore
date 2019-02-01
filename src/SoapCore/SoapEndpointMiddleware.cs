@@ -40,8 +40,7 @@ namespace SoapCore
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableRewind();
-			string servicePathPart = httpContext.Request.Path.Value.Substring(httpContext.Request.Path.Value.LastIndexOf('/'));
-			if (servicePathPart.Equals(_endpointPath, _pathComparisonStrategy))
+			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
