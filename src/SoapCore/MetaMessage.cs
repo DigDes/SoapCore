@@ -36,14 +36,17 @@ namespace SoapCore
 			writer.WriteStartElement("wsdl", "definitions", "http://schemas.xmlsoap.org/wsdl/");
 			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
 
-			if (Version == MessageVersion.Soap11 || Version == MessageVersion.Soap11WSAddressingAugust2004 || Version == MessageVersion.Soap11WSAddressingAugust2004) // Soap11
+			// Soap11
+			if (Version == MessageVersion.Soap11 || Version == MessageVersion.Soap11WSAddressingAugust2004 || Version == MessageVersion.Soap11WSAddressingAugust2004)
 			{
 				writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap/");
-            }
-			else if (Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004) // Soap12
+			}
+
+			// Soap12
+			else if (Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004)
 			{
 				writer.WriteAttributeString("xmlns:soap", "http://schemas.xmlsoap.org/wsdl/soap12/");
-            }
+			}
 			else
 			{
 				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
