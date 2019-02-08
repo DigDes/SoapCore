@@ -559,6 +559,7 @@ namespace SoapCore
 			if (typeInfo.IsEnum)
 			{
 				WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace);
+				writer.WriteAttributeString("name", type.Name);
 				_enumToBuild.Enqueue(type);
 			}
 			else if (typeInfo.IsValueType)
@@ -710,6 +711,8 @@ namespace SoapCore
 			{
 				writer.WriteAttributeString("type", $"tns:{typeName}");
 			}
+
+			//writer.WriteAttributeString("name", typeName);
 		}
 
 #pragma warning disable SA1009 // Closing parenthesis must be spaced correctly

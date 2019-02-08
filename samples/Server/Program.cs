@@ -13,7 +13,7 @@ namespace Server
 		{
 			var host = new WebHostBuilder()
 				.UseKestrel()
-				.UseUrls("http://*:5050")
+				.UseUrls("http://*:5051")
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.UseStartup<Startup>()
 				.Build();
