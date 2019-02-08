@@ -112,6 +112,7 @@ namespace SoapCore
 			writer.WriteAttributeString("elementFormDefault", "qualified");
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
+
 			_schemaNamespace = TargetNameSpace;
 			_namespaceCounter = 1;
 
@@ -196,8 +197,17 @@ namespace SoapCore
 				writer.WriteEndElement(); // xs:annotation
 
 				writer.WriteStartElement("xs:sequence");
-				AddSchemaType(writer, typeof(DateTime), "DateTime", false);
-				AddSchemaType(writer, typeof(short), "OffsetMinutes", false);
+
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", "DateTime");
+				writer.WriteAttributeString("type", "xs:dateTime");
+				writer.WriteEndElement();
+
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", "OffsetMinutes");
+				writer.WriteAttributeString("type", "xs:short");
+				writer.WriteEndElement();
+
 				writer.WriteEndElement(); // xs:sequence
 
 				writer.WriteEndElement(); // xs:complexType
@@ -354,6 +364,8 @@ namespace SoapCore
 			writer.WriteAttributeString("targetNamespace", ModelNameSpace);
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
 			writer.WriteAttributeString("xmlns:tns", ModelNameSpace);
+			writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
+
 			_namespaceCounter = 1;
 			_schemaNamespace = ModelNameSpace;
 
@@ -377,6 +389,7 @@ namespace SoapCore
 				{
 					writer.WriteStartElement("xs:complexType");
 					writer.WriteAttributeString("name", toBuildName);
+					writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
 					writer.WriteStartElement("xs:sequence");
 
 					if (toBuild.IsArray || typeof(IEnumerable).IsAssignableFrom(toBuild))
