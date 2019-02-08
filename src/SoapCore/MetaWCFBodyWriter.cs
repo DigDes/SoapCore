@@ -197,8 +197,17 @@ namespace SoapCore
 				writer.WriteEndElement(); // xs:annotation
 
 				writer.WriteStartElement("xs:sequence");
-				AddSchemaType(writer, typeof(DateTime), "DateTime", false);
-				AddSchemaType(writer, typeof(short), "OffsetMinutes", false);
+
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", "DateTime");
+				writer.WriteAttributeString("type", "xs:dateTime");
+				writer.WriteEndElement();
+
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", "OffsetMinutes");
+				writer.WriteAttributeString("type", "xs:short");
+				writer.WriteEndElement();
+
 				writer.WriteEndElement(); // xs:sequence
 
 				writer.WriteEndElement(); // xs:complexType
