@@ -531,6 +531,7 @@ namespace SoapCore
 						writer.WriteAttributeString($"xmlns:{ns}", "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
 						writer.WriteAttributeString("name", name);
 						writer.WriteAttributeString("nillable", "true");
+
 						writer.WriteAttributeString("type", $"{ns}:ArrayOf{GetGenericType(type).Name.ToLower()}");
 
 						_arrayToBuild.Enqueue(type);
@@ -543,7 +544,12 @@ namespace SoapCore
 						}
 
 						writer.WriteAttributeString("name", name);
-						writer.WriteAttributeString("nillable", "true");
+
+						if (!isArray)
+						{
+							writer.WriteAttributeString("nillable", "true");
+						}
+
 						writer.WriteAttributeString("type", "tns:ArrayOf" + GetGenericType(type).Name);
 
 						_complexTypeToBuild.Enqueue(type);
