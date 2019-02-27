@@ -63,7 +63,7 @@ namespace SoapCore
 		private bool _buildDateTimeOffset;
 		private string _schemaNamespace;
 
-		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl) : base(isBuffered: true)
+		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -73,11 +73,24 @@ namespace SoapCore
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
+
+			BindingType = service.Contracts.First().Name;
+
+			if (binding != null)
+			{
+				BindingName = $"{binding.Name}_{_service.Contracts.First().Name}";
+				PortName = $"{binding.Name}_{_service.Contracts.First().Name}";
+			}
+			else
+			{
+				BindingName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+				PortName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+			}
 		}
 
-		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
-		private string BindingType => _service.Contracts.First().Name;
-		private string PortName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private string BindingName { get; }
+		private string BindingType { get; }
+		private string PortName { get; }
 		private string TargetNameSpace => _service.Contracts.First().Namespace;
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
