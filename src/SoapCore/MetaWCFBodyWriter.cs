@@ -52,6 +52,7 @@ namespace SoapCore
 
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
+		private readonly Binding _binding;
 
 		private readonly Queue<Type> _complexTypeToBuild;
 		private readonly Queue<Type> _arrayToBuild;
@@ -67,6 +68,7 @@ namespace SoapCore
 		{
 			_service = service;
 			_baseUrl = baseUrl;
+			_binding = binding;
 
 			_complexTypeToBuild = new Queue<Type>();
 			_arrayToBuild = new Queue<Type>();
@@ -561,6 +563,13 @@ namespace SoapCore
 			writer.WriteStartElement("wsdl:binding");
 			writer.WriteAttributeString("name", BindingName);
 			writer.WriteAttributeString("type", "tns:" + BindingType);
+
+			if (_binding.HasBasicAuth())
+			{
+				writer.WriteStartElement("wsp:PolicyReference");
+				writer.WriteAttributeString("URI", $"#{_binding.Name}_{_service.Contracts.First().Name}_policy");
+				writer.WriteEndElement();
+			}
 
 			writer.WriteStartElement("soap:binding");
 			writer.WriteAttributeString("transport", TRANSPORT_SCHEMA);

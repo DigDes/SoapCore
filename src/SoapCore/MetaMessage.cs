@@ -64,7 +64,7 @@ namespace SoapCore
 			writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
 			writer.WriteAttributeString("name", _service.ServiceType.Name);
 
-			if (_binding != null && _binding.CreateBindingElements().Find<HttpTransportBindingElement>().AuthenticationScheme == AuthenticationSchemes.Basic)
+			if (_binding != null && _binding.HasBasicAuth())
 			{
 				writer.WriteStartElement("wsp:Policy");
 				writer.WriteAttributeString("wsu:Id", $"{_binding.Name}_{_service.Contracts.First().Name}_policy");
