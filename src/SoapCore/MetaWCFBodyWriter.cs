@@ -394,9 +394,9 @@ namespace SoapCore
 
 		private void AddComplexTypes(XmlDictionaryWriter writer)
 		{
-			var groupedByNamespace = _complexTypeToBuild.Concat(DiscoveryEnumProperties()).GroupBy(x => x.Namespace);
+			var groupedByNamespace = _complexTypeToBuild.Concat(DiscoveryTypesByProperties()).GroupBy(x => x.Namespace);
 
-			foreach (var types in groupedByNamespace)
+			foreach (var types in groupedByNamespace.Distinct())
 			{
 				writer.WriteStartElement("xs:schema");
 				writer.WriteAttributeString("elementFormDefault", "qualified");
@@ -438,11 +438,11 @@ namespace SoapCore
 			}
 		}
 
-		private IEnumerable<Type> DiscoveryEnumProperties()
+		private IEnumerable<Type> DiscoveryTypesByProperties()
 		{
 			foreach (var type in _complexTypeToBuild)
 			{
-				foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute") && prop.PropertyType.IsEnum))
+				foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")))
 				{
 					yield return property.PropertyType;
 				}
