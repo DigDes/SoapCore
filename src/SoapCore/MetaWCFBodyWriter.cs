@@ -394,7 +394,12 @@ namespace SoapCore
 
 		private void AddComplexTypes(XmlDictionaryWriter writer)
 		{
-			var groupedByNamespace = _complexTypeToBuild.Concat(DiscoveryTypesByProperties()).GroupBy(x => x.Namespace);
+			foreach (var type in _complexTypeToBuild.ToArray())
+			{
+				DiscoveryTypesByProperties(type, true);
+			}
+
+			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Namespace);
 
 			foreach (var types in groupedByNamespace.Distinct())
 			{
@@ -416,7 +421,7 @@ namespace SoapCore
 				writer.WriteAttributeString("namespace", ARRAYS_NS);
 				writer.WriteEndElement();
 
-				foreach (var type in types)
+				foreach (var type in types.Distinct())
 				{
 					if (type.IsEnum)
 					{
@@ -438,13 +443,38 @@ namespace SoapCore
 			}
 		}
 
-		private IEnumerable<Type> DiscoveryTypesByProperties()
+		private void DiscoveryTypesByProperties(Type type, bool isRootType)
 		{
-			foreach (var type in _complexTypeToBuild)
+			//guard against infinity recursion
+			if (!isRootType && _complexTypeToBuild.Contains(type))
 			{
-				foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")))
+				return;
+			}
+
+			foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute") && !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName)))
+			{
+				Type propertyType;
+				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
 				{
-					yield return property.PropertyType;
+					propertyType = underlyingType;
+				}
+				else if (property.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
+				{
+					propertyType = property.PropertyType.IsArray
+						? property.PropertyType.GetElementType()
+						: GetGenericType(property.PropertyType);
+					_complexTypeToBuild.Enqueue(property.PropertyType);
+				}
+				else
+				{
+					propertyType = property.PropertyType;
+				}
+
+				if (!propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
+				{
+					DiscoveryTypesByProperties(propertyType, false);
+					_complexTypeToBuild.Enqueue(propertyType);
 				}
 			}
 		}
