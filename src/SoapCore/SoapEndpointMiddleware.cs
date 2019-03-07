@@ -22,10 +22,11 @@ namespace SoapCore
 		private readonly string _endpointPath;
 		private readonly MessageEncoder _messageEncoder;
 		private readonly SoapSerializer _serializer;
+		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly ISoapModelBounder _soapModelBounder;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder = null)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
 		{
 			_logger = logger;
 			_next = next;
@@ -35,6 +36,12 @@ namespace SoapCore
 			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
 			_soapModelBounder = soapModelBounder;
+			_binding = binding;
+		}
+
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, SoapOptions options)
+			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoder, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding)
+		{
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -63,10 +70,10 @@ namespace SoapCore
 		{
 			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
-			BodyWriter bodyWriter = _serializer == SoapSerializer.XmlSerializer ? (BodyWriter)new MetaBodyWriter(_service, baseUrl) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl);
+			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
 
 			var responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, _service);
+			responseMessage = new MetaMessage(responseMessage, _service, _binding);
 
 			httpContext.Response.ContentType = _messageEncoder.ContentType;
 			_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);

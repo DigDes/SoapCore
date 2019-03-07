@@ -10,17 +10,22 @@ namespace SoapCore
 	{
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
-			return builder.UseSoapEndpoint(typeof(T), path, encoder, serializer, caseInsensitivePath, soapModelBounder);
+			return builder.UseSoapEndpoint(typeof(T), path, encoder, serializer, caseInsensitivePath, soapModelBounder, null);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
 		{
-			if (soapModelBounder == null)
+			var options = new SoapOptions
 			{
-				return builder.UseMiddleware<SoapEndpointMiddleware>(type, path, encoder, serializer, caseInsensitivePath);
-			}
-
-			return builder.UseMiddleware<SoapEndpointMiddleware>(type, path, encoder, serializer, caseInsensitivePath, soapModelBounder);
+				Binding = binding,
+				CaseInsensitivePath = caseInsensitivePath,
+				MessageEncoder = encoder,
+				Path = path,
+				ServiceType = type,
+				SoapSerializer = serializer,
+				SoapModelBounder = soapModelBounder
+			};
+			return builder.UseMiddleware<SoapEndpointMiddleware>(options);
 		}
 
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
@@ -33,7 +38,7 @@ namespace SoapCore
 			var element = binding.CreateBindingElements().Find<MessageEncodingBindingElement>();
 			var factory = element.CreateMessageEncoderFactory();
 			var encoder = factory.Encoder;
-			return builder.UseSoapEndpoint(type, path, encoder, serializer, caseInsensitivePath, soapModelBounder);
+			return builder.UseSoapEndpoint(type, path, encoder, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)

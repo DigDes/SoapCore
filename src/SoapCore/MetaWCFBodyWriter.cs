@@ -53,6 +53,7 @@ namespace SoapCore
 
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
+		private readonly Binding _binding;
 
 		private readonly Queue<Type> _complexTypeToBuild;
 		private readonly Queue<Type> _arrayToBuild;
@@ -64,21 +65,35 @@ namespace SoapCore
 		private bool _buildDateTimeOffset;
 		private string _schemaNamespace;
 
-		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl) : base(isBuffered: true)
+		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
+			_binding = binding;
 
 			_complexTypeToBuild = new Queue<Type>();
 			_arrayToBuild = new Queue<Type>();
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
+
+			BindingType = service.Contracts.First().Name;
+
+			if (binding != null)
+			{
+				BindingName = $"{binding.Name}_{_service.Contracts.First().Name}";
+				PortName = $"{binding.Name}_{_service.Contracts.First().Name}";
+			}
+			else
+			{
+				BindingName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+				PortName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+			}
 		}
 
-		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
-		private string BindingType => _service.Contracts.First().Name;
-		private string PortName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private string BindingName { get; }
+		private string BindingType { get; }
+		private string PortName { get; }
 		private string TargetNameSpace => _service.Contracts.First().Namespace;
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
@@ -380,9 +395,14 @@ namespace SoapCore
 
 		private void AddComplexTypes(XmlDictionaryWriter writer)
 		{
-			var groupedByNamespace = _complexTypeToBuild.Concat(DiscoveryEnumProperties()).GroupBy(x => x.Namespace);
+			foreach (var type in _complexTypeToBuild.ToArray())
+			{
+				DiscoveryTypesByProperties(type, true);
+			}
 
-			foreach (var types in groupedByNamespace)
+			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Namespace);
+
+			foreach (var types in groupedByNamespace.Distinct())
 			{
 				writer.WriteStartElement("xs:schema");
 				writer.WriteAttributeString("elementFormDefault", "qualified");
@@ -402,7 +422,7 @@ namespace SoapCore
 				writer.WriteAttributeString("namespace", ARRAYS_NS);
 				writer.WriteEndElement();
 
-				foreach (var type in types)
+				foreach (var type in types.Distinct())
 				{
 					if (type.IsEnum)
 					{
@@ -424,13 +444,38 @@ namespace SoapCore
 			}
 		}
 
-		private IEnumerable<Type> DiscoveryEnumProperties()
+		private void DiscoveryTypesByProperties(Type type, bool isRootType)
 		{
-			foreach (var type in _complexTypeToBuild)
+			//guard against infinity recursion
+			if (!isRootType && _complexTypeToBuild.Contains(type))
 			{
-				foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute") && prop.PropertyType.IsEnum))
+				return;
+			}
+
+			foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute") && !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName)))
+			{
+				Type propertyType;
+				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
 				{
-					yield return property.PropertyType;
+					propertyType = underlyingType;
+				}
+				else if (property.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
+				{
+					propertyType = property.PropertyType.IsArray
+						? property.PropertyType.GetElementType()
+						: GetGenericType(property.PropertyType);
+					_complexTypeToBuild.Enqueue(property.PropertyType);
+				}
+				else
+				{
+					propertyType = property.PropertyType;
+				}
+
+				if (!propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
+				{
+					DiscoveryTypesByProperties(propertyType, false);
+					_complexTypeToBuild.Enqueue(propertyType);
 				}
 			}
 		}
@@ -549,6 +594,13 @@ namespace SoapCore
 			writer.WriteStartElement("wsdl:binding");
 			writer.WriteAttributeString("name", BindingName);
 			writer.WriteAttributeString("type", "tns:" + BindingType);
+
+			if (_binding.HasBasicAuth())
+			{
+				writer.WriteStartElement("wsp:PolicyReference");
+				writer.WriteAttributeString("URI", $"#{_binding.Name}_{_service.Contracts.First().Name}_policy");
+				writer.WriteEndElement();
+			}
 
 			writer.WriteStartElement("soap:binding");
 			writer.WriteAttributeString("transport", TRANSPORT_SCHEMA);
