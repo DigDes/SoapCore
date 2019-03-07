@@ -32,6 +32,7 @@ namespace SoapCore
 			["System.Int16"] = ("short", SYSTEM_NS),
 			["System.Int32"] = ("int", SYSTEM_NS),
 			["System.Int64"] = ("long", SYSTEM_NS),
+			["System.Byte"] = ("byte", SYSTEM_NS),
 			["System.SByte"] = ("byte", SYSTEM_NS),
 			["System.UInt16"] = ("unsignedShort", SYSTEM_NS),
 			["System.UInt32"] = ("unsignedInt", SYSTEM_NS),
