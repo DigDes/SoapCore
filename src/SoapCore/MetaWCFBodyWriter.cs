@@ -452,7 +452,16 @@ namespace SoapCore
 				return;
 			}
 
-			foreach (var property in type.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute") && !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName)))
+			if (HasBaseType(type))
+			{
+				DiscoveryTypesByProperties(type.BaseType, false);
+				_complexTypeToBuild.Enqueue(type.BaseType);
+			}
+
+			foreach (var property in type.GetProperties().Where(prop =>
+						prop.DeclaringType == type
+						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
+				        && !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName)))
 			{
 				Type propertyType;
 				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
@@ -517,6 +526,17 @@ namespace SoapCore
 				writer.WriteStartElement("xs:complexType");
 				writer.WriteAttributeString("name", toBuildName);
 				writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
+
+				var hasBaseType = HasBaseType(type);
+
+				if (hasBaseType)
+				{
+					writer.WriteStartElement("xs:complexContent");
+
+					writer.WriteStartElement("xs:extension");
+					writer.WriteAttributeString("base", $"tns:{type.BaseType.Name}");
+				}
+
 				writer.WriteStartElement("xs:sequence");
 
 				if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
@@ -527,6 +547,7 @@ namespace SoapCore
 				else
 				{
 					var properties = type.GetProperties().Where(prop =>
+						prop.DeclaringType == type &&
 						prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
 
 					//TODO: base type properties
@@ -537,8 +558,15 @@ namespace SoapCore
 					}
 				}
 
-				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:sequence
+
+				if (hasBaseType)
+				{
+					writer.WriteEndElement(); // xs:extension
+					writer.WriteEndElement(); // xs:complexContent
+				}
+
+				writer.WriteEndElement(); // xs:complexType
 
 				_builtComplexTypes.Add(toBuildName);
 			}
@@ -854,6 +882,15 @@ namespace SoapCore
 			}
 
 			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		private bool HasBaseType(Type type)
+		{
+			var isArrayType = type.IsArray || typeof(IEnumerable).IsAssignableFrom(type);
+
+			var baseType = type.GetTypeInfo().BaseType;
+
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !baseType.Name.Equals("Object");
 		}
 	}
 }
