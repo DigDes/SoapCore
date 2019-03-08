@@ -45,6 +45,12 @@ namespace SoapCore
 						ca.AttributeType == typeof(MessageContractAttribute)) != null;
 
 			ReturnName = operationMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? Name + "Result";
+
+			var faultContractAttributes = operationMethod.GetCustomAttributes<FaultContractAttribute>();
+			Faults = faultContractAttributes
+				.Where(a => a.DetailType?.Name != null)
+				.Select(a => a.DetailType)
+				.ToArray();
 		}
 
 		public ContractDescription Contract { get; private set; }
@@ -58,6 +64,7 @@ namespace SoapCore
 		public SoapMethodParameterInfo[] AllParameters { get; private set; }
 		public SoapMethodParameterInfo[] InParameters { get; private set; }
 		public SoapMethodParameterInfo[] OutParameters { get; private set; }
+		public System.Type[] Faults { get; private set; }
 		public string ReturnName { get; private set; }
 
 		private static SoapMethodParameterInfo CreateParameterInfo(ParameterInfo info, int index, ContractDescription contract)

@@ -450,7 +450,7 @@ namespace SoapCore
 			HttpContext httpContext)
 		{
 			// Create response message
-			object faultDetail = ExtractFaultDetail(exception.InnerException);
+			object faultDetail = ExtractFaultDetail(exception);
 			string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message;
 			var transformer = serviceProvider.GetService<ExceptionTransformer>();
 			if (transformer != null)
@@ -477,19 +477,29 @@ namespace SoapCore
 		/// The exception that caused the failure.
 		/// </param>
 		/// <returns>
-		/// Returns instance of T if the exception is of type FaultException<T>
+		/// Returns instance of T if the exception (or its InnerExceptions) is of type FaultException<T>
 		/// otherwise returns null
 		/// </returns>
-		private object ExtractFaultDetail(
-			Exception exception)
+		private object ExtractFaultDetail(Exception exception)
 		{
 			try
 			{
-				var type = exception.GetType();
-				if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FaultException<>))
+				Exception currentException = exception;
+				while (currentException != null)
 				{
-					var detailInfo = type.GetProperty("Detail");
-					return detailInfo?.GetValue(exception);
+					var type = currentException.GetType();
+					if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FaultException<>))
+					{
+						var detailInfo = type.GetProperty("Detail");
+						var value = detailInfo?.GetValue(currentException);
+
+						if (value != null)
+						{
+							return value;
+						}
+					}
+
+					currentException = currentException.InnerException;
 				}
 			}
 			catch

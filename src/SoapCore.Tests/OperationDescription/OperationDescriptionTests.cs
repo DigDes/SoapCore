@@ -1,3 +1,4 @@
+using System.Linq;
 using System.ServiceModel;
 using SoapCore.Tests.OperationDescription;
 using Xunit;
@@ -49,6 +50,26 @@ namespace SoapCore.Tests
 			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
 
 			Assert.False(operationDescription.IsMessageContractResponse);
+		}
+
+		[Fact]
+		public void TestProperUnwrappingOfSoapFaults()
+		{
+			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithMessageContract));
+			ContractDescription contractDescription = new ContractDescription(serviceDescription, typeof(IServiceWithMessageContract), new ServiceContractAttribute());
+
+			System.Reflection.MethodInfo method = typeof(IServiceWithMessageContract).GetMethod(nameof(IServiceWithMessageContract.ThrowTypedFault));
+
+			OperationContractAttribute contractAttribute = new OperationContractAttribute();
+
+			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+
+			var faultInfo = Assert.Single(operationDescription.Faults);
+			Assert.Equal("TypedSoapFault", faultInfo.Name);
+
+			var properties = faultInfo.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
+			var faultProperty = Assert.Single(properties);
+			Assert.Equal("MyIncludedProperty", faultProperty.Name);
 		}
 	}
 }
