@@ -193,9 +193,21 @@ namespace SoapCore
 				writer.WriteEndElement(); // xs:sequence
 				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:element
+
+				AddFaultTypes(writer, operation);
 			}
 
 			writer.WriteEndElement(); // xs:schema
+		}
+
+		private void AddFaultTypes(XmlDictionaryWriter writer, OperationDescription operation)
+		{
+			foreach (Type faultType in operation.Faults)
+			{
+				WriteComplexType(writer, faultType);
+
+				WriteSerializationElement(writer, faultType.Name, "tns:" + faultType.Name, true);
+			}
 		}
 
 		private void AddTypes(XmlDictionaryWriter writer)
@@ -564,6 +576,22 @@ namespace SoapCore
 				writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
+
+				AddMessageFaults(writer, operation);
+			}
+		}
+
+		private void AddMessageFaults(XmlDictionaryWriter writer, OperationDescription operation)
+		{
+			foreach (Type fault in operation.Faults)
+			{
+				writer.WriteStartElement("wsdl:message");
+				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_{fault.Name}Fault_FaultMessage");
+				writer.WriteStartElement("wsdl:part");
+				writer.WriteAttributeString("name", "detail");
+				writer.WriteAttributeString("element", "tns:" + fault.Name);
+				writer.WriteEndElement(); // wsdl:part
+				writer.WriteEndElement(); // wsdl:message
 			}
 		}
 
@@ -583,10 +611,25 @@ namespace SoapCore
 				writer.WriteAttributeString("wsam:Action", operation.SoapAction + "Response");
 				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteEndElement(); // wsdl:output
+
+				AddPortTypeFaults(writer, operation);
+
 				writer.WriteEndElement(); // wsdl:operation
 			}
 
 			writer.WriteEndElement(); // wsdl:portType
+		}
+
+		private void AddPortTypeFaults(XmlDictionaryWriter writer, OperationDescription operation)
+		{
+			foreach (Type fault in operation.Faults)
+			{
+				writer.WriteStartElement("wsdl:fault");
+				writer.WriteAttributeString("wsam:Action", $"{operation.SoapAction}{fault.Name}Fault");
+				writer.WriteAttributeString("name", $"{fault.Name}Fault");
+				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_{fault.Name}Fault_FaultMessage");
+				writer.WriteEndElement(); // wsdl:fault
+			}
 		}
 
 		private void AddBinding(XmlDictionaryWriter writer)
@@ -628,10 +671,28 @@ namespace SoapCore
 				writer.WriteEndElement(); // soap:body
 				writer.WriteEndElement(); // wsdl:output
 
+				AddBindingFaults(writer, operation);
+
 				writer.WriteEndElement(); // wsdl:operation
 			}
 
 			writer.WriteEndElement(); // wsdl:binding
+		}
+
+		private void AddBindingFaults(XmlDictionaryWriter writer, OperationDescription operation)
+		{
+			foreach (Type fault in operation.Faults)
+			{
+				writer.WriteStartElement("wsdl:fault");
+				writer.WriteAttributeString("name", $"{fault.Name}Fault");
+
+				writer.WriteStartElement("soap:fault");
+				writer.WriteAttributeString("use", "literal");
+				writer.WriteAttributeString("name", $"{fault.Name}Fault");
+				writer.WriteEndElement(); // soap:fault
+
+				writer.WriteEndElement(); // wsdl:fault
+			}
 		}
 
 		private void AddService(XmlDictionaryWriter writer)
