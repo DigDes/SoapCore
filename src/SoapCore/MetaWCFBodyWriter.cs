@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -562,11 +562,34 @@ namespace SoapCore
 						prop.DeclaringType == type &&
 						prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
 
+					var dataMembersToWrite = new List<DataMemberDescription>();
+
 					//TODO: base type properties
 					//TODO: enforce order attribute parameters
-					foreach (var property in properties.OrderBy(p => p.Name))
+					foreach (var property in properties)
 					{
-						AddSchemaType(writer, property.PropertyType, property.Name);
+						var propertyName = property.Name;
+
+						var attributes = property.GetCustomAttributes(true);
+						foreach (var attr in attributes)
+						{
+							if (attr is DataMemberAttribute dataContractAttribute)
+							{
+								propertyName = dataContractAttribute.Name;
+								break;
+							}
+						}
+
+						dataMembersToWrite.Add(new DataMemberDescription
+						{
+							Name = propertyName,
+							Type = property.PropertyType
+						});
+					}
+
+					foreach (var p in dataMembersToWrite.OrderBy(p => p.Name, StringComparer.Ordinal))
+					{
+						AddSchemaType(writer, p.Type, p.Name);
 					}
 				}
 
