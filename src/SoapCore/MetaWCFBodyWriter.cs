@@ -951,7 +951,7 @@ namespace SoapCore
 
 			var baseType = type.GetTypeInfo().BaseType;
 
-			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !baseType.Name.Equals("Object");
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && baseType != null && !baseType.Name.Equals("Object");
 		}
 	}
 }
