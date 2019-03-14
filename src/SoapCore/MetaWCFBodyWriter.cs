@@ -464,6 +464,11 @@ namespace SoapCore
 				return;
 			}
 
+			if (type == typeof(DateTimeOffset))
+			{
+				return;
+			}
+
 			if (HasBaseType(type))
 			{
 				DiscoveryTypesByProperties(type.BaseType, false);
@@ -473,9 +478,9 @@ namespace SoapCore
 			foreach (var property in type.GetProperties().Where(prop =>
 						prop.DeclaringType == type
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
-				        && !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName)))
+						&& !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName) && prop.PropertyType != typeof(ValueType) && prop.PropertyType != typeof(DateTimeOffset)))
 			{
-				Type propertyType;
+				Type propertyType = null;
 				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
 				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
 				{
@@ -493,7 +498,7 @@ namespace SoapCore
 					propertyType = property.PropertyType;
 				}
 
-				if (!propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
+				if (propertyType != null && !propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
 				{
 					DiscoveryTypesByProperties(propertyType, false);
 					_complexTypeToBuild.Enqueue(propertyType);
@@ -573,7 +578,7 @@ namespace SoapCore
 						var attributes = property.GetCustomAttributes(true);
 						foreach (var attr in attributes)
 						{
-							if (attr is DataMemberAttribute dataContractAttribute)
+							if (attr is DataMemberAttribute dataContractAttribute && !string.IsNullOrEmpty(dataContractAttribute.Name))
 							{
 								propertyName = dataContractAttribute.Name;
 								break;
@@ -974,7 +979,7 @@ namespace SoapCore
 
 			var baseType = type.GetTypeInfo().BaseType;
 
-			return !isArrayType && !type.IsEnum && !type.IsPrimitive && baseType != null && !baseType.Name.Equals("Object");
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && baseType != null && !baseType.Name.Equals("Object") && baseType.FullName != typeof(ValueType).FullName;
 		}
 	}
 }
