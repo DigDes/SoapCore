@@ -55,7 +55,7 @@ namespace SoapCore
 		private readonly string _baseUrl;
 		private readonly Binding _binding;
 
-		private readonly Queue<Type> _complexTypeToBuild;
+		private readonly Dictionary<Type, string> _complexTypeToBuild = new Dictionary<Type, string>();
 		private readonly Queue<Type> _arrayToBuild;
 
 		private readonly HashSet<string> _builtEnumTypes;
@@ -71,7 +71,6 @@ namespace SoapCore
 			_baseUrl = baseUrl;
 			_binding = binding;
 
-			_complexTypeToBuild = new Queue<Type>();
 			_arrayToBuild = new Queue<Type>();
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
@@ -121,6 +120,11 @@ namespace SoapCore
 
 		private string GetModelNamespace(string @namespace)
 		{
+			if (@namespace.StartsWith("http"))
+			{
+				return @namespace;
+			}
+
 			return $"{DataContraceNamespace}{@namespace}";
 		}
 
@@ -132,7 +136,7 @@ namespace SoapCore
 				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
 										? elementAttribute.ElementName
 										: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
-				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, objectNamespace: elementAttribute?.Namespace);
+				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, objectNamespace: elementAttribute?.Namespace ?? (parameterInfo.Namespace != "http://tempuri.org/" ? parameterInfo.Namespace : null));
 			}
 		}
 
@@ -185,7 +189,7 @@ namespace SoapCore
 					}
 
 					var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
-					AddSchemaType(writer, returnType, returnName);
+					AddSchemaType(writer, returnType, returnName, false, GetDataContractNamespace(returnType));
 				}
 
 				WriteParameters(writer, operation.OutParameters);
@@ -409,10 +413,10 @@ namespace SoapCore
 		{
 			foreach (var type in _complexTypeToBuild.ToArray())
 			{
-				DiscoveryTypesByProperties(type, true);
+				DiscoveryTypesByProperties(type.Key, true);
 			}
 
-			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Namespace);
+			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Value).ToDictionary(x => x.Key, x => x.Select(k => k.Key));
 
 			foreach (var types in groupedByNamespace.Distinct())
 			{
@@ -434,7 +438,7 @@ namespace SoapCore
 				writer.WriteAttributeString("namespace", ARRAYS_NS);
 				writer.WriteEndElement();
 
-				foreach (var type in types.Distinct())
+				foreach (var type in types.Value.Distinct())
 				{
 					if (type.IsEnum)
 					{
@@ -459,23 +463,28 @@ namespace SoapCore
 		private void DiscoveryTypesByProperties(Type type, bool isRootType)
 		{
 			//guard against infinity recursion
-			if (!isRootType && _complexTypeToBuild.Contains(type))
+			if (!isRootType && _complexTypeToBuild.ContainsKey(type))
 			{
 				return;
 			}
 
-			if (HasBaseType(type))
+			if (type == typeof(DateTimeOffset))
+			{
+				return;
+			}
+
+			if (HasBaseType(type) && type.BaseType != null)
 			{
 				DiscoveryTypesByProperties(type.BaseType, false);
-				_complexTypeToBuild.Enqueue(type.BaseType);
+				_complexTypeToBuild[type.BaseType] = GetDataContractNamespace(type.BaseType);
 			}
 
 			foreach (var property in type.GetProperties().Where(prop =>
 						prop.DeclaringType == type
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
-				        && !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName)))
+						&& !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName) && prop.PropertyType != typeof(ValueType) && prop.PropertyType != typeof(DateTimeOffset)))
 			{
-				Type propertyType;
+				Type propertyType = null;
 				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
 				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
 				{
@@ -486,19 +495,35 @@ namespace SoapCore
 					propertyType = property.PropertyType.IsArray
 						? property.PropertyType.GetElementType()
 						: GetGenericType(property.PropertyType);
-					_complexTypeToBuild.Enqueue(property.PropertyType);
+					_complexTypeToBuild[property.PropertyType] = GetDataContractNamespace(property.PropertyType);
 				}
 				else
 				{
 					propertyType = property.PropertyType;
 				}
 
-				if (!propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
+				if (propertyType != null && !propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
 				{
 					DiscoveryTypesByProperties(propertyType, false);
-					_complexTypeToBuild.Enqueue(propertyType);
+					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
 				}
 			}
+		}
+
+		private string GetDataContractNamespace(Type type)
+		{
+			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				type = type.IsArray ? type.GetElementType() : GetGenericType(type);
+			}
+
+			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
+			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Namespace))
+			{
+				return dataContractAttribute.Namespace;
+			}
+
+			return GetModelNamespace(type.Namespace);
 		}
 
 		private void WriteEnum(XmlDictionaryWriter writer, Type type)
@@ -554,7 +579,7 @@ namespace SoapCore
 				if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
 				{
 					var elementType = type.IsArray ? type.GetElementType() : GetGenericType(type);
-					AddSchemaType(writer, elementType, null, true);
+					AddSchemaType(writer, elementType, null, true, GetDataContractNamespace(type));
 				}
 				else
 				{
@@ -571,11 +596,21 @@ namespace SoapCore
 						var propertyName = property.Name;
 
 						var attributes = property.GetCustomAttributes(true);
+						int order = 0;
 						foreach (var attr in attributes)
 						{
 							if (attr is DataMemberAttribute dataContractAttribute)
 							{
-								propertyName = dataContractAttribute.Name;
+								if (!string.IsNullOrEmpty(dataContractAttribute.Name))
+								{
+									propertyName = dataContractAttribute.Name;
+								}
+
+								if (dataContractAttribute.Order > 0)
+								{
+									order = dataContractAttribute.Order;
+								}
+
 								break;
 							}
 						}
@@ -583,13 +618,14 @@ namespace SoapCore
 						dataMembersToWrite.Add(new DataMemberDescription
 						{
 							Name = propertyName,
-							Type = property.PropertyType
+							Type = property.PropertyType,
+							Order = order
 						});
 					}
 
-					foreach (var p in dataMembersToWrite.OrderBy(p => p.Name, StringComparer.Ordinal))
+					foreach (var p in dataMembersToWrite.OrderBy(x => x.Order).ThenBy(p => p.Name, StringComparer.Ordinal))
 					{
-						AddSchemaType(writer, p.Type, p.Name);
+						AddSchemaType(writer, p.Type, p.Name, false, GetDataContractNamespace(p.Type));
 					}
 				}
 
@@ -900,7 +936,7 @@ namespace SoapCore
 
 						writer.WriteAttributeString("name", name);
 						WriteComplexElementType(writer, $"ArrayOf{elType.Name}", _schemaNamespace, objectNamespace, type);
-						_complexTypeToBuild.Enqueue(type);
+						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 					}
 				}
 				else
@@ -912,7 +948,7 @@ namespace SoapCore
 
 					writer.WriteAttributeString("name", name);
 					WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace, type);
-					_complexTypeToBuild.Enqueue(type);
+					_complexTypeToBuild[type] = GetDataContractNamespace(type);
 				}
 			}
 
@@ -974,7 +1010,7 @@ namespace SoapCore
 
 			var baseType = type.GetTypeInfo().BaseType;
 
-			return !isArrayType && !type.IsEnum && !type.IsPrimitive && baseType != null && !baseType.Name.Equals("Object");
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !type.IsValueType && baseType != null && !baseType.Name.Equals("Object");
 		}
 	}
 }
