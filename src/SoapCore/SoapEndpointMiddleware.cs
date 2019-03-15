@@ -47,6 +47,12 @@ namespace SoapCore
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableRewind();
+			var trailPathTuner = serviceProvider.GetServices<IServiceOperationTuner>().FirstOrDefault(f => f is TrailingServicePathTuner);
+			if (trailPathTuner != null)
+			{
+				trailPathTuner.Tune(httpContext, null, null);
+			}
+
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
 				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
