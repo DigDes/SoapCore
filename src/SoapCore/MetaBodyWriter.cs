@@ -624,6 +624,9 @@ namespace SoapCore
 				case "Char":
 					resolvedType = "xs:string";
 					break;
+				case "TimeSpan":
+					resolvedType = "xs:duration";
+					break;
 			}
 
 			if (string.IsNullOrEmpty(resolvedType))
