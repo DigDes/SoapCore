@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
-		<VersionPrefix>0.9.9.1</VersionPrefix>
+		<VersionPrefix>0.9.9.5</VersionPrefix>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
+		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
@@ -14,7 +14,7 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>0.9.9.1</Version>
+		<Version>0.9.9.5</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
