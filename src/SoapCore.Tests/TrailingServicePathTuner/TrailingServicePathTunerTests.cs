@@ -1,12 +1,9 @@
-using System;
-using System.IO;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 
 namespace SoapCore.Tests
 {
@@ -38,7 +35,7 @@ namespace SoapCore.Tests
 			SoapEndpointMiddleware soapCore = new SoapEndpointMiddleware(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
 
 			var context = new DefaultHttpContext();
-			context.Request.Path = new PathString("/DynamicPath/Service.svc"); 
+			context.Request.Path = new PathString("/DynamicPath/Service.svc");
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
