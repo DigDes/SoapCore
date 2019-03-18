@@ -162,6 +162,12 @@ namespace SoapCore
 				}
 			}
 
+			if (soapAction.Contains('/'))
+			{
+				// soapAction may be a path. Therefore must take the action from the path provided.
+				soapAction = soapAction.Split('/').Last();
+			}
+
 			if (!string.IsNullOrEmpty(soapAction))
 			{
 				// soapAction may have '"' in some cases.
@@ -242,7 +248,7 @@ namespace SoapCore
 					}
 
 					// Get operation arguments from message
-					var arguments = GetRequestArguments(requestMessage, reader, operation);
+					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
 
 					// Execute model binding filters
 					object modelBindingOutput = null;
@@ -327,7 +333,7 @@ namespace SoapCore
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation)
+		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation, HttpContext httpContext)
 		{
 			var arguments = new object[operation.AllParameters.Length];
 
@@ -391,6 +397,10 @@ namespace SoapCore
 							default: throw new NotImplementedException();
 						}
 					}
+				}
+				else if (parameterInfo.Parameter.ParameterType == typeof(HttpContext))
+				{
+					arguments[parameterInfo.Index] = httpContext;
 				}
 				else
 				{
