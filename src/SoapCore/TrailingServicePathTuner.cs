@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 namespace SoapCore
 {
 	/// <summary>
+	/// This tuner truncates the incoming http request to the last path-part. ie. /DynamicPath/Service.svc becomes /Service.svc
 	/// Register this tuner in ConfigureServices: services.AddSoapServiceOperationTuner(new TrailingServicePathTuner));
 	/// </summary>
 	public class TrailingServicePathTuner : IServiceOperationTuner

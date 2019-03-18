@@ -16,13 +16,18 @@ namespace SoapCore.Tests
 		[TestMethod]
 		public async Task TrailingServicePath_WritesMessage_True()
 		{
+			// The Trailing Service Path Tuner is an opt-in service.
+
+			// This test demonstrates the proper behavior when the service
+			// is registered in app startup.
+
 			// Arrange
 			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
 
 			var encoder = new MockMessageEncoder();
 			SoapOptions options = new SoapOptions()
 			{
-				Path = "/Service.svc",
+				Path = "/Service.svc", // this is the path registered in app startup
 				Binding = new CustomBinding(),
 				MessageEncoder = encoder,
 				ServiceType = typeof(SoapCore.TrailingServicePathTuner),
@@ -33,7 +38,7 @@ namespace SoapCore.Tests
 			SoapEndpointMiddleware soapCore = new SoapEndpointMiddleware(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
 
 			var context = new DefaultHttpContext();
-			context.Request.Path = new PathString("/DynamicPath/Service.svc");
+			context.Request.Path = new PathString("/DynamicPath/Service.svc"); 
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
@@ -46,13 +51,18 @@ namespace SoapCore.Tests
 		[TestMethod]
 		public async Task TrailingServicePath_WritesMessage_False()
 		{
+			// The Trailing Service Path Tuner is an opt-in service.
+
+			// This test demonstrates the breaking behavior when the service
+			// is registered in app startup but a single path-part is not implemented.
+
 			// Arrange
 			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
 
 			var encoder = new MockMessageEncoder();
 			SoapOptions options = new SoapOptions()
 			{
-				Path = "/v1/Service.svc",
+				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
 				Binding = new CustomBinding(),
 				MessageEncoder = encoder,
 				ServiceType = typeof(SoapCore.TrailingServicePathTuner),
@@ -76,13 +86,18 @@ namespace SoapCore.Tests
 		[TestMethod]
 		public async Task FullPath_WritesMessage_True()
 		{
+			// The Trailing Service Path Tuner is an opt-in service.
+
+			// This test demonstrates existing functionality is not changed
+			// when the service is not registered in app startup (opted-in).
+
 			// Arrange
 			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
 
 			var encoder = new MockMessageEncoder();
 			SoapOptions options = new SoapOptions()
 			{
-				Path = "/v1/Service.svc",
+				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
 				Binding = new CustomBinding(),
 				MessageEncoder = encoder,
 				ServiceType = typeof(SoapCore.TrailingServicePathTuner),
