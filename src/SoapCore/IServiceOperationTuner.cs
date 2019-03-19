@@ -5,7 +5,6 @@ namespace SoapCore
 	/// <summary>
 	/// Interface for tuning each operation call
 	/// </summary>
-	[System.ServiceModel.ServiceContractAttribute]
 	public interface IServiceOperationTuner
 	{
 		/// <summary>

@@ -47,10 +47,10 @@ namespace SoapCore
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableRewind();
-			var trailPathTuner = serviceProvider.GetServices<IServiceOperationTuner>().FirstOrDefault(f => f is TrailingServicePathTuner);
+			var trailPathTuner = serviceProvider.GetServices<TrailingServicePathTuner>().FirstOrDefault();
 			if (trailPathTuner != null)
 			{
-				trailPathTuner.Tune(httpContext, null, null);
+				trailPathTuner.ConvertPath(httpContext);
 			}
 
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
