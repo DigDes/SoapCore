@@ -451,7 +451,11 @@ namespace SoapCore
 
 					writer.WriteStartElement("xs:element");
 					writer.WriteAttributeString("name", GetTypeName(type));
-					writer.WriteAttributeString("nillable", "true");
+					if (Nullable.GetUnderlyingType(type) != null)
+					{
+						writer.WriteAttributeString("nillable", "true");
+					}
+
 					writer.WriteAttributeString("type", "tns:" + GetTypeName(type));
 					writer.WriteEndElement(); // xs:element
 				}
@@ -957,7 +961,11 @@ namespace SoapCore
 
 		private void WriteComplexElementType(XmlDictionaryWriter writer, string typeName, string schemaNamespace, string objectNamespace, Type type)
 		{
-			writer.WriteAttributeString("nillable", "true");
+			if (Nullable.GetUnderlyingType(type) != null)
+			{
+				writer.WriteAttributeString("nillable", "true");
+			}
+
 			if (schemaNamespace != objectNamespace)
 			{
 				var ns = $"q{_namespaceCounter++}";
