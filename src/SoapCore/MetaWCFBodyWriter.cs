@@ -451,7 +451,7 @@ namespace SoapCore
 
 					writer.WriteStartElement("xs:element");
 					writer.WriteAttributeString("name", GetTypeName(type));
-					if (Nullable.GetUnderlyingType(type) != null)
+					if (!type.IsEnum || Nullable.GetUnderlyingType(type) != null)
 					{
 						writer.WriteAttributeString("nillable", "true");
 					}
@@ -961,7 +961,7 @@ namespace SoapCore
 
 		private void WriteComplexElementType(XmlDictionaryWriter writer, string typeName, string schemaNamespace, string objectNamespace, Type type)
 		{
-			if (Nullable.GetUnderlyingType(type) != null)
+			if (!type.IsEnum || Nullable.GetUnderlyingType(type) != null)
 			{
 				writer.WriteAttributeString("nillable", "true");
 			}
