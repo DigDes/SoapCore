@@ -510,7 +510,11 @@ namespace SoapCore
 
 					writer.WriteStartElement("xs:element");
 					writer.WriteAttributeString("name", GetTypeName(type));
-					writer.WriteAttributeString("nillable", "true");
+					if (!type.IsEnum || Nullable.GetUnderlyingType(type) != null)
+					{
+						writer.WriteAttributeString("nillable", "true");
+					}
+
 					writer.WriteAttributeString("type", "tns:" + GetTypeName(type));
 					writer.WriteEndElement(); // xs:element
 				}
@@ -860,7 +864,7 @@ namespace SoapCore
 			if (typeInfo.IsEnum)
 			{
 				WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace, type);
-				writer.WriteAttributeString("name", type.Name);
+				writer.WriteAttributeString("name", name);
 			}
 			else if (typeInfo.IsValueType)
 			{
@@ -1000,7 +1004,11 @@ namespace SoapCore
 
 		private void WriteComplexElementType(XmlDictionaryWriter writer, string typeName, string schemaNamespace, string objectNamespace, Type type)
 		{
-			writer.WriteAttributeString("nillable", "true");
+			if (!type.IsEnum || Nullable.GetUnderlyingType(type) != null)
+			{
+				writer.WriteAttributeString("nillable", "true");
+			}
+
 			if (schemaNamespace != objectNamespace)
 			{
 				var ns = $"q{_namespaceCounter++}";

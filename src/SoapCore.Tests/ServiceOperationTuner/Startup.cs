@@ -13,6 +13,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 		{
 			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
+			services.TryAddSingleton<TrailingServicePathTuner>();
 			services.AddSoapServiceOperationTuner(new TestServiceOperationTuner());
 			services.AddMvc();
 		}
