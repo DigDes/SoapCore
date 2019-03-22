@@ -576,7 +576,7 @@ namespace SoapCore
 
 					writer.WriteStartElement("xs:extension");
 
-					var modelNamespace = GetModelNamespace(type.BaseType);
+					var modelNamespace = GetDataContractNamespace(type.BaseType);
 
 					var typeName = type.BaseType.Name;
 
