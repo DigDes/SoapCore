@@ -821,7 +821,7 @@ namespace SoapCore
 			if (typeInfo.IsEnum)
 			{
 				WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace, type);
-				writer.WriteAttributeString("name", type.Name);
+				writer.WriteAttributeString("name", name);
 			}
 			else if (typeInfo.IsValueType)
 			{
