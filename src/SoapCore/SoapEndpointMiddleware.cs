@@ -354,7 +354,8 @@ namespace SoapCore
 			foreach (var parameterInfo in operation.InParameters)
 			{
 				var parameterName = parameterInfo.Name;
-				var parameterNs = parameterInfo.Namespace;
+
+				var parameterNs = parameterInfo.Namespace ?? operation.Contract.Namespace;
 
 				if (xmlReader.IsStartElement(parameterName, parameterNs))
 				{

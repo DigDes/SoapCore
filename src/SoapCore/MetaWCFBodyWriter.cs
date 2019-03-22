@@ -19,7 +19,7 @@ namespace SoapCore
 		private const string TRANSPORT_SCHEMA = "http://schemas.xmlsoap.org/soap/http";
 		private const string ARRAYS_NS = "http://schemas.microsoft.com/2003/10/Serialization/Arrays";
 		private const string SYSTEM_NS = "http://schemas.datacontract.org/2004/07/System";
-		private const string DataContraceNamespace = "http://schemas.datacontract.org/2004/07/";
+		private const string DataContractNamespace = "http://schemas.datacontract.org/2004/07/";
 		private const string SERIALIZATION_NS = "http://schemas.microsoft.com/2003/10/Serialization/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
@@ -108,24 +108,54 @@ namespace SoapCore
 			AddService(writer);
 		}
 
-		private string GetModelNamespace(Type type)
-		{
-			if (type != null && type.Namespace != _service.ServiceType.Namespace)
-			{
-				return $"{DataContraceNamespace}{type.Namespace}";
-			}
-
-			return $"{DataContraceNamespace}{_service.ServiceType.Namespace}";
-		}
-
-		private string GetModelNamespace(string @namespace)
+		private static string GetModelNamespace(string @namespace)
 		{
 			if (@namespace.StartsWith("http"))
 			{
 				return @namespace;
 			}
 
-			return $"{DataContraceNamespace}{@namespace}";
+			return $"{DataContractNamespace}{@namespace}";
+		}
+
+		private static string GetDataContractNamespace(Type type)
+		{
+			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				type = type.IsArray ? type.GetElementType() : GetGenericType(type);
+			}
+
+			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
+			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Namespace))
+			{
+				return dataContractAttribute.Namespace;
+			}
+
+			return GetModelNamespace(type.Namespace);
+		}
+
+		private static Type GetGenericType(Type collectionType)
+		{
+			// Recursively look through the base class to find the Generic Type of the Enumerable
+			var baseType = collectionType;
+			var baseTypeInfo = collectionType.GetTypeInfo();
+			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
+			{
+				baseType = baseTypeInfo.BaseType;
+				baseTypeInfo = baseType.GetTypeInfo();
+			}
+
+			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		private string GetModelNamespace(Type type)
+		{
+			if (type != null && type.Namespace != _service.ServiceType.Namespace)
+			{
+				return $"{DataContractNamespace}{type.Namespace}";
+			}
+
+			return $"{DataContractNamespace}{_service.ServiceType.Namespace}";
 		}
 
 		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos)
@@ -151,12 +181,41 @@ namespace SoapCore
 			_namespaceCounter = 1;
 
 			//discovery all parameters types which namespaceses diff with service namespace
-			var namespaces = _service.Operations.SelectMany(x => x.AllParameters.Where(parameter => parameter.Parameter.ParameterType.Namespace != _service.ServiceType.Namespace && parameter.Parameter.ParameterType.Namespace != "System")).Select(x => x.Parameter.ParameterType.Namespace);
+			foreach (var operation in _service.Operations)
+			{
+				foreach (var parameter in operation.AllParameters)
+				{
+					var type = parameter.Parameter.ParameterType;
+					var typeInfo = type.GetTypeInfo();
+					if (typeInfo.IsByRef)
+					{
+						type = typeInfo.GetElementType();
+					}
 
-			foreach (var @namespace in namespaces.Distinct())
+					_complexTypeToBuild[type] = GetDataContractNamespace(type);
+
+					DiscoveryTypesByProperties(type, true);
+				}
+
+				if (operation.DispatchMethod.ReturnType != typeof(void))
+				{
+					var returnType = operation.DispatchMethod.ReturnType;
+					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+					{
+						returnType = returnType.GetGenericArguments().First();
+					}
+
+					_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
+					DiscoveryTypesByProperties(returnType, true);
+				}
+			}
+
+			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Value).ToDictionary(x => x.Key, x => x.Select(k => k.Key));
+
+			foreach (var @namespace in groupedByNamespace.Keys.Where(x => x != null && x != _service.ServiceType.Namespace).Distinct())
 			{
 				writer.WriteStartElement("xs:import");
-				writer.WriteAttributeString("namespace", DataContraceNamespace + @namespace);
+				writer.WriteAttributeString("namespace", @namespace);
 				writer.WriteEndElement();
 			}
 
@@ -508,22 +567,6 @@ namespace SoapCore
 					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
 				}
 			}
-		}
-
-		private string GetDataContractNamespace(Type type)
-		{
-			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
-			{
-				type = type.IsArray ? type.GetElementType() : GetGenericType(type);
-			}
-
-			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Namespace))
-			{
-				return dataContractAttribute.Namespace;
-			}
-
-			return GetModelNamespace(type.Namespace);
 		}
 
 		private void WriteEnum(XmlDictionaryWriter writer, Type type)
@@ -962,7 +1005,7 @@ namespace SoapCore
 			{
 				var ns = $"q{_namespaceCounter++}";
 				writer.WriteAttributeString("type", $"{ns}:{typeName}");
-				writer.WriteAttributeString($"xmlns:{ns}", GetModelNamespace(type));
+				writer.WriteAttributeString($"xmlns:{ns}", GetDataContractNamespace(type));
 			}
 			else
 			{
@@ -990,27 +1033,13 @@ namespace SoapCore
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 #pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
 
-		private Type GetGenericType(Type collectionType)
-		{
-			// Recursively look through the base class to find the Generic Type of the Enumerable
-			var baseType = collectionType;
-			var baseTypeInfo = collectionType.GetTypeInfo();
-			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
-			{
-				baseType = baseTypeInfo.BaseType;
-				baseTypeInfo = baseType.GetTypeInfo();
-			}
-
-			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
-		}
-
 		private bool HasBaseType(Type type)
 		{
 			var isArrayType = type.IsArray || typeof(IEnumerable).IsAssignableFrom(type);
 
 			var baseType = type.GetTypeInfo().BaseType;
 
-			return !isArrayType && !type.IsEnum && !type.IsPrimitive && baseType != null && !baseType.Name.Equals("Object") && baseType.FullName != typeof(ValueType).FullName;
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !type.IsValueType && baseType != null && !baseType.Name.Equals("Object");
 		}
 	}
 }
