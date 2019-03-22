@@ -192,9 +192,11 @@ namespace SoapCore
 						type = typeInfo.GetElementType();
 					}
 
-					_complexTypeToBuild[type] = GetDataContractNamespace(type);
-
-					DiscoveryTypesByProperties(type, true);
+					if (TypeIsComplexForWsdl(type, out type))
+					{
+						_complexTypeToBuild[type] = GetDataContractNamespace(type);
+						DiscoveryTypesByProperties(type, true);
+					}
 				}
 
 				if (operation.DispatchMethod.ReturnType != typeof(void))
@@ -205,8 +207,11 @@ namespace SoapCore
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
-					DiscoveryTypesByProperties(returnType, true);
+					if (TypeIsComplexForWsdl(returnType, out returnType))
+					{
+						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
+						DiscoveryTypesByProperties(returnType, true);
+					}
 				}
 			}
 
@@ -547,7 +552,7 @@ namespace SoapCore
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
 						&& !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName) && prop.PropertyType != typeof(ValueType) && prop.PropertyType != typeof(DateTimeOffset)))
 			{
-				Type propertyType = null;
+				Type propertyType;
 				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
 				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
 				{
@@ -1000,6 +1005,44 @@ namespace SoapCore
 			}
 
 			writer.WriteEndElement(); // xs:element
+		}
+
+		private bool TypeIsComplexForWsdl(Type type, out Type resultType)
+		{
+			var typeInfo = type.GetTypeInfo();
+			resultType = null;
+			if (typeInfo.IsByRef)
+			{
+				type = typeInfo.GetElementType();
+			}
+
+			if (typeInfo.IsEnum || typeInfo.IsValueType)
+			{
+				return false;
+			}
+
+			if (type.Name == "String" || type.Name == "String&")
+			{
+				return false;
+			}
+
+			if (type == typeof(System.Xml.Linq.XElement))
+			{
+				return false;
+			}
+
+			if (type.Name == "Byte[]")
+			{
+				return false;
+			}
+
+			if (typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				resultType = type.IsArray ? type.GetElementType() : GetGenericType(type);
+				return true;
+			}
+
+			return true;
 		}
 
 		private void WriteComplexElementType(XmlDictionaryWriter writer, string typeName, string schemaNamespace, string objectNamespace, Type type)
