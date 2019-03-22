@@ -575,7 +575,21 @@ namespace SoapCore
 					writer.WriteStartElement("xs:complexContent");
 
 					writer.WriteStartElement("xs:extension");
-					writer.WriteAttributeString("base", $"tns:{type.BaseType.Name}");
+
+					var modelNamespace = GetDataContractNamespace(type.BaseType);
+
+					var typeName = type.BaseType.Name;
+
+					if (_schemaNamespace != modelNamespace)
+					{
+						var ns = $"q{_namespaceCounter++}";
+						writer.WriteAttributeString("base", $"{ns}:{typeName}");
+						writer.WriteAttributeString($"xmlns:{ns}", modelNamespace);
+					}
+					else
+					{
+						writer.WriteAttributeString("base", $"tns:{typeName}");
+					}
 				}
 
 				writer.WriteStartElement("xs:sequence");
