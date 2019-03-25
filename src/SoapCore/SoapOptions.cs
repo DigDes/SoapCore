@@ -11,7 +11,7 @@ namespace SoapCore
 	{
 		public Type ServiceType { get; set; }
 		public string Path { get; set; }
-		public MessageEncoder MessageEncoder { get; set; }
+		public MessageEncoder[] MessageEncoders { get; set; }
 		public SoapSerializer SoapSerializer { get; set; }
 		public bool CaseInsensitivePath { get; set; }
 		public ISoapModelBounder SoapModelBounder { get; set; }

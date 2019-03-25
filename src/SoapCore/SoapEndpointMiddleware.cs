@@ -20,18 +20,18 @@ namespace SoapCore
 		private readonly RequestDelegate _next;
 		private readonly ServiceDescription _service;
 		private readonly string _endpointPath;
-		private readonly MessageEncoder _messageEncoder;
+		private readonly MessageEncoder[] _messageEncoders;
 		private readonly SoapSerializer _serializer;
 		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly ISoapModelBounder _soapModelBounder;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
 		{
 			_logger = logger;
 			_next = next;
 			_endpointPath = path;
-			_messageEncoder = encoder;
+			_messageEncoders = encoders;
 			_serializer = serializer;
 			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
@@ -39,8 +39,13 @@ namespace SoapCore
 			_binding = binding;
 		}
 
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
+			: this(logger, next, serviceType, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding)
+		{
+		}
+
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, SoapOptions options)
-			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoder, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding)
+			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoders, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding)
 		{
 		}
 
@@ -74,15 +79,16 @@ namespace SoapCore
 
 		private Message ProcessMeta(HttpContext httpContext)
 		{
+			MessageEncoder messageEncoder = _messageEncoders[0];
 			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
 			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
 
-			var responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
+			var responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service, _binding);
 
-			httpContext.Response.ContentType = _messageEncoder.ContentType;
-			_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+			httpContext.Response.ContentType = messageEncoder.ContentType;
+			messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 
 			return responseMessage;
 		}
@@ -199,8 +205,19 @@ namespace SoapCore
 				return ProcessMeta(httpContext);
 			}
 
+			// Get the encoder based on Content Type
+			var messageEncoder = _messageEncoders[0];
+			for (int i = 0; i < _messageEncoders.Length; i++)
+			{
+				if (_messageEncoders[i].IsContentTypeSupported(httpContext.Request.ContentType))
+				{
+					messageEncoder = _messageEncoders[i];
+					break;
+				}
+			}
+
 			//Get the message
-			var requestMessage = _messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+			var requestMessage = messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 
 			// Get MessageFilters, ModelBindingFilters
 			var messageFilters = serviceProvider.GetServices<IMessageFilter>();
@@ -216,7 +233,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
 				return responseMessage;
 			}
 
@@ -302,7 +319,7 @@ namespace SoapCore
 					// Create response message
 					var resultName = operation.ReturnName;
 					var bodyWriter = new ServiceBodyWriter(_serializer, operation, resultName, responseObject, resultOutDictionary);
-					responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
+					responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
 					responseMessage = new CustomMessage(responseMessage);
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
@@ -312,12 +329,12 @@ namespace SoapCore
 
 					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 
-					_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+					messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 				}
 				catch (Exception exception)
 				{
 					_logger.LogWarning(0, exception, exception.Message);
-					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
+					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
 				}
 			}
 
@@ -331,7 +348,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, httpContext);
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
 				return responseMessage;
 			}
 
@@ -452,6 +469,9 @@ namespace SoapCore
 		/// <param name="serviceProvider">
 		/// The DI container.
 		/// </param>
+		/// <param name="messageEncoder">
+		/// The Message Encoder.
+		/// </param>
 		/// <param name="httpContext">
 		/// The HTTP context that received the response message.
 		/// </param>
@@ -463,6 +483,7 @@ namespace SoapCore
 			Exception exception,
 			int statusCode,
 			IServiceProvider serviceProvider,
+			MessageEncoder messageEncoder,
 			HttpContext httpContext)
 		{
 			// Create response message
@@ -475,13 +496,13 @@ namespace SoapCore
 			}
 
 			var bodyWriter = new FaultBodyWriter(new Fault(faultDetail) { FaultString = errorText });
-			var responseMessage = Message.CreateMessage(_messageEncoder.MessageVersion, null, bodyWriter);
+			var responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
 			responseMessage = new CustomMessage(responseMessage);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 			httpContext.Response.StatusCode = statusCode;
-			_messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+			messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 
 			return responseMessage;
 		}
