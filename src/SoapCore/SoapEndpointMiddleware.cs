@@ -361,7 +361,7 @@ namespace SoapCore
 			var arguments = new object[operation.AllParameters.Length];
 
 			// Find the element for the operation's data
-			if (!operation.IsMessageContractRequest)
+			if (!operation.IsMessageContractRequest && string.Compare(xmlReader.LocalName, operation.Name, StringComparison.OrdinalIgnoreCase) != 0)
 			{
 				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 			}
