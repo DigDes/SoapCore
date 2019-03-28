@@ -176,6 +176,7 @@ namespace SoapCore
 			writer.WriteAttributeString("elementFormDefault", "qualified");
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 			writer.WriteAttributeString("xmlns:xs", XMLNS_XS);
+			writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
 
 			_schemaNamespace = TargetNameSpace;
 			_namespaceCounter = 1;
@@ -1011,6 +1012,7 @@ namespace SoapCore
 		{
 			var typeInfo = type.GetTypeInfo();
 			resultType = null;
+			resultType = type;
 			if (typeInfo.IsByRef)
 			{
 				type = typeInfo.GetElementType();
