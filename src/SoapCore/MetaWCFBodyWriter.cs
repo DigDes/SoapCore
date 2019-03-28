@@ -61,6 +61,7 @@ namespace SoapCore
 		private readonly HashSet<string> _builtEnumTypes;
 		private readonly HashSet<string> _builtComplexTypes;
 		private readonly HashSet<string> _buildArrayTypes;
+		private readonly HashSet<string> _builtSerializationElements;
 
 		private bool _buildDateTimeOffset;
 		private string _schemaNamespace;
@@ -75,6 +76,7 @@ namespace SoapCore
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
+			_builtSerializationElements = new HashSet<string>();
 
 			BindingType = service.Contracts.First().Name;
 
@@ -467,11 +469,16 @@ namespace SoapCore
 
 		private void WriteSerializationElement(XmlDictionaryWriter writer, string name, string type, bool nillable)
 		{
-			writer.WriteStartElement("xs:element");
-			writer.WriteAttributeString("name", name);
-			writer.WriteAttributeString("nillable", nillable ? "true" : "false");
-			writer.WriteAttributeString("type", type);
-			writer.WriteEndElement();
+			if (!_builtSerializationElements.Contains(name))
+			{
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", name);
+				writer.WriteAttributeString("nillable", nillable ? "true" : "false");
+				writer.WriteAttributeString("type", type);
+				writer.WriteEndElement();
+
+				_builtSerializationElements.Add(name);
+			}
 		}
 
 		private void AddComplexTypes(XmlDictionaryWriter writer)
@@ -624,7 +631,21 @@ namespace SoapCore
 					writer.WriteStartElement("xs:complexContent");
 
 					writer.WriteStartElement("xs:extension");
-					writer.WriteAttributeString("base", $"tns:{type.BaseType.Name}");
+
+					var modelNamespace = GetDataContractNamespace(type.BaseType);
+
+					var typeName = type.BaseType.Name;
+
+					if (_schemaNamespace != modelNamespace)
+					{
+						var ns = $"q{_namespaceCounter++}";
+						writer.WriteAttributeString("base", $"{ns}:{typeName}");
+						writer.WriteAttributeString($"xmlns:{ns}", modelNamespace);
+					}
+					else
+					{
+						writer.WriteAttributeString("base", $"tns:{typeName}");
+					}
 				}
 
 				writer.WriteStartElement("xs:sequence");

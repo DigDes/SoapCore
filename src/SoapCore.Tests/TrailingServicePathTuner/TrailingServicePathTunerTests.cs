@@ -26,7 +26,7 @@ namespace SoapCore.Tests
 			{
 				Path = "/Service.svc", // this is the path registered in app startup
 				Binding = new CustomBinding(),
-				MessageEncoder = encoder,
+				MessageEncoders = new MessageEncoder[] { encoder },
 				ServiceType = typeof(MockSoapService),
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
@@ -61,7 +61,7 @@ namespace SoapCore.Tests
 			{
 				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
 				Binding = new CustomBinding(),
-				MessageEncoder = encoder,
+				MessageEncoders = new MessageEncoder[] { encoder },
 				ServiceType = typeof(MockSoapService),
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
@@ -96,7 +96,7 @@ namespace SoapCore.Tests
 			{
 				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
 				Binding = new CustomBinding(),
-				MessageEncoder = encoder,
+				MessageEncoders = new MessageEncoder[] { encoder },
 				ServiceType = typeof(MockSoapService),
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
