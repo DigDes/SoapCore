@@ -44,7 +44,8 @@ namespace SoapCore
 			["System.Decimal"] = ("decimal", SYSTEM_NS),
 			["System.Guid"] = ("guid", SERIALIZATION_NS),
 			["System.Char"] = ("char", SERIALIZATION_NS),
-			["System.TimeSpan"] = ("duration", SERIALIZATION_NS)
+			["System.TimeSpan"] = ("duration", SERIALIZATION_NS),
+			["System.Object"] = ("anyType", SERIALIZATION_NS)
 		};
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 #pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
@@ -199,6 +200,10 @@ namespace SoapCore
 					{
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 						DiscoveryTypesByProperties(type, true);
+					}
+					else if (type.IsEnum)
+					{
+						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 					}
 				}
 
@@ -510,7 +515,7 @@ namespace SoapCore
 				writer.WriteAttributeString("namespace", ARRAYS_NS);
 				writer.WriteEndElement();
 
-				foreach (var type in types.Value.Distinct())
+				foreach (var type in types.Value.Distinct(new TypesComparer(GetTypeName)))
 				{
 					if (type.IsEnum)
 					{
@@ -893,7 +898,7 @@ namespace SoapCore
 				WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace, type);
 				writer.WriteAttributeString("name", name);
 			}
-			else if (typeInfo.IsValueType)
+			else if (type.IsValueType)
 			{
 				string xsTypename;
 				if (typeof(DateTimeOffset).IsAssignableFrom(type))
@@ -957,6 +962,11 @@ namespace SoapCore
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("nillable", "true");
 					writer.WriteAttributeString("type", "xs:string");
+				}
+				else if (type.Name == "Object" || type.Name == "Object&")
+				{
+					writer.WriteAttributeString("name", "anyType");
+					writer.WriteAttributeString("type", "xs:anyType");
 				}
 				else if (type == typeof(System.Xml.Linq.XElement))
 				{
@@ -1039,6 +1049,12 @@ namespace SoapCore
 				type = typeInfo.GetElementType();
 			}
 
+			if (typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				resultType = type.IsArray ? type.GetElementType() : GetGenericType(type);
+				type = resultType;
+			}
+
 			if (typeInfo.IsEnum || typeInfo.IsValueType)
 			{
 				return false;
@@ -1059,10 +1075,9 @@ namespace SoapCore
 				return false;
 			}
 
-			if (typeof(IEnumerable).IsAssignableFrom(type))
+			if (SysTypeDic.ContainsKey(type.FullName))
 			{
-				resultType = type.IsArray ? type.GetElementType() : GetGenericType(type);
-				return true;
+				return false;
 			}
 
 			return true;
