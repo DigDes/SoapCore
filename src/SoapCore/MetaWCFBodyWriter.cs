@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -65,6 +66,7 @@ namespace SoapCore
 		private readonly HashSet<string> _builtSerializationElements;
 
 		private bool _buildDateTimeOffset;
+		private bool _buildDataTable;
 		private string _schemaNamespace;
 
 		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
@@ -343,6 +345,54 @@ namespace SoapCore
 				writer.WriteEndElement();
 
 				writer.WriteEndElement(); // xs:schema
+			}
+
+			if (_buildDataTable)
+			{
+				writer.WriteStartElement("xs:schema");
+				writer.WriteAttributeString("elementFormDefault", "qualified");
+				writer.WriteAttributeString("targetNamespace", "http://schemas.datacontract.org/2004/07/System.Data");
+				writer.WriteAttributeString("xmlns:xs", "http://www.w3.org/2001/XMLSchema");
+				writer.WriteAttributeString("xmlns:tns", "http://schemas.datacontract.org/2004/07/System.Data");
+
+				writer.WriteStartElement("xs:element");
+				writer.WriteAttributeString("name", "DataTable");
+				writer.WriteAttributeString("nillable", "true");
+
+				writer.WriteStartElement("xs:complexType");
+				writer.WriteStartElement("xs:annotation");
+
+				writer.WriteStartElement("xs:appinfo");
+				writer.WriteStartElement("ActualType");
+				writer.WriteAttributeString("xmlns", "http://schemas.microsoft.com/2003/10/Serialization/");
+				writer.WriteAttributeString("Name", "DataTable");
+				writer.WriteAttributeString("Namespace", "http://schemas.datacontract.org/2004/07/System.Data");
+				writer.WriteEndElement(); //actual type
+				writer.WriteEndElement(); //appinfo
+				writer.WriteEndElement(); //annotation
+
+				writer.WriteStartElement("xs:sequence");
+
+				writer.WriteStartElement("xs:any");
+				writer.WriteAttributeString("minOccurs", "0");
+				writer.WriteAttributeString("maxOccurs", "unbounded");
+				writer.WriteAttributeString("namespace", "http://www.w3.org/2001/XMLSchema");
+				writer.WriteAttributeString("processContents", "lax");
+				writer.WriteEndElement(); //any
+
+				writer.WriteStartElement("xs:any");
+				writer.WriteAttributeString("minOccurs", "1");
+				writer.WriteAttributeString("namespace", "urn:schemas-microsoft-com:xml-diffgram-v1");
+				writer.WriteAttributeString("processContents", "lax");
+				writer.WriteEndElement(); //any
+
+				writer.WriteEndElement(); //sequence
+
+				writer.WriteEndElement();  //complexType
+
+				writer.WriteEndElement(); //element
+
+				writer.WriteEndElement(); //schema
 			}
 		}
 
@@ -981,6 +1031,41 @@ namespace SoapCore
 					writer.WriteEndElement();
 					writer.WriteEndElement();
 				}
+				else if (type == typeof(DataTable))
+				{
+					_buildDataTable = true;
+
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("nillable", "true");
+					writer.WriteStartElement("xs:complexType");
+					writer.WriteStartElement("xs:annotation");
+					writer.WriteStartElement("xs:appinfo");
+					writer.WriteStartElement("ActualType");
+					writer.WriteAttributeString("xmlns", "http://schemas.microsoft.com/2003/10/Serialization/");
+					writer.WriteAttributeString("Name", "DataTable");
+					writer.WriteAttributeString("Namespace", "http://schemas.datacontract.org/2004/07/System.Data");
+					writer.WriteEndElement(); //actual type
+					writer.WriteEndElement(); // appinfo
+					writer.WriteEndElement(); //annotation
+					writer.WriteEndElement(); //complex type
+
+					writer.WriteStartElement("xs:sequence");
+
+					writer.WriteStartElement("xs:any");
+					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("maxOccurs", "unbounded");
+					writer.WriteAttributeString("namespace", "http://www.w3.org/2001/XMLSchema");
+					writer.WriteAttributeString("processContents", "lax");
+					writer.WriteEndElement();
+
+					writer.WriteStartElement("xs:any");
+					writer.WriteAttributeString("minOccurs", "1");
+					writer.WriteAttributeString("namespace", "urn:schemas-microsoft-com:xml-diffgram-v1");
+					writer.WriteAttributeString("processContents", "lax");
+					writer.WriteEndElement();
+
+					writer.WriteEndElement(); //sequence
+				}
 				else if (type.Name == "Byte[]")
 				{
 					if (string.IsNullOrEmpty(name))
@@ -1066,6 +1151,11 @@ namespace SoapCore
 			}
 
 			if (type == typeof(System.Xml.Linq.XElement))
+			{
+				return false;
+			}
+
+			if (type == typeof(DataTable))
 			{
 				return false;
 			}
