@@ -209,7 +209,7 @@ namespace SoapCore
 					}
 				}
 
-				if (operation.DispatchMethod.ReturnType != typeof(void))
+				if (operation.DispatchMethod.ReturnType != typeof(void) && operation.DispatchMethod.ReturnType != typeof(Task))
 				{
 					var returnType = operation.DispatchMethod.ReturnType;
 					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
@@ -254,7 +254,7 @@ namespace SoapCore
 				writer.WriteStartElement("xs:complexType");
 				writer.WriteStartElement("xs:sequence");
 
-				if (operation.DispatchMethod.ReturnType != typeof(void))
+				if (operation.DispatchMethod.ReturnType != typeof(void) && operation.DispatchMethod.ReturnType != typeof(Task))
 				{
 					var returnType = operation.DispatchMethod.ReturnType;
 					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
