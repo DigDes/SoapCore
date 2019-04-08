@@ -42,7 +42,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 				StringProperty = $"{nameof(ComplexModel1)} sample one",
 				FloatProperty = 1.1F,
 				IntProperty = 1,
-				ListProperty = new List<string> {"one"},
+				ListProperty = new List<string> { "one" },
 				EnumProperty = SampleEnum.B,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample1(),
 				ComplexListProperty = new List<ComplexObject>
@@ -57,7 +57,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 				StringProperty = $"{nameof(ComplexModel1)} sample two",
 				FloatProperty = 2.2F,
 				IntProperty = 2,
-				ListProperty = new List<string> {"one", "two"},
+				ListProperty = new List<string> { "one", "two" },
 				EnumProperty = SampleEnum.C,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample2(),
 				ComplexListProperty = new List<ComplexObject>
@@ -73,7 +73,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 				StringProperty = $"{nameof(ComplexModel1)} sample three",
 				FloatProperty = 3.3F,
 				IntProperty = 3,
-				ListProperty = new List<string> {"one", "two", "three"},
+				ListProperty = new List<string> { "one", "two", "three" },
 				EnumProperty = SampleEnum.D,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample3(),
 				ComplexListProperty = new List<ComplexObject>

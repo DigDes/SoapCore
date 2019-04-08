@@ -5,7 +5,6 @@ using System.Xml.Serialization;
 namespace SoapCore.Tests.Serialization.Models.Xml
 {
 	// same as ComplexModel1, but different serialization attributes and samples
-
 	[DataContract(Namespace = ServiceNamespace.Value)]
 	[XmlType(Namespace = ServiceNamespace.Value)]
 	public class ComplexModel2
@@ -44,7 +43,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 				StringProperty = $"{nameof(ComplexModel2)} sample one",
 				FloatProperty = 1.11F,
 				IntProperty = 11,
-				ListProperty = new List<string> {"one2"},
+				ListProperty = new List<string> { "one2" },
 				EnumProperty = SampleEnum.D,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample1(),
 				ComplexListProperty = new List<ComplexObject>
@@ -59,7 +58,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 				StringProperty = $"{nameof(ComplexModel2)} sample two",
 				FloatProperty = 2.22F,
 				IntProperty = 22,
-				ListProperty = new List<string> {"one2", "two2"},
+				ListProperty = new List<string> { "one2", "two2" },
 				EnumProperty = SampleEnum.B,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample2(),
 				ComplexListProperty = new List<ComplexObject>
@@ -75,7 +74,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 				StringProperty = $"{nameof(ComplexModel2)} sample three",
 				FloatProperty = 3.33F,
 				IntProperty = 33,
-				ListProperty = new List<string> {"one2", "two2", "three2"},
+				ListProperty = new List<string> { "one2", "two2", "three2" },
 				EnumProperty = SampleEnum.C,
 				ComplexNestedObjectProperty = ComplexObject.CreateSample3(),
 				ComplexListProperty = new List<ComplexObject>

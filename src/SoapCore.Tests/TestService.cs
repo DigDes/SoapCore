@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.ServiceModel;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
 {
 	public class TestService : ITestService
 	{
+		private ThreadLocal<string> _pingResultValue = new ThreadLocal<string>() { Value = string.Empty };
+
 		public string Ping(string s)
 		{
 			return s;
@@ -92,6 +96,16 @@ namespace SoapCore.Tests
 		public ComplexModelInput ComplexParamWithActionFilter(ComplexModelInput test)
 		{
 			return test;
+		}
+
+		public void SetPingResult(string value)
+		{
+			_pingResultValue.Value = value;
+		}
+
+		public string PingWithServiceOperationTuning()
+		{
+			return _pingResultValue.Value;
 		}
 	}
 }

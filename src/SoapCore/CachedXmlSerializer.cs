@@ -8,14 +8,14 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-    public static class CachedXmlSerializer
-    {
-		static readonly ConcurrentDictionary<string, XmlSerializer> cachedSerializers = new ConcurrentDictionary<string, XmlSerializer>();
+	public static class CachedXmlSerializer
+	{
+		private static readonly ConcurrentDictionary<string, XmlSerializer> CachedSerializers = new ConcurrentDictionary<string, XmlSerializer>();
 
 		public static XmlSerializer GetXmlSerializer(Type elementType, string parameterName, string parameterNs)
 		{
 			var key = $"{elementType}|{parameterName}|{parameterNs}";
-			return cachedSerializers.GetOrAdd(key, _ => new XmlSerializer(elementType, null, new Type[0], new XmlRootAttribute(parameterName), parameterNs));
+			return CachedSerializers.GetOrAdd(key, _ => new XmlSerializer(elementType, null, new Type[0], new XmlRootAttribute(parameterName), parameterNs));
 		}
 	}
 }

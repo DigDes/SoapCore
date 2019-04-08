@@ -1,9 +1,9 @@
+using System.ServiceModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using System.ServiceModel;
 
 namespace SoapCore.Tests.MessageFilter
 {
@@ -11,6 +11,7 @@ namespace SoapCore.Tests.MessageFilter
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSoapWsSecurityFilter("yourusername", "yourpassword");
 			services.AddMvc();

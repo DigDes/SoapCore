@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
 {
@@ -14,10 +15,9 @@ namespace SoapCore.Tests
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
-			services.AddSoapModelBindingFilter(
-				new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) })
-			);
+			services.AddSoapModelBindingFilter(new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) }));
 			services.AddScoped<ActionFilter.TestActionFilter>();
 			services.AddMvc();
 		}
@@ -31,9 +31,8 @@ namespace SoapCore.Tests
 
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
-				// For case insensitive path test 
-				app2.UseSoapEndpoint<TestService>("/ServiceCI.svc", new BasicHttpBinding(),
-					SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
+				// For case insensitive path test
+				app2.UseSoapEndpoint<TestService>("/ServiceCI.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
 			});
 
 			app.UseWhen(ctx => !ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>

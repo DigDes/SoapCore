@@ -1,13 +1,12 @@
 using System;
-using System.Security.Authentication;
 using System.Runtime.Serialization;
+using System.Security.Authentication;
 using System.ServiceModel.Channels;
 
 namespace SoapCore
 {
-	class WsMessageFilter : IMessageFilter
+	public class WsMessageFilter : IMessageFilter
 	{
-
 		private static string _username;
 		private static string _password;
 		private readonly string _authMissingErrorMessage = "Referenced security token could not be retrieved";
@@ -19,7 +18,8 @@ namespace SoapCore
 			_password = password;
 		}
 
-		public WsMessageFilter(string username, string password, string authMissingErrorMessage, string authInvalidErrorMessage) {
+		public WsMessageFilter(string username, string password, string authMissingErrorMessage, string authInvalidErrorMessage)
+		{
 			_username = username;
 			_password = password;
 			_authMissingErrorMessage = authMissingErrorMessage;
@@ -40,10 +40,15 @@ namespace SoapCore
 			}
 
 			if (!ValidateWsUsernameToken(wsUsernameToken))
+			{
 				throw new InvalidCredentialException(_authInvalidErrorMessage);
+			}
 		}
 
-		public void OnResponseExecuting(Message message) { }
+		public void OnResponseExecuting(Message message)
+		{
+			//empty
+		}
 
 		private WsUsernameToken GetWsUsernameToken(Message message)
 		{
@@ -61,7 +66,9 @@ namespace SoapCore
 			}
 
 			if (wsUsernameToken == null)
+			{
 				throw new Exception();
+			}
 
 			return wsUsernameToken;
 		}
@@ -70,6 +77,5 @@ namespace SoapCore
 		{
 			return wsUsernameToken.Username == _username && wsUsernameToken.Password == _password;
 		}
-
 	}
 }

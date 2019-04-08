@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.ServiceModel.Channels;
 using System.Xml;
@@ -35,7 +37,9 @@ namespace SoapCore
 			var needResponseEnvelope = _serializer != SoapSerializer.XmlSerializer || _result == null || (_outResults != null && _outResults.Count > 0) || !_operation.IsMessageContractResponse;
 
 			if (needResponseEnvelope)
+			{
 				writer.WriteStartElement(_envelopeName, _serviceNamespace);
+			}
 
 			if (_outResults != null)
 			{
@@ -43,16 +47,28 @@ namespace SoapCore
 				{
 					string value = null;
 					if (outResult.Value is Guid)
+					{
 						value = outResult.Value.ToString();
+					}
 					else if (outResult.Value is bool)
+					{
 						value = outResult.Value.ToString().ToLower();
+					}
 					else if (outResult.Value is string)
-						value = SecurityElement.Escape(outResult.Value.ToString());
+					{
+						value = System.Security.SecurityElement.Escape(outResult.Value.ToString());
+					}
 					else if (outResult.Value is Enum)
+					{
 						value = outResult.Value.ToString();
+					}
 					else if (outResult.Value == null)
+					{
 						value = null;
-					else //for complex types
+					}
+
+					//for complex types
+					else
 					{
 						using (var ms = new MemoryStream())
 						using (var stream = new BufferedStream(ms))
@@ -65,8 +81,11 @@ namespace SoapCore
 									var outResultType = outResult.Value.GetType();
 									var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
 									lock (serializer)
+									{
 										serializer.Serialize(stream, outResult.Value);
-									// add outResultType. ugly, but working
+									}
+
+									//add outResultType. ugly, but working
 									stream.Position = 0;
 									XmlDocument xdoc = new XmlDocument();
 									xdoc.Load(stream);
@@ -83,6 +102,7 @@ namespace SoapCore
 										reader.MoveToContent();
 										value = reader.ReadInnerXml();
 									}
+
 									break;
 								default: throw new NotImplementedException();
 							}
@@ -90,7 +110,9 @@ namespace SoapCore
 					}
 
 					if (value != null)
+					{
 						writer.WriteRaw(string.Format("<{0}>{1}</{0}>", outResult.Key, value));
+					}
 				}
 			}
 
@@ -102,23 +124,34 @@ namespace SoapCore
 						{
 							// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
 							var resultType = _result.GetType();
-							var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, needResponseEnvelope ? _resultName : resultType.Name, _serviceNamespace);
+
+							var xmlRootAttr = resultType.GetTypeInfo().GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
+							var xmlName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? resultType.Name : xmlRootAttr.ElementName;
+							var xmlNs = string.IsNullOrWhiteSpace(xmlRootAttr?.Namespace) ? _serviceNamespace : xmlRootAttr.Namespace;
+
+							var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, needResponseEnvelope ? _resultName : xmlName, xmlNs);
 							lock (serializer)
+							{
 								serializer.Serialize(writer, _result);
+							}
 						}
+
 						break;
 					case SoapSerializer.DataContractSerializer:
 						{
 							var serializer = new DataContractSerializer(_result.GetType(), _resultName, _serviceNamespace);
 							serializer.WriteObject(writer, _result);
 						}
+
 						break;
 					default: throw new NotImplementedException();
 				}
 			}
 
 			if (needResponseEnvelope)
+			{
 				writer.WriteEndElement();
+			}
 		}
 	}
 }

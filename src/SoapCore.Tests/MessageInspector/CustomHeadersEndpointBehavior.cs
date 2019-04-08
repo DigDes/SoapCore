@@ -31,5 +31,4 @@ namespace SoapCore.Tests.MessageInspector
 		{
 		}
 	}
-
 }
