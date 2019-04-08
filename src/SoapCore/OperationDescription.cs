@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -75,7 +76,13 @@ namespace SoapCore
 				info.GetCustomAttribute<MessageParameterAttribute>()?.Name ??
 				info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName ??
 				info.Name;
-			var parameterNs = elementAttribute?.Namespace ?? contract.Namespace;
+			var parameterNs = elementAttribute?.Namespace;
+			var dataContractAttribute = info.ParameterType.GetCustomAttribute<DataContractAttribute>();
+			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly)
+			{
+				parameterNs = dataContractAttribute.Namespace;
+			}
+
 			return new SoapMethodParameterInfo(info, index, parameterName, parameterNs);
 		}
 
