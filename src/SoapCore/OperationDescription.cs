@@ -70,13 +70,18 @@ namespace SoapCore
 		private static SoapMethodParameterInfo CreateParameterInfo(ParameterInfo info, int index, ContractDescription contract)
 		{
 			var elementAttribute = info.GetCustomAttribute<XmlElementAttribute>();
+			var arrayAttribute = info.GetCustomAttribute<XmlArrayAttribute>();
+			var arrayItemAttribute = info.GetCustomAttribute<XmlArrayItemAttribute>();
 			var parameterName =
 				elementAttribute?.ElementName ??
+				arrayAttribute?.ElementName ??
 				info.GetCustomAttribute<MessageParameterAttribute>()?.Name ??
 				info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName ??
 				info.Name;
+			var arrayName = arrayAttribute?.ElementName;
+			var arrayItemName = arrayItemAttribute?.ElementName;
 			var parameterNs = elementAttribute?.Namespace ?? contract.Namespace;
-			return new SoapMethodParameterInfo(info, index, parameterName, parameterNs);
+			return new SoapMethodParameterInfo(info, index, parameterName, arrayName, arrayItemName, parameterNs);
 		}
 
 		private static string GetNameByAction(string action)
