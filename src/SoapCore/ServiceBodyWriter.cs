@@ -126,13 +126,32 @@ namespace SoapCore
 							var resultType = _result.GetType();
 
 							var xmlRootAttr = resultType.GetTypeInfo().GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
-							var xmlName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? resultType.Name : xmlRootAttr.ElementName;
-							var xmlNs = string.IsNullOrWhiteSpace(xmlRootAttr?.Namespace) ? _serviceNamespace : xmlRootAttr.Namespace;
+							var xmlName = _operation.ReturnElementName
+								?? (needResponseEnvelope
+								? _resultName
+								: (string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName)
+								? resultType.Name
+								: xmlRootAttr.ElementName));
+							var xmlNs = _operation.ReturnNamespace
+								?? (string.IsNullOrWhiteSpace(xmlRootAttr?.Namespace)
+								? _serviceNamespace
+								: xmlRootAttr.Namespace);
 
-							var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, needResponseEnvelope ? _resultName : xmlName, xmlNs);
-							lock (serializer)
+							if (resultType.IsArray)
 							{
-								serializer.Serialize(writer, _result);
+								var serializer = CachedXmlSerializer.GetXmlSerializer(resultType.GetElementType(), xmlName, xmlNs);
+								lock (serializer)
+								{
+									serializer.SerializeArray(writer, (object[])_result);
+								}
+							}
+							else
+							{
+								var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, xmlName, xmlNs);
+								lock (serializer)
+								{
+									serializer.Serialize(writer, _result);
+								}
 							}
 						}
 
