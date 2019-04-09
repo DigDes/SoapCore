@@ -96,6 +96,7 @@ namespace SoapCore
 			{
 				parameterNs = dataContractAttribute.Namespace;
 			}
+
 			return new SoapMethodParameterInfo(info, index, parameterName, arrayName, arrayItemName, parameterNs);
 		}
 
