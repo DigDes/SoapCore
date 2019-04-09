@@ -4,11 +4,13 @@ namespace SoapCore
 {
 	public class SoapMethodParameterInfo
 	{
-		public SoapMethodParameterInfo(ParameterInfo parameter, int index, string name, string ns)
+		public SoapMethodParameterInfo(ParameterInfo parameter, int index, string name, string arrayName, string arrayItemName, string ns)
 		{
 			Parameter = parameter;
 			Index = index;
 			Name = name;
+			ArrayName = arrayName;
+			ArrayItemName = arrayItemName;
 			Namespace = ns;
 
 			if (!Parameter.IsOut && !Parameter.ParameterType.IsByRef)
@@ -34,6 +36,8 @@ namespace SoapCore
 		public int Index { get; private set; }
 		public SoapMethodParameterDirection Direction { get; private set; }
 		public string Name { get; private set; }
+		public string ArrayName { get; private set; }
+		public string ArrayItemName { get; private set; }
 		public string Namespace { get; private set; }
 	}
 }

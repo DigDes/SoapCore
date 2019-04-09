@@ -392,27 +392,64 @@ namespace SoapCore
 
 					if (xmlReader.IsStartElement(parameterName, parameterNs))
 					{
-						var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
-						if (elementType == null || parameterInfo.Parameter.ParameterType.IsArray)
-						{
-							elementType = parameterInfo.Parameter.ParameterType;
-						}
-
 						switch (_serializer)
 						{
 							case SoapSerializer.XmlSerializer:
 								{
-									// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-									var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
-									lock (serializer)
+									// case [XmlElement("parameter")] int parameter
+									// case int[] parameter
+									// case [XmlArray("parameter")] int[] parameter
+									if (!parameterInfo.Parameter.ParameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
 									{
-										arguments[parameterInfo.Index] = serializer.Deserialize(xmlReader);
+										// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
+										var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
+										if (elementType == null || parameterInfo.Parameter.ParameterType.IsArray)
+										{
+											elementType = parameterInfo.Parameter.ParameterType;
+										}
+
+										var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
+										lock (serializer)
+										{
+											arguments[parameterInfo.Index] = serializer.Deserialize(xmlReader);
+										}
+									}
+
+									// case [XmlElement("parameter")] int[] parameter
+									// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
+									else
+									{
+										if (parameterInfo.ArrayItemName != null)
+										{
+											xmlReader.ReadStartElement(parameterName, parameterNs);
+										}
+
+										var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
+										var localName = parameterInfo.ArrayItemName ?? parameterInfo.Name;
+										var deserializeMethod = typeof(XmlSerializerExtensions)
+											.GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), new[] { elementType });
+										var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
+										lock (serializer)
+										{
+											arguments[parameterInfo.Index] = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
+										}
+
+										if (parameterInfo.ArrayItemName != null)
+										{
+											xmlReader.ReadEndElement();
+										}
 									}
 								}
 
 								break;
 							case SoapSerializer.DataContractSerializer:
 								{
+									var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
+									if (elementType == null || parameterInfo.Parameter.ParameterType.IsArray)
+									{
+										elementType = parameterInfo.Parameter.ParameterType;
+									}
+
 									var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
 									arguments[parameterInfo.Index] = serializer.ReadObject(xmlReader, verifyObjectName: true);
 								}
