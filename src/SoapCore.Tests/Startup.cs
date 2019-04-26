@@ -41,6 +41,12 @@ namespace SoapCore.Tests
 				var textEncodingBinding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
 				app.UseSoapEndpoint<TestService>("/Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
 			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("asmx"), app2 =>
+			{
+				app2.UseSoapEndpoint<TestService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+			});
+
 			app.UseMvc();
 		}
 	}
