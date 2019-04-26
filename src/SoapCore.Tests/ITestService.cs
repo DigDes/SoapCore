@@ -63,5 +63,8 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		string PingWithServiceOperationTuning();
+
+		[OperationContract]
+		string[] GetArray(string[] args);
 	}
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -156,11 +157,28 @@ namespace SoapCore.Tests
 			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
 		}
 
+		[TestMethod]
+		public void CheckArrays()
+		{
+			var client = CreateClientXmlSerializer();
+			var result = client.GetArray(new[] { "test", "test1" });
+			Assert.IsTrue(result.Any());
+		}
+
 		private ITestService CreateClient(bool caseInsensitivePath = false)
 		{
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(
 				string.Format("http://{0}:5050/{1}.svc", "localhost", caseInsensitivePath ? "serviceci" : "Service")));
+			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+			var serviceClient = channelFactory.CreateChannel();
+			return serviceClient;
+		}
+
+		private ITestService CreateClientXmlSerializer()
+		{
+			var binding = new BasicHttpBinding();
+			var endpoint = new EndpointAddress(new Uri("http://localhost:5050/Service.asmx"));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
