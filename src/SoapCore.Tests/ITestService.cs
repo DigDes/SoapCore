@@ -63,11 +63,5 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		string PingWithServiceOperationTuning();
-
-		[OperationContract]
-		string[] GetArray(string[] test);
-
-		[OperationContract]
-		ComplexModelInput[] GetComplexArray(ComplexModelInput[] inputs);
 	}
 }
