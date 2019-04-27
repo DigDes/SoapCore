@@ -173,6 +173,74 @@ namespace SoapCore.Tests.Serialization
 			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel1.CreateSample3());
 		}
 
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexArrayModel(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexModelArray(It.IsAny<ComplexModel1[]>(), It.IsAny<ComplexModel2[]>()))
+				.Callback((ComplexModel1[] input, ComplexModel2[] input2) =>
+				{
+					input.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
+					input2.ShouldDeepEqual(new[] { ComplexModel2.CreateSample1() });
+				})
+				.Returns(new[] { ComplexModel1.CreateSample1() });
+			var result = sampleServiceClient.PingComplexModelArray(new[] { ComplexModel1.CreateSample1() }, new[] { ComplexModel2.CreateSample1() });
+			result.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexArrayModelWithXmlArray(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexModelArray(It.IsAny<ComplexModel1[]>(), It.IsAny<ComplexModel2[]>()))
+				.Callback((ComplexModel1[] input, ComplexModel2[] input2) =>
+				{
+					input.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
+					input2.ShouldDeepEqual(new[] { ComplexModel2.CreateSample1() });
+				})
+				.Returns(new[] { ComplexModel1.CreateSample1() });
+			var result = sampleServiceClient.PingComplexModelArrayWithXmlArray(new[] { ComplexModel1.CreateSample1() }, new[] { ComplexModel2.CreateSample1() });
+			result.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingStringArray(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var data = new[] { "string", "string1" };
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingStringArray(It.IsAny<string[]>()))
+				.Callback((string[] input) => { input.ShouldDeepEqual(data); })
+				.Returns(data);
+			var result = sampleServiceClient.PingStringArray(data);
+			result.ShouldDeepEqual(data);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingStringArrayWithXmlArray(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var data = new[] { "string", "string1" };
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingStringArray(It.IsAny<string[]>()))
+				.Callback((string[] input) => { input.ShouldDeepEqual(data); })
+				.Returns(data);
+			var result = sampleServiceClient.PingStringArrayWithXmlArray(data);
+			result.ShouldDeepEqual(data);
+		}
+
 		//not compatible with DataContractSerializer
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]

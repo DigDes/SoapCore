@@ -108,9 +108,14 @@ namespace SoapCore.Tests
 			return _pingResultValue.Value;
 		}
 
-		public string[] GetArray(string[] args)
+		public string[] GetArray(string[] test)
 		{
-			return new string[] { "result" };
+			return test;
+		}
+
+		public ComplexModelInput[] GetComplexArray(ComplexModelInput[] inputs)
+		{
+			return inputs;
 		}
 	}
 }

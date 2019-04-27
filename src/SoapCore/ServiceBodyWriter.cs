@@ -137,7 +137,8 @@ namespace SoapCore
 								? _serviceNamespace
 								: xmlRootAttr.Namespace);
 
-							if (resultType.IsArray)
+							var xmlArrayAttr = _operation.DispatchMethod.GetCustomAttribute<XmlArrayAttribute>();
+							if (xmlArrayAttr != null && resultType.IsArray)
 							{
 								var serializer = CachedXmlSerializer.GetXmlSerializer(resultType.GetElementType(), xmlName, xmlNs);
 								lock (serializer)
