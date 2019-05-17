@@ -13,7 +13,7 @@ namespace SoapCore
 		public OperationDescription(ContractDescription contract, MethodInfo operationMethod, OperationContractAttribute contractAttribute)
 		{
 			Contract = contract;
-			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? operationMethod.Name;
+			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? GetNameByMethod(operationMethod);
 			SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
 			IsOneWay = contractAttribute.IsOneWay;
 			ReplyAction = contractAttribute.ReplyAction;
@@ -106,6 +106,27 @@ namespace SoapCore
 			return (index ?? -1) > -1
 				? action.Substring(index.Value + 1, action.Length - index.Value - 1)
 				: null;
+		}
+
+		private static string GetNameByMethod(MethodInfo operationMethod)
+		{
+			var returnType = operationMethod.ReturnType;
+			var name = operationMethod.Name;
+
+			if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+			{
+				if (name.EndsWith("Async"))
+				{
+					name = name.Substring(0, name.LastIndexOf("Async"));
+				}
+			}
+
+			if (returnType == typeof(Task) && name.EndsWith("Async"))
+			{
+				name = name.Substring(0, name.LastIndexOf("Async"));
+			}
+
+			return name;
 		}
 	}
 }
