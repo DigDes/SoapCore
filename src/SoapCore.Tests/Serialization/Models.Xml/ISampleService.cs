@@ -1,5 +1,6 @@
 using System.ServiceModel;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace SoapCore.Tests.Serialization.Models.Xml
 {
@@ -62,5 +63,21 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EmptyParamsMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		ComplexModel1 EmptyParamsMethod();
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		string[] PingStringArray(string[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		ComplexModel1[] PingComplexModelArray(ComplexModel1[] models, ComplexModel2[] models2);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		string[] PingStringArrayWithXmlArray([XmlElement("arrayItem")]string[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		ComplexModel1[] PingComplexModelArrayWithXmlArray([XmlArrayItem("arr1")]ComplexModel1[] models, [XmlElement("arr2")]ComplexModel2[] models2);
 	}
 }

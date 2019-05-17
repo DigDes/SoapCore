@@ -107,10 +107,5 @@ namespace SoapCore.Tests
 		{
 			return _pingResultValue.Value;
 		}
-
-		public string[] GetArray(string[] args)
-		{
-			return new string[] { "result" };
-		}
 	}
 }

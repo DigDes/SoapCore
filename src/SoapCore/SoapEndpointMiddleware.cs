@@ -419,13 +419,20 @@ namespace SoapCore
 									// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
 									else
 									{
-										if (parameterInfo.ArrayItemName != null)
+										//if (parameterInfo.ArrayItemName != null)
 										{
 											xmlReader.ReadStartElement(parameterName, parameterNs);
 										}
 
 										var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
-										var localName = parameterInfo.ArrayItemName ?? parameterInfo.Name;
+
+										var localName = parameterInfo.ArrayItemName ?? elementType.Name;
+										if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
+										{
+											localName = localName.ToLower();
+										}
+
+										//localName = "ComplexModelInput";
 										var deserializeMethod = typeof(XmlSerializerExtensions)
 											.GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), new[] { elementType });
 										var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
@@ -434,7 +441,7 @@ namespace SoapCore
 											arguments[parameterInfo.Index] = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
 										}
 
-										if (parameterInfo.ArrayItemName != null)
+										//if (parameterInfo.ArrayItemName != null)
 										{
 											xmlReader.ReadEndElement();
 										}
