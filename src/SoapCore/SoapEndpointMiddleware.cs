@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.ServiceModel;
@@ -333,6 +334,11 @@ namespace SoapCore
 				}
 				catch (Exception exception)
 				{
+					if (exception is TargetInvocationException targetInvocationException)
+					{
+						exception = targetInvocationException.InnerException;
+					}
+
 					_logger.LogWarning(0, exception, exception.Message);
 					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
 				}
@@ -524,14 +530,13 @@ namespace SoapCore
 			MessageEncoder messageEncoder,
 			HttpContext httpContext)
 		{
-
 			Message faultMessage;
 
 			var faultExceptionTransformer = serviceProvider.GetService<IFaultExceptionTransformer>();
 
 			if (faultExceptionTransformer != null)
 			{
-				faultMessage = faultExceptionTransformer.ProvideFault(exception);
+				faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion);
 			}
 			else
 			{
