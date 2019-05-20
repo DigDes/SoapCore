@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.ServiceModel;
@@ -339,6 +340,11 @@ namespace SoapCore
 				}
 				catch (Exception exception)
 				{
+					if (exception is TargetInvocationException targetInvocationException)
+					{
+						exception = targetInvocationException.InnerException;
+					}
+
 					_logger.LogWarning(0, exception, exception.Message);
 					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
 				}
@@ -542,25 +548,42 @@ namespace SoapCore
 			MessageEncoder messageEncoder,
 			HttpContext httpContext)
 		{
-			// Create response message
-			object faultDetail = ExtractFaultDetail(exception);
-			string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message;
-			var transformer = serviceProvider.GetService<ExceptionTransformer>();
-			if (transformer != null)
+			Message faultMessage;
+
+			var faultExceptionTransformer = serviceProvider.GetService<IFaultExceptionTransformer>();
+
+			if (faultExceptionTransformer != null)
 			{
-				errorText = transformer.Transform(exception);
+				faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion);
+			}
+			else
+			{
+				// Create response message
+				object faultDetail = ExtractFaultDetail(exception);
+				string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message;
+				var transformer = serviceProvider.GetService<ExceptionTransformer>();
+
+				if (transformer != null)
+				{
+					errorText = transformer.Transform(exception);
+				}
+
+				var fault = new Fault(faultDetail)
+				{
+					FaultString = errorText
+				};
+
+				var bodyWriter = new FaultBodyWriter(fault);
+				var soapCoreFaultMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
+				faultMessage = new CustomMessage(soapCoreFaultMessage);
 			}
 
-			var bodyWriter = new FaultBodyWriter(new Fault(faultDetail) { FaultString = errorText });
-			var responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
-			responseMessage = new CustomMessage(responseMessage);
-
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
-			httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
 			httpContext.Response.StatusCode = statusCode;
-			messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+			messageEncoder.WriteMessage(faultMessage, httpContext.Response.Body);
 
-			return responseMessage;
+			return faultMessage;
 		}
 
 		/// <summary>
