@@ -241,6 +241,18 @@ namespace SoapCore.Tests.Serialization
 			result.ShouldDeepEqual(data);
 		}
 
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestResponseIntArray(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var data = new[] { 2, 5 };
+			_fixture.ServiceMock.Setup(x => x.PingIntArray(data)).Callback((int[] input) => input.ShouldDeepEqual(data))
+				.Returns(data);
+			var result = sampleServiceClient.PingIntArray(data);
+			result.ShouldDeepEqual(data);
+		}
+
 		//not compatible with DataContractSerializer
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]

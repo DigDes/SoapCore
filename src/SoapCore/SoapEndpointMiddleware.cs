@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.CSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -429,7 +431,9 @@ namespace SoapCore
 										var localName = parameterInfo.ArrayItemName ?? elementType.Name;
 										if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
 										{
-											localName = localName.ToLower();
+											var compiler = new CSharpCodeProvider();
+											var type = new CodeTypeReference(elementType);
+											localName = compiler.GetTypeOutput(type);
 										}
 
 										//localName = "ComplexModelInput";
