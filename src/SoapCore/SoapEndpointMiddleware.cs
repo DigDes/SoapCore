@@ -1,6 +1,7 @@
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,6 +10,7 @@ using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.CSharp;
@@ -379,17 +381,6 @@ namespace SoapCore
 		{
 			var arguments = new object[operation.AllParameters.Length];
 
-			// Find the element for the operation's data
-			if (!operation.IsMessageContractRequest)
-			{
-				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
-			}
-			else
-			{
-				// MessageContracts are constrained to having one "InParameter". We can do special logic on
-				// for this
-			}
-
 			// if any ordering issues, possible to rewrite like:
 			/*while (!xmlReader.EOF)
 			{
@@ -404,160 +395,88 @@ namespace SoapCore
 				...
 			}*/
 
-			foreach (var parameterInfo in operation.InParameters)
+			// Find the element for the operation's data
+			if (!operation.IsMessageContractRequest)
 			{
-				MemberInfo messageBodyMemberInfo = null;
-				MessageBodyMemberAttribute messageBodyMemberAttribute = null;
+				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 
-				var parameterName = parameterInfo.Name;
-				var parameterNs = parameterInfo.Namespace ?? operation.Contract.Namespace;
+				foreach (var parameterInfo in operation.InParameters)
+				{
+					var @namespace = parameterInfo.Namespace ?? operation.Contract.Namespace;
+					var parameterType = parameterInfo.Parameter.ParameterType;
 
+					if (parameterType == typeof(HttpContext))
+					{
+						arguments[parameterInfo.Index] = httpContext;
+					}
+					else
+					{
+						arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, @namespace, parameterInfo);
+					}
+				}
+			}
+			else
+			{
+				// MessageContracts are constrained to having one "InParameter". We can do special logic on
+				// for this
+				Debug.Assert(operation.InParameters.Length == 1, "MessageContracts are constrained to having one 'InParameter'");
+
+				var parameterInfo = operation.InParameters[0];
 				var parameterType = parameterInfo.Parameter.ParameterType;
+
 				var messageContractAttribute = parameterType.GetCustomAttribute<MessageContractAttribute>();
 
-				if (messageContractAttribute != null)
+				Debug.Assert(messageContractAttribute != null, "operation.IsMessageContractRequest should be false if this is null");
+
+				var @namespace = parameterInfo.Namespace ?? operation.Contract.Namespace;
+
+				if (messageContractAttribute.IsWrapped)
 				{
-					if (!messageContractAttribute.IsWrapped)
-					{
-						// This object isn't a wrapper element, so we will hunt for the nested message body
-						// member inside of it
-						var messageBodyMember =
-							parameterType
-								.GetPropertyOrFieldMembers()
-								.Select(mi => new
-								{
-									Member = mi,
-									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-								})
-								.Single(x => x.MessageBodyMemberAttribute != null);
-
-						messageBodyMemberAttribute = messageBodyMember.MessageBodyMemberAttribute;
-						messageBodyMemberInfo = messageBodyMember.Member;
-
-						parameterName = messageBodyMemberAttribute.Name ?? messageBodyMemberInfo.Name;
-						parameterNs = messageBodyMemberAttribute.Namespace;
-
-						parameterType = messageBodyMemberInfo.GetPropertyOrFieldType() ?? throw new NotImplementedException("Cannot extract parameter type from " + messageBodyMember.Member.GetType()?.Name);
-					}
-				}
-
-				if (xmlReader.IsStartElement(parameterName, parameterNs))
-				{
-					xmlReader.MoveToStartElement(parameterName, parameterNs);
-
-					if (xmlReader.IsStartElement(parameterName, parameterNs))
-					{
-						switch (_serializer)
-						{
-							case SoapSerializer.XmlSerializer:
-								{
-									// case [XmlElement("parameter")] int parameter
-									// case int[] parameter
-									// case [XmlArray("parameter")] int[] parameter
-									if (!parameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
-									{
-										// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-										var elementType = parameterType.GetElementType();
-
-										if (elementType == null || parameterType.IsArray)
-										{
-											elementType = parameterType;
-										}
-
-										var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
-
-										lock (serializer)
-										{
-											var argumentData = serializer.Deserialize(xmlReader);
-
-											if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
-											{
-												// The no-wrapper structure is only for the XML document format. We wrap it
-												// and set the appropriate field here.
-												var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
-
-												if (messageBodyMemberInfo is FieldInfo fi)
-												{
-													fi.SetValue(wrapperObject, argumentData);
-												}
-												else if (messageBodyMemberInfo is PropertyInfo pi)
-												{
-													pi.SetValue(wrapperObject, argumentData);
-												}
-												else
-												{
-													throw new NotImplementedException("Cannot set value of parameter type from " + messageBodyMemberInfo.GetType()?.Name);
-												}
-
-												arguments[parameterInfo.Index] = wrapperObject;
-											}
-											else
-											{
-												arguments[parameterInfo.Index] = argumentData;
-											}
-										}
-									}
-
-									// case [XmlElement("parameter")] int[] parameter
-									// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
-									else
-									{
-										//if (parameterInfo.ArrayItemName != null)
-										{
-											xmlReader.ReadStartElement(parameterName, parameterNs);
-										}
-
-										var elementType = parameterType.GetElementType();
-
-										var localName = parameterInfo.ArrayItemName ?? elementType.Name;
-										if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
-										{
-											var compiler = new CSharpCodeProvider();
-											var type = new CodeTypeReference(elementType);
-											localName = compiler.GetTypeOutput(type);
-										}
-
-										//localName = "ComplexModelInput";
-										var deserializeMethod = typeof(XmlSerializerExtensions)
-											.GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), new[] { elementType });
-										var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
-										lock (serializer)
-										{
-											arguments[parameterInfo.Index] = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
-										}
-
-										//if (parameterInfo.ArrayItemName != null)
-										{
-											xmlReader.ReadEndElement();
-										}
-									}
-								}
-
-								break;
-							case SoapSerializer.DataContractSerializer:
-								{
-									var elementType = parameterType.GetElementType();
-									if (elementType == null || parameterType.IsArray)
-									{
-										elementType = parameterType;
-									}
-
-									var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
-									arguments[parameterInfo.Index] = serializer.ReadObject(xmlReader, verifyObjectName: true);
-								}
-
-								break;
-							default: throw new NotImplementedException();
-						}
-					}
-				}
-				else if (parameterType == typeof(HttpContext))
-				{
-					arguments[parameterInfo.Index] = httpContext;
+					// It's wrapped so we treat it like normal!
+					arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterInfo.Parameter.ParameterType, parameterInfo.Name, @namespace, parameterInfo);
 				}
 				else
 				{
-					arguments[parameterInfo.Index] = null;
+					// This object isn't a wrapper element, so we will hunt for the nested message body
+					// member inside of it
+					var messageBodyMembers =
+						parameterType
+							.GetPropertyOrFieldMembers()
+							.Select(mi => new
+							{
+								Member = mi,
+								MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+							})
+							.OrderBy(x => x.MessageBodyMemberAttribute.Order);
+
+					var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
+
+					foreach (var messageBodyMember in messageBodyMembers)
+					{
+						var messageBodyMemberAttribute = messageBodyMember.MessageBodyMemberAttribute;
+						var messageBodyMemberInfo = messageBodyMember.Member;
+
+						var innerParameterName = messageBodyMemberAttribute.Name ?? messageBodyMemberInfo.Name;
+						var innerParameterNs = messageBodyMemberAttribute.Namespace;
+						var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
+
+						var innerParameter = DeserializeInputParameter(xmlReader, innerParameterType, innerParameterName, innerParameterNs, parameterInfo);
+
+						if (messageBodyMemberInfo is FieldInfo fi)
+						{
+							fi.SetValue(wrapperObject, innerParameter);
+						}
+						else if (messageBodyMemberInfo is PropertyInfo pi)
+						{
+							pi.SetValue(wrapperObject, innerParameter);
+						}
+						else
+						{
+							throw new NotImplementedException("Cannot set value of parameter type from " + messageBodyMemberInfo.GetType()?.Name);
+						}
+					}
+
+					arguments[parameterInfo.Index] = wrapperObject;
 				}
 			}
 
@@ -585,6 +504,111 @@ namespace SoapCore
 			}
 
 			return arguments;
+		}
+
+		private object DeserializeInputParameter(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo)
+		{
+			if (xmlReader.IsStartElement(parameterName, parameterNs))
+			{
+				xmlReader.MoveToStartElement(parameterName, parameterNs);
+
+				if (xmlReader.IsStartElement(parameterName, parameterNs))
+				{
+					switch (_serializer)
+					{
+						case SoapSerializer.XmlSerializer:
+							if (!parameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
+							{
+								// case [XmlElement("parameter")] int parameter
+								// case int[] parameter
+								// case [XmlArray("parameter")] int[] parameter
+								return DeserializeObject(xmlReader, parameterType, parameterName, parameterNs);
+							}
+							else
+							{
+								// case [XmlElement("parameter")] int[] parameter
+								// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
+								return DeserializeArray(xmlReader, parameterType, parameterName, parameterNs, parameterInfo);
+							}
+
+						case SoapSerializer.DataContractSerializer:
+							return DeserializeDataContract(xmlReader, parameterType, parameterName, parameterNs);
+
+						default:
+							throw new NotImplementedException();
+					}
+				}
+			}
+
+			return null;
+		}
+
+		private object DeserializeDataContract(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
+		{
+			var elementType = parameterType.GetElementType();
+
+			if (elementType == null || parameterType.IsArray)
+			{
+				elementType = parameterType;
+			}
+
+			var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
+
+			return serializer.ReadObject(xmlReader, verifyObjectName: true);
+		}
+
+		private object DeserializeArray(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo)
+		{
+			//if (parameterInfo.ArrayItemName != null)
+			{
+				xmlReader.ReadStartElement(parameterName, parameterNs);
+			}
+
+			var elementType = parameterType.GetElementType();
+
+			var localName = parameterInfo.ArrayItemName ?? elementType.Name;
+			if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
+			{
+				var compiler = new CSharpCodeProvider();
+				var type = new CodeTypeReference(elementType);
+				localName = compiler.GetTypeOutput(type);
+			}
+
+			//localName = "ComplexModelInput";
+			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), new[] { elementType });
+			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
+
+			object result = null;
+
+			lock (serializer)
+			{
+				result = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
+			}
+
+			//if (parameterInfo.ArrayItemName != null)
+			{
+				xmlReader.ReadEndElement();
+			}
+
+			return result;
+		}
+
+		private object DeserializeObject(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
+		{
+			// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
+			var elementType = parameterType.GetElementType();
+
+			if (elementType == null || parameterType.IsArray)
+			{
+				elementType = parameterType;
+			}
+
+			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
+
+			lock (serializer)
+			{
+				return serializer.Deserialize(xmlReader);
+			}
 		}
 
 		/// <summary>
