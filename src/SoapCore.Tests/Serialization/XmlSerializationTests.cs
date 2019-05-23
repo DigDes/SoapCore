@@ -318,6 +318,131 @@ namespace SoapCore.Tests.Serialization
 		//not compatible with DataContractSerializer
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestNotWrappedPropertyComplexInput(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.NotWrappedPropertyComplexInputRequestMethod(It.IsAny<NotWrappedPropertyComplexInputRequest>()))
+				.Callback((NotWrappedPropertyComplexInputRequest request) =>
+				{
+					// Check deserialisation in service!
+					request.NotWrappedComplexInput.ShouldNotBeNull();
+					request.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+				})
+				.Returns(() => new NotWrappedPropertyComplexInputResponse
+				{
+					NotWrappedComplexInput = new NotWrappedPropertyComplexInput
+					{
+						StringProperty = "z"
+					}
+				});
+
+			var clientResponse = sampleServiceClient.NotWrappedPropertyComplexInputRequestMethod(new NotWrappedPropertyComplexInputRequest
+			{
+				NotWrappedComplexInput = new NotWrappedPropertyComplexInput
+				{
+					StringProperty = "z"
+				}
+			});
+
+			clientResponse.ShouldNotBeNull();
+
+			// The client does not support unpacking these message contracts, so further assertions have been
+			// commented
+			//	clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
+			//	clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+		}
+
+		//not compatible with DataContractSerializer
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestNotWrappedFieldComplexInput(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.NotWrappedFieldComplexInputRequestMethod(It.IsAny<NotWrappedFieldComplexInputRequest>()))
+				.Callback((NotWrappedFieldComplexInputRequest request) =>
+				{
+					// Check deserialisation in service!
+					request.NotWrappedComplexInput.ShouldNotBeNull();
+					request.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+				})
+				.Returns(() => new NotWrappedFieldComplexInputResponse
+				{
+					NotWrappedComplexInput = new NotWrappedFieldComplexInput
+					{
+						StringProperty = "z"
+					}
+				});
+
+			var clientResponse = sampleServiceClient.NotWrappedFieldComplexInputRequestMethod(new NotWrappedFieldComplexInputRequest
+			{
+				NotWrappedComplexInput = new NotWrappedFieldComplexInput
+				{
+					StringProperty = "z"
+				}
+			});
+
+			clientResponse.ShouldNotBeNull();
+
+			// The client does not support unpacking these message contracts, so further assertions have been
+			// commented
+			//	clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
+			//	clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+		}
+
+		//not compatible with DataContractSerializer
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestNotWrappedFieldDoubleComplexInput(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.NotWrappedFieldDoubleComplexInputRequestMethod(It.IsAny<NotWrappedFieldDoubleComplexInputRequest>()))
+				.Callback((NotWrappedFieldDoubleComplexInputRequest request) =>
+				{
+					// Check deserialisation in service!
+					request.NotWrappedComplexInput1.ShouldNotBeNull();
+					request.NotWrappedComplexInput1.StringProperty.ShouldBe("z");
+
+					request.NotWrappedComplexInput2.ShouldNotBeNull();
+					request.NotWrappedComplexInput2.StringProperty.ShouldBe("x");
+				})
+				.Returns(() => new NotWrappedFieldComplexInputResponse
+				{
+					NotWrappedComplexInput = new NotWrappedFieldComplexInput
+					{
+						StringProperty = "z"
+					}
+				});
+
+			var clientResponse = sampleServiceClient.NotWrappedFieldDoubleComplexInputRequestMethod(new NotWrappedFieldDoubleComplexInputRequest
+			{
+				NotWrappedComplexInput1 = new NotWrappedFieldComplexInput
+				{
+					StringProperty = "z"
+				},
+
+				NotWrappedComplexInput2 = new NotWrappedFieldComplexInput
+				{
+					StringProperty = "x"
+				}
+			});
+
+			clientResponse.ShouldNotBeNull();
+
+			// The client does not support unpacking these message contracts, so further assertions have been
+			// commented
+			//	clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
+			//	clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+		}
+
+		//not compatible with DataContractSerializer
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingComplexModelOldStyleSerialization(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
