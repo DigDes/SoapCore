@@ -44,6 +44,16 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		PingComplexModelOldStyleResponse PingComplexModelOldStyle(
 			PingComplexModelOldStyleRequest request);
 
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedPropertyComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedPropertyComplexInputResponse NotWrappedPropertyComplexInputRequestMethod(
+			NotWrappedPropertyComplexInputRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedFieldComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedFieldComplexInputResponse NotWrappedFieldComplexInputRequestMethod(
+			NotWrappedFieldComplexInputRequest request);
+
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool EnumMethod(out SampleEnum e);

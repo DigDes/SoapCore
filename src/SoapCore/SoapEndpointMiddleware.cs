@@ -384,6 +384,11 @@ namespace SoapCore
 			{
 				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 			}
+			else
+			{
+				// MessageContracts are constrained to having one "InParameter". We can do special logic on
+				// for this
+			}
 
 			// if any ordering issues, possible to rewrite like:
 			/*while (!xmlReader.EOF)
@@ -401,9 +406,40 @@ namespace SoapCore
 
 			foreach (var parameterInfo in operation.InParameters)
 			{
-				var parameterName = parameterInfo.Name;
+				MemberInfo messageBodyMemberInfo = null;
+				MessageBodyMemberAttribute messageBodyMemberAttribute = null;
 
+				var parameterName = parameterInfo.Name;
 				var parameterNs = parameterInfo.Namespace ?? operation.Contract.Namespace;
+
+				var parameterType = parameterInfo.Parameter.ParameterType;
+				var messageContractAttribute = parameterType.GetCustomAttribute<MessageContractAttribute>();
+
+				if (messageContractAttribute != null)
+				{
+					if (!messageContractAttribute.IsWrapped)
+					{
+						// This object isn't a wrapper element, so we will hunt for the nested message body
+						// member inside of it
+						var messageBodyMember =
+							parameterType
+								.GetPropertyOrFieldMembers()
+								.Select(mi => new
+								{
+									Member = mi,
+									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+								})
+								.Single(x => x.MessageBodyMemberAttribute != null);
+
+						messageBodyMemberAttribute = messageBodyMember.MessageBodyMemberAttribute;
+						messageBodyMemberInfo = messageBodyMember.Member;
+
+						parameterName = messageBodyMemberAttribute.Name ?? messageBodyMemberInfo.Name;
+						parameterNs = messageBodyMemberAttribute.Namespace;
+
+						parameterType = messageBodyMemberInfo.GetPropertyOrFieldType() ?? throw new NotImplementedException("Cannot extract parameter type from " + messageBodyMember.Member.GetType()?.Name);
+					}
+				}
 
 				if (xmlReader.IsStartElement(parameterName, parameterNs))
 				{
@@ -418,19 +454,47 @@ namespace SoapCore
 									// case [XmlElement("parameter")] int parameter
 									// case int[] parameter
 									// case [XmlArray("parameter")] int[] parameter
-									if (!parameterInfo.Parameter.ParameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
+									if (!parameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
 									{
 										// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-										var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
-										if (elementType == null || parameterInfo.Parameter.ParameterType.IsArray)
+										var elementType = parameterType.GetElementType();
+
+										if (elementType == null || parameterType.IsArray)
 										{
-											elementType = parameterInfo.Parameter.ParameterType;
+											elementType = parameterType;
 										}
 
 										var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
+
 										lock (serializer)
 										{
-											arguments[parameterInfo.Index] = serializer.Deserialize(xmlReader);
+											var argumentData = serializer.Deserialize(xmlReader);
+
+											if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
+											{
+												// The no-wrapper structure is only for the XML document format. We wrap it
+												// and set the appropriate field here.
+												var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
+
+												if (messageBodyMemberInfo is FieldInfo fi)
+												{
+													fi.SetValue(wrapperObject, argumentData);
+												}
+												else if (messageBodyMemberInfo is PropertyInfo pi)
+												{
+													pi.SetValue(wrapperObject, argumentData);
+												}
+												else
+												{
+													throw new NotImplementedException("Cannot set value of parameter type from " + messageBodyMemberInfo.GetType()?.Name);
+												}
+
+												arguments[parameterInfo.Index] = wrapperObject;
+											}
+											else
+											{
+												arguments[parameterInfo.Index] = argumentData;
+											}
 										}
 									}
 
@@ -443,7 +507,7 @@ namespace SoapCore
 											xmlReader.ReadStartElement(parameterName, parameterNs);
 										}
 
-										var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
+										var elementType = parameterType.GetElementType();
 
 										var localName = parameterInfo.ArrayItemName ?? elementType.Name;
 										if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
@@ -472,10 +536,10 @@ namespace SoapCore
 								break;
 							case SoapSerializer.DataContractSerializer:
 								{
-									var elementType = parameterInfo.Parameter.ParameterType.GetElementType();
-									if (elementType == null || parameterInfo.Parameter.ParameterType.IsArray)
+									var elementType = parameterType.GetElementType();
+									if (elementType == null || parameterType.IsArray)
 									{
-										elementType = parameterInfo.Parameter.ParameterType;
+										elementType = parameterType;
 									}
 
 									var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
@@ -487,7 +551,7 @@ namespace SoapCore
 						}
 					}
 				}
-				else if (parameterInfo.Parameter.ParameterType == typeof(HttpContext))
+				else if (parameterType == typeof(HttpContext))
 				{
 					arguments[parameterInfo.Index] = httpContext;
 				}
