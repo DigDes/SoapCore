@@ -42,6 +42,7 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector
 		}
 
 		[TestMethod]
+		[ExpectedException(typeof(FaultException))]
 		public void AfterReceivedRequestCalled()
 		{
 			Assert.IsFalse(MessageInspectorMock.AfterReceivedRequestCalled);
@@ -51,6 +52,7 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector
 		}
 
 		[TestMethod]
+		[ExpectedException(typeof(FaultException))]
 		public void BeforeSendReplyShouldNotBeCalled()
 		{
 			Assert.IsFalse(MessageInspectorMock.BeforeSendReplyCalled);
