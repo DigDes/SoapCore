@@ -249,12 +249,34 @@ namespace SoapCore
 			}
 
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
-			var correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
+			var correlationObject = default(object);
+
+			try
+			{
+				correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
+			}
+			catch (Exception ex)
+			{
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+				return responseMessage;
+			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
+#pragma warning disable SA1009 // StyleCop has not yet been updated to support tuples
+			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
+#pragma warning restore SA1009
+
+			try
+			{
 #pragma warning disable SA1008 // StyleCop has not yet been updated to support tuples
-			var correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
+				correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
 #pragma warning restore SA1008
+			}
+			catch (Exception ex)
+			{
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+				return responseMessage;
+			}
 
 			// for getting soapaction and parameters in body
 			// GetReaderAtBodyContents must not be called twice in one request
