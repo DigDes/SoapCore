@@ -92,7 +92,7 @@ namespace SoapCore
 				?? arrayAttribute?.Namespace
 				?? contract.Namespace;
 			var dataContractAttribute = info.ParameterType.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly)
+			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly && !string.IsNullOrWhiteSpace(dataContractAttribute.Namespace))
 			{
 				parameterNs = dataContractAttribute.Namespace;
 			}
