@@ -280,11 +280,11 @@ namespace SoapCore
 
 		private void AddFaultTypes(XmlDictionaryWriter writer, OperationDescription operation)
 		{
-            foreach (var faultType in operation.Faults)
-            {
-                _complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
-                DiscoveryTypesByProperties(faultType, true);
-            }
+			foreach (var faultType in operation.Faults)
+			{
+				_complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
+				DiscoveryTypesByProperties(faultType, true);
+			}
 		}
 
 		private void AddTypes(XmlDictionaryWriter writer)
@@ -612,7 +612,10 @@ namespace SoapCore
 			foreach (var property in type.GetProperties().Where(prop =>
 						prop.DeclaringType == type
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
-						&& !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName) && prop.PropertyType != typeof(ValueType) && prop.PropertyType != typeof(DateTimeOffset)))
+						&& !prop.PropertyType.IsPrimitive
+						&& !SysTypeDic.ContainsKey(prop.PropertyType.FullName)
+						&& prop.PropertyType != typeof(ValueType)
+						&& prop.PropertyType != typeof(DateTimeOffset)))
 			{
 				Type propertyType;
 				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
@@ -634,6 +637,11 @@ namespace SoapCore
 
 				if (propertyType != null && !propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
 				{
+					if (propertyType == type)
+					{
+						continue;
+					}
+
 					DiscoveryTypesByProperties(propertyType, false);
 					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
 				}
@@ -684,7 +692,7 @@ namespace SoapCore
 				{
 					writer.WriteStartElement("xs:complexContent");
 
-                    writer.WriteAttributeString("mixed", "false");
+					writer.WriteAttributeString("mixed", "false");
 
 					writer.WriteStartElement("xs:extension");
 
@@ -932,7 +940,7 @@ namespace SoapCore
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string objectNamespace = null)
 		{
 			var typeInfo = type.GetTypeInfo();
-            var typeName = GetTypeName(type);
+			var typeName = GetTypeName(type);
 
 			if (typeInfo.IsByRef)
 			{
@@ -950,12 +958,12 @@ namespace SoapCore
 			{
 				WriteComplexElementType(writer, typeName, _schemaNamespace, objectNamespace, type);
 
-                if (string.IsNullOrEmpty(name))
-                {
-                    name = typeName;
-                }
+				if (string.IsNullOrEmpty(name))
+				{
+					name = typeName;
+				}
 
-                writer.WriteAttributeString("name", name);
+				writer.WriteAttributeString("name", name);
 			}
 			else if (type.IsValueType)
 			{
@@ -1109,8 +1117,8 @@ namespace SoapCore
 					{
 						if (string.IsNullOrEmpty(name))
 						{
-                            name = typeName;
-                        }
+							name = typeName;
+						}
 
 						writer.WriteAttributeString("name", name);
 						WriteComplexElementType(writer, typeName, _schemaNamespace, objectNamespace, type);
@@ -1203,25 +1211,25 @@ namespace SoapCore
 
 		private string GetTypeName(Type type)
 		{
-            if (type.IsGenericType && !type.IsArray && !typeof(IEnumerable).IsAssignableFrom(type))
-            {
-                var genericType = GetGenericType(type);
-                var genericTypeName = GetTypeName(genericType);
+			if (type.IsGenericType && !type.IsArray && !typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				var genericType = GetGenericType(type);
+				var genericTypeName = GetTypeName(genericType);
 
-                var typeName = type.Name.Replace("`1", string.Empty);
-                typeName = typeName + "Of" + genericTypeName;
-                return typeName;
-            }
+				var typeName = type.Name.Replace("`1", string.Empty);
+				typeName = typeName + "Of" + genericTypeName;
+				return typeName;
+			}
 
-            if (type.IsArray)
-            {
-                return "ArrayOf" + GetTypeName(type.GetElementType());
-            }
+			if (type.IsArray)
+			{
+				return "ArrayOf" + GetTypeName(type.GetElementType());
+			}
 
-            if (typeof(IEnumerable).IsAssignableFrom(type))
-            {
-                return "ArrayOf" + GetTypeName(GetGenericType(type));
-            }
+			if (typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				return "ArrayOf" + GetTypeName(GetGenericType(type));
+			}
 
 			return type.Name;
 		}
