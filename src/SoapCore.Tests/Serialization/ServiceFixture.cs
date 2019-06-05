@@ -18,6 +18,7 @@ namespace SoapCore.Tests.Serialization
 
 		private readonly IWebHost _host;
 		private readonly Dictionary<SoapSerializer, IService> _sampleServiceClients = new Dictionary<SoapSerializer, IService>();
+		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
 		public ServiceFixture()
 		{
@@ -43,7 +44,7 @@ namespace SoapCore.Tests.Serialization
 				.Build();
 
 #pragma warning disable 4014
-			_host.RunAsync();
+			_host.RunAsync(_cancellationTokenSource.Token);
 #pragma warning restore 4014
 
 			//make service client
@@ -79,7 +80,7 @@ namespace SoapCore.Tests.Serialization
 
 		public void Dispose()
 		{
-			_host.StopAsync().GetAwaiter().GetResult();
+			_cancellationTokenSource.Cancel();
 		}
 
 		private void WaitForServerStarted()
@@ -91,10 +92,11 @@ namespace SoapCore.Tests.Serialization
 					try
 					{
 						client.Connect("localhost", Port);
+						break;
 					}
 					catch
 					{
-						Thread.Sleep(1000);
+						Thread.Sleep(100);
 					}
 				}
 			}
