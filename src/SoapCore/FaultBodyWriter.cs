@@ -11,6 +11,7 @@ namespace SoapCore
 	public class FaultBodyWriter : BodyWriter
 	{
 		private const string Soap12Namespace = "http://www.w3.org/2003/05/soap-envelope";
+		private const string Soap11Namespace = "http://schemas.xmlsoap.org/soap/envelope/";
 
 		private readonly MessageVersion _version;
 		private readonly Exception _exception;
@@ -69,7 +70,7 @@ namespace SoapCore
 
 			if (faultDetail != null)
 			{
-				writer.WriteStartElement(prefix, "detail", Soap12Namespace);
+				writer.WriteStartElement(prefix, "Detail", Soap12Namespace);
 				faultDetail.WriteTo(writer);
 				writer.WriteEndElement();
 			}
@@ -82,7 +83,7 @@ namespace SoapCore
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
 
-			writer.WriteStartElement("Fault", "http://schemas.xmlsoap.org/soap/envelope/");
+			writer.WriteStartElement("Fault", Soap11Namespace);
 			writer.WriteElementString("faultcode", "s:Client");
 			writer.WriteElementString("faultstring", faultString);
 
@@ -130,7 +131,7 @@ namespace SoapCore
 		{
 			try
 			{
-				Exception currentException = exception;
+				var currentException = exception;
 
 				while (currentException != null)
 				{
