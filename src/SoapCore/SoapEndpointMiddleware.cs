@@ -2,6 +2,7 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -672,22 +673,12 @@ namespace SoapCore
 			}
 			else
 			{
-				// Create response message
-				object faultDetail = ExtractFaultDetail(exception);
-				string errorText = exception.InnerException != null ? exception.InnerException.Message : exception.Message;
 				var transformer = serviceProvider.GetService<ExceptionTransformer>();
 
-				if (transformer != null)
-				{
-					errorText = transformer.Transform(exception);
-				}
+				var bodyWriter = transformer == null ?
+					new FaultBodyWriter(exception, messageEncoder.MessageVersion) :
+					new FaultBodyWriter(exception, messageEncoder.MessageVersion, faultStringOverride: transformer.Transform(exception));
 
-				var fault = new Fault(faultDetail)
-				{
-					FaultString = errorText
-				};
-
-				var bodyWriter = new FaultBodyWriter(fault);
 				var soapCoreFaultMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
 				faultMessage = new CustomMessage(soapCoreFaultMessage);
 			}
@@ -698,46 +689,6 @@ namespace SoapCore
 			messageEncoder.WriteMessage(faultMessage, httpContext.Response.Body);
 
 			return faultMessage;
-		}
-
-		/// <summary>
-		/// Helper to extract object of a detailed fault.
-		/// </summary>
-		/// <param name="exception">
-		/// The exception that caused the failure.
-		/// </param>
-		/// <returns>
-		/// Returns instance of T if the exception (or its InnerExceptions) is of type FaultException<T>
-		/// otherwise returns null
-		/// </returns>
-		private object ExtractFaultDetail(Exception exception)
-		{
-			try
-			{
-				Exception currentException = exception;
-				while (currentException != null)
-				{
-					var type = currentException.GetType();
-					if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FaultException<>))
-					{
-						var detailInfo = type.GetProperty("Detail");
-						var value = detailInfo?.GetValue(currentException);
-
-						if (value != null)
-						{
-							return value;
-						}
-					}
-
-					currentException = currentException.InnerException;
-				}
-			}
-			catch
-			{
-				return null;
-			}
-
-			return null;
 		}
 	}
 }
