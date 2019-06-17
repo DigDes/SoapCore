@@ -132,7 +132,24 @@ namespace SoapCore
 		{
 			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
-			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
+			BodyWriter bodyWriter;
+			switch (_serializer)
+			{
+				case SoapSerializer.XmlSerializer:
+					bodyWriter = new MetaBodyWriter(_service, baseUrl, _binding);
+					break;
+
+				case SoapSerializer.DataContractSerializer:
+					bodyWriter = new MetaWCFBodyWriter(_service, baseUrl, _binding);
+					break;
+
+				case SoapSerializer.XmlWcfSerializer:
+					bodyWriter = new MetaWcfXmlBodyWriter(_service, baseUrl, _binding);
+					break;
+
+				default:
+					throw new NotImplementedException();
+			}
 
 			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service, _binding);
@@ -616,6 +633,7 @@ namespace SoapCore
 				{
 					switch (_serializer)
 					{
+						case SoapSerializer.XmlWcfSerializer:
 						case SoapSerializer.XmlSerializer:
 							if (!parameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
 							{
