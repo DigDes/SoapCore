@@ -42,7 +42,6 @@ namespace SoapCore
 			["System.Double"] = ("double", SYSTEM_NS),
 			["System.Single"] = ("float", SYSTEM_NS),
 			["System.DateTime"] = ("dateTime", SYSTEM_NS),
-			["System.Decimal"] = ("decimal", SYSTEM_NS),
 			["System.Guid"] = ("guid", SERIALIZATION_NS),
 			["System.Char"] = ("char", SERIALIZATION_NS),
 			["System.TimeSpan"] = ("duration", SERIALIZATION_NS),
