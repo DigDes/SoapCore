@@ -663,25 +663,8 @@ namespace SoapCore
 			MessageEncoder messageEncoder,
 			HttpContext httpContext)
 		{
-			Message faultMessage;
-
-			var faultExceptionTransformer = serviceProvider.GetService<IFaultExceptionTransformer>();
-
-			if (faultExceptionTransformer != null)
-			{
-				faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion);
-			}
-			else
-			{
-				var transformer = serviceProvider.GetService<ExceptionTransformer>();
-
-				var bodyWriter = transformer == null ?
-					new FaultBodyWriter(exception, messageEncoder.MessageVersion) :
-					new FaultBodyWriter(exception, messageEncoder.MessageVersion, faultStringOverride: transformer.Transform(exception));
-
-				var soapCoreFaultMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
-				faultMessage = new CustomMessage(soapCoreFaultMessage);
-			}
+			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
