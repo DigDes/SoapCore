@@ -3,6 +3,10 @@ using System.ServiceModel.Channels;
 
 namespace SoapCore
 {
+	/// <summary>
+	/// The default implementation of the fault provider when an unexpected exception occurs. This can be replaced or
+	/// extended by registering your own IFaultExceptionTransformer in the service collection on startup.
+	/// </summary>
 	public class DefaultFaultExceptionTransformer : IFaultExceptionTransformer
 	{
 		private readonly ExceptionTransformer _exceptionTransformer;
