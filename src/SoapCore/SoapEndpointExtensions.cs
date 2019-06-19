@@ -59,6 +59,8 @@ namespace SoapCore
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)
 		{
 			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
+			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer>();
+
 			return serviceCollection;
 		}
 
