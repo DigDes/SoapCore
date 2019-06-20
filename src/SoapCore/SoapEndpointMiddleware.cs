@@ -245,7 +245,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -258,7 +258,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -275,7 +275,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -353,8 +353,21 @@ namespace SoapCore
 					// Create response message
 					var resultName = operation.ReturnName;
 					var bodyWriter = new ServiceBodyWriter(_serializer, operation, resultName, responseObject, resultOutDictionary);
-					responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
-					responseMessage = new CustomMessage(responseMessage);
+
+					if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+					{
+						responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, soapAction, bodyWriter);
+						responseMessage = new CustomMessage(responseMessage);
+
+						responseMessage.Headers.Action = operation.ReplyAction;
+						responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
+						responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
+					}
+					else
+					{
+						responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
+						responseMessage = new CustomMessage(responseMessage);
+					}
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
@@ -373,7 +386,7 @@ namespace SoapCore
 					}
 
 					_logger.LogWarning(0, exception, exception.Message);
-					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				}
 			}
 
@@ -392,7 +405,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, httpContext);
+				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -649,6 +662,9 @@ namespace SoapCore
 		/// <param name="messageEncoder">
 		/// The Message Encoder.
 		/// </param>
+		/// <param name="requestMessage">
+		/// The Message for the incoming request
+		/// </param>
 		/// <param name="httpContext">
 		/// The HTTP context that received the response message.
 		/// </param>
@@ -661,6 +677,7 @@ namespace SoapCore
 			int statusCode,
 			IServiceProvider serviceProvider,
 			MessageEncoder messageEncoder,
+			Message requestMessage,
 			HttpContext httpContext)
 		{
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
@@ -669,6 +686,15 @@ namespace SoapCore
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
 			httpContext.Response.StatusCode = statusCode;
+
+			if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+			{
+				// TODO: Some additional work needs to be done in order to support setting the action. Simply setting it to
+				// "http://www.w3.org/2005/08/addressing/fault" will cause the WCF Client to not be able to figure out the type
+				faultMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
+				faultMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
+			}
+
 			messageEncoder.WriteMessage(faultMessage, httpContext.Response.Body);
 
 			return faultMessage;
