@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -70,6 +71,37 @@ namespace SoapCore
 			}
 
 			return result?.MakeGenericMethod(typeArguments);
+		}
+
+		/// <summary>
+		/// Gets the field or property members of the specific type.
+		/// </summary>
+		/// <param name="type">The type to look for field or property members for</param>
+		/// <returns>An enumerable containing members which are fields or properties</returns>
+		internal static IEnumerable<MemberInfo> GetPropertyOrFieldMembers(this Type type) =>
+			type.GetFields()
+				.Cast<MemberInfo>()
+				.Concat(type.GetProperties());
+
+		/// <summary>
+		/// Gets the field or property type of a member. Returns null if the member is neither a field or
+		/// a property member
+		/// </summary>
+		/// <param name="memberInfo">The member to get the field or property type</param>
+		/// <returns>The return type of the member, null if it could not be determined</returns>
+		internal static Type GetPropertyOrFieldType(this MemberInfo memberInfo)
+		{
+			if (memberInfo is FieldInfo fi)
+			{
+				return fi.FieldType;
+			}
+
+			if (memberInfo is PropertyInfo pi)
+			{
+				return pi.PropertyType;
+			}
+
+			return null;
 		}
 	}
 }

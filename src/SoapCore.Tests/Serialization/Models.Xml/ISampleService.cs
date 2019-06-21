@@ -44,6 +44,21 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		PingComplexModelOldStyleResponse PingComplexModelOldStyle(
 			PingComplexModelOldStyleRequest request);
 
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedPropertyComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedPropertyComplexInputResponse NotWrappedPropertyComplexInputRequestMethod(
+			NotWrappedPropertyComplexInputRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedFieldComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedFieldComplexInputResponse NotWrappedFieldComplexInputRequestMethod(
+			NotWrappedFieldComplexInputRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedFieldDoubleComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedFieldComplexInputResponse NotWrappedFieldDoubleComplexInputRequestMethod(
+			NotWrappedFieldDoubleComplexInputRequest request);
+
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool EnumMethod(out SampleEnum e);
@@ -79,5 +94,9 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract]
 		[XmlSerializerFormat]
 		ComplexModel1[] PingComplexModelArrayWithXmlArray([XmlArrayItem("arr1")]ComplexModel1[] models, [XmlElement("arr2")]ComplexModel2[] models2);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		int[] PingIntArray(int[] array);
 	}
 }

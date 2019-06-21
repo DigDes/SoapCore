@@ -71,5 +71,21 @@ namespace SoapCore.Tests
 			var faultProperty = Assert.Single(properties);
 			Assert.Equal("MyIncludedProperty", faultProperty.Name);
 		}
+
+		[Fact]
+		public void TestProperNamingOfAsyncMethods()
+		{
+			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithMessageContract));
+			ContractDescription contractDescription = new ContractDescription(serviceDescription, typeof(IServiceWithMessageContract), new ServiceContractAttribute());
+
+			System.Reflection.MethodInfo method = typeof(IServiceWithMessageContract).GetMethod(nameof(IServiceWithMessageContract.GetMyAsyncClassAsync));
+
+			OperationContractAttribute contractAttribute = new OperationContractAttribute();
+
+			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+
+			Assert.True(operationDescription.IsMessageContractResponse);
+			Assert.Equal("GetMyAsyncClass", operationDescription.Name);
+		}
 	}
 }
