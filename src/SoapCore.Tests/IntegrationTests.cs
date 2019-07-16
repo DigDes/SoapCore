@@ -41,8 +41,6 @@ namespace SoapCore.Tests
 
 			var client = CreateSoap12Client();
 
-			// We don't actually want an exception to be thrown but are asserting so
-			// that the behaviour change can be monitored.
 			client.VoidAll();
 		}
 
