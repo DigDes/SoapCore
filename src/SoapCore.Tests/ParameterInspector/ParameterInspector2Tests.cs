@@ -16,7 +16,7 @@ namespace SoapCore.Tests.ParameterInspector
 			{
 				var host = new WebHostBuilder()
 					.UseKestrel()
-					.UseUrls("http://localhost:7051")
+					.UseUrls("http://localhost:8921")
 					.UseStartup<Startup>()
 					.Build();
 
@@ -27,7 +27,7 @@ namespace SoapCore.Tests.ParameterInspector
 		public ITestService CreateClient()
 		{
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:7051/Service.svc", "localhost")));
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:8921/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
