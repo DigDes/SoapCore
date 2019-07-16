@@ -11,6 +11,12 @@ namespace SoapCore.Tests
 		[OperationContract]
 		string Ping(string s);
 
+		[OperationContract(IsOneWay = false)] // explicitly IsOneWay = false (synchronous)
+		void VoidAll();
+
+		[OperationContract(IsOneWay = false)] // explicitly IsOneWay = false (synchronous)
+		void VoidString(string s);
+
 		[OperationContract]
 		string EmptyArgs();
 

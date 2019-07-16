@@ -33,6 +33,13 @@ namespace SoapCore
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
+			if (_operation.OutParameters.Length == 0 && _operation.DispatchMethod.ReturnType == typeof(void))
+			{
+				// Let's bail early because there is nothing to write! This can occur when a method
+				// returns void and has no "out" parameters.
+				return;
+			}
+
 			// do not wrap old-style single element response into additional xml element for xml serializer
 			var needResponseEnvelope = _serializer != SoapSerializer.XmlSerializer || _result == null || (_outResults != null && _outResults.Count > 0) || !_operation.IsMessageContractResponse;
 

@@ -35,6 +35,28 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void VoidAllMethod()
+		{
+			Assert.Inconclusive("The .NET WCF client does not appear to support empty messages");
+
+			var client = CreateSoap12Client();
+
+			// We don't actually want an exception to be thrown but are asserting so
+			// that the behaviour change can be monitored.
+			client.VoidAll();
+		}
+
+		[TestMethod]
+		public void VoidStringMethod()
+		{
+			Assert.Inconclusive("The .NET WCF client does not appear to support empty messages");
+
+			var client = CreateSoap12Client();
+
+			client.VoidString("hello, world");
+		}
+
+		[TestMethod]
 		public void PingSoap12()
 		{
 			var client = CreateSoap12Client();

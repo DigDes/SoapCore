@@ -107,5 +107,13 @@ namespace SoapCore.Tests
 		{
 			return _pingResultValue.Value;
 		}
+
+		public void VoidAll()
+		{
+		}
+
+		public void VoidString(string s)
+		{
+		}
 	}
 }

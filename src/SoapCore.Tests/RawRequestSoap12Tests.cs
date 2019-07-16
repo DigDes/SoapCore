@@ -174,6 +174,37 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public async Task Soap12VoidAll()
+		{
+			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">
+  <soap12:Body>
+    <VoidAll xmlns=""http://tempuri.org/"" />
+  </soap12:Body>
+</soap12:Envelope>
+";
+
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
+			using (var response = await host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync())
+			{
+				response.EnsureSuccessStatusCode();
+
+				var responseBodyStream = await response.Content.ReadAsStreamAsync();
+				var document = XDocument.Load(responseBodyStream);
+
+				var envelopeBody =
+					document
+						.Element(XName.Get("Envelope", "http://www.w3.org/2003/05/soap-envelope"))
+						.Element(XName.Get("Body", "http://www.w3.org/2003/05/soap-envelope"));
+
+				Assert.IsNotNull(envelopeBody);
+				Assert.IsTrue(envelopeBody.IsEmpty);
+			}
+		}
+
+		[TestMethod]
 		public async Task Soap12DetailedFault()
 		{
 			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
