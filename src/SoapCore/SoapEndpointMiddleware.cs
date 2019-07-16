@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.ServiceModel.Dispatcher;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -334,6 +335,12 @@ namespace SoapCore
 					// Invoke OnModelBound
 					_soapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
 
+					var parameterCorrelationObjects2 = serviceProvider.GetServices<IParameterInspector2>()
+#pragma warning disable SA1008 // OpeningParenthesisMustBeSpacedCorrectly
+						.Select(pi => (inspector: pi, correlationObject: pi.BeforeCall(_service, operation.Name, arguments)))
+#pragma warning restore SA1008 // OpeningParenthesisMustBeSpacedCorrectly
+						.ToList();
+
 					// Tune service instance for operation call
 					var serviceOperationTuners = serviceProvider.GetServices<IServiceOperationTuner>();
 					foreach (var operationTuner in serviceOperationTuners)
@@ -344,10 +351,22 @@ namespace SoapCore
 					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
-					var resultOutDictionary = new Dictionary<string, object>();
-					foreach (var parameterInfo in operation.OutParameters)
+					var outputs = new object[operation.OutParameters.Length];
+					var resultOutIndex = new Dictionary<string, int>();
+					for (var index = 0; index < operation.OutParameters.Length; index++)
 					{
-						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
+						var parameterInfo = operation.OutParameters[index];
+
+						outputs[index] = arguments[parameterInfo.Index];
+						resultOutIndex[parameterInfo.Name] = index;
+					}
+
+					parameterCorrelationObjects2.ForEach(pi => pi.inspector.AfterCall(_service, operation.Name, outputs, responseObject, pi.correlationObject));
+
+					var resultOutDictionary = new Dictionary<string, object>();
+					foreach (var kv in resultOutIndex)
+					{
+						resultOutDictionary[kv.Key] = outputs[kv.Value];
 					}
 
 					// Create response message
