@@ -13,6 +13,7 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.CSharp;
 using Microsoft.Extensions.DependencyInjection;
@@ -376,6 +377,8 @@ namespace SoapCore
 
 					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 
+					SetHttpResponse(httpContext, responseMessage);
+
 					messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
 				}
 				catch (Exception exception)
@@ -687,6 +690,8 @@ namespace SoapCore
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
 			httpContext.Response.StatusCode = statusCode;
 
+			SetHttpResponse(httpContext, faultMessage);
+
 			if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
 				// TODO: Some additional work needs to be done in order to support setting the action. Simply setting it to
@@ -698,6 +703,30 @@ namespace SoapCore
 			messageEncoder.WriteMessage(faultMessage, httpContext.Response.Body);
 
 			return faultMessage;
+		}
+
+		private void SetHttpResponse(HttpContext httpContext, Message message)
+		{
+			if (!message.Properties.TryGetValue(HttpResponseMessageProperty.Name, out var value)
+#pragma warning disable SA1119 // StatementMustNotUseUnnecessaryParenthesis
+				|| !(value is HttpResponseMessageProperty httpProperty))
+#pragma warning restore SA1119 // StatementMustNotUseUnnecessaryParenthesis
+			{
+				return;
+			}
+
+			httpContext.Response.StatusCode = (int)httpProperty.StatusCode;
+
+			var feature = httpContext.Features.Get<IHttpResponseFeature>();
+			if (feature != null && !string.IsNullOrEmpty(httpProperty.StatusDescription))
+			{
+				feature.ReasonPhrase = httpProperty.StatusDescription;
+			}
+
+			foreach (string key in httpProperty.Headers.Keys)
+			{
+				httpContext.Response.Headers.Add(key, httpProperty.Headers.GetValues(key));
+			}
 		}
 	}
 }

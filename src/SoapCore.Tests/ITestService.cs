@@ -50,6 +50,9 @@ namespace SoapCore.Tests
 		[OperationContract]
 		void ThrowException();
 
+		[OperationContract(Name = "ThrowExceptionAsync")]
+		Task ThrowExceptionAsync();
+
 		[OperationContract]
 		void ThrowExceptionWithMessage(string message);
 

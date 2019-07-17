@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
+using System.ServiceModel.Description;
+using System.ServiceModel.Dispatcher;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,9 +17,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace SoapCore.Tests.FaultExceptionTransformer
 {
 	[TestClass]
-	public class FaultExceptionTransformerTests
+	public class FaultExceptionTransformerTests : DelegatingHandler, IEndpointBehavior
 	{
 		private static IWebHost _host;
+		private bool _hasAssertHttpResponse;
 
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
@@ -42,8 +48,13 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 			var address = addresses.Addresses.Single();
 
 			var binding = new BasicHttpBinding();
+
 			var endpoint = new EndpointAddress(new Uri(string.Format("{0}/Service.svc", address)));
+
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+
+			channelFactory.Endpoint.EndpointBehaviors.Add(this);
+
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
 		}
@@ -67,6 +78,42 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 
 				Assert.AreEqual("foo:bar", detail.AdditionalProperty);
 			}
+
+			Assert.IsTrue(_hasAssertHttpResponse);
+		}
+
+		public void AddBindingParameters(ServiceEndpoint endpoint, BindingParameterCollection bindingParameters)
+		{
+			bindingParameters.Add(new Func<HttpClientHandler, HttpMessageHandler>(handler =>
+			{
+				InnerHandler = handler;
+
+				return this;
+			}));
+		}
+
+		public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime)
+		{
+		}
+
+		public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher)
+		{
+		}
+
+		public void Validate(ServiceEndpoint endpoint)
+		{
+		}
+
+		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+		{
+			var response = await base.SendAsync(request, cancellationToken);
+
+			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+			Assert.AreEqual("test description", response.ReasonPhrase);
+
+			_hasAssertHttpResponse = true;
+
+			return response;
 		}
 	}
 }
