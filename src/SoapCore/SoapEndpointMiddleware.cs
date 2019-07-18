@@ -2,7 +2,6 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +10,7 @@ using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
+using AspectCore.Extensions.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.CSharp;
@@ -22,6 +21,9 @@ namespace SoapCore
 {
 	public class SoapEndpointMiddleware
 	{
+		private static readonly IDictionary<Type, ValueTuple<PropertyReflector, Type>> MessageHeadersCache = new Dictionary<Type, ValueTuple<PropertyReflector, Type>>();
+		private static readonly IDictionary<Type, MethodReflector> ActionFilterCache = new Dictionary<Type, MethodReflector>();
+
 		private readonly ILogger<SoapEndpointMiddleware> _logger;
 		private readonly RequestDelegate _next;
 		private readonly ServiceDescription _service;
@@ -31,6 +33,7 @@ namespace SoapCore
 		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly ISoapModelBounder _soapModelBounder;
+		private readonly IReadOnlyDictionary<OperationDescription, IReadOnlyCollection<Type>> _actionFilters;
 
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
 		{
@@ -43,6 +46,35 @@ namespace SoapCore
 			_service = new ServiceDescription(serviceType);
 			_soapModelBounder = soapModelBounder;
 			_binding = binding;
+
+			var property = _service.ServiceType.GetProperty("MessageHeaders");
+			MessageHeadersCache[_service.ServiceType] = ValueTuple.Create(property?.GetReflector(), property?.PropertyType);
+
+			var actionFilters = new Dictionary<OperationDescription, IReadOnlyCollection<Type>>();
+			_actionFilters = actionFilters;
+
+			foreach (var operation in _service.Operations)
+			{
+				var list = new List<Type>();
+				actionFilters[operation] = list;
+
+				foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute"))
+				{
+					var actionFilterType = actionFilterAttr.ConstructorArguments[0].Value as Type;
+					var method = actionFilterType?.GetMethod("OnSoapActionExecuting");
+					if (actionFilterType == null || method == null)
+					{
+						continue;
+					}
+
+					list.Add(actionFilterType);
+
+					if (!ActionFilterCache.ContainsKey(actionFilterType))
+					{
+						ActionFilterCache[actionFilterType] = method.GetReflector();
+					}
+				}
+			}
 		}
 
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
@@ -298,10 +330,10 @@ namespace SoapCore
 					//Create an instance of the service class
 					var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
 
-					var headerProperty = _service.ServiceType.GetProperty("MessageHeaders");
-					if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
+					var headerProperty = MessageHeadersCache[_service.ServiceType];
+					if (headerProperty.Item2 != null && headerProperty.Item2.IsInstanceOfType(requestMessage.Headers))
 					{
-						headerProperty.SetValue(serviceInstance, requestMessage.Headers);
+						headerProperty.Item1.SetValue(serviceInstance, requestMessage.Headers);
 					}
 
 					// Get operation arguments from message
@@ -325,10 +357,9 @@ namespace SoapCore
 					}
 
 					// Execute Mvc ActionFilters
-					foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute"))
+					foreach (var actionFilterType in _actionFilters[operation])
 					{
-						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
-						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, arguments, httpContext, modelBindingOutput });
+						ActionFilterCache[actionFilterType].Invoke(serviceProvider.GetService(actionFilterType), operation.Name, arguments, httpContext, modelBindingOutput);
 					}
 
 					// Invoke OnModelBound
