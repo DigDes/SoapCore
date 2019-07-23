@@ -16,7 +16,6 @@ namespace SoapCore
 			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? GetNameByMethod(operationMethod);
 			SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
 			IsOneWay = contractAttribute.IsOneWay;
-			ReplyAction = contractAttribute.ReplyAction;
 			DispatchMethod = operationMethod;
 
 			var returnType = operationMethod.ReturnType;
@@ -50,6 +49,8 @@ namespace SoapCore
 			ReturnName = operationMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? Name + "Result";
 			ReturnElementName = elementAttribute?.ElementName;
 			ReturnNamespace = elementAttribute?.Form == XmlSchemaForm.Unqualified ? string.Empty : elementAttribute?.Namespace;
+
+			ReplyAction = contractAttribute.ReplyAction ?? $"{Contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name + "Response"}";
 
 			var faultContractAttributes = operationMethod.GetCustomAttributes<FaultContractAttribute>();
 			Faults = faultContractAttributes
