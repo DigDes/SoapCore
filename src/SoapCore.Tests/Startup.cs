@@ -47,6 +47,14 @@ namespace SoapCore.Tests
 				app2.UseSoapEndpoint<TestService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 			});
 
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA10Service.svc"), app2 =>
+			{
+				var transportBinding = new HttpTransportBindingElement();
+				var textEncodingBinding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
+
+				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
+			});
+
 			app.UseMvc();
 		}
 	}
