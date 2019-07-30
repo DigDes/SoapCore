@@ -348,10 +348,48 @@ namespace SoapCore.Tests.Serialization
 
 			clientResponse.ShouldNotBeNull();
 
-			// The client does not support unpacking these message contracts, so further assertions have been
-			// commented
-			//	clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
-			//	clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+			clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
+			clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+		}
+
+		//not compatible with DataContractSerializer
+		[Theory(Skip = "Multiple MessageBodyMember and MessageContract(IsWrapped = false) is not supported")]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestUnwrappedMessageBodyMemberResponse(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var called = false;
+
+			_fixture.ServiceMock
+				.Setup(x => x.TestUnwrappedMessageBodyMember())
+				.Callback(() =>
+				{
+					called = true;
+				})
+				.Returns(new UnwrappedMessageBodyMemberResponse
+				{
+					NotWrappedComplexInput1 = new NotWrappedPropertyComplexInput
+					{
+						StringProperty = "one"
+					},
+
+					NotWrappedComplexInput2 = new NotWrappedPropertyComplexInput
+					{
+						StringProperty = "two"
+					}
+				});
+
+			var clientResponse = sampleServiceClient.TestUnwrappedMessageBodyMember();
+
+			Assert.True(called);
+
+			clientResponse.ShouldNotBeNull();
+
+			clientResponse.NotWrappedComplexInput1.ShouldNotBeNull();
+			clientResponse.NotWrappedComplexInput1.StringProperty.ShouldBe("one");
+
+			clientResponse.NotWrappedComplexInput2.ShouldNotBeNull();
+			clientResponse.NotWrappedComplexInput2.StringProperty.ShouldBe("two");
 		}
 
 		//not compatible with DataContractSerializer
@@ -387,10 +425,8 @@ namespace SoapCore.Tests.Serialization
 
 			clientResponse.ShouldNotBeNull();
 
-			// The client does not support unpacking these message contracts, so further assertions have been
-			// commented
-			//	clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
-			//	clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+			clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
+			clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
 		}
 
 		//not compatible with DataContractSerializer
@@ -434,10 +470,8 @@ namespace SoapCore.Tests.Serialization
 
 			clientResponse.ShouldNotBeNull();
 
-			// The client does not support unpacking these message contracts, so further assertions have been
-			// commented
-			//	clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
-			//	clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
+			clientResponse.NotWrappedComplexInput.ShouldNotBeNull();
+			clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
 		}
 
 		//not compatible with DataContractSerializer

@@ -59,6 +59,10 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		NotWrappedFieldComplexInputResponse NotWrappedFieldDoubleComplexInputRequestMethod(
 			NotWrappedFieldDoubleComplexInputRequest request);
 
+		[OperationContract(Action = ServiceNamespace.Value + nameof(TestUnwrappedMessageBodyMember), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		UnwrappedMessageBodyMemberResponse TestUnwrappedMessageBodyMember();
+
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool EnumMethod(out SampleEnum e);

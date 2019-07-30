@@ -350,8 +350,7 @@ namespace SoapCore
 					}
 
 					// Create response message
-					var resultName = operation.ReturnName;
-					var bodyWriter = new ServiceBodyWriter(_serializer, operation, resultName, responseObject, resultOutDictionary);
+					var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
 
 					if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 					{
