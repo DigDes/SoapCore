@@ -604,8 +604,8 @@ namespace SoapCore
 
 			if (HasBaseType(type) && type.BaseType != null)
 			{
-				DiscoveryTypesByProperties(type.BaseType, false);
 				_complexTypeToBuild[type.BaseType] = GetDataContractNamespace(type.BaseType);
+				DiscoveryTypesByProperties(type.BaseType, false);
 			}
 
 			foreach (var property in type.GetProperties().Where(prop =>
@@ -641,8 +641,8 @@ namespace SoapCore
 						continue;
 					}
 
-					DiscoveryTypesByProperties(propertyType, false);
 					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
+					DiscoveryTypesByProperties(propertyType, false);
 				}
 			}
 		}
