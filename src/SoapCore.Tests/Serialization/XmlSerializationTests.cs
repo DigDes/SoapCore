@@ -352,21 +352,34 @@ namespace SoapCore.Tests.Serialization
 			clientResponse.NotWrappedComplexInput.StringProperty.ShouldBe("z");
 		}
 
-		//not compatible with DataContractSerializer
-		[Theory(Skip = "Multiple MessageBodyMember and MessageContract(IsWrapped = false) is not supported")]
+		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
-		public void TestUnwrappedMessageBodyMemberResponse(SoapSerializer soapSerializer)
+		public void TestUnwrappedSimpleMessageBodyMemberResponse(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-			var called = false;
 
 			_fixture.ServiceMock
-				.Setup(x => x.TestUnwrappedMessageBodyMember())
-				.Callback(() =>
+				.Setup(x => x.TestUnwrappedStringMessageBodyMember(It.IsAny<BasicMessageContractPayload>()))
+				.Returns(() => new UnwrappedStringMessageBodyMemberResponse
 				{
-					called = true;
-				})
-				.Returns(new UnwrappedMessageBodyMemberResponse
+					StringProperty = "one"
+				});
+
+			var clientResponse = sampleServiceClient.TestUnwrappedStringMessageBodyMember(new BasicMessageContractPayload());
+
+			clientResponse.ShouldNotBeNull();
+			clientResponse.StringProperty.ShouldBe("one");
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestUnwrappedMultipleMessageBodyMemberResponse(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.TestUnwrappedMultipleMessageBodyMember(It.IsAny<BasicMessageContractPayload>()))
+				.Returns(new UnwrappedMultipleMessageBodyMemberResponse
 				{
 					NotWrappedComplexInput1 = new NotWrappedPropertyComplexInput
 					{
@@ -379,9 +392,7 @@ namespace SoapCore.Tests.Serialization
 					}
 				});
 
-			var clientResponse = sampleServiceClient.TestUnwrappedMessageBodyMember();
-
-			Assert.True(called);
+			var clientResponse = sampleServiceClient.TestUnwrappedMultipleMessageBodyMember(new BasicMessageContractPayload());
 
 			clientResponse.ShouldNotBeNull();
 

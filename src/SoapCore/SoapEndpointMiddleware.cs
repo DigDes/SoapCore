@@ -57,7 +57,9 @@ namespace SoapCore
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableBuffering();
+
 			var trailPathTuner = serviceProvider.GetServices<TrailingServicePathTuner>().FirstOrDefault();
+
 			if (trailPathTuner != null)
 			{
 				trailPathTuner.ConvertPath(httpContext);
@@ -65,15 +67,26 @@ namespace SoapCore
 
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
-				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
+				try
+				{
+					_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
-				if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
-				{
-					ProcessMeta(httpContext);
+					if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
+					{
+						ProcessMeta(httpContext);
+					}
+					else
+					{
+						await ProcessOperation(httpContext, serviceProvider);
+					}
 				}
-				else
+				catch (Exception ex)
 				{
-					await ProcessOperation(httpContext, serviceProvider);
+					_logger.LogCritical(ex, $"An error occurred when trying to service a request on SOAP endpoint: {httpContext.Request.Path}");
+
+					// Let's pass this up the middleware chain after we have logged this issue
+					// and signalled the criticality of it
+					throw;
 				}
 			}
 			else

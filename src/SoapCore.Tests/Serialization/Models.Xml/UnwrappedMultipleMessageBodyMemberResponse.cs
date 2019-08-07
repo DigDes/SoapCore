@@ -3,7 +3,7 @@ using System.ServiceModel;
 namespace SoapCore.Tests.Serialization.Models.Xml
 {
 	[MessageContract(IsWrapped = false)]
-	public class UnwrappedMessageBodyMemberResponse
+	public class UnwrappedMultipleMessageBodyMemberResponse
 	{
 		[MessageBodyMember(Name = "foo1", Namespace = "http://tempuri.org/NotWrappedPropertyComplexInput")]
 		public NotWrappedPropertyComplexInput NotWrappedComplexInput1 { get; set; }
