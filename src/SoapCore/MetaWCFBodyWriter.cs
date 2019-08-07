@@ -57,6 +57,7 @@ namespace SoapCore
 		private readonly Binding _binding;
 
 		private readonly Dictionary<Type, string> _complexTypeToBuild = new Dictionary<Type, string>();
+		private readonly HashSet<Type> _complexTypeProcessed = new HashSet<Type>(); // Contains types that have been discovered
 		private readonly Queue<Type> _arrayToBuild;
 
 		private readonly HashSet<string> _builtEnumTypes;
@@ -538,6 +539,7 @@ namespace SoapCore
 		{
 			foreach (var type in _complexTypeToBuild.ToArray())
 			{
+				_complexTypeToBuild[type.Key] = GetDataContractNamespace(type.Key);
 				DiscoveryTypesByProperties(type.Key, true);
 			}
 
@@ -592,7 +594,9 @@ namespace SoapCore
 		private void DiscoveryTypesByProperties(Type type, bool isRootType)
 		{
 			//guard against infinity recursion
-			if (!isRootType && _complexTypeToBuild.ContainsKey(type))
+			//check is made against _complexTypeProcessed, which contains types that have been
+			//discovered by the current method
+			if (_complexTypeProcessed.Contains(type))
 			{
 				return;
 			}
@@ -601,6 +605,9 @@ namespace SoapCore
 			{
 				return;
 			}
+
+			//type will be processed, so can be added to _complexTypeProcessed
+			_complexTypeProcessed.Add(type);
 
 			if (HasBaseType(type) && type.BaseType != null)
 			{
