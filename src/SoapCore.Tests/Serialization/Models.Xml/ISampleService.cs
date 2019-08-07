@@ -59,14 +59,14 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		NotWrappedFieldComplexInputResponse NotWrappedFieldDoubleComplexInputRequestMethod(
 			NotWrappedFieldDoubleComplexInputRequest request);
 
-		// Ideally, this would be void however the WCF client requires that if you have a MessageContract
-		// response you *must* have a MessageContract
+		// Ideally this would be void however the WCF client requires that if you have a MessageContract
+		// response you *must* have a MessageContract input
 		[OperationContract(Action = ServiceNamespace.Value + nameof(TestUnwrappedMultipleMessageBodyMember), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		UnwrappedMultipleMessageBodyMemberResponse TestUnwrappedMultipleMessageBodyMember(BasicMessageContractPayload x);
 
-		// Ideally, this would be void however WCF client requires that if you have a MessageContract
-		// response you *must* have a MessageContract
+		// Ideally this would be void however WCF client requires that if you have a MessageContract
+		// response you *must* have a MessageContract input
 		[OperationContract(Action = ServiceNamespace.Value + nameof(TestUnwrappedStringMessageBodyMember), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		UnwrappedStringMessageBodyMemberResponse TestUnwrappedStringMessageBodyMember(BasicMessageContractPayload x);
