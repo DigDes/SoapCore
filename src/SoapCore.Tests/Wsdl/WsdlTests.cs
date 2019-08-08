@@ -12,59 +12,70 @@ using SoapCore.Tests.Wsdl.Services;
 
 namespace SoapCore.Tests.Wsdl
 {
-	[TestClass]
-	public class WsdlTests
-	{
-		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+    [TestClass]
+    public class WsdlTests
+    {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-		[TestMethod]
-		public void CheckTaskReturnMethod()
-		{
-			string serviceUrl = "http://localhost:5053";
-			StartService(typeof(TaskNoReturnService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
-			Trace.TraceInformation(wsdl);
-			Assert.IsNotNull(wsdl);
-			StopServer();
-		}
+        [TestMethod]
+        public void CheckTaskReturnMethod()
+        {
+            string serviceUrl = "http://localhost:5053";
+            StartService(typeof(TaskNoReturnService), serviceUrl);
+            var wsdl = GetWsdl(serviceUrl);
+            Trace.TraceInformation(wsdl);
+            Assert.IsNotNull(wsdl);
+            StopServer();
+        }
 
-		[TestMethod]
-		public void CheckDataContractContainsItself()
-		{
-			string serviceUrl = "http://localhost:5054";
-			StartService(typeof(DataContractContainsItselfService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
-			Trace.TraceInformation(wsdl);
-			Assert.IsNotNull(wsdl);
-			StopServer();
-		}
+        [TestMethod]
+        public void CheckDataContractContainsItself()
+        {
+            string serviceUrl = "http://localhost:5054";
+            StartService(typeof(DataContractContainsItselfService), serviceUrl);
+            var wsdl = GetWsdl(serviceUrl);
+            Trace.TraceInformation(wsdl);
+            Assert.IsNotNull(wsdl);
+            StopServer();
+        }
 
-		[TestCleanup]
-		public void StopServer()
-		{
-			_cancellationTokenSource.Cancel();
-		}
+        [TestMethod]
+        public void CheckDataContractCircularReference()
+        {
+            string serviceUrl = "http://localhost:5055";
+            StartService(typeof(DataContractCircularReferenceService), serviceUrl);
+            var wsdl = GetWsdl(serviceUrl);
+            Trace.TraceInformation(wsdl);
+            Assert.IsNotNull(wsdl);
+            StopServer();
+        }
 
-		private string GetWsdl(string serviceUrl, string serviceName = "Service.svc")
-		{
-			using (var httpClient = new HttpClient())
-			{
-				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", serviceUrl, serviceName)).Result;
-			}
-		}
+        [TestCleanup]
+        public void StopServer()
+        {
+            _cancellationTokenSource.Cancel();
+        }
 
-		private void StartService(Type serviceType, string serviceUrl)
-		{
-			Task.Run(async () =>
-			{
-				var host = new WebHostBuilder()
-					.UseKestrel()
-					.UseUrls(serviceUrl)
-					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
-					.UseStartup<Startup>()
-					.Build();
-				await host.RunAsync(_cancellationTokenSource.Token);
-			}).Wait(1000);
-		}
-	}
+        private string GetWsdl(string serviceUrl, string serviceName = "Service.svc")
+        {
+            using (var httpClient = new HttpClient())
+            {
+                return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", serviceUrl, serviceName)).Result;
+            }
+        }
+
+        private void StartService(Type serviceType, string serviceUrl)
+        {
+            Task.Run(async () =>
+            {
+                var host = new WebHostBuilder()
+                    .UseKestrel()
+                    .UseUrls(serviceUrl)
+                    .ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
+                    .UseStartup<Startup>()
+                    .Build();
+                await host.RunAsync(_cancellationTokenSource.Token);
+            }).Wait(1000);
+        }
+    }
 }
