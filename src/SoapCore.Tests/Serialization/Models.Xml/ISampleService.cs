@@ -11,9 +11,13 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[XmlSerializerFormat(SupportFaults = true)]
 		string Ping(string s);
 
-		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel), ReplyAction = "*")]
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel1), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
-		ComplexModel1 PingComplexModel(ComplexModel2 inputModel);
+		ComplexModel2 PingComplexModel1(ComplexModel1 inputModel);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel2), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		ComplexModel1 PingComplexModel2(ComplexModel2 inputModel);
 
 		// new style call with multiple out/ref/value params
 		//   instead of packing them into single request/response class
