@@ -206,6 +206,7 @@ namespace SoapCore
 					else if (type.IsEnum)
 					{
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
+						DiscoveryTypesByProperties(type, true);
 					}
 				}
 
@@ -218,6 +219,11 @@ namespace SoapCore
 					}
 
 					if (TypeIsComplexForWsdl(returnType, out returnType))
+					{
+						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
+						DiscoveryTypesByProperties(returnType, true);
+					}
+					else if (returnType.IsEnum)
 					{
 						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
 						DiscoveryTypesByProperties(returnType, true);
