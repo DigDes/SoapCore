@@ -282,6 +282,11 @@ namespace SoapCore
 		{
 			foreach (var faultType in operation.Faults)
 			{
+				if (_complexTypeProcessed.Contains(faultType))
+				{
+					continue;
+				}
+
 				_complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
 				DiscoveryTypesByProperties(faultType, true);
 			}
