@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -30,8 +31,10 @@ namespace SoapCore
 		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly ISoapModelBounder _soapModelBounder;
+		private readonly bool _httpGetEnabled;
+		private readonly bool _httpsGetEnabled;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
 		{
 			_logger = logger;
 			_next = next;
@@ -42,15 +45,17 @@ namespace SoapCore
 			_service = new ServiceDescription(serviceType);
 			_soapModelBounder = soapModelBounder;
 			_binding = binding;
+			_httpGetEnabled = httpGetEnabled;
+			_httpsGetEnabled = httpsGetEnabled;
 		}
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
-			: this(logger, next, serviceType, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
+			: this(logger, next, serviceType, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding, httpGetEnabled, httpsGetEnabled)
 		{
 		}
 
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, SoapOptions options)
-			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoders, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding)
+			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoders, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding, options.HttpGetEnabled, options.HttpsGetEnabled)
 		{
 		}
 
@@ -67,6 +72,16 @@ namespace SoapCore
 
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
+				if (httpContext.Request.Method?.ToLower() == "get")
+				{
+					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
+					if ((httpContext.Request.IsHttps && !_httpsGetEnabled) || (!httpContext.Request.IsHttps && !_httpGetEnabled))
+					{
+						httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+						return;
+					}
+				}
+
 				try
 				{
 					_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
@@ -216,12 +231,6 @@ namespace SoapCore
 			await httpContext.Request.Body.CopyToAsync(mstm).ConfigureAwait(false);
 			mstm.Seek(0, SeekOrigin.Begin);
 			httpContext.Request.Body = mstm;
-
-			//Return metadata if no request
-			if (httpContext.Request.Body.Length == 0)
-			{
-				return ProcessMeta(httpContext);
-			}
 
 			// Get the encoder based on Content Type
 			var messageEncoder = _messageEncoders[0];
