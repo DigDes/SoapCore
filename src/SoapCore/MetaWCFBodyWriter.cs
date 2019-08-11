@@ -960,7 +960,7 @@ namespace SoapCore
 				objectNamespace = GetModelNamespace(type);
 			}
 
-			if (typeInfo.IsEnum)
+			if (typeInfo.IsEnum || Nullable.GetUnderlyingType(typeInfo)?.IsEnum == true)
 			{
 				WriteComplexElementType(writer, typeName, _schemaNamespace, objectNamespace, type);
 
@@ -1198,9 +1198,18 @@ namespace SoapCore
 
 		private void WriteComplexElementType(XmlDictionaryWriter writer, string typeName, string schemaNamespace, string objectNamespace, Type type)
 		{
-			if (!type.IsEnum || Nullable.GetUnderlyingType(type) != null)
+			var underlying = Nullable.GetUnderlyingType(type);
+			if (!type.IsEnum || underlying != null)
 			{
 				writer.WriteAttributeString("nillable", "true");
+			}
+
+			// In case of Nullable<T>, type is replaced by the underlying type
+			if (underlying?.IsEnum == true)
+			{
+				type = underlying;
+				typeName = GetTypeName(underlying);
+				objectNamespace = GetModelNamespace(underlying);
 			}
 
 			if (schemaNamespace != objectNamespace)
