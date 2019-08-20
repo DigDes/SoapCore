@@ -15,7 +15,7 @@ namespace SoapCore
 
 		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
 		{
-			return builder.UseSoapEndpoint(type, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
+			return builder.UseSoapEndpoint(type, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
@@ -56,12 +56,39 @@ namespace SoapCore
 			return builder.UseSoapEndpoint(type, path, encoders, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Action<SoapOptions> options)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Action<Options> options)
 		{
-			var opt = new SoapOptions();
+			var opt = new Options();
 			options(opt);
 
-			return builder.UseMiddleware<SoapEndpointMiddleware>(options);
+			// Generate encoders from Binding when they are not provided
+			if (opt.MessageEncoders is null && opt.Binding != null)
+			{
+				var elements = opt.Binding.CreateBindingElements().FindAll<MessageEncodingBindingElement>();
+				var encoders = new MessageEncoder[elements.Count];
+				for (var i = 0; i < encoders.Length; i++)
+				{
+					var factory = elements[i].CreateMessageEncoderFactory();
+					encoders[i] = factory.Encoder;
+				}
+
+				opt.MessageEncoders = encoders;
+			}
+
+			var optio = new SoapOptions
+			{
+				ServiceType = typeof(T),
+				Path = path,
+				HttpsGetEnabled = opt.HttpsGetEnabled,
+				HttpGetEnabled = opt.HttpGetEnabled,
+				Binding = opt.Binding,
+				CaseInsensitivePath = opt.CaseInsensitivePath,
+				MessageEncoders = opt.MessageEncoders,
+				SoapModelBounder = opt.SoapModelBounder,
+				SoapSerializer = opt.SoapSerializer
+			};
+
+			return builder.UseMiddleware<SoapEndpointMiddleware>(optio);
 		}
 
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)
