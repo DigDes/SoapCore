@@ -56,8 +56,11 @@ namespace SoapCore
 			return builder.UseSoapEndpoint(type, path, encoders, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, SoapOptions options)
+		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Action<SoapOptions> options)
 		{
+			var opt = new SoapOptions();
+			options(opt);
+
 			return builder.UseMiddleware<SoapEndpointMiddleware>(options);
 		}
 
