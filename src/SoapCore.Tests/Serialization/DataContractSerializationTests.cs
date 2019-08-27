@@ -149,12 +149,12 @@ namespace SoapCore.Tests.Serialization
 		//not compatible with XmlSerializer
 		[Theory]
 		[InlineData(SoapSerializer.DataContractSerializer)]
-		public void TestPingComplexModelSerialization(SoapSerializer soapSerializer)
+		public void TestPingComplexModelSerializationWithNameSpace(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
 			_fixture.ServiceMock
-				.Setup(x => x.PingComplexModel(It.IsAny<ComplexModel2>()))
+				.Setup(x => x.PingComplexModel2(It.IsAny<ComplexModel2>()))
 				.Callback(
 					(ComplexModel2 inputModel_service) =>
 					{
@@ -165,10 +165,35 @@ namespace SoapCore.Tests.Serialization
 
 			var pingComplexModelResult_client =
 				sampleServiceClient
-					.PingComplexModel(ComplexModel2.CreateSample2());
+					.PingComplexModel2(ComplexModel2.CreateSample2());
 
 			// check output paremeters serialization
 			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel1.CreateSample3());
+		}
+
+		//not compatible with XmlSerializer
+		[Theory]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestPingComplexModelSerializationWithNoNameSpace(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexModel1(It.IsAny<ComplexModel1>()))
+				.Callback(
+					(ComplexModel1 inputModel_service) =>
+					{
+						// check input paremeters serialization
+						inputModel_service.ShouldDeepEqual(ComplexModel1.CreateSample3());
+					})
+				.Returns(ComplexModel2.CreateSample2);
+
+			var pingComplexModelResult_client =
+				sampleServiceClient
+					.PingComplexModel1(ComplexModel1.CreateSample3());
+
+			// check output paremeters serialization
+			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel2.CreateSample2());
 		}
 
 		[Theory(Skip = "incompatible with all serializers")]

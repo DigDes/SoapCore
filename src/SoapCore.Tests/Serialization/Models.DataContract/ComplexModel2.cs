@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace SoapCore.Tests.Serialization.Models.DataContract
 {
 	// same as ComplexModel1, just for testing
-	[DataContract]
+	[DataContract(Namespace = "http://SoapCore.Tests.Serialization.Models.DataContract.ComplexModel2")]
 	public class ComplexModel2
 	{
 		[DataMember]
