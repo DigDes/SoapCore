@@ -203,7 +203,7 @@ namespace SoapCore
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 						DiscoveryTypesByProperties(type, true);
 					}
-					else if (type.IsEnum)
+					else if (type.IsEnum || Nullable.GetUnderlyingType(type)?.IsEnum == true)
 					{
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 						DiscoveryTypesByProperties(type, true);
@@ -223,7 +223,7 @@ namespace SoapCore
 						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
 						DiscoveryTypesByProperties(returnType, true);
 					}
-					else if (returnType.IsEnum)
+					else if (returnType.IsEnum || Nullable.GetUnderlyingType(returnType)?.IsEnum == true)
 					{
 						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
 						DiscoveryTypesByProperties(returnType, true);
