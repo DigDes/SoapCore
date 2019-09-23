@@ -458,7 +458,6 @@ namespace SoapCore
 
 				foreach (var parameterInfo in operation.InParameters)
 				{
-					var @namespace = parameterInfo.Namespace ?? operation.Contract.Namespace;
 					var parameterType = parameterInfo.Parameter.ParameterType;
 
 					if (parameterType == typeof(HttpContext))
@@ -467,7 +466,7 @@ namespace SoapCore
 					}
 					else
 					{
-						arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, @namespace, parameterInfo);
+						arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
 					}
 				}
 			}
