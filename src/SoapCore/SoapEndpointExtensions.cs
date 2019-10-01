@@ -56,9 +56,9 @@ namespace SoapCore
 			return builder.UseSoapEndpoint(type, path, encoders, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Action<Options> options)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, Action<SoapCoreOptions> options)
 		{
-			var opt = new Options();
+			var opt = new SoapCoreOptions();
 			options(opt);
 
 			// Generate encoders from Binding when they are not provided
@@ -75,10 +75,10 @@ namespace SoapCore
 				opt.MessageEncoders = encoders;
 			}
 
-			var optio = new SoapOptions
+			var soapOptions = new SoapOptions
 			{
 				ServiceType = typeof(T),
-				Path = path,
+				Path = opt.Path,
 				HttpsGetEnabled = opt.HttpsGetEnabled,
 				HttpGetEnabled = opt.HttpGetEnabled,
 				Binding = opt.Binding,
@@ -88,7 +88,7 @@ namespace SoapCore
 				SoapSerializer = opt.SoapSerializer
 			};
 
-			return builder.UseMiddleware<SoapEndpointMiddleware>(optio);
+			return builder.UseMiddleware<SoapEndpointMiddleware>(soapOptions);
 		}
 
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)

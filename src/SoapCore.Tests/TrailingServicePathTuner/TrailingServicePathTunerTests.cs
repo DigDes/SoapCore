@@ -36,6 +36,7 @@ namespace SoapCore.Tests
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
+			context.Request.Method = "GET";
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
@@ -106,6 +107,7 @@ namespace SoapCore.Tests
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/v1/Service.svc");
+			context.Request.Method = "GET";
 
 			// Act
 			// MockServiceProvider(false) simulates not registering the TrailingServicePathTuner in app startup

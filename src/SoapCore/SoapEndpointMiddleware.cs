@@ -232,6 +232,12 @@ namespace SoapCore
 			mstm.Seek(0, SeekOrigin.Begin);
 			httpContext.Request.Body = mstm;
 
+			//Return metadata if no request, provided this is a GET request
+			if (httpContext.Request.Body.Length == 0 && httpContext.Request.Method?.ToLower() == "get")
+			{
+				return ProcessMeta(httpContext);
+			}
+
 			// Get the encoder based on Content Type
 			var messageEncoder = _messageEncoders[0];
 			for (int i = 0; i < _messageEncoders.Length; i++)
