@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp2.0;netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
+		<TargetFrameworks>netcoreapp3.0</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
@@ -23,25 +23,25 @@
 		<PackageReference Include="DeepEqual.SuperJMN" Version="2.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-		<PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
-		<PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="2.0.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="2.0.0" />
+		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.ServiceModel.Http" Version="4.5.3" />
-		<PackageReference Include="Moq" Version="4.10.1" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
+		<PackageReference Include="Moq" Version="4.13.0" />
 		<PackageReference Include="Shouldly" Version="3.0.2" />
 		<PackageReference Include="xunit" Version="2.4.1" />
 		<PackageReference Include="xunit.runner.console" Version="2.4.1">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 	</ItemGroup>
 
