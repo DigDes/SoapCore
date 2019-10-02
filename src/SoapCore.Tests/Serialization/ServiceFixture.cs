@@ -38,7 +38,7 @@ namespace SoapCore.Tests.Serialization
 					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
 				})
-				.UseKestrel()
+				.UseKestrel(x => x.AllowSynchronousIO = true)
 				.UseUrls($"http://*:{Port}")
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.Build();

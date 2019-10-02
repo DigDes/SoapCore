@@ -112,7 +112,7 @@ namespace SoapCore.Tests.Wsdl
 			Task.Run(async () =>
 			{
 				var host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls(serviceUrl)
 					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
 					.UseStartup<Startup>()

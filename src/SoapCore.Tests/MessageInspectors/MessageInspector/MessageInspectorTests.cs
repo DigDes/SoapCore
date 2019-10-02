@@ -16,7 +16,7 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector
 			Task.Run(() =>
 			{
 				var host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls("http://localhost:6051")
 					.UseStartup<Startup>()
 					.UseSetting("InspectorStyle", InspectorStyle.MessageInspector.ToString())
