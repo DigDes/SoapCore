@@ -2,10 +2,10 @@ using System.Runtime.Serialization;
 
 namespace SoapCore.Tests.Wsdl.Services
 {
-    [DataContract]
-    public class CircularReferenceSecondObject
-    {
+	[DataContract]
+	public class CircularReferenceSecondObject
+	{
 		[DataMember]
-        public CircularReferenceFirstObject FirstObject { get; set; }
-    }
+		public CircularReferenceFirstObject FirstObject { get; set; }
+	}
 }
