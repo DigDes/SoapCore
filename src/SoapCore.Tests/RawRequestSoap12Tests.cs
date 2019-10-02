@@ -259,7 +259,10 @@ namespace SoapCore.Tests
 		{
 			var webHostBuilder = new WebHostBuilder()
 				.UseStartup<Startup>();
-			return new TestServer(webHostBuilder);
+			return new TestServer(webHostBuilder)
+			{
+				AllowSynchronousIO = true
+			};
 		}
 	}
 }

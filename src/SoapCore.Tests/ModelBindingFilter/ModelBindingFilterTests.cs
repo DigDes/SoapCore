@@ -17,7 +17,7 @@ namespace SoapCore.Tests.ModelBindingFilter
 			Task.Run(() =>
 			{
 				var host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls("http://localhost:5053")
 					.UseStartup<Startup>()
 					.Build();

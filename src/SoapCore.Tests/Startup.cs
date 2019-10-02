@@ -19,10 +19,10 @@ namespace SoapCore.Tests
 			services.TryAddSingleton<TestService>();
 			services.AddSoapModelBindingFilter(new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) }));
 			services.AddScoped<ActionFilter.TestActionFilter>();
-			services.AddMvc();
+			services.AddMvc(x => x.EnableEndpointRouting = false);
 		}
 
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
