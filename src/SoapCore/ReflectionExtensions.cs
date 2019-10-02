@@ -105,5 +105,20 @@ namespace SoapCore
 
 			return null;
 		}
+
+		internal static object GetPropertyOrFieldValue(this MemberInfo memberInfo, object obj)
+		{
+			if (memberInfo is FieldInfo fi)
+			{
+				return fi.GetValue(obj);
+			}
+
+			if (memberInfo is PropertyInfo pi)
+			{
+				return pi.GetValue(obj);
+			}
+
+			throw new NotImplementedException($"Unable to get value out of member with type {memberInfo.GetType()}");
+		}
 	}
 }

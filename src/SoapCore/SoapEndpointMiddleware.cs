@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -30,8 +31,10 @@ namespace SoapCore
 		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly ISoapModelBounder _soapModelBounder;
+		private readonly bool _httpGetEnabled;
+		private readonly bool _httpsGetEnabled;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
 		{
 			_logger = logger;
 			_next = next;
@@ -42,22 +45,26 @@ namespace SoapCore
 			_service = new ServiceDescription(serviceType);
 			_soapModelBounder = soapModelBounder;
 			_binding = binding;
+			_httpGetEnabled = httpGetEnabled;
+			_httpsGetEnabled = httpsGetEnabled;
 		}
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
-			: this(logger, next, serviceType, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
+			: this(logger, next, serviceType, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding, httpGetEnabled, httpsGetEnabled)
 		{
 		}
 
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, SoapOptions options)
-			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoders, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding)
+			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoders, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding, options.HttpGetEnabled, options.HttpsGetEnabled)
 		{
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			httpContext.Request.EnableBuffering();
+
 			var trailPathTuner = serviceProvider.GetServices<TrailingServicePathTuner>().FirstOrDefault();
+
 			if (trailPathTuner != null)
 			{
 				trailPathTuner.ConvertPath(httpContext);
@@ -65,15 +72,36 @@ namespace SoapCore
 
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
-				_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
-
-				if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
+				if (httpContext.Request.Method?.ToLower() == "get")
 				{
-					ProcessMeta(httpContext);
+					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
+					if ((httpContext.Request.IsHttps && !_httpsGetEnabled) || (!httpContext.Request.IsHttps && !_httpGetEnabled))
+					{
+						httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+						return;
+					}
 				}
-				else
+
+				try
 				{
-					await ProcessOperation(httpContext, serviceProvider);
+					_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
+
+					if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
+					{
+						ProcessMeta(httpContext);
+					}
+					else
+					{
+						await ProcessOperation(httpContext, serviceProvider);
+					}
+				}
+				catch (Exception ex)
+				{
+					_logger.LogCritical(ex, $"An error occurred when trying to service a request on SOAP endpoint: {httpContext.Request.Path}");
+
+					// Let's pass this up the middleware chain after we have logged this issue
+					// and signalled the criticality of it
+					throw;
 				}
 			}
 			else
@@ -204,8 +232,8 @@ namespace SoapCore
 			mstm.Seek(0, SeekOrigin.Begin);
 			httpContext.Request.Body = mstm;
 
-			//Return metadata if no request
-			if (httpContext.Request.Body.Length == 0)
+			//Return metadata if no request, provided this is a GET request
+			if (httpContext.Request.Body.Length == 0 && httpContext.Request.Method?.ToLower() == "get")
 			{
 				return ProcessMeta(httpContext);
 			}
@@ -350,8 +378,7 @@ namespace SoapCore
 					}
 
 					// Create response message
-					var resultName = operation.ReturnName;
-					var bodyWriter = new ServiceBodyWriter(_serializer, operation, resultName, responseObject, resultOutDictionary);
+					var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
 
 					if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 					{
@@ -437,7 +464,6 @@ namespace SoapCore
 
 				foreach (var parameterInfo in operation.InParameters)
 				{
-					var @namespace = parameterInfo.Namespace ?? operation.Contract.Namespace;
 					var parameterType = parameterInfo.Parameter.ParameterType;
 
 					if (parameterType == typeof(HttpContext))
@@ -446,7 +472,7 @@ namespace SoapCore
 					}
 					else
 					{
-						arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, @namespace, parameterInfo);
+						arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
 					}
 				}
 			}
