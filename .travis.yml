@@ -1,7 +1,7 @@
 language: csharp
 mono: none
-dotnet: 2.2
+dotnet: 3.0
 script:
  - dotnet restore src
- - dotnet build -f netcoreapp2.0 src
- - dotnet test -f netcoreapp2.0 src/SoapCore.Tests
+ - dotnet build -f netcoreapp3.0 src
+ - dotnet test -f netcoreapp3.0 src/SoapCore.Tests
