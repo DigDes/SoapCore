@@ -19,11 +19,12 @@ namespace SoapCore.Tests.Wsdl
 	{
 		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		private readonly XNamespace _xmlSchema = "http://www.w3.org/2001/XMLSchema";
+		private readonly Random _portRandom = new Random();
 
 		[TestMethod]
 		public void CheckTaskReturnMethod()
 		{
-			string serviceUrl = "http://localhost:5053";
+			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
 			StartService(typeof(TaskNoReturnService), serviceUrl);
 			var wsdl = GetWsdl(serviceUrl);
 			Trace.TraceInformation(wsdl);
@@ -34,7 +35,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckDataContractContainsItself()
 		{
-			string serviceUrl = "http://localhost:5054";
+			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
 			StartService(typeof(DataContractContainsItselfService), serviceUrl);
 			var wsdl = GetWsdl(serviceUrl);
 			Trace.TraceInformation(wsdl);
@@ -45,7 +46,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckDataContractCircularReference()
 		{
-			string serviceUrl = "http://localhost:5055";
+			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
 			StartService(typeof(DataContractCircularReferenceService), serviceUrl);
 			var wsdl = GetWsdl(serviceUrl);
 			Trace.TraceInformation(wsdl);
@@ -56,7 +57,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckNullableEnum()
 		{
-			string serviceUrl = "http://localhost:5056";
+			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
 			StartService(typeof(NullableEnumService), serviceUrl);
 			var wsdl = GetWsdl(serviceUrl);
 			StopServer();
@@ -76,7 +77,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckNonNullableEnum()
 		{
-			string serviceUrl = "http://localhost:5057";
+			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
 			StartService(typeof(NonNullableEnumService), serviceUrl);
 			var wsdl = GetWsdl(serviceUrl);
 			StopServer();
