@@ -13,7 +13,7 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	public class MetaWCFBodyWriter : BodyWriter
+	internal class MetaWCFBodyWriter : BodyWriter
 	{
 #pragma warning disable SA1310 // Field names must not contain underscore
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
@@ -792,7 +792,8 @@ namespace SoapCore
 				writer.WriteAttributeString("element", "tns:" + operation.Name);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
-										  // output
+
+				// output
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteStartElement("wsdl:part");
