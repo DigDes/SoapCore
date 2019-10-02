@@ -288,6 +288,11 @@ namespace SoapCore
 		{
 			foreach (var faultType in operation.Faults)
 			{
+				if (_complexTypeProcessed.Contains(faultType))
+				{
+					continue;
+				}
+
 				_complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
 				DiscoveryTypesByProperties(faultType, true);
 			}
@@ -838,7 +843,9 @@ namespace SoapCore
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_{fault.Name}Fault_FaultMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "detail");
-				writer.WriteAttributeString("element", "tns:" + fault.Name);
+				var ns = $"q{_namespaceCounter++}";
+				writer.WriteAttributeString("element", $"{ns}:{fault.Name}");
+				writer.WriteAttributeString($"xmlns:{ns}", GetDataContractNamespace(fault));
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}
