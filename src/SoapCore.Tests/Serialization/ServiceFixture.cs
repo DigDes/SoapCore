@@ -11,13 +11,13 @@ using Moq;
 
 namespace SoapCore.Tests.Serialization
 {
-	public class ServiceFixture<IService> : IDisposable
-		where IService : class
+	public class ServiceFixture<TService> : IDisposable
+		where TService : class
 	{
 		public const int Port = 5060;
 
 		private readonly IWebHost _host;
-		private readonly Dictionary<SoapSerializer, IService> _sampleServiceClients = new Dictionary<SoapSerializer, IService>();
+		private readonly Dictionary<SoapSerializer, TService> _sampleServiceClients = new Dictionary<SoapSerializer, TService>();
 		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
 		public ServiceFixture()
@@ -27,18 +27,18 @@ namespace SoapCore.Tests.Serialization
 				.ConfigureServices(services =>
 				{
 					// init SampleService service mock
-					ServiceMock = new Mock<IService>();
+					ServiceMock = new Mock<TService>();
 					services.AddSingleton(ServiceMock.Object);
 					services.AddSoapCore();
-					services.AddMvc();
+					services.AddMvc(x => x.EnableEndpointRouting = false);
 				})
 				.Configure(appBuilder =>
 				{
-					appBuilder.UseSoapEndpoint<IService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
-					appBuilder.UseSoapEndpoint<IService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
 				})
-				.UseKestrel()
+				.UseKestrel(x => x.AllowSynchronousIO = true)
 				.UseUrls($"http://*:{Port}")
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.Build();
@@ -51,18 +51,18 @@ namespace SoapCore.Tests.Serialization
 			var binding = new BasicHttpBinding();
 
 			var endpointXml = new EndpointAddress(new Uri($"http://localhost:{Port}/Service.asmx"));
-			var channelFactoryXml = new ChannelFactory<IService>(binding, endpointXml);
+			var channelFactoryXml = new ChannelFactory<TService>(binding, endpointXml);
 			var serviceClientXml = channelFactoryXml.CreateChannel();
 
 			var endpointDC = new EndpointAddress(new Uri($"http://localhost:{Port}/Service.svc"));
-			var channelFactoryDC = new ChannelFactory<IService>(binding, endpointDC);
+			var channelFactoryDC = new ChannelFactory<TService>(binding, endpointDC);
 			var serviceClientDc = channelFactoryDC.CreateChannel();
 
 			_sampleServiceClients[SoapSerializer.XmlSerializer] = serviceClientXml;
 			_sampleServiceClients[SoapSerializer.DataContractSerializer] = serviceClientDc;
 		}
 
-		public Mock<IService> ServiceMock { get; private set; }
+		public Mock<TService> ServiceMock { get; private set; }
 
 		public static IEnumerable<object[]> SoapSerializersList()
 		{
@@ -72,7 +72,7 @@ namespace SoapCore.Tests.Serialization
 			}
 		}
 
-		public IService GetSampleServiceClient(SoapSerializer soapSerializer)
+		public TService GetSampleServiceClient(SoapSerializer soapSerializer)
 		{
 			WaitForServerStarted();
 			return _sampleServiceClients[soapSerializer];

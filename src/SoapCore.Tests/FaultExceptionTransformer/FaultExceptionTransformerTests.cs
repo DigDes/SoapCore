@@ -22,7 +22,7 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 			Task.Run(() =>
 			{
 				_host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls("http://127.0.0.1:0")
 					.UseStartup<Startup>()
 					.Build();

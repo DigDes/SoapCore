@@ -15,7 +15,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 		public static void StartServer(TestContext testContext)
 		{
 			var host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls("http://localhost:5054")
 					.UseStartup<Startup>()
 					.Build();

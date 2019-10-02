@@ -14,10 +14,10 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSingleton<IFaultExceptionTransformer, TestFaultExceptionTransformer>();
-			services.AddMvc();
+			services.AddMvc(x => x.EnableEndpointRouting = false);
 		}
 
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			app.UseMvc();

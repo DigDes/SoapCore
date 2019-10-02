@@ -18,14 +18,12 @@ namespace Server
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.TryAddSingleton<ISampleService, SampleService>();
-			services.AddMvc();
+			services.AddMvc(x => x.EnableEndpointRouting = false);
+			services.AddSoapCore();
 		}
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
-			loggerFactory.AddConsole();
-			loggerFactory.AddDebug();
-
 			app.UseSoapEndpoint<ISampleService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			app.UseSoapEndpoint<ISampleService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 

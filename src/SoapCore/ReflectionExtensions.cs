@@ -48,6 +48,7 @@ namespace SoapCore
 					{
 						return false;
 					}
+
 					for (var i = 0; i < genericArguments.Length; i++)
 					{
 						var genericArgument = genericArguments[i];
@@ -57,6 +58,7 @@ namespace SoapCore
 							return false;
 						}
 					}
+
 					return true;
 				});
 			MethodInfo result = null;
