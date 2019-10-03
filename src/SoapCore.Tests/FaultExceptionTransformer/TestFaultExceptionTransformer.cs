@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
+using System.Net;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
-using System.Text;
 
 namespace SoapCore.Tests.FaultExceptionTransformer
 {
@@ -21,6 +20,8 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 			var messageFault = faultException.CreateMessageFault();
 			var bodyWriter = new MessageFaultBodyWriter(messageFault, messageVersion);
 			var faultMessage = Message.CreateMessage(messageVersion, null, bodyWriter);
+
+			faultMessage.Properties.Add(HttpResponseMessageProperty.Name, new HttpResponseMessageProperty { StatusCode = HttpStatusCode.OK, StatusDescription = "test description" });
 
 			return faultMessage;
 		}
