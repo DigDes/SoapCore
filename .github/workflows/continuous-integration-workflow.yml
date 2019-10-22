@@ -8,10 +8,7 @@ jobs:
     
     container:
       image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine
-      volumes: 
-        - $GITHUB_WORKSPACE:/src
-        - /home/runner/work/SoapCore/SoapCore:/src1
-    
+         
     steps:
     - uses: actions/checkout@v1
     - name: build and test
