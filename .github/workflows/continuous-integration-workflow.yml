@@ -14,6 +14,6 @@ jobs:
     container:
       image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine
       volumes: 
-        - ${{GITHUB_WORKSPACE}}:/src
+        - $GITHUB_WORKSPACE:/src
       
   
