@@ -11,8 +11,7 @@ jobs:
     - name: build and test
       uses: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine
     - name: Run a multi-line script
-      run: |
-        cat /etc/os_release
+      run: cat /etc/os_release
     container:
       volumes:
           - src:/src
