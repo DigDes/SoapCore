@@ -9,6 +9,12 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: build and test
-      run: cat /etc/os_release
+      run: |
+            dotnet -h
+            ls /src
+    container:
+      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine
+      volumes: 
+        - src:/src
       
   
