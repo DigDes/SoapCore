@@ -129,4 +129,4 @@ public class MyService : IMyServiceService
 
 See [Contributing guide](CONTRIBUTING.md)
 
-[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
+![](https://github.com/kotovaleksandr/SoapCore/workflows/CI/badge.svg)
