@@ -1,7 +1,0 @@
-language: csharp
-mono: none
-dotnet: 3.0
-script:
- - dotnet restore src
- - dotnet build -f netcoreapp3.0 src
- - dotnet test -f netcoreapp3.0 src/SoapCore.Tests
