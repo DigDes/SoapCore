@@ -129,4 +129,4 @@ public class MyService : IMyServiceService
 
 See [Contributing guide](CONTRIBUTING.md)
 
-![](https://github.com/kotovaleksandr/SoapCore/workflows/CI/badge.svg)
+![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg)
