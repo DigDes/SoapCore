@@ -19,10 +19,10 @@ namespace SoapCore.Tests
 			services.TryAddSingleton<TestService>();
 			services.AddSoapModelBindingFilter(new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) }));
 			services.AddScoped<ActionFilter.TestActionFilter>();
-			services.AddMvc();
+			services.AddMvc(x => x.EnableEndpointRouting = false);
 		}
 
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
@@ -45,6 +45,14 @@ namespace SoapCore.Tests
 			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("asmx"), app2 =>
 			{
 				app2.UseSoapEndpoint<TestService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA10Service.svc"), app2 =>
+			{
+				var transportBinding = new HttpTransportBindingElement();
+				var textEncodingBinding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
+
+				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
 			});
 
 			app.UseMvc();

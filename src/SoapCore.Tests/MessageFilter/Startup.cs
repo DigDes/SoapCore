@@ -14,10 +14,10 @@ namespace SoapCore.Tests.MessageFilter
 			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
 			services.AddSoapWsSecurityFilter("yourusername", "yourpassword");
-			services.AddMvc();
+			services.AddMvc(x => x.EnableEndpointRouting = false);
 		}
 
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			app.UseMvc();

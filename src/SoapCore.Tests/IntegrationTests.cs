@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -18,7 +17,7 @@ namespace SoapCore.Tests
 			Task.Run(() =>
 			{
 				var host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls("http://localhost:5050")
 					.UseStartup<Startup>()
 					.Build();
@@ -146,6 +145,19 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void ExceptionMessageSoap12()
+		{
+			var client = CreateSoap12Client();
+
+			var e = Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowExceptionWithMessage("Your error message here");
+			});
+
+			Assert.AreEqual("Your error message here", e.Message);
+		}
+
+		[TestMethod]
 		public void ThrowsDetailedFault()
 		{
 			var client = CreateClient();
@@ -153,6 +165,20 @@ namespace SoapCore.Tests
 			{
 				client.ThrowDetailedFault("Detail message");
 			});
+			Assert.IsNotNull(e.Detail);
+			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
+		}
+
+		[TestMethod]
+		public void ThrowsDetailedSoap12Fault()
+		{
+			var client = CreateSoap12Client();
+
+			var e = Assert.ThrowsException<FaultException<FaultDetail>>(() =>
+			{
+				client.ThrowDetailedFault("Detail message");
+			});
+
 			Assert.IsNotNull(e.Detail);
 			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
 		}

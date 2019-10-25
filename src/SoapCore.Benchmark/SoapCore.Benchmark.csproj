@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
+		<TargetFrameworks>netcoreapp3.0</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
 
@@ -14,11 +14,11 @@
 		<Compile Include="../SoapCore.Benchmark.Shared/*.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
 		<PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Core" Version="2.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.5.3" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
 	</ItemGroup>
 
 </Project>

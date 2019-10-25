@@ -13,7 +13,7 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	public class MetaWCFBodyWriter : BodyWriter
+	internal class MetaWCFBodyWriter : BodyWriter
 	{
 #pragma warning disable SA1310 // Field names must not contain underscore
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
@@ -42,7 +42,6 @@ namespace SoapCore
 			["System.Double"] = ("double", SYSTEM_NS),
 			["System.Single"] = ("float", SYSTEM_NS),
 			["System.DateTime"] = ("dateTime", SYSTEM_NS),
-			["System.Decimal"] = ("decimal", SYSTEM_NS),
 			["System.Guid"] = ("guid", SERIALIZATION_NS),
 			["System.Char"] = ("char", SERIALIZATION_NS),
 			["System.TimeSpan"] = ("duration", SERIALIZATION_NS),
@@ -58,6 +57,7 @@ namespace SoapCore
 		private readonly Binding _binding;
 
 		private readonly Dictionary<Type, string> _complexTypeToBuild = new Dictionary<Type, string>();
+		private readonly HashSet<Type> _complexTypeProcessed = new HashSet<Type>(); // Contains types that have been discovered
 		private readonly Queue<Type> _arrayToBuild;
 
 		private readonly HashSet<string> _builtEnumTypes;
@@ -203,9 +203,10 @@ namespace SoapCore
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 						DiscoveryTypesByProperties(type, true);
 					}
-					else if (type.IsEnum)
+					else if (type.IsEnum || Nullable.GetUnderlyingType(type)?.IsEnum == true)
 					{
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
+						DiscoveryTypesByProperties(type, true);
 					}
 				}
 
@@ -218,6 +219,11 @@ namespace SoapCore
 					}
 
 					if (TypeIsComplexForWsdl(returnType, out returnType))
+					{
+						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
+						DiscoveryTypesByProperties(returnType, true);
+					}
+					else if (returnType.IsEnum || Nullable.GetUnderlyingType(returnType)?.IsEnum == true)
 					{
 						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
 						DiscoveryTypesByProperties(returnType, true);
@@ -280,11 +286,15 @@ namespace SoapCore
 
 		private void AddFaultTypes(XmlDictionaryWriter writer, OperationDescription operation)
 		{
-			foreach (Type faultType in operation.Faults)
+			foreach (var faultType in operation.Faults)
 			{
-				WriteComplexType(writer, faultType);
+				if (_complexTypeProcessed.Contains(faultType))
+				{
+					continue;
+				}
 
-				WriteSerializationElement(writer, faultType.Name, "tns:" + faultType.Name, true);
+				_complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
+				DiscoveryTypesByProperties(faultType, true);
 			}
 		}
 
@@ -540,6 +550,7 @@ namespace SoapCore
 		{
 			foreach (var type in _complexTypeToBuild.ToArray())
 			{
+				_complexTypeToBuild[type.Key] = GetDataContractNamespace(type.Key);
 				DiscoveryTypesByProperties(type.Key, true);
 			}
 
@@ -594,7 +605,9 @@ namespace SoapCore
 		private void DiscoveryTypesByProperties(Type type, bool isRootType)
 		{
 			//guard against infinity recursion
-			if (!isRootType && _complexTypeToBuild.ContainsKey(type))
+			//check is made against _complexTypeProcessed, which contains types that have been
+			//discovered by the current method
+			if (_complexTypeProcessed.Contains(type))
 			{
 				return;
 			}
@@ -604,19 +617,26 @@ namespace SoapCore
 				return;
 			}
 
+			//type will be processed, so can be added to _complexTypeProcessed
+			_complexTypeProcessed.Add(type);
+
 			if (HasBaseType(type) && type.BaseType != null)
 			{
-				DiscoveryTypesByProperties(type.BaseType, false);
 				_complexTypeToBuild[type.BaseType] = GetDataContractNamespace(type.BaseType);
+				DiscoveryTypesByProperties(type.BaseType, false);
 			}
 
 			foreach (var property in type.GetProperties().Where(prop =>
 						prop.DeclaringType == type
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
-						&& !prop.PropertyType.IsPrimitive && !SysTypeDic.ContainsKey(prop.PropertyType.FullName) && prop.PropertyType != typeof(ValueType) && prop.PropertyType != typeof(DateTimeOffset)))
+						&& !prop.PropertyType.IsPrimitive
+						&& !SysTypeDic.ContainsKey(prop.PropertyType.FullName)
+						&& prop.PropertyType != typeof(ValueType)
+						&& prop.PropertyType != typeof(DateTimeOffset)))
 			{
 				Type propertyType;
 				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+
 				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
 				{
 					propertyType = underlyingType;
@@ -635,8 +655,13 @@ namespace SoapCore
 
 				if (propertyType != null && !propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
 				{
-					DiscoveryTypesByProperties(propertyType, false);
+					if (propertyType == type)
+					{
+						continue;
+					}
+
 					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
+					DiscoveryTypesByProperties(propertyType, false);
 				}
 			}
 		}
@@ -648,24 +673,33 @@ namespace SoapCore
 				type = type.GetElementType();
 			}
 
-			if (!_builtEnumTypes.Contains(type.Name))
+			var typeName = GetTypeName(type);
+
+			if (!_builtEnumTypes.Contains(typeName))
 			{
 				writer.WriteStartElement("xs:simpleType");
-				writer.WriteAttributeString("name", type.Name);
+				writer.WriteAttributeString("name", typeName);
 				writer.WriteStartElement("xs:restriction ");
 				writer.WriteAttributeString("base", "xs:string");
 
-				foreach (var value in Enum.GetValues(type))
+				foreach (var name in Enum.GetNames(type))
 				{
 					writer.WriteStartElement("xs:enumeration ");
-					writer.WriteAttributeString("value", value.ToString());
+
+					// Search for EnumMember attribute. If available, get enum value from its Value field
+					var enumMemberAttribute = ((EnumMemberAttribute[])type.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).SingleOrDefault();
+					var value = enumMemberAttribute is null || !enumMemberAttribute.IsValueSetExplicitly
+						? name
+						: enumMemberAttribute.Value;
+
+					writer.WriteAttributeString("value", value);
 					writer.WriteEndElement(); // xs:enumeration
 				}
 
 				writer.WriteEndElement(); // xs:restriction
 				writer.WriteEndElement(); // xs:simpleType
 
-				_builtEnumTypes.Add(type.Name);
+				_builtEnumTypes.Add(typeName);
 			}
 		}
 
@@ -673,103 +707,107 @@ namespace SoapCore
 		{
 			var toBuildName = GetTypeName(type);
 
-			if (!_builtComplexTypes.Contains(toBuildName))
+			if (_builtComplexTypes.Contains(toBuildName))
 			{
-				writer.WriteStartElement("xs:complexType");
-				writer.WriteAttributeString("name", toBuildName);
-				writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
+				return;
+			}
 
-				var hasBaseType = HasBaseType(type);
+			writer.WriteStartElement("xs:complexType");
+			writer.WriteAttributeString("name", toBuildName);
+			writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
 
-				if (hasBaseType)
+			var hasBaseType = HasBaseType(type);
+
+			if (hasBaseType)
+			{
+				writer.WriteStartElement("xs:complexContent");
+
+				writer.WriteAttributeString("mixed", "false");
+
+				writer.WriteStartElement("xs:extension");
+
+				var modelNamespace = GetDataContractNamespace(type.BaseType);
+
+				var typeName = type.BaseType.Name;
+
+				if (_schemaNamespace != modelNamespace)
 				{
-					writer.WriteStartElement("xs:complexContent");
-
-					writer.WriteStartElement("xs:extension");
-
-					var modelNamespace = GetDataContractNamespace(type.BaseType);
-
-					var typeName = type.BaseType.Name;
-
-					if (_schemaNamespace != modelNamespace)
-					{
-						var ns = $"q{_namespaceCounter++}";
-						writer.WriteAttributeString("base", $"{ns}:{typeName}");
-						writer.WriteAttributeString($"xmlns:{ns}", modelNamespace);
-					}
-					else
-					{
-						writer.WriteAttributeString("base", $"tns:{typeName}");
-					}
-				}
-
-				writer.WriteStartElement("xs:sequence");
-
-				if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
-				{
-					var elementType = type.IsArray ? type.GetElementType() : GetGenericType(type);
-					AddSchemaType(writer, elementType, null, true, GetDataContractNamespace(type));
+					var ns = $"q{_namespaceCounter++}";
+					writer.WriteAttributeString("base", $"{ns}:{typeName}");
+					writer.WriteAttributeString($"xmlns:{ns}", modelNamespace);
 				}
 				else
 				{
-					var properties = type.GetProperties().Where(prop =>
-						prop.DeclaringType == type &&
-						prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
-
-					var dataMembersToWrite = new List<DataMemberDescription>();
-
-					//TODO: base type properties
-					//TODO: enforce order attribute parameters
-					foreach (var property in properties)
-					{
-						var propertyName = property.Name;
-
-						var attributes = property.GetCustomAttributes(true);
-						int order = 0;
-						foreach (var attr in attributes)
-						{
-							if (attr is DataMemberAttribute dataContractAttribute)
-							{
-								if (!string.IsNullOrEmpty(dataContractAttribute.Name))
-								{
-									propertyName = dataContractAttribute.Name;
-								}
-
-								if (dataContractAttribute.Order > 0)
-								{
-									order = dataContractAttribute.Order;
-								}
-
-								break;
-							}
-						}
-
-						dataMembersToWrite.Add(new DataMemberDescription
-						{
-							Name = propertyName,
-							Type = property.PropertyType,
-							Order = order
-						});
-					}
-
-					foreach (var p in dataMembersToWrite.OrderBy(x => x.Order).ThenBy(p => p.Name, StringComparer.Ordinal))
-					{
-						AddSchemaType(writer, p.Type, p.Name, false, GetDataContractNamespace(p.Type));
-					}
+					writer.WriteAttributeString("base", $"tns:{typeName}");
 				}
-
-				writer.WriteEndElement(); // xs:sequence
-
-				if (hasBaseType)
-				{
-					writer.WriteEndElement(); // xs:extension
-					writer.WriteEndElement(); // xs:complexContent
-				}
-
-				writer.WriteEndElement(); // xs:complexType
-
-				_builtComplexTypes.Add(toBuildName);
 			}
+
+			writer.WriteStartElement("xs:sequence");
+
+			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				var elementType = type.IsArray ? type.GetElementType() : GetGenericType(type);
+				AddSchemaType(writer, elementType, null, true, GetDataContractNamespace(type));
+			}
+			else
+			{
+				var properties = type.GetProperties().Where(prop =>
+					prop.DeclaringType == type &&
+					prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
+
+				var dataMembersToWrite = new List<DataMemberDescription>();
+
+				//TODO: base type properties
+				//TODO: enforce order attribute parameters
+				foreach (var property in properties)
+				{
+					var propertyName = property.Name;
+
+					var attributes = property.GetCustomAttributes(true);
+					int order = 0;
+					foreach (var attr in attributes)
+					{
+						if (attr is DataMemberAttribute dataContractAttribute)
+						{
+							if (!string.IsNullOrEmpty(dataContractAttribute.Name))
+							{
+								propertyName = dataContractAttribute.Name;
+							}
+
+							if (dataContractAttribute.Order > 0)
+							{
+								order = dataContractAttribute.Order;
+							}
+
+							break;
+						}
+					}
+
+					dataMembersToWrite.Add(new DataMemberDescription
+					{
+						Name = propertyName,
+						Type = property.PropertyType,
+						Order = order
+					});
+				}
+
+				foreach (var p in dataMembersToWrite.OrderBy(x => x.Order).ThenBy(p => p.Name, StringComparer.Ordinal))
+				{
+					AddSchemaType(writer, p.Type, p.Name, false, GetDataContractNamespace(p.Type));
+				}
+			}
+
+			writer.WriteEndElement(); // xs:sequence
+
+			if (hasBaseType)
+			{
+				writer.WriteEndElement(); // xs:extension
+				writer.WriteEndElement(); // xs:complexContent
+			}
+
+			writer.WriteEndElement(); // xs:complexType
+
+			_builtComplexTypes.Add(toBuildName);
 		}
 
 		private void AddMessage(XmlDictionaryWriter writer)
@@ -784,7 +822,8 @@ namespace SoapCore
 				writer.WriteAttributeString("element", "tns:" + operation.Name);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
-										  // output
+
+				// output
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteStartElement("wsdl:part");
@@ -805,7 +844,9 @@ namespace SoapCore
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_{fault.Name}Fault_FaultMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "detail");
-				writer.WriteAttributeString("element", "tns:" + fault.Name);
+				var ns = $"q{_namespaceCounter++}";
+				writer.WriteAttributeString("element", $"{ns}:{fault.Name}");
+				writer.WriteAttributeString($"xmlns:{ns}", GetDataContractNamespace(fault));
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}
@@ -931,6 +972,8 @@ namespace SoapCore
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string objectNamespace = null)
 		{
 			var typeInfo = type.GetTypeInfo();
+			var typeName = GetTypeName(type);
+
 			if (typeInfo.IsByRef)
 			{
 				type = typeInfo.GetElementType();
@@ -943,9 +986,15 @@ namespace SoapCore
 				objectNamespace = GetModelNamespace(type);
 			}
 
-			if (typeInfo.IsEnum)
+			if (typeInfo.IsEnum || Nullable.GetUnderlyingType(typeInfo)?.IsEnum == true)
 			{
-				WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace, type);
+				WriteComplexElementType(writer, typeName, _schemaNamespace, objectNamespace, type);
+
+				if (string.IsNullOrEmpty(name))
+				{
+					name = typeName;
+				}
+
 				writer.WriteAttributeString("name", name);
 			}
 			else if (type.IsValueType)
@@ -955,11 +1004,11 @@ namespace SoapCore
 				{
 					if (string.IsNullOrEmpty(name))
 					{
-						name = type.Name;
+						name = typeName;
 					}
 
 					var ns = $"q{_namespaceCounter++}";
-					xsTypename = $"{ns}:{type.Name}";
+					xsTypename = $"{ns}:{typeName}";
 					writer.WriteAttributeString($"xmlns:{ns}", SYSTEM_NS);
 
 					_buildDateTimeOffset = true;
@@ -1084,7 +1133,7 @@ namespace SoapCore
 					{
 						if (string.IsNullOrEmpty(name))
 						{
-							name = type.Name;
+							name = typeName;
 						}
 
 						var ns = $"q{_namespaceCounter++}";
@@ -1100,11 +1149,11 @@ namespace SoapCore
 					{
 						if (string.IsNullOrEmpty(name))
 						{
-							name = type.Name;
+							name = typeName;
 						}
 
 						writer.WriteAttributeString("name", name);
-						WriteComplexElementType(writer, $"ArrayOf{elType.Name}", _schemaNamespace, objectNamespace, type);
+						WriteComplexElementType(writer, typeName, _schemaNamespace, objectNamespace, type);
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
 					}
 				}
@@ -1112,11 +1161,11 @@ namespace SoapCore
 				{
 					if (string.IsNullOrEmpty(name))
 					{
-						name = type.Name;
+						name = typeName;
 					}
 
 					writer.WriteAttributeString("name", name);
-					WriteComplexElementType(writer, type.Name, _schemaNamespace, objectNamespace, type);
+					WriteComplexElementType(writer, typeName, _schemaNamespace, objectNamespace, type);
 					_complexTypeToBuild[type] = GetDataContractNamespace(type);
 				}
 			}
@@ -1175,9 +1224,18 @@ namespace SoapCore
 
 		private void WriteComplexElementType(XmlDictionaryWriter writer, string typeName, string schemaNamespace, string objectNamespace, Type type)
 		{
-			if (!type.IsEnum || Nullable.GetUnderlyingType(type) != null)
+			var underlying = Nullable.GetUnderlyingType(type);
+			if (!type.IsEnum || underlying != null)
 			{
 				writer.WriteAttributeString("nillable", "true");
+			}
+
+			// In case of Nullable<T>, type is replaced by the underlying type
+			if (underlying?.IsEnum == true)
+			{
+				type = underlying;
+				typeName = GetTypeName(underlying);
+				objectNamespace = GetModelNamespace(underlying);
 			}
 
 			if (schemaNamespace != objectNamespace)
@@ -1194,7 +1252,34 @@ namespace SoapCore
 
 		private string GetTypeName(Type type)
 		{
-			return type.IsArray ? "ArrayOf" + type.GetElementType().Name : typeof(IEnumerable).IsAssignableFrom(type) ? "ArrayOf" + GetGenericType(type).Name : type.Name;
+			if (type.IsGenericType && !type.IsArray && !typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				var genericType = GetGenericType(type);
+				var genericTypeName = GetTypeName(genericType);
+
+				var typeName = type.Name.Replace("`1", string.Empty);
+				typeName = typeName + "Of" + genericTypeName;
+				return typeName;
+			}
+
+			if (type.IsArray)
+			{
+				return "ArrayOf" + GetTypeName(type.GetElementType());
+			}
+
+			if (typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				return "ArrayOf" + GetTypeName(GetGenericType(type));
+			}
+
+			// Make use of DataContract attribute, if set, as it may contain a Name override
+			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
+			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Name))
+			{
+				return dataContractAttribute.Name;
+			}
+
+			return type.Name;
 		}
 
 #pragma warning disable SA1009 // Closing parenthesis must be spaced correctly

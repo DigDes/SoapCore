@@ -4,7 +4,7 @@
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<VersionPrefix>0.9.9.1</VersionPrefix>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
+		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
@@ -14,7 +14,7 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>0.9.9.1</Version>
+		<Version>0.9.9.8-alpha</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
@@ -22,8 +22,8 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-	  <WarningsAsErrors />
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors />
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -35,15 +35,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
-		<PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
+		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.5.3" />
-		<PackageReference Include="System.ServiceModel.Http" Version="4.5.3" />
+		<PackageReference Include="System.CodeDom" Version="4.6.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
 		<PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

@@ -13,10 +13,9 @@ namespace SoapCore
 		public OperationDescription(ContractDescription contract, MethodInfo operationMethod, OperationContractAttribute contractAttribute)
 		{
 			Contract = contract;
-			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? operationMethod.Name;
+			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? GetNameByMethod(operationMethod);
 			SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
 			IsOneWay = contractAttribute.IsOneWay;
-			ReplyAction = contractAttribute.ReplyAction;
 			DispatchMethod = operationMethod;
 
 			var returnType = operationMethod.ReturnType;
@@ -50,6 +49,8 @@ namespace SoapCore
 			ReturnName = operationMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? Name + "Result";
 			ReturnElementName = elementAttribute?.ElementName;
 			ReturnNamespace = elementAttribute?.Form == XmlSchemaForm.Unqualified ? string.Empty : elementAttribute?.Namespace;
+
+			ReplyAction = contractAttribute.ReplyAction ?? $"{Contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name + "Response"}";
 
 			var faultContractAttributes = operationMethod.GetCustomAttributes<FaultContractAttribute>();
 			Faults = faultContractAttributes
@@ -92,7 +93,7 @@ namespace SoapCore
 				?? arrayAttribute?.Namespace
 				?? contract.Namespace;
 			var dataContractAttribute = info.ParameterType.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly)
+			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly && !string.IsNullOrWhiteSpace(dataContractAttribute.Namespace))
 			{
 				parameterNs = dataContractAttribute.Namespace;
 			}
@@ -106,6 +107,27 @@ namespace SoapCore
 			return (index ?? -1) > -1
 				? action.Substring(index.Value + 1, action.Length - index.Value - 1)
 				: null;
+		}
+
+		private static string GetNameByMethod(MethodInfo operationMethod)
+		{
+			var returnType = operationMethod.ReturnType;
+			var name = operationMethod.Name;
+
+			if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+			{
+				if (name.EndsWith("Async"))
+				{
+					name = name.Substring(0, name.LastIndexOf("Async"));
+				}
+			}
+
+			if (returnType == typeof(Task) && name.EndsWith("Async"))
+			{
+				name = name.Substring(0, name.LastIndexOf("Async"));
+			}
+
+			return name;
 		}
 	}
 }
