@@ -30,7 +30,7 @@ namespace SoapCore.Tests.Serialization
 					ServiceMock = new Mock<TService>();
 					services.AddSingleton(ServiceMock.Object);
 					services.AddSoapCore();
-					services.AddMvc(x => x.EnableEndpointRouting = false);
+					services.AddMvc();
 				})
 				.Configure(appBuilder =>
 				{

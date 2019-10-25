@@ -24,15 +24,29 @@ namespace SoapCore.Tests.Wsdl
 		{
 			services.AddSoapCore();
 			services.TryAddSingleton(_serviceType);
-			services.AddMvc(x => x.EnableEndpointRouting = false);
+			services.AddMvc();
 		}
 
-		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+#if ASPNET_21
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseSoapEndpoint(_serviceType, "/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			app.UseSoapEndpoint(_serviceType, "/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 
 			app.UseMvc();
 		}
+#endif
+#if ASPNET_30
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+		{
+			app.UseEndpoints(x =>
+			{
+				x.UseSoapEndpoint(_serviceType, "/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+			});
+
+			app.UseMvc();
+		}
+#endif
 	}
 }

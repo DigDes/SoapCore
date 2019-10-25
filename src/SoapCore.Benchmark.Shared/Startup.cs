@@ -1,13 +1,10 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.ServiceModel.Channels;
-using System.ServiceModel;
-using SoapCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using System.Text;
+using Microsoft.Extensions.Hosting;
+using SoapCore;
+using System.ServiceModel;
 
 namespace SoapCore.Benchmark
 {
@@ -17,7 +14,13 @@ namespace SoapCore.Benchmark
 		{
 			services.AddSingleton<PingService>();
 		}
+
+#if ASPNET_21
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+#endif
+#if ASPNET_30
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+#endif
 		{
 			if (env.IsDevelopment())
 			{

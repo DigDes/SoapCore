@@ -273,7 +273,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -286,7 +286,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -303,7 +303,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -405,7 +405,13 @@ namespace SoapCore
 
 					SetHttpResponse(httpContext, responseMessage);
 
-					messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+					var memoryStream = new MemoryStream();
+
+					messageEncoder.WriteMessage(responseMessage, memoryStream);
+
+					memoryStream.Seek(0, SeekOrigin.Begin);
+
+					await memoryStream.CopyToAsync(httpContext.Response.Body);
 				}
 				catch (Exception exception)
 				{
@@ -415,7 +421,7 @@ namespace SoapCore
 					}
 
 					_logger.LogWarning(0, exception, exception.Message);
-					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				}
 			}
 
@@ -434,7 +440,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -700,7 +706,7 @@ namespace SoapCore
 		/// Returns the constructed message (which is implicitly written to the response
 		/// and therefore must not be handled by the caller).
 		/// </returns>
-		private Message WriteErrorResponseMessage(
+		private async Task<Message> WriteErrorResponseMessage(
 			Exception exception,
 			int statusCode,
 			IServiceProvider serviceProvider,
@@ -725,7 +731,10 @@ namespace SoapCore
 				faultMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 			}
 
-			messageEncoder.WriteMessage(faultMessage, httpContext.Response.Body);
+			var memoryStream = new MemoryStream();
+			messageEncoder.WriteMessage(faultMessage, memoryStream);
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			await memoryStream.CopyToAsync(httpContext.Response.Body);
 
 			return faultMessage;
 		}
