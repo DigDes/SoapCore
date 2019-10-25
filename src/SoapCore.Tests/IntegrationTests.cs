@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -18,7 +17,7 @@ namespace SoapCore.Tests
 			Task.Run(() =>
 			{
 				var host = new WebHostBuilder()
-					.UseKestrel()
+					.UseKestrel(x => x.AllowSynchronousIO = true)
 					.UseUrls("http://localhost:5050")
 					.UseStartup<Startup>()
 					.Build();
@@ -146,6 +145,19 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void ExceptionMessageSoap12()
+		{
+			var client = CreateSoap12Client();
+
+			var e = Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowExceptionWithMessage("Your error message here");
+			});
+
+			Assert.AreEqual("Your error message here", e.Message);
+		}
+
+		[TestMethod]
 		public void ThrowsDetailedFault()
 		{
 			var client = CreateClient();
@@ -158,11 +170,17 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
-		public void CheckArrays()
+		public void ThrowsDetailedSoap12Fault()
 		{
-			var client = CreateClientXmlSerializer();
-			var result = client.GetArray(new[] { "test", "test1" });
-			Assert.IsTrue(result.Any());
+			var client = CreateSoap12Client();
+
+			var e = Assert.ThrowsException<FaultException<FaultDetail>>(() =>
+			{
+				client.ThrowDetailedFault("Detail message");
+			});
+
+			Assert.IsNotNull(e.Detail);
+			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
 		}
 
 		private ITestService CreateClient(bool caseInsensitivePath = false)
@@ -170,15 +188,6 @@ namespace SoapCore.Tests
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(
 				string.Format("http://{0}:5050/{1}.svc", "localhost", caseInsensitivePath ? "serviceci" : "Service")));
-			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
-			var serviceClient = channelFactory.CreateChannel();
-			return serviceClient;
-		}
-
-		private ITestService CreateClientXmlSerializer()
-		{
-			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri("http://localhost:5050/Service.asmx"));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;

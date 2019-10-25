@@ -42,6 +42,11 @@ namespace SoapCore.Tests
 			throw new Exception();
 		}
 
+		public async Task ThrowExceptionAsync()
+		{
+			await Task.Run(() => throw new Exception());
+		}
+
 		public void ThrowExceptionWithMessage(string message)
 		{
 			throw new Exception(message);
@@ -106,11 +111,6 @@ namespace SoapCore.Tests
 		public string PingWithServiceOperationTuning()
 		{
 			return _pingResultValue.Value;
-		}
-
-		public string[] GetArray(string[] args)
-		{
-			return new string[] { "result" };
 		}
 	}
 }

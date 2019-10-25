@@ -1,5 +1,6 @@
 using System.ServiceModel;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace SoapCore.Tests.Serialization.Models.Xml
 {
@@ -10,9 +11,13 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[XmlSerializerFormat(SupportFaults = true)]
 		string Ping(string s);
 
-		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel), ReplyAction = "*")]
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel1), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
-		ComplexModel1 PingComplexModel(ComplexModel2 inputModel);
+		ComplexModel2 PingComplexModel1(ComplexModel1 inputModel);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexModel2), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		ComplexModel1 PingComplexModel2(ComplexModel2 inputModel);
 
 		// new style call with multiple out/ref/value params
 		//   instead of packing them into single request/response class
@@ -43,6 +48,33 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		PingComplexModelOldStyleResponse PingComplexModelOldStyle(
 			PingComplexModelOldStyleRequest request);
 
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedPropertyComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedPropertyComplexInputResponse NotWrappedPropertyComplexInputRequestMethod(
+			NotWrappedPropertyComplexInputRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedFieldComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedFieldComplexInputResponse NotWrappedFieldComplexInputRequestMethod(
+			NotWrappedFieldComplexInputRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(NotWrappedFieldDoubleComplexInputRequestMethod), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		NotWrappedFieldComplexInputResponse NotWrappedFieldDoubleComplexInputRequestMethod(
+			NotWrappedFieldDoubleComplexInputRequest request);
+
+		// Ideally this would be void however the WCF client requires that if you have a MessageContract
+		// response you *must* have a MessageContract input
+		[OperationContract(Action = ServiceNamespace.Value + nameof(TestUnwrappedMultipleMessageBodyMember), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		UnwrappedMultipleMessageBodyMemberResponse TestUnwrappedMultipleMessageBodyMember(BasicMessageContractPayload x);
+
+		// Ideally this would be void however WCF client requires that if you have a MessageContract
+		// response you *must* have a MessageContract input
+		[OperationContract(Action = ServiceNamespace.Value + nameof(TestUnwrappedStringMessageBodyMember), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		UnwrappedStringMessageBodyMemberResponse TestUnwrappedStringMessageBodyMember(BasicMessageContractPayload x);
+
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool EnumMethod(out SampleEnum e);
@@ -62,5 +94,25 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EmptyParamsMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		ComplexModel1 EmptyParamsMethod();
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		string[] PingStringArray(string[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		ComplexModel1[] PingComplexModelArray(ComplexModel1[] models, ComplexModel2[] models2);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		string[] PingStringArrayWithXmlArray([XmlElement("arrayItem")]string[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		ComplexModel1[] PingComplexModelArrayWithXmlArray([XmlArrayItem("arr1")]ComplexModel1[] models, [XmlElement("arr2")]ComplexModel2[] models2);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		int[] PingIntArray(int[] array);
 	}
 }

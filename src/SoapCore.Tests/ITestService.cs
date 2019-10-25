@@ -50,6 +50,9 @@ namespace SoapCore.Tests
 		[OperationContract]
 		void ThrowException();
 
+		[OperationContract(Name = "ThrowExceptionAsync")]
+		Task ThrowExceptionAsync();
+
 		[OperationContract]
 		void ThrowExceptionWithMessage(string message);
 
@@ -63,8 +66,5 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		string PingWithServiceOperationTuning();
-
-		[OperationContract]
-		string[] GetArray(string[] args);
 	}
 }

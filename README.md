@@ -26,6 +26,19 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 }
 ```
 
+Program.cs (**AllowSynchronousIO = true**):
+```csharp
+public static void Main(string[] args)
+{
+    var host = new WebHostBuilder()
+        .UseKestrel(x => x.AllowSynchronousIO = true)
+        .UseUrls("http://*:5050")
+        .UseStartup<Startup>()
+        .Build();
+    host.Run();
+}
+```
+
 ### Using with legacy WCF/WS
 
 It is possible to use SoapCore with .net legacy WCF and Web Services, both as client and service.
@@ -116,4 +129,4 @@ public class MyService : IMyServiceService
 
 See [Contributing guide](CONTRIBUTING.md)
 
-[![Build Status](https://travis-ci.com/DigDes/SoapCore.svg?branch=master)](https://travis-ci.com/DigDes/SoapCore)
+![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg)

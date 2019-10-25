@@ -12,7 +12,12 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 		// if enabled, can handle XmlSerializer, but not DataContractSerializer
 		// [XmlSerializerFormat]
 		[OperationContract]
-		ComplexModel1 PingComplexModel(ComplexModel2 inputModel);
+		ComplexModel2 PingComplexModel1(ComplexModel1 inputModel);
+
+		// if enabled, can handle XmlSerializer, but not DataContractSerializer
+		// [XmlSerializerFormat]
+		[OperationContract]
+		ComplexModel1 PingComplexModel2(ComplexModel2 inputModel);
 
 		// if enabled, can handle XmlSerializer, but not DataContractSerializer
 		// [XmlSerializerFormat]

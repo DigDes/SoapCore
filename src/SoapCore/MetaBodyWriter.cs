@@ -11,7 +11,7 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	public class MetaBodyWriter : BodyWriter
+	internal class MetaBodyWriter : BodyWriter
 	{
 #pragma warning disable SA1310 // Field names must not contain underscore
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
@@ -33,7 +33,7 @@ namespace SoapCore
 
 		private bool _buildDateTimeOffset;
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -44,11 +44,23 @@ namespace SoapCore
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
+
+			if (binding != null)
+			{
+				BindingName = $"{binding.Name}_{_service.Contracts.First().Name}";
+				PortName = $"{binding.Name}_{_service.Contracts.First().Name}";
+			}
+			else
+			{
+				BindingName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+				PortName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+			}
 		}
 
-		private string BindingName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private string BindingName { get; }
 		private string BindingType => _service.Contracts.First().Name;
-		private string PortName => "BasicHttpBinding_" + _service.Contracts.First().Name;
+		private string PortName { get; }
+
 		private string TargetNameSpace => _service.Contracts.First().Namespace;
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
@@ -305,7 +317,8 @@ namespace SoapCore
 				writer.WriteAttributeString("element", "tns:" + operation.Name);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
-										  // output
+
+				// output
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteStartElement("wsdl:part");
