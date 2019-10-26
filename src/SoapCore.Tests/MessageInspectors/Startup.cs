@@ -49,12 +49,12 @@ namespace SoapCore.Tests.MessageInspectors
 #if ASPNET_30
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
+			app.UseRouting();
+
 			app.UseEndpoints(x =>
 			{
 				x.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			});
-
-			app.UseMvc();
 		}
 #endif
 	}

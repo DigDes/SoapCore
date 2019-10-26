@@ -19,6 +19,7 @@
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
+        <LangVersion>8.0</LangVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
@@ -27,7 +28,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
-		<DefineConstants>ASPNET_21</DefineConstants>
+		<DefineConstants>ASPNET_21;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'net461'">
@@ -39,7 +40,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
-		<DefineConstants>ASPNET_30</DefineConstants>
+		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -70,7 +71,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
-		<FrameworkReference Include="Microsoft.AspNetCore.App"/>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
 		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
 		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
@@ -79,11 +80,13 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="System.CodeDom" Version="4.6.0" />
+		<PackageReference Include="System.IO.Pipelines" Version="4.6.0" />
 		<PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
 	</ItemGroup>
 </Project>

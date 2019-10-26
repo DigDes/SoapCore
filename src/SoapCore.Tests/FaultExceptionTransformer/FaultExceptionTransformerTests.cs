@@ -20,26 +20,32 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 	public class FaultExceptionTransformerTests : DelegatingHandler, IEndpointBehavior
 	{
 		private static IWebHost _host;
+
+#if !NETFRAMEWORK
 		private bool _hasAssertHttpResponse;
+#endif
 
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
 		{
-			Task.Run(() =>
-			{
-				_host = new WebHostBuilder()
-					.UseKestrel(x => x.AllowSynchronousIO = true)
-					.UseUrls("http://127.0.0.1:0")
-					.UseStartup<Startup>()
-					.Build();
+			_host = new WebHostBuilder()
+				.UseKestrel()
+				.UseUrls("http://127.0.0.1:0")
+				.UseStartup<Startup>()
+				.Build();
 
-				_host.Run();
-			});
+			_host.RunAsync();
 
 			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
 			{
 				Thread.Sleep(2000);
 			}
+		}
+
+		[ClassCleanup]
+		public static async Task StopServer()
+		{
+			await _host.StopAsync();
 		}
 
 		public ITestService CreateClient()
@@ -53,7 +59,9 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 
+#if !NETFRAMEWORK
 			channelFactory.Endpoint.EndpointBehaviors.Add(this);
+#endif
 
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
@@ -79,7 +87,9 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 				Assert.AreEqual("foo:bar", detail.AdditionalProperty);
 			}
 
+#if !NETFRAMEWORK
 			Assert.IsTrue(_hasAssertHttpResponse);
+#endif
 		}
 
 		public void AddBindingParameters(ServiceEndpoint endpoint, BindingParameterCollection bindingParameters)
@@ -104,6 +114,7 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 		{
 		}
 
+#if !NETFRAMEWORK
 		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
 		{
 			var response = await base.SendAsync(request, cancellationToken);
@@ -115,5 +126,6 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 
 			return response;
 		}
+#endif
 	}
 }
