@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -26,31 +26,26 @@
 		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) =='net461'">
 		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-		<Reference Include="System.ServiceModel" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) =='netstandard2.0'">
 		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="../SoapCore/SoapCore.csproj">
-		</ProjectReference>
+		<ProjectReference Include="../SoapCore/SoapCore.csproj"/>
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="../SoapCore.Benchmark.Shared/*.cs" />
