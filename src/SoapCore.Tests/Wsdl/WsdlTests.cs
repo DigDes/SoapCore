@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
@@ -17,16 +18,15 @@ namespace SoapCore.Tests.Wsdl
 	[TestClass]
 	public class WsdlTests
 	{
-		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		private readonly XNamespace _xmlSchema = "http://www.w3.org/2001/XMLSchema";
-		private readonly Random _portRandom = new Random();
+
+		private IWebHost _host;
 
 		[TestMethod]
 		public void CheckTaskReturnMethod()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(TaskNoReturnService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(TaskNoReturnService));
+			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
@@ -35,9 +35,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckDataContractContainsItself()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(DataContractContainsItselfService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(DataContractContainsItselfService));
+			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
@@ -46,9 +45,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckDataContractCircularReference()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(DataContractCircularReferenceService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(DataContractCircularReferenceService));
+			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
@@ -57,9 +55,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckNullableEnum()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(NullableEnumService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(NullableEnumService));
+			var wsdl = GetWsdl();
 			StopServer();
 
 			// Parse wsdl content as XML
@@ -77,9 +74,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckNonNullableEnum()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(NonNullableEnumService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(NonNullableEnumService));
+			var wsdl = GetWsdl();
 			StopServer();
 
 			// Parse wsdl content as XML
@@ -97,29 +93,40 @@ namespace SoapCore.Tests.Wsdl
 		[TestCleanup]
 		public void StopServer()
 		{
-			_cancellationTokenSource.Cancel();
+			_host.StopAsync();
 		}
 
-		private string GetWsdl(string serviceUrl, string serviceName = "Service.svc")
+		private string GetWsdl()
 		{
+			var serviceName = "Service.svc";
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
 			using (var httpClient = new HttpClient())
 			{
-				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", serviceUrl, serviceName)).Result;
+				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
 			}
 		}
 
-		private void StartService(Type serviceType, string serviceUrl)
+		private void StartService(Type serviceType)
 		{
-			Task.Run(async () =>
+			Task.Run(() =>
 			{
-				var host = new WebHostBuilder()
-					.UseKestrel(x => x.AllowSynchronousIO = true)
-					.UseUrls(serviceUrl)
+				_host = new WebHostBuilder()
+					.UseKestrel()
+					.UseUrls("http://127.0.0.1:0")
 					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
 					.UseStartup<Startup>()
 					.Build();
-				await host.RunAsync(_cancellationTokenSource.Token);
-			}).Wait(1000);
+
+				_host.Run();
+			});
+
+			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+			{
+				Thread.Sleep(2000);
+			}
 		}
 
 		private List<XElement> GetElements(XElement root, XName name)

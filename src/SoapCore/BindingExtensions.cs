@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.ServiceModel.Channels;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoapCore
 {
@@ -12,12 +7,14 @@ namespace SoapCore
 	{
 		public static bool HasBasicAuth(this Binding binding)
 		{
-			if (binding == null)
+			var transportBindingElement = binding?.CreateBindingElements().Find<HttpTransportBindingElement>();
+
+			if (transportBindingElement != null)
 			{
-				return false;
+				return transportBindingElement.AuthenticationScheme == AuthenticationSchemes.Basic;
 			}
 
-			return binding.CreateBindingElements().Find<HttpTransportBindingElement>().AuthenticationScheme == AuthenticationSchemes.Basic;
+			return false;
 		}
 	}
 }
