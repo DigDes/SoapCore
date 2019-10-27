@@ -12,19 +12,19 @@ Support ref\out params, exceptions. Works with legacy SOAP\WCF-clients.
 
 The following frameworks are supported:
 
-- .NET Core 3.0 (using ASP.net Core 3.0)
-- .NET Core 2.1 (using ASP.net Core 2.1)
-- .NET Framework 4.6.1 and higher (using ASP.net Core 2.1)
-- .NET Standard 2.0 (using ASP.net Core 2.1)
+- .NET Core 3.0 (using ASP.NET Core 3.0)
+- .NET Core 2.1 (using ASP.NET Core 2.1)
+- .NET Framework 4.6.1 and higher (using ASP.NET Core 2.1)
+- .NET Standard 2.0 (using ASP.NET Core 2.1)
 
-.NET Core 2.2 / ASP.net Core 2.2 is not explictly supported, but will probably work. We suggest upgrading to .NET Core 3.0 since .NET Core 2.2 is only supported until December 23, 2019.
+.NET Core 2.2 / ASP.NET Core 2.2 is not explictly supported, but will probably work. We suggest upgrading to .NET Core 3.0 since .NET Core 2.2 is only supported until December 23, 2019.
 If you using .NET Framework, and you cannot migrate to .NET Core, we recommend downgrading to ASP.net Core 2.1 since it's an LTS release and will be supported for some time.
 
 ### Installing
 
 `PM> Install-Package SoapCore`
 
-There's 2 diferent ways of adding SoapCore to your ASP.net Core website. If you are using ASP.net Core 3.0 or higher with endpoint routing enabled (the default):
+There's 2 diferent ways of adding SoapCore to your ASP.net Core website. If you are using ASP.NET Core 3.0 or higher with endpoint routing enabled (the default):
 
 In Startup.cs:
 
@@ -47,7 +47,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 }
 ```
 
-If you are using ASP.net Core 2.1 (i.e., on .NET Framework, .NET Core 2.1, or another .NET Standard 2.0 compliant platform):
+If you are using ASP.NET Core 2.1 (i.e., on .NET Framework, .NET Core 2.1, or another .NET Standard 2.0 compliant platform):
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
