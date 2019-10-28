@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -31,6 +32,8 @@ namespace SoapCore
 		private readonly HashSet<string> _builtComplexTypes;
 		private readonly HashSet<string> _buildArrayTypes;
 
+		private readonly Dictionary<Type, Type> _wrappedTypes;
+
 		private bool _buildDateTimeOffset;
 
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
@@ -44,6 +47,8 @@ namespace SoapCore
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
+
+			_wrappedTypes = new Dictionary<Type, Type>();
 
 			if (binding != null)
 			{
@@ -76,15 +81,49 @@ namespace SoapCore
 			AddService(writer);
 		}
 
-		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos)
+		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos, bool isMessageContract)
 		{
+			var hasWrittenSchema = false;
+
 			foreach (var parameterInfo in parameterInfos)
 			{
-				var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
-				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
-										? elementAttribute.ElementName
-										: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
-				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
+				var doWriteInlineType = true;
+
+				if (isMessageContract)
+				{
+					doWriteInlineType = IsWrappedMessageContractType(parameterInfo.Parameter.ParameterType);
+				}
+
+				if (doWriteInlineType)
+				{
+					if (!hasWrittenSchema)
+					{
+						writer.WriteStartElement("xs:complexType");
+						writer.WriteStartElement("xs:sequence");
+
+						hasWrittenSchema = true;
+					}
+
+					var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
+					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+						? elementAttribute.ElementName
+						: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
+
+					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
+				}
+				else
+				{
+					var messageBodyType = GetMessageContractBodyType(parameterInfo.Parameter.ParameterType);
+
+					writer.WriteAttributeString("type", "tns:" + messageBodyType.Name);
+					_complexTypeToBuild.Enqueue(parameterInfo.Parameter.ParameterType);
+				}
+			}
+
+			if (hasWrittenSchema)
+			{
+				writer.WriteEndElement(); // xs:sequence
+				writer.WriteEndElement(); // xs:complexType
 			}
 		}
 
@@ -109,20 +148,14 @@ namespace SoapCore
 				// input parameters of operation
 				writer.WriteStartElement("xs:element");
 				writer.WriteAttributeString("name", operation.Name);
-				writer.WriteStartElement("xs:complexType");
-				writer.WriteStartElement("xs:sequence");
 
-				WriteParameters(writer, operation.InParameters);
+				WriteParameters(writer, operation.InParameters, operation.IsMessageContractRequest);
 
-				writer.WriteEndElement(); // xs:sequence
-				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:element
 
 				// output parameter / return of operation
 				writer.WriteStartElement("xs:element");
 				writer.WriteAttributeString("name", operation.Name + "Response");
-				writer.WriteStartElement("xs:complexType");
-				writer.WriteStartElement("xs:sequence");
 
 				if (operation.DispatchMethod.ReturnType != typeof(void))
 				{
@@ -132,14 +165,29 @@ namespace SoapCore
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
-					AddSchemaType(writer, returnType, returnName);
+					var doWriteInlineType = true;
+
+					if (operation.IsMessageContractResponse)
+					{
+						doWriteInlineType = IsWrappedMessageContractType(returnType);
+					}
+
+					if (doWriteInlineType)
+					{
+						var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+						AddSchemaType(writer, returnType, returnName);
+					}
+					else
+					{
+						var type = GetMessageContractBodyType(returnType);
+
+						writer.WriteAttributeString("type", "tns:" + type.Name);
+						_complexTypeToBuild.Enqueue(returnType);
+					}
 				}
 
-				WriteParameters(writer, operation.OutParameters);
+				WriteParameters(writer, operation.OutParameters, operation.IsMessageContractResponse);
 
-				writer.WriteEndElement(); // xs:sequence
-				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:element
 			}
 
@@ -147,9 +195,12 @@ namespace SoapCore
 			{
 				var toBuild = _complexTypeToBuild.Dequeue();
 
-				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
-					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name
-					: toBuild.Name;
+				var toBuildBodyType = GetMessageContractBodyType(toBuild);
+				var isWrappedBodyType = IsWrappedMessageContractType(toBuild);
+
+				var toBuildName = toBuildBodyType.IsArray ? "ArrayOf" + toBuildBodyType.Name.Replace("[]", string.Empty)
+					: typeof(IEnumerable).IsAssignableFrom(toBuildBodyType) ? "ArrayOf" + GetGenericType(toBuildBodyType).Name
+					: toBuildBodyType.Name;
 
 				if (!_builtComplexTypes.Contains(toBuildName))
 				{
@@ -179,20 +230,46 @@ namespace SoapCore
 					}
 					else
 					{
-						foreach (var property in toBuild.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType.Name == "IgnoreDataMemberAttribute")))
+						if (!isWrappedBodyType)
 						{
-							AddSchemaType(writer, property.PropertyType, property.Name);
+							foreach (var property in toBuildBodyType.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
+							{
+								AddSchemaType(writer, property.PropertyType, property.Name);
+							}
+						}
+						else
+						{
+							foreach (var property in toBuild.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
+							{
+								AddSchemaType(writer, property.PropertyType, property.Name);
+							}
+
+							var messageBodyMemberFields = toBuild.GetFields()
+								.Where(field => field.CustomAttributes.Any(attr => attr.AttributeType == typeof(MessageBodyMemberAttribute)))
+								.OrderBy(field => field.GetCustomAttribute<MessageBodyMemberAttribute>().Order);
+
+							foreach (var field in messageBodyMemberFields)
+							{
+								var messageBodyMember = field.GetCustomAttribute<MessageBodyMemberAttribute>();
+
+								var fieldName = messageBodyMember.Name ?? field.Name;
+
+								AddSchemaType(writer, field.FieldType, fieldName);
+							}
 						}
 					}
 
 					writer.WriteEndElement(); // xs:sequence
 					writer.WriteEndElement(); // xs:complexType
 
-					writer.WriteStartElement("xs:element");
-					writer.WriteAttributeString("name", toBuildName);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteAttributeString("type", "tns:" + toBuildName);
-					writer.WriteEndElement(); // xs:element
+					if (isWrappedBodyType)
+					{
+						writer.WriteStartElement("xs:element");
+						writer.WriteAttributeString("name", toBuildName);
+						writer.WriteAttributeString("nillable", "true");
+						writer.WriteAttributeString("type", "tns:" + toBuildName);
+						writer.WriteEndElement(); // xs:element
+					}
 
 					_builtComplexTypes.Add(toBuildName);
 				}
@@ -310,20 +387,55 @@ namespace SoapCore
 			foreach (var operation in _service.Operations)
 			{
 				// input
+				var requestTypeName = operation.Name;
+
+				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
+				{
+					if (!IsWrappedMessageContractType(operation.InParameters[0].Parameter.ParameterType))
+					{
+						requestTypeName = GetMessageContractBodyType(operation.InParameters[0].Parameter.ParameterType).Name;
+					}
+				}
+
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name);
+				writer.WriteAttributeString("element", "tns:" + requestTypeName);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
+
+				var responseTypeName = operation.Name + "Response";
+
+				if (operation.DispatchMethod.ReturnType != typeof(void))
+				{
+					var returnType = operation.DispatchMethod.ReturnType;
+
+					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+					{
+						returnType = returnType.GetGenericArguments().First();
+					}
+
+					if (!IsWrappedMessageContractType(returnType))
+					{
+						responseTypeName = GetMessageContractBodyType(returnType).Name;
+					}
+				}
+
+				if (operation.IsMessageContractResponse && operation.OutParameters.Length > 0)
+				{
+					if (!IsWrappedMessageContractType(operation.OutParameters[0].Parameter.ParameterType))
+					{
+						responseTypeName = GetMessageContractBodyType(operation.OutParameters[0].Parameter.ParameterType).Name;
+					}
+				}
 
 				// output
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
+				writer.WriteAttributeString("element", "tns:" + responseTypeName);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}
@@ -662,6 +774,41 @@ namespace SoapCore
 			}
 
 			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		private static bool IsWrappedMessageContractType(Type type)
+		{
+			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
+
+			if (messageContractAttribute != null)
+			{
+				return messageContractAttribute.IsWrapped;
+			}
+
+			return false;
+		}
+
+		private static Type GetMessageContractBodyType(Type type)
+		{
+			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
+
+			if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
+			{
+				var messageBodyMembers =
+					type
+						.GetPropertyOrFieldMembers()
+						.Select(mi => new
+						{
+							Member = mi,
+							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+						})
+						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+						.ToList();
+
+				return messageBodyMembers[0].Member.GetPropertyOrFieldType();
+			}
+
+			return type;
 		}
 	}
 }
