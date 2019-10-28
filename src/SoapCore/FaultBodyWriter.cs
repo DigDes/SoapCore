@@ -109,9 +109,11 @@ namespace SoapCore
 				</s:Body>
 			</s:Envelope>
 			*/
-			if (_exception is FaultException) {
+			if (_exception is FaultException)
+			{
 				var faultException = (FaultException)_exception;
-				if (faultException != null && faultException.Code != null && !string.IsNullOrEmpty(faultException.Code.Name)) {
+				if (faultException != null && faultException.Code != null && !string.IsNullOrEmpty(faultException.Code.Name))
+				{
 					if (!string.IsNullOrEmpty(faultException.Code.Namespace))
 					{
 						writer.WriteElementString("a", "faultcode", faultException.Code.Namespace, "a:" + faultException.Code.Name);

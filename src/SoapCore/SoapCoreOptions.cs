@@ -12,7 +12,7 @@ namespace SoapCore
 		/// <summary>
 		/// Gets or sets encoders
 		/// </summary>
-		public MessageEncoder[] MessageEncoders { get; set; }
+		public SoapEncoderOptions[] EncoderOptions { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating the kind of serializer
