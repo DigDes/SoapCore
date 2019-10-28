@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -31,6 +32,8 @@ namespace SoapCore
 		private readonly HashSet<string> _builtComplexTypes;
 		private readonly HashSet<string> _buildArrayTypes;
 
+		private readonly Dictionary<Type, Type> _wrappedTypes;
+
 		private bool _buildDateTimeOffset;
 
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
@@ -44,6 +47,8 @@ namespace SoapCore
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
+
+			_wrappedTypes = new Dictionary<Type, Type>();
 
 			if (binding != null)
 			{
@@ -76,15 +81,66 @@ namespace SoapCore
 			AddService(writer);
 		}
 
-		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos)
+		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos, bool isMessageContract)
 		{
+			var hasWrittenSchema = false;
+
 			foreach (var parameterInfo in parameterInfos)
 			{
-				var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
-				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
-										? elementAttribute.ElementName
-										: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
-				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
+				var doWriteInlineType = true;
+
+				if (isMessageContract)
+				{
+					var messageContractAttribute = parameterInfo.Parameter.ParameterType.GetCustomAttribute<MessageContractAttribute>();
+					doWriteInlineType = messageContractAttribute.IsWrapped;
+				}
+
+				if (doWriteInlineType)
+				{
+					if (!hasWrittenSchema)
+					{
+						writer.WriteStartElement("xs:complexType");
+						writer.WriteStartElement("xs:sequence");
+
+						hasWrittenSchema = true;
+					}
+
+					var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
+					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
+						? elementAttribute.ElementName
+						: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
+
+					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
+				}
+				else
+				{
+					string typeName = parameterInfo.Parameter.ParameterType.Name;
+
+					var messageBodyMembers =
+						parameterInfo.Parameter.ParameterType
+							.GetPropertyOrFieldMembers()
+							.Select(mi => new
+							{
+								Member = mi,
+								MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+							})
+							.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+							.ToList();
+
+					if (messageBodyMembers.Count > 0)
+					{
+						typeName = messageBodyMembers[0].Member.Name;
+					}
+
+					writer.WriteAttributeString("type", "tns:" + typeName);
+					_complexTypeToBuild.Enqueue(parameterInfo.Parameter.ParameterType);
+				}
+			}
+
+			if (hasWrittenSchema)
+			{
+				writer.WriteEndElement(); // xs:sequence
+				writer.WriteEndElement(); // xs:complexType
 			}
 		}
 
@@ -109,20 +165,14 @@ namespace SoapCore
 				// input parameters of operation
 				writer.WriteStartElement("xs:element");
 				writer.WriteAttributeString("name", operation.Name);
-				writer.WriteStartElement("xs:complexType");
-				writer.WriteStartElement("xs:sequence");
 
-				WriteParameters(writer, operation.InParameters);
+				WriteParameters(writer, operation.InParameters, operation.IsMessageContractRequest);
 
-				writer.WriteEndElement(); // xs:sequence
-				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:element
 
 				// output parameter / return of operation
 				writer.WriteStartElement("xs:element");
 				writer.WriteAttributeString("name", operation.Name + "Response");
-				writer.WriteStartElement("xs:complexType");
-				writer.WriteStartElement("xs:sequence");
 
 				if (operation.DispatchMethod.ReturnType != typeof(void))
 				{
@@ -132,14 +182,46 @@ namespace SoapCore
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
-					AddSchemaType(writer, returnType, returnName);
+					var doWriteInlineType = true;
+
+					if (operation.IsMessageContractResponse)
+					{
+						var messageContractAttribute = returnType.GetCustomAttribute<MessageContractAttribute>();
+						doWriteInlineType = messageContractAttribute.IsWrapped;
+					}
+
+					if (doWriteInlineType)
+					{
+						var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+						AddSchemaType(writer, returnType, returnName);
+					}
+					else
+					{
+						string typeName = returnType.Name;
+
+						var messageBodyMembers =
+							returnType
+								.GetPropertyOrFieldMembers()
+								.Select(mi => new
+								{
+									Member = mi,
+									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+								})
+								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+								.ToList();
+
+						if (messageBodyMembers.Count > 0)
+						{
+							typeName = messageBodyMembers[0].Member.Name;
+						}
+
+						writer.WriteAttributeString("type", "tns:" + typeName);
+						_complexTypeToBuild.Enqueue(returnType);
+					}
 				}
 
-				WriteParameters(writer, operation.OutParameters);
+				WriteParameters(writer, operation.OutParameters, operation.IsMessageContractResponse);
 
-				writer.WriteEndElement(); // xs:sequence
-				writer.WriteEndElement(); // xs:complexType
 				writer.WriteEndElement(); // xs:element
 			}
 
@@ -150,6 +232,24 @@ namespace SoapCore
 				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
 					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name
 					: toBuild.Name;
+
+				var messageContractAttribute = toBuild.GetCustomAttribute<MessageContractAttribute>();
+
+				var messageBodyMembers =
+					toBuild
+						.GetPropertyOrFieldMembers()
+						.Select(mi => new
+						{
+							Member = mi,
+							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+						})
+						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+						.ToList();
+
+				if (messageBodyMembers.Count > 0)
+				{
+					toBuildName = messageBodyMembers[0].Member.Name;
+				}
 
 				if (!_builtComplexTypes.Contains(toBuildName))
 				{
@@ -179,20 +279,51 @@ namespace SoapCore
 					}
 					else
 					{
-						foreach (var property in toBuild.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType.Name == "IgnoreDataMemberAttribute")))
+						if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
 						{
-							AddSchemaType(writer, property.PropertyType, property.Name);
+							foreach (var messageBodyMember in messageBodyMembers)
+							{
+								var memberType = messageBodyMember.Member.GetPropertyOrFieldType();
+
+								foreach (var property in memberType.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
+								{
+									AddSchemaType(writer, property.PropertyType, property.Name);
+								}
+							}
+						}
+						else
+						{
+							foreach (var property in toBuild.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
+							{
+								AddSchemaType(writer, property.PropertyType, property.Name);
+							}
+
+							var messageBodyMemberFields = toBuild.GetFields()
+								.Where(field => field.CustomAttributes.Any(attr => attr.AttributeType == typeof(MessageBodyMemberAttribute)))
+								.OrderBy(field => field.GetCustomAttribute<MessageBodyMemberAttribute>().Order);
+
+							foreach (var field in messageBodyMemberFields)
+							{
+								var messageBodyMember = field.GetCustomAttribute<MessageBodyMemberAttribute>();
+
+								var fieldName = messageBodyMember.Name ?? field.Name;
+
+								AddSchemaType(writer, field.FieldType, fieldName);
+							}
 						}
 					}
 
 					writer.WriteEndElement(); // xs:sequence
 					writer.WriteEndElement(); // xs:complexType
 
-					writer.WriteStartElement("xs:element");
-					writer.WriteAttributeString("name", toBuildName);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteAttributeString("type", "tns:" + toBuildName);
-					writer.WriteEndElement(); // xs:element
+					if (messageContractAttribute == null || messageContractAttribute.IsWrapped)
+					{
+						writer.WriteStartElement("xs:element");
+						writer.WriteAttributeString("name", toBuildName);
+						writer.WriteAttributeString("nillable", "true");
+						writer.WriteAttributeString("type", "tns:" + toBuildName);
+						writer.WriteEndElement(); // xs:element
+					}
 
 					_builtComplexTypes.Add(toBuildName);
 				}
@@ -310,20 +441,93 @@ namespace SoapCore
 			foreach (var operation in _service.Operations)
 			{
 				// input
+				var requestTypeName = operation.Name;
+
+				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
+				{
+					var messageContractAttribute = operation.InParameters[0].Parameter.ParameterType.GetCustomAttribute<MessageContractAttribute>();
+
+					if (!messageContractAttribute.IsWrapped)
+					{
+						var messageBodyMembers =
+							operation.InParameters[0].Parameter.ParameterType
+								.GetPropertyOrFieldMembers()
+								.Select(mi => new
+								{
+									Member = mi,
+									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+								})
+								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+								.ToList();
+
+						requestTypeName = messageBodyMembers[0].Member.Name;
+					}
+				}
+
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name);
+				writer.WriteAttributeString("element", "tns:" + requestTypeName);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
+
+				var responseTypeName = operation.Name + "Response";
+
+				if (operation.DispatchMethod.ReturnType != typeof(void))
+				{
+					var returnType = operation.DispatchMethod.ReturnType;
+					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+					{
+						returnType = returnType.GetGenericArguments().First();
+					}
+
+					var messageContractAttribute = returnType.GetCustomAttribute<MessageContractAttribute>();
+
+					if (!messageContractAttribute.IsWrapped)
+					{
+						var messageBodyMembers =
+							returnType
+								.GetPropertyOrFieldMembers()
+								.Select(mi => new
+								{
+									Member = mi,
+									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+								})
+								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+								.ToList();
+
+						responseTypeName = messageBodyMembers[0].Member.Name;
+					}
+				}
+
+				if (operation.IsMessageContractResponse && operation.OutParameters.Length > 0)
+				{
+					var messageContractAttribute = operation.OutParameters[0].Parameter.ParameterType.GetCustomAttribute<MessageContractAttribute>();
+
+					if (!messageContractAttribute.IsWrapped)
+					{
+						var messageBodyMembers =
+							operation.OutParameters[0].Parameter.ParameterType
+								.GetPropertyOrFieldMembers()
+								.Select(mi => new
+								{
+									Member = mi,
+									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+								})
+								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+								.ToList();
+
+						responseTypeName = messageBodyMembers[0].Member.Name;
+					}
+				}
 
 				// output
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
+				writer.WriteAttributeString("element", "tns:" + responseTypeName);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}
