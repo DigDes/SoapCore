@@ -91,8 +91,7 @@ namespace SoapCore
 
 				if (isMessageContract)
 				{
-					var messageContractAttribute = parameterInfo.Parameter.ParameterType.GetCustomAttribute<MessageContractAttribute>();
-					doWriteInlineType = messageContractAttribute.IsWrapped;
+					doWriteInlineType = IsWrappedMessageContractType(parameterInfo.Parameter.ParameterType);
 				}
 
 				if (doWriteInlineType)
@@ -114,25 +113,9 @@ namespace SoapCore
 				}
 				else
 				{
-					string typeName = parameterInfo.Parameter.ParameterType.Name;
+					var messageBodyType = GetMessageContractBodyType(parameterInfo.Parameter.ParameterType);
 
-					var messageBodyMembers =
-						parameterInfo.Parameter.ParameterType
-							.GetPropertyOrFieldMembers()
-							.Select(mi => new
-							{
-								Member = mi,
-								MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-							})
-							.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-							.ToList();
-
-					if (messageBodyMembers.Count > 0)
-					{
-						typeName = messageBodyMembers[0].Member.Name;
-					}
-
-					writer.WriteAttributeString("type", "tns:" + typeName);
+					writer.WriteAttributeString("type", "tns:" + messageBodyType.Name);
 					_complexTypeToBuild.Enqueue(parameterInfo.Parameter.ParameterType);
 				}
 			}
@@ -186,8 +169,7 @@ namespace SoapCore
 
 					if (operation.IsMessageContractResponse)
 					{
-						var messageContractAttribute = returnType.GetCustomAttribute<MessageContractAttribute>();
-						doWriteInlineType = messageContractAttribute.IsWrapped;
+						doWriteInlineType = IsWrappedMessageContractType(returnType);
 					}
 
 					if (doWriteInlineType)
@@ -197,25 +179,9 @@ namespace SoapCore
 					}
 					else
 					{
-						string typeName = returnType.Name;
+						var type = GetMessageContractBodyType(returnType);
 
-						var messageBodyMembers =
-							returnType
-								.GetPropertyOrFieldMembers()
-								.Select(mi => new
-								{
-									Member = mi,
-									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-								})
-								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-								.ToList();
-
-						if (messageBodyMembers.Count > 0)
-						{
-							typeName = messageBodyMembers[0].Member.Name;
-						}
-
-						writer.WriteAttributeString("type", "tns:" + typeName);
+						writer.WriteAttributeString("type", "tns:" + type.Name);
 						_complexTypeToBuild.Enqueue(returnType);
 					}
 				}
@@ -229,27 +195,12 @@ namespace SoapCore
 			{
 				var toBuild = _complexTypeToBuild.Dequeue();
 
-				var toBuildName = toBuild.IsArray ? "ArrayOf" + toBuild.Name.Replace("[]", string.Empty)
-					: typeof(IEnumerable).IsAssignableFrom(toBuild) ? "ArrayOf" + GetGenericType(toBuild).Name
-					: toBuild.Name;
+				var toBuildBodyType = GetMessageContractBodyType(toBuild);
+				var isWrappedBodyType = IsWrappedMessageContractType(toBuild);
 
-				var messageContractAttribute = toBuild.GetCustomAttribute<MessageContractAttribute>();
-
-				var messageBodyMembers =
-					toBuild
-						.GetPropertyOrFieldMembers()
-						.Select(mi => new
-						{
-							Member = mi,
-							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-						})
-						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-						.ToList();
-
-				if (messageBodyMembers.Count > 0)
-				{
-					toBuildName = messageBodyMembers[0].Member.Name;
-				}
+				var toBuildName = toBuildBodyType.IsArray ? "ArrayOf" + toBuildBodyType.Name.Replace("[]", string.Empty)
+					: typeof(IEnumerable).IsAssignableFrom(toBuildBodyType) ? "ArrayOf" + GetGenericType(toBuildBodyType).Name
+					: toBuildBodyType.Name;
 
 				if (!_builtComplexTypes.Contains(toBuildName))
 				{
@@ -279,16 +230,11 @@ namespace SoapCore
 					}
 					else
 					{
-						if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
+						if (!isWrappedBodyType)
 						{
-							foreach (var messageBodyMember in messageBodyMembers)
+							foreach (var property in toBuildBodyType.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
 							{
-								var memberType = messageBodyMember.Member.GetPropertyOrFieldType();
-
-								foreach (var property in memberType.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
-								{
-									AddSchemaType(writer, property.PropertyType, property.Name);
-								}
+								AddSchemaType(writer, property.PropertyType, property.Name);
 							}
 						}
 						else
@@ -316,7 +262,7 @@ namespace SoapCore
 					writer.WriteEndElement(); // xs:sequence
 					writer.WriteEndElement(); // xs:complexType
 
-					if (messageContractAttribute == null || messageContractAttribute.IsWrapped)
+					if (isWrappedBodyType)
 					{
 						writer.WriteStartElement("xs:element");
 						writer.WriteAttributeString("name", toBuildName);
@@ -445,22 +391,9 @@ namespace SoapCore
 
 				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
 				{
-					var messageContractAttribute = operation.InParameters[0].Parameter.ParameterType.GetCustomAttribute<MessageContractAttribute>();
-
-					if (!messageContractAttribute.IsWrapped)
+					if (!IsWrappedMessageContractType(operation.InParameters[0].Parameter.ParameterType))
 					{
-						var messageBodyMembers =
-							operation.InParameters[0].Parameter.ParameterType
-								.GetPropertyOrFieldMembers()
-								.Select(mi => new
-								{
-									Member = mi,
-									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-								})
-								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-								.ToList();
-
-						requestTypeName = messageBodyMembers[0].Member.Name;
+						requestTypeName = GetMessageContractBodyType(operation.InParameters[0].Parameter.ParameterType).Name;
 					}
 				}
 
@@ -477,48 +410,23 @@ namespace SoapCore
 				if (operation.DispatchMethod.ReturnType != typeof(void))
 				{
 					var returnType = operation.DispatchMethod.ReturnType;
+
 					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
 					{
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					var messageContractAttribute = returnType.GetCustomAttribute<MessageContractAttribute>();
-
-					if (!messageContractAttribute.IsWrapped)
+					if (!IsWrappedMessageContractType(returnType))
 					{
-						var messageBodyMembers =
-							returnType
-								.GetPropertyOrFieldMembers()
-								.Select(mi => new
-								{
-									Member = mi,
-									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-								})
-								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-								.ToList();
-
-						responseTypeName = messageBodyMembers[0].Member.Name;
+						responseTypeName = GetMessageContractBodyType(returnType).Name;
 					}
 				}
 
 				if (operation.IsMessageContractResponse && operation.OutParameters.Length > 0)
 				{
-					var messageContractAttribute = operation.OutParameters[0].Parameter.ParameterType.GetCustomAttribute<MessageContractAttribute>();
-
-					if (!messageContractAttribute.IsWrapped)
+					if (!IsWrappedMessageContractType(operation.OutParameters[0].Parameter.ParameterType))
 					{
-						var messageBodyMembers =
-							operation.OutParameters[0].Parameter.ParameterType
-								.GetPropertyOrFieldMembers()
-								.Select(mi => new
-								{
-									Member = mi,
-									MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-								})
-								.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-								.ToList();
-
-						responseTypeName = messageBodyMembers[0].Member.Name;
+						responseTypeName = GetMessageContractBodyType(operation.OutParameters[0].Parameter.ParameterType).Name;
 					}
 				}
 
@@ -866,6 +774,41 @@ namespace SoapCore
 			}
 
 			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		private static bool IsWrappedMessageContractType(Type type)
+		{
+			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
+
+			if (messageContractAttribute != null)
+			{
+				return messageContractAttribute.IsWrapped;
+			}
+
+			return false;
+		}
+
+		private static Type GetMessageContractBodyType(Type type)
+		{
+			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
+
+			if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
+			{
+				var messageBodyMembers =
+					type
+						.GetPropertyOrFieldMembers()
+						.Select(mi => new
+						{
+							Member = mi,
+							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+						})
+						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+						.ToList();
+
+				return messageBodyMembers[0].Member.GetPropertyOrFieldType();
+			}
+
+			return type;
 		}
 	}
 }
