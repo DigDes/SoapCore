@@ -85,8 +85,8 @@ namespace SoapCore
 
 			if (binding != null)
 			{
-				BindingName = $"{binding.Name}_{_service.Contracts.First().Name}";
-				PortName = $"{binding.Name}_{_service.Contracts.First().Name}";
+				BindingName = binding.Name;
+				PortName = binding.Name;
 			}
 			else
 			{
