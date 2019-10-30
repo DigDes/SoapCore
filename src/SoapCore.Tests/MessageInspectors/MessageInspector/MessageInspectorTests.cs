@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SoapCore.Tests.MessageInspectors.MessageInspector
@@ -10,20 +13,46 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector
 	[TestClass]
 	public class MessageInspectorTests
 	{
+		private static IWebHost _host;
+
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
 		{
-			Task.Run(() =>
-			{
-				var host = new WebHostBuilder()
-					.UseKestrel()
-					.UseUrls("http://localhost:6051")
-					.UseStartup<Startup>()
-					.UseSetting("InspectorStyle", InspectorStyle.MessageInspector.ToString())
-					.Build();
+			_host = new WebHostBuilder()
+				.UseKestrel()
+				.UseUrls("http://127.0.0.1:0")
+				.UseStartup<Startup>()
+				.UseSetting("InspectorStyle", InspectorStyle.MessageInspector.ToString())
+				.Build();
 
-				host.Run();
-			}).Wait(1000);
+			var task = _host.RunAsync();
+
+			while (true)
+			{
+				if (_host != null)
+				{
+					if (task.IsFaulted && task.Exception != null)
+					{
+						throw task.Exception;
+					}
+
+					if (!task.IsCompleted || !task.IsCanceled)
+					{
+						if (!_host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+						{
+							break;
+						}
+					}
+				}
+
+				Thread.Sleep(2000);
+			}
+		}
+
+		[ClassCleanup]
+		public static async Task StopServer()
+		{
+			await _host.StopAsync();
 		}
 
 		[TestInitialize]
@@ -34,8 +63,11 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector
 
 		public ITestService CreateClient()
 		{
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:6051/Service.svc", "localhost")));
+			var endpoint = new EndpointAddress(new Uri(string.Format("{0}/Service.svc", address)));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;

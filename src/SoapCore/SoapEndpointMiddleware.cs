@@ -2,20 +2,22 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.CSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SoapCore.MessageEncoder;
 
 namespace SoapCore
 {
@@ -25,33 +27,54 @@ namespace SoapCore
 		private readonly RequestDelegate _next;
 		private readonly ServiceDescription _service;
 		private readonly string _endpointPath;
-		private readonly MessageEncoder[] _messageEncoders;
 		private readonly SoapSerializer _serializer;
 		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly ISoapModelBounder _soapModelBounder;
+		private readonly bool _httpGetEnabled;
+		private readonly bool _httpsGetEnabled;
+		private readonly SoapMessageEncoder[] _messageEncoders;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder[] encoders, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
 		{
 			_logger = logger;
 			_next = next;
 			_endpointPath = path;
-			_messageEncoders = encoders;
 			_serializer = serializer;
 			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
 			_soapModelBounder = soapModelBounder;
 			_binding = binding;
-		}
+			_httpGetEnabled = httpGetEnabled;
+			_httpsGetEnabled = httpsGetEnabled;
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, MessageEncoder encoder, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding)
-			: this(logger, next, serviceType, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding)
-		{
+			_messageEncoders = new SoapMessageEncoder[encoderOptions.Length];
+
+			for (var i = 0; i < encoderOptions.Length; i++)
+			{
+				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas);
+			}
 		}
 
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, SoapOptions options)
-			: this(logger, next, options.ServiceType, options.Path, options.MessageEncoders, options.SoapSerializer, options.CaseInsensitivePath, options.SoapModelBounder, options.Binding)
 		{
+			_logger = logger;
+			_next = next;
+			_endpointPath = options.Path;
+			_serializer = options.SoapSerializer;
+			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+			_service = new ServiceDescription(options.ServiceType);
+			_soapModelBounder = options.SoapModelBounder;
+			_binding = options.Binding;
+			_httpGetEnabled = options.HttpGetEnabled;
+			_httpsGetEnabled = options.HttpsGetEnabled;
+
+			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
+
+			for (var i = 0; i < options.EncoderOptions.Length; i++)
+			{
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas);
+			}
 		}
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -67,13 +90,23 @@ namespace SoapCore
 
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
+				if (httpContext.Request.Method?.ToLower() == "get")
+				{
+					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
+					if ((httpContext.Request.IsHttps && !_httpsGetEnabled) || (!httpContext.Request.IsHttps && !_httpGetEnabled))
+					{
+						httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+						return;
+					}
+				}
+
 				try
 				{
 					_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
 					if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
 					{
-						ProcessMeta(httpContext);
+						await ProcessMeta(httpContext);
 					}
 					else
 					{
@@ -85,7 +118,7 @@ namespace SoapCore
 					_logger.LogCritical(ex, $"An error occurred when trying to service a request on SOAP endpoint: {httpContext.Request.Path}");
 
 					// Let's pass this up the middleware chain after we have logged this issue
-					// and signalled the criticality of it
+					// and signaled the criticality of it
 					throw;
 				}
 			}
@@ -95,18 +128,24 @@ namespace SoapCore
 			}
 		}
 
-		private Message ProcessMeta(HttpContext httpContext)
+		private async Task<Message> ProcessMeta(HttpContext httpContext)
 		{
-			MessageEncoder messageEncoder = _messageEncoders[0];
 			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
 			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
 
-			var responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
+			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service, _binding);
 
-			httpContext.Response.ContentType = messageEncoder.ContentType;
-			messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+			httpContext.Response.ContentType = _messageEncoders[0].ContentType;
+
+#if ASPNET_21
+			await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.Body);
+#endif
+
+#if ASPNET_30
+			await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
+#endif
 
 			return responseMessage;
 		}
@@ -217,15 +256,16 @@ namespace SoapCore
 			mstm.Seek(0, SeekOrigin.Begin);
 			httpContext.Request.Body = mstm;
 
-			//Return metadata if no request
-			if (httpContext.Request.Body.Length == 0)
+			//Return metadata if no request, provided this is a GET request
+			if (httpContext.Request.Body.Length == 0 && httpContext.Request.Method?.ToLower() == "get")
 			{
-				return ProcessMeta(httpContext);
+				return await ProcessMeta(httpContext);
 			}
 
 			// Get the encoder based on Content Type
 			var messageEncoder = _messageEncoders[0];
-			for (int i = 0; i < _messageEncoders.Length; i++)
+
+			for (var i = 0; i < _messageEncoders.Length; i++)
 			{
 				if (_messageEncoders[i].IsContentTypeSupported(httpContext.Request.ContentType))
 				{
@@ -235,7 +275,13 @@ namespace SoapCore
 			}
 
 			//Get the message
-			var requestMessage = messageEncoder.ReadMessage(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+#if ASPNET_30
+			var requestMessage = await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
+#endif
+
+#if ASPNET_21
+			var requestMessage = await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+#endif
 
 			// Get MessageFilters, ModelBindingFilters
 			var messageFilters = serviceProvider.GetServices<IMessageFilter>();
@@ -257,7 +303,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -270,7 +316,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -287,7 +333,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -365,9 +411,9 @@ namespace SoapCore
 					// Create response message
 					var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
 
-					if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+					if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 					{
-						responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, soapAction, bodyWriter);
+						responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
 						responseMessage = new CustomMessage(responseMessage);
 
 						responseMessage.Headers.Action = operation.ReplyAction;
@@ -376,7 +422,7 @@ namespace SoapCore
 					}
 					else
 					{
-						responseMessage = Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter);
+						responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 						responseMessage = new CustomMessage(responseMessage);
 					}
 
@@ -387,7 +433,15 @@ namespace SoapCore
 
 					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 
-					messageEncoder.WriteMessage(responseMessage, httpContext.Response.Body);
+					SetHttpResponse(httpContext, responseMessage);
+
+#if ASPNET_30
+					await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
+#endif
+
+#if ASPNET_21
+					await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.Body);
+#endif
 				}
 				catch (Exception exception)
 				{
@@ -397,7 +451,7 @@ namespace SoapCore
 					}
 
 					_logger.LogWarning(0, exception, exception.Message);
-					responseMessage = WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
 				}
 			}
 
@@ -416,7 +470,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, messageEncoder, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
 				return responseMessage;
 			}
 
@@ -669,9 +723,6 @@ namespace SoapCore
 		/// <param name="serviceProvider">
 		/// The DI container.
 		/// </param>
-		/// <param name="messageEncoder">
-		/// The Message Encoder.
-		/// </param>
 		/// <param name="requestMessage">
 		/// The Message for the incoming request
 		/// </param>
@@ -682,22 +733,23 @@ namespace SoapCore
 		/// Returns the constructed message (which is implicitly written to the response
 		/// and therefore must not be handled by the caller).
 		/// </returns>
-		private Message WriteErrorResponseMessage(
+		private async Task<Message> WriteErrorResponseMessage(
 			Exception exception,
 			int statusCode,
 			IServiceProvider serviceProvider,
-			MessageEncoder messageEncoder,
 			Message requestMessage,
 			HttpContext httpContext)
 		{
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
 			httpContext.Response.StatusCode = statusCode;
 
-			if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+			SetHttpResponse(httpContext, faultMessage);
+
+			if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
 				// TODO: Some additional work needs to be done in order to support setting the action. Simply setting it to
 				// "http://www.w3.org/2005/08/addressing/fault" will cause the WCF Client to not be able to figure out the type
@@ -705,9 +757,39 @@ namespace SoapCore
 				faultMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 			}
 
-			messageEncoder.WriteMessage(faultMessage, httpContext.Response.Body);
+#if ASPNET_30
+			await _messageEncoders[0].WriteMessageAsync(faultMessage, httpContext.Response.BodyWriter);
+#endif
+
+#if ASPNET_21
+			await _messageEncoders[0].WriteMessageAsync(faultMessage, httpContext.Response.Body);
+#endif
 
 			return faultMessage;
+		}
+
+		private void SetHttpResponse(HttpContext httpContext, Message message)
+		{
+			if (!message.Properties.TryGetValue(HttpResponseMessageProperty.Name, out var value)
+#pragma warning disable SA1119 // StatementMustNotUseUnnecessaryParenthesis
+				|| !(value is HttpResponseMessageProperty httpProperty))
+#pragma warning restore SA1119 // StatementMustNotUseUnnecessaryParenthesis
+			{
+				return;
+			}
+
+			httpContext.Response.StatusCode = (int)httpProperty.StatusCode;
+
+			var feature = httpContext.Features.Get<IHttpResponseFeature>();
+			if (feature != null && !string.IsNullOrEmpty(httpProperty.StatusDescription))
+			{
+				feature.ReasonPhrase = httpProperty.StatusDescription;
+			}
+
+			foreach (string key in httpProperty.Headers.Keys)
+			{
+				httpContext.Response.Headers.Add(key, httpProperty.Headers.GetValues(key));
+			}
 		}
 	}
 }

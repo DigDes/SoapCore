@@ -13,7 +13,7 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	public class MetaWCFBodyWriter : BodyWriter
+	internal class MetaWCFBodyWriter : BodyWriter
 	{
 #pragma warning disable SA1310 // Field names must not contain underscore
 		private const string XMLNS_XS = "http://www.w3.org/2001/XMLSchema";
@@ -288,6 +288,11 @@ namespace SoapCore
 		{
 			foreach (var faultType in operation.Faults)
 			{
+				if (_complexTypeProcessed.Contains(faultType))
+				{
+					continue;
+				}
+
 				_complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
 				DiscoveryTypesByProperties(faultType, true);
 			}
@@ -817,7 +822,8 @@ namespace SoapCore
 				writer.WriteAttributeString("element", "tns:" + operation.Name);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
-										  // output
+
+				// output
 				writer.WriteStartElement("wsdl:message");
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 				writer.WriteStartElement("wsdl:part");
@@ -838,7 +844,9 @@ namespace SoapCore
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_{fault.Name}Fault_FaultMessage");
 				writer.WriteStartElement("wsdl:part");
 				writer.WriteAttributeString("name", "detail");
-				writer.WriteAttributeString("element", "tns:" + fault.Name);
+				var ns = $"q{_namespaceCounter++}";
+				writer.WriteAttributeString("element", $"{ns}:{fault.Name}");
+				writer.WriteAttributeString($"xmlns:{ns}", GetDataContractNamespace(fault));
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}

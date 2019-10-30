@@ -84,7 +84,55 @@ namespace SoapCore
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
 
 			writer.WriteStartElement("Fault", Soap11Namespace);
-			writer.WriteElementString("faultcode", "s:Client");
+
+			/* SUPPORT FOR SPECIFYING CUSTOM FAULTCODE AND NAMESPACE
+
+			For Example, this would result in the response below:
+			throw new System.ServiceModel.FaultException(new FaultReason("faultString1"), new FaultCode("faultCode1", "faultNamespace1"), "action1");
+			<s:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+				<s:Body>
+					<s:Fault>
+						<a:faultcode xmlns:a="faultNamespace1">a:faultCode1</a:faultcode>
+						<faultstring>faultString1</faultstring>
+					</s:Fault>
+				</s:Body>
+			</s:Envelope>
+
+			For Example, this would result in the response below:
+			throw new System.ServiceModel.FaultException(new FaultReason("faultString1"), new FaultCode("faultCode1"), "action1");
+			<s:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+				<s:Body>
+					<s:Fault>
+						<faultcode>s:faultCode1</faultcode>
+						<faultstring>faultString1</faultstring>
+					</s:Fault>
+				</s:Body>
+			</s:Envelope>
+			*/
+			if (_exception is FaultException)
+			{
+				var faultException = (FaultException)_exception;
+				if (faultException != null && faultException.Code != null && !string.IsNullOrEmpty(faultException.Code.Name))
+				{
+					if (!string.IsNullOrEmpty(faultException.Code.Namespace))
+					{
+						writer.WriteElementString("a", "faultcode", faultException.Code.Namespace, "a:" + faultException.Code.Name);
+					}
+					else
+					{
+						writer.WriteElementString("faultcode", "s:" + faultException.Code.Name);
+					}
+				}
+				else
+				{
+					writer.WriteElementString("faultcode", "s:Client");
+				}
+			}
+			else
+			{
+				writer.WriteElementString("faultcode", "s:Client");
+			}
+
 			writer.WriteElementString("faultstring", faultString);
 
 			if (faultDetail != null)
@@ -124,7 +172,7 @@ namespace SoapCore
 		/// The exception that caused the failure.
 		/// </param>
 		/// <returns>
-		/// Returns instance of T if the exception (or its InnerExceptions) is of type FaultException<T>
+		/// Returns instance of T if the exception (or its InnerExceptions) is of type FaultException<T>.
 		/// otherwise returns null
 		/// </returns>
 		private object ExtractFaultDetail(Exception exception)

@@ -12,7 +12,7 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	public class ServiceBodyWriter : BodyWriter
+	internal class ServiceBodyWriter : BodyWriter
 	{
 		private readonly SoapSerializer _serializer;
 		private readonly OperationDescription _operation;

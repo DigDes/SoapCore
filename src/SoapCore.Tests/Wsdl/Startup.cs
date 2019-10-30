@@ -27,6 +27,7 @@ namespace SoapCore.Tests.Wsdl
 			services.AddMvc();
 		}
 
+#if ASPNET_21
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseSoapEndpoint(_serviceType, "/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
@@ -34,5 +35,18 @@ namespace SoapCore.Tests.Wsdl
 
 			app.UseMvc();
 		}
+#endif
+#if ASPNET_30
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+		{
+			app.UseRouting();
+
+			app.UseEndpoints(x =>
+			{
+				x.UseSoapEndpoint(_serviceType, "/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+			});
+		}
+#endif
 	}
 }

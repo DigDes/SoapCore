@@ -1,24 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.ServiceModel;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace SoapCore.Tests.Serialization
 {
-	public class ServiceFixture<IService> : IDisposable
-		where IService : class
+	public class ServiceFixture<TService> : IDisposable
+		where TService : class
 	{
-		public const int Port = 5060;
-
 		private readonly IWebHost _host;
-		private readonly Dictionary<SoapSerializer, IService> _sampleServiceClients = new Dictionary<SoapSerializer, IService>();
-		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+		private readonly Dictionary<SoapSerializer, TService> _sampleServiceClients = new Dictionary<SoapSerializer, TService>();
 
 		public ServiceFixture()
 		{
@@ -27,42 +26,76 @@ namespace SoapCore.Tests.Serialization
 				.ConfigureServices(services =>
 				{
 					// init SampleService service mock
-					ServiceMock = new Mock<IService>();
+					ServiceMock = new Mock<TService>();
 					services.AddSingleton(ServiceMock.Object);
 					services.AddSoapCore();
 					services.AddMvc();
 				})
 				.Configure(appBuilder =>
 				{
-					appBuilder.UseSoapEndpoint<IService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
-					appBuilder.UseSoapEndpoint<IService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+#if ASPNET_21
+					appBuilder.UseSoapEndpoint<TService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
+#endif
+
+#if ASPNET_30
+					appBuilder.UseRouting();
+
+					appBuilder.UseEndpoints(x =>
+					{
+						x.UseSoapEndpoint<TService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+						x.UseSoapEndpoint<TService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+					});
+#endif
 				})
 				.UseKestrel()
-				.UseUrls($"http://*:{Port}")
+				.UseUrls($"http://127.0.0.1:0")
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.Build();
 
-#pragma warning disable 4014
-			_host.RunAsync(_cancellationTokenSource.Token);
-#pragma warning restore 4014
+			var task = _host.RunAsync();
+
+			while (true)
+			{
+				if (_host != null)
+				{
+					if (task.IsFaulted && task.Exception != null)
+					{
+						throw task.Exception;
+					}
+
+					if (!task.IsCompleted || !task.IsCanceled)
+					{
+						if (!_host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+						{
+							break;
+						}
+					}
+				}
+
+				Thread.Sleep(2000);
+			}
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
 
 			//make service client
 			var binding = new BasicHttpBinding();
 
-			var endpointXml = new EndpointAddress(new Uri($"http://localhost:{Port}/Service.asmx"));
-			var channelFactoryXml = new ChannelFactory<IService>(binding, endpointXml);
+			var endpointXml = new EndpointAddress(new Uri($"{address}/Service.asmx"));
+			var channelFactoryXml = new ChannelFactory<TService>(binding, endpointXml);
 			var serviceClientXml = channelFactoryXml.CreateChannel();
 
-			var endpointDC = new EndpointAddress(new Uri($"http://localhost:{Port}/Service.svc"));
-			var channelFactoryDC = new ChannelFactory<IService>(binding, endpointDC);
+			var endpointDC = new EndpointAddress(new Uri($"{address}/Service.svc"));
+			var channelFactoryDC = new ChannelFactory<TService>(binding, endpointDC);
 			var serviceClientDc = channelFactoryDC.CreateChannel();
 
 			_sampleServiceClients[SoapSerializer.XmlSerializer] = serviceClientXml;
 			_sampleServiceClients[SoapSerializer.DataContractSerializer] = serviceClientDc;
 		}
 
-		public Mock<IService> ServiceMock { get; private set; }
+		public Mock<TService> ServiceMock { get; private set; }
 
 		public static IEnumerable<object[]> SoapSerializersList()
 		{
@@ -72,34 +105,14 @@ namespace SoapCore.Tests.Serialization
 			}
 		}
 
-		public IService GetSampleServiceClient(SoapSerializer soapSerializer)
+		public TService GetSampleServiceClient(SoapSerializer soapSerializer)
 		{
-			WaitForServerStarted();
 			return _sampleServiceClients[soapSerializer];
 		}
 
 		public void Dispose()
 		{
-			_cancellationTokenSource.Cancel();
-		}
-
-		private void WaitForServerStarted()
-		{
-			using (var client = new TcpClient())
-			{
-				for (var i = 0; i < 10 && !client.Connected; i++)
-				{
-					try
-					{
-						client.Connect("localhost", Port);
-						break;
-					}
-					catch
-					{
-						Thread.Sleep(100);
-					}
-				}
-			}
+			_host.StopAsync();
 		}
 	}
 }

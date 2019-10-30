@@ -22,6 +22,7 @@ namespace SoapCore.Tests
 			services.AddMvc();
 		}
 
+#if ASPNET_21
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
@@ -57,5 +58,63 @@ namespace SoapCore.Tests
 
 			app.UseMvc();
 		}
+#endif
+
+#if ASPNET_30
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+		{
+			app.UseRouting();
+
+			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
+			{
+				app2.UseRouting();
+
+				app2.UseEndpoints(x =>
+				{
+					x.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+				});
+			});
+
+			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
+			{
+				app2.UseRouting();
+
+				app2.UseEndpoints(x =>
+				{
+					x.UseSoapEndpoint<TestService>("/ServiceCI.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
+				});
+			});
+
+			app.UseWhen(ctx => !ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
+			{
+				var transportBinding = new HttpTransportBindingElement();
+				var textEncodingBinding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
+
+				app2.UseRouting();
+
+				app2.UseEndpoints(x =>
+				{
+					x.UseSoapEndpoint<TestService>("/Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
+				});
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("asmx"), app2 =>
+			{
+				app2.UseRouting();
+
+				app2.UseSoapEndpoint<TestService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA10Service.svc"), app2 =>
+			{
+				var transportBinding = new HttpTransportBindingElement();
+				var textEncodingBinding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
+
+				app2.UseRouting();
+
+				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
+			});
+		}
+#endif
 	}
 }

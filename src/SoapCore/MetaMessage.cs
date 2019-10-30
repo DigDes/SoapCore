@@ -6,7 +6,7 @@ using System.Xml;
 
 namespace SoapCore
 {
-	public class MetaMessage : Message
+	internal class MetaMessage : Message
 	{
 		private readonly Message _message;
 		private readonly ServiceDescription _service;

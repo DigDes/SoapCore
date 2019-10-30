@@ -1,0 +1,30 @@
+name: Nuget publish
+
+on:
+  push:
+    branches: master
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    
+    container:
+      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine     
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@master
+      env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: true
+    - uses: actions/checkout@v1
+    - name: build and publish
+      run: |
+            dotnet restore src
+            dotnet pack --configuration Release --output nupkg src/SoapCore
+            #dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }}

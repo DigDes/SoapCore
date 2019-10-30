@@ -1,5 +1,8 @@
+using System.IO;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,12 +24,19 @@ namespace SoapCore.Tests
 			// Arrange
 			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
 
-			var encoder = new MockMessageEncoder();
 			SoapOptions options = new SoapOptions()
 			{
 				Path = "/Service.svc", // this is the path registered in app startup
 				Binding = new CustomBinding(),
-				MessageEncoders = new MessageEncoder[] { encoder },
+				EncoderOptions = new[]
+				{
+					new SoapEncoderOptions
+					{
+						MessageVersion = MessageVersion.Soap12WSAddressing10,
+						WriteEncoding = Encoding.UTF8,
+						ReaderQuotas = XmlDictionaryReaderQuotas.Max
+					}
+				},
 				ServiceType = typeof(MockSoapService),
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
@@ -36,13 +46,15 @@ namespace SoapCore.Tests
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
+			context.Request.Method = "GET";
+			context.Response.Body = new MemoryStream();
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
 			await soapCore.Invoke(context, new MockServiceProvider(true));
 
 			// Assert
-			Assert.AreEqual(true, encoder.DidWriteMessage);
+			Assert.IsTrue(context.Response.Body.Length > 0);
 		}
 
 		[TestMethod]
@@ -56,12 +68,19 @@ namespace SoapCore.Tests
 			// Arrange
 			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
 
-			var encoder = new MockMessageEncoder();
 			SoapOptions options = new SoapOptions()
 			{
 				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
 				Binding = new CustomBinding(),
-				MessageEncoders = new MessageEncoder[] { encoder },
+				EncoderOptions = new[]
+				{
+					new SoapEncoderOptions
+					{
+						MessageVersion = MessageVersion.Soap12WSAddressing10,
+						WriteEncoding = Encoding.UTF8,
+						ReaderQuotas = XmlDictionaryReaderQuotas.Max
+					}
+				},
 				ServiceType = typeof(MockSoapService),
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
@@ -71,13 +90,14 @@ namespace SoapCore.Tests
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
+			context.Response.Body = new MemoryStream();
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
 			await soapCore.Invoke(context, new MockServiceProvider(true));
 
 			// Assert
-			Assert.AreEqual(false, encoder.DidWriteMessage);
+			Assert.IsFalse(context.Response.Body.Length > 0);
 		}
 
 		[TestMethod]
@@ -91,12 +111,19 @@ namespace SoapCore.Tests
 			// Arrange
 			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
 
-			var encoder = new MockMessageEncoder();
 			SoapOptions options = new SoapOptions()
 			{
 				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
 				Binding = new CustomBinding(),
-				MessageEncoders = new MessageEncoder[] { encoder },
+				EncoderOptions = new[]
+				{
+					new SoapEncoderOptions
+					{
+						MessageVersion = MessageVersion.Soap12WSAddressing10,
+						WriteEncoding = Encoding.UTF8,
+						ReaderQuotas = XmlDictionaryReaderQuotas.Max
+					}
+				},
 				ServiceType = typeof(MockSoapService),
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
@@ -106,13 +133,15 @@ namespace SoapCore.Tests
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/v1/Service.svc");
+			context.Request.Method = "GET";
+			context.Response.Body = new MemoryStream();
 
 			// Act
 			// MockServiceProvider(false) simulates not registering the TrailingServicePathTuner in app startup
 			await soapCore.Invoke(context, new MockServiceProvider(false));
 
 			// Assert
-			Assert.AreEqual(true, encoder.DidWriteMessage);
+			Assert.IsTrue(context.Response.Body.Length > 0);
 		}
 	}
 }
