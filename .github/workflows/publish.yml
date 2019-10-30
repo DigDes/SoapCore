@@ -21,7 +21,7 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         draft: false
-        prerelease: false
+        prerelease: true
     - uses: actions/checkout@v1
     - name: build and publish
       run: |
