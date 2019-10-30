@@ -20,13 +20,8 @@ jobs:
             dotnet pack --configuration Release --output nupkg src/SoapCore
             #dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }}
 
-    - name: Extract tag name
-      id: tag
-      uses: actions/github-script@0.2.0
-      with:
-         github-token: ${{ secrets.GITHUB_TOKEN }}
-         script: |
-            return context.payload.ref.replace(/\/refs\/tags\//, '');
+    - name: Set env
+      run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
     - name: Create Release
       id: create_release
       uses: actions/create-release@master
@@ -44,6 +39,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: nupkg/SoapCore.${{ steps.tag.outputs.result }}.nupkg
-          asset_name: nupkg/SoapCore.${{ steps.tag.outputs.result }}.nupkg
+          asset_path: nupkg/SoapCore.$RELEASE_VERSION.nupkg
+          asset_name: nupkg/SoapCore.$RELEASE_VERSION.nupkg
           asset_content_type: application/zip
