@@ -3,7 +3,8 @@ name: Nuget publish
 on:
   push:
     branches: master
-
+    tags:
+      - 'v*'
 jobs:
   build:
     runs-on: ubuntu-16.04
