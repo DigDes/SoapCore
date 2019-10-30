@@ -2,6 +2,7 @@ name: Nuget publish
 
 on:
   push:
+    branches: master
     tags:
       - 'v*'
 jobs:
@@ -11,6 +12,14 @@ jobs:
     container:
       image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine     
     steps:
+   
+    - uses: actions/checkout@v1
+    - name: build and publish
+      run: |
+            dotnet restore src
+            dotnet pack --configuration Release --output nupkg src/SoapCore
+            #dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }}
+    
     - name: Create Release
       id: create_release
       uses: actions/create-release@master
@@ -21,9 +30,13 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: true
         prerelease: true
-    - uses: actions/checkout@v1
-    - name: build and publish
-      run: |
-            dotnet restore src
-            dotnet pack --configuration Release --output nupkg src/SoapCore
-            #dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }}
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: nupkg/SoapCore.${{ github.ref }}.nupkg
+          asset_name: nupkg/SoapCore.${{ github.ref }}.nupkg
+          asset_content_type: application/zip
