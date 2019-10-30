@@ -1,0 +1,19 @@
+name: Nuget publish
+
+on:
+  push:
+    branches: master
+
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    
+    container:
+      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine     
+    steps:
+    - uses: actions/checkout@v1
+    - name: build and publish
+      run: |
+            dotnet restore src
+            dotnet pack --configuration Release --output nupkg src/SoapCore
+            dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }}
