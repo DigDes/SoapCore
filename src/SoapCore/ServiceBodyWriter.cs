@@ -148,13 +148,15 @@ namespace SoapCore
 				else
 				{
 					var messageContractAttribute = resultType.GetCustomAttribute<MessageContractAttribute>();
-
-					// This behavior is opt-in i.e. you have to explicitly have a [MessageContract(IsWrapped=false)]
-					// to have the message body members inlined.
-					var shouldInline = messageContractAttribute != null && messageContractAttribute.IsWrapped == false;
-
-					if (shouldInline)
+					if (messageContractAttribute != null)
 					{
+						// This behavior is opt-in i.e. you have to explicitly have a [MessageContract(IsWrapped=false)]
+						// to have the message body members inlined.
+						if (messageContractAttribute.IsWrapped)
+						{
+							writer.WriteStartElement(xmlName, xmlNs);
+						}
+
 						var memberInformation = resultType
 							.GetPropertyOrFieldMembers()
 							.Select(mi => new
@@ -178,6 +180,11 @@ namespace SoapCore
 							{
 								serializer.Serialize(writer, memberValue);
 							}
+						}
+
+						if (messageContractAttribute.IsWrapped)
+						{
+							writer.WriteEndElement();
 						}
 					}
 					else
