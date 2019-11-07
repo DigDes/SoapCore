@@ -55,6 +55,30 @@ namespace SoapCore
 			return null;
 		}
 
+		private static object DeserializeObject(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
+		{
+			// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
+			var elementType = parameterType.GetElementType();
+
+			if (elementType == null || parameterType.IsArray)
+			{
+				elementType = parameterType;
+			}
+
+			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
+
+			lock (serializer)
+			{
+				if (elementType == typeof(Stream) || typeof(Stream).IsAssignableFrom(elementType))
+				{
+					xmlReader.Read();
+					return new MemoryStream(xmlReader.ReadContentAsBase64());
+				}
+
+				return serializer.Deserialize(xmlReader);
+			}
+		}
+
 		private static object DeserializeDataContract(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
 		{
 			var elementType = parameterType.GetElementType();
@@ -104,30 +128,5 @@ namespace SoapCore
 
 			return result;
 		}
-
-		private static object DeserializeObject(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
-		{
-			// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-			var elementType = parameterType.GetElementType();
-
-			if (elementType == null || parameterType.IsArray)
-			{
-				elementType = parameterType;
-			}
-
-			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
-
-			lock (serializer)
-			{
-				if (elementType == typeof(Stream) || typeof(Stream).IsAssignableFrom(elementType))
-				{
-					xmlReader.Read();
-					return new MemoryStream(xmlReader.ReadContentAsBase64());
-				}
-
-				return serializer.Deserialize(xmlReader);
-			}
-		}
-
 	}
 }
