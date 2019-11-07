@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	public interface ISoapModelBounder
 	{

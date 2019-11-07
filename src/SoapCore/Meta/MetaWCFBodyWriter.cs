@@ -11,8 +11,9 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using SoapCore.ServiceModel;
 
-namespace SoapCore
+namespace SoapCore.Meta
 {
 	internal class MetaWCFBodyWriter : BodyWriter
 	{

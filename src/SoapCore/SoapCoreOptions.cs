@@ -1,4 +1,5 @@
 using System.ServiceModel.Channels;
+using SoapCore.Extensibility;
 
 namespace SoapCore
 {

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.Serialization;
 using System.Security.Authentication;
 using System.ServiceModel.Channels;
+using SoapCore.Extensibility;
 
 namespace SoapCore
 {

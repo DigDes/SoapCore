@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.ServiceModel.Channels;
-using System.Text;
-using System.Threading.Tasks;
+using SoapCore.ServiceModel;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	public interface IMessageInspector2
 	{

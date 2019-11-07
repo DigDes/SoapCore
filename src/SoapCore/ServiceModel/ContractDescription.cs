@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.ServiceModel;
-using System.ServiceModel.Description;
 
-namespace SoapCore
+namespace SoapCore.ServiceModel
 {
 	public class ContractDescription
 	{

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	public interface IModelBindingFilter
 	{

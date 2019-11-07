@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace SoapCore
+namespace SoapCore.ServiceModel
 {
 	public class OperationDescription
 	{

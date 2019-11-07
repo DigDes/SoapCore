@@ -1,5 +1,4 @@
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,16 +6,17 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.CSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SoapCore.Extensibility;
 using SoapCore.MessageEncoder;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -33,6 +33,7 @@ namespace SoapCore
 		private readonly bool _httpGetEnabled;
 		private readonly bool _httpsGetEnabled;
 		private readonly SoapMessageEncoder[] _messageEncoders;
+		private readonly SerializerHelper _serializerHelper;
 
 		[Obsolete]
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
@@ -41,6 +42,7 @@ namespace SoapCore
 			_next = next;
 			_endpointPath = path;
 			_serializer = serializer;
+			_serializerHelper = new SerializerHelper(_serializer);
 			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(serviceType);
 			_soapModelBounder = soapModelBounder;
@@ -62,6 +64,7 @@ namespace SoapCore
 			_next = next;
 			_endpointPath = options.Path;
 			_serializer = options.SoapSerializer;
+			_serializerHelper = new SerializerHelper(_serializer);
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType);
 			_soapModelBounder = options.SoapModelBounder;
@@ -434,7 +437,7 @@ namespace SoapCore
 					}
 					else
 					{
-						arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
+						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
 					}
 				}
 			}
@@ -456,7 +459,7 @@ namespace SoapCore
 				if (messageContractAttribute.IsWrapped && !parameterType.GetMembersWithAttribute<MessageHeaderAttribute>().Any())
 				{
 					// It's wrapped so we treat it like normal!
-					arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterInfo.Parameter.ParameterType, parameterInfo.Name, @namespace, parameterInfo);
+					arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(xmlReader, parameterInfo.Parameter.ParameterType, parameterInfo.Name, @namespace, parameterInfo);
 				}
 				else
 				{
@@ -474,7 +477,7 @@ namespace SoapCore
 							var messageHeaderAttribute = member.GetCustomAttribute<MessageHeaderAttribute>();
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-							var value = DeserializeInputParameter(reader, member.GetPropertyOrFieldType(), messageHeaderAttribute.Name ?? member.Name, messageHeaderAttribute.Namespace ?? @namespace);
+							var value = _serializerHelper.DeserializeInputParameter(reader, member.GetPropertyOrFieldType(), messageHeaderAttribute.Name ?? member.Name, messageHeaderAttribute.Namespace ?? @namespace);
 
 							member.SetValueToPropertyOrField(wrapperObject, value);
 						}
@@ -503,7 +506,7 @@ namespace SoapCore
 						var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
 
 						//xmlReader.MoveToStartElement(innerParameterName, innerParameterNs);
-						var innerParameter = DeserializeInputParameter(xmlReader, innerParameterType, innerParameterName, innerParameterNs, parameterInfo);
+						var innerParameter = _serializerHelper.DeserializeInputParameter(xmlReader, innerParameterType, innerParameterName, innerParameterNs, parameterInfo);
 
 						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
 					}
@@ -536,117 +539,6 @@ namespace SoapCore
 			}
 
 			return arguments;
-		}
-
-		private object DeserializeInputParameter(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo = null)
-		{
-			if (xmlReader.IsStartElement(parameterName, parameterNs))
-			{
-				xmlReader.MoveToStartElement(parameterName, parameterNs);
-
-				if (xmlReader.IsStartElement(parameterName, parameterNs))
-				{
-					switch (_serializer)
-					{
-						case SoapSerializer.XmlSerializer:
-							if (!parameterType.IsArray || (parameterInfo != null && parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
-							{
-								// case [XmlElement("parameter")] int parameter
-								// case int[] parameter
-								// case [XmlArray("parameter")] int[] parameter
-								return DeserializeObject(xmlReader, parameterType, parameterName, parameterNs);
-							}
-							else
-							{
-								// case [XmlElement("parameter")] int[] parameter
-								// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
-								return DeserializeArray(xmlReader, parameterType, parameterName, parameterNs, parameterInfo);
-							}
-
-						case SoapSerializer.DataContractSerializer:
-							return DeserializeDataContract(xmlReader, parameterType, parameterName, parameterNs);
-
-						default:
-							throw new NotImplementedException();
-					}
-				}
-			}
-
-			return null;
-		}
-
-		private object DeserializeDataContract(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
-		{
-			var elementType = parameterType.GetElementType();
-
-			if (elementType == null || parameterType.IsArray)
-			{
-				elementType = parameterType;
-			}
-
-			var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
-
-			return serializer.ReadObject(xmlReader, verifyObjectName: true);
-		}
-
-		private object DeserializeArray(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo)
-		{
-			//if (parameterInfo.ArrayItemName != null)
-			{
-				xmlReader.ReadStartElement(parameterName, parameterNs);
-			}
-
-			var elementType = parameterType.GetElementType();
-
-			var localName = parameterInfo.ArrayItemName ?? elementType.Name;
-			if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
-			{
-				var compiler = new CSharpCodeProvider();
-				var type = new CodeTypeReference(elementType);
-				localName = compiler.GetTypeOutput(type);
-			}
-
-			//localName = "ComplexModelInput";
-			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), elementType);
-			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
-
-			object result = null;
-
-			lock (serializer)
-			{
-				result = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
-			}
-
-			//if (parameterInfo.ArrayItemName != null)
-			{
-				xmlReader.ReadEndElement();
-			}
-
-			return result;
-		}
-
-		private object DeserializeObject(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
-		{
-			// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
-			var elementType = parameterType.GetElementType();
-
-			if (elementType == null || parameterType.IsArray)
-			{
-				elementType = parameterType;
-			}
-
-			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
-
-			lock (serializer)
-			{
-				if (elementType == typeof(Stream) || typeof(Stream).IsAssignableFrom(elementType))
-				{
-					xmlReader.Read();
-					return new MemoryStream(xmlReader.ReadContentAsBase64());
-				}
-
-				return serializer.Deserialize(xmlReader);
-			}
 		}
 
 		/// <summary>
