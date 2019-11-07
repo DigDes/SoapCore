@@ -1,3 +1,4 @@
+using System.IO;
 using System.ServiceModel;
 using System.Threading.Tasks;
 
@@ -53,5 +54,8 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 		// [XmlSerializerFormat]
 		[OperationContract]
 		ComplexModel1 EmptyParamsMethod();
+
+		[OperationContract]
+		Stream GetStream();
 	}
 }

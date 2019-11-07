@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -1121,6 +1122,13 @@ namespace SoapCore
 					{
 						name = "base64Binary";
 					}
+
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "xs:base64Binary");
+				}
+				else if (type == typeof(Stream) || typeof(Stream).IsAssignableFrom(type))
+				{
+					name = "StreamBody";
 
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:base64Binary");

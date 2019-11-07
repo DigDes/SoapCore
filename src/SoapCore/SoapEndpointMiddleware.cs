@@ -10,7 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -35,6 +34,7 @@ namespace SoapCore
 		private readonly bool _httpsGetEnabled;
 		private readonly SoapMessageEncoder[] _messageEncoders;
 
+		[Obsolete]
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
 		{
 			_logger = logger;
@@ -83,10 +83,7 @@ namespace SoapCore
 
 			var trailPathTuner = serviceProvider.GetServices<TrailingServicePathTuner>().FirstOrDefault();
 
-			if (trailPathTuner != null)
-			{
-				trailPathTuner.ConvertPath(httpContext);
-			}
+			trailPathTuner?.ConvertPath(httpContext);
 
 			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
 			{
@@ -118,7 +115,7 @@ namespace SoapCore
 					_logger.LogCritical(ex, $"An error occurred when trying to service a request on SOAP endpoint: {httpContext.Request.Path}");
 
 					// Let's pass this up the middleware chain after we have logged this issue
-					// and signaled the criticality of it
+					// and signaled the critical of it
 					throw;
 				}
 			}
@@ -128,9 +125,9 @@ namespace SoapCore
 			}
 		}
 
-		private async Task<Message> ProcessMeta(HttpContext httpContext)
+		private async Task ProcessMeta(HttpContext httpContext)
 		{
-			string baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
+			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 
 			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
 
@@ -146,130 +143,33 @@ namespace SoapCore
 #if ASPNET_30
 			await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
 #endif
-
-			return responseMessage;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private string GetSoapAction(HttpContext httpContext, Message requestMessage, System.Xml.XmlDictionaryReader reader)
-		{
-			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
-			if (soapAction == "\"\"")
-			{
-				soapAction = string.Empty;
-			}
-
-			if (string.IsNullOrEmpty(soapAction))
-			{
-				foreach (var headerItem in httpContext.Request.Headers["Content-Type"])
-				{
-					// I want to avoid allocation as possible as I can(I hope to use Span<T> or Utf8String)
-					// soap1.2: action name is in Content-Type(like 'action="[action url]"') or body
-					int i = 0;
-
-					// skip whitespace
-					while (i < headerItem.Length && headerItem[i] == ' ')
-					{
-						i++;
-					}
-
-					if (headerItem.Length - i < 6)
-					{
-						continue;
-					}
-
-					// find 'action'
-					if (headerItem[i + 0] == 'a'
-						&& headerItem[i + 1] == 'c'
-						&& headerItem[i + 2] == 't'
-						&& headerItem[i + 3] == 'i'
-						&& headerItem[i + 4] == 'o'
-						&& headerItem[i + 5] == 'n')
-					{
-						i += 6;
-
-						// skip white space
-						while (i < headerItem.Length && headerItem[i] == ' ')
-						{
-							i++;
-						}
-
-						if (headerItem[i] == '=')
-						{
-							i++;
-
-							// skip whitespace
-							while (i < headerItem.Length && headerItem[i] == ' ')
-							{
-								i++;
-							}
-
-							// action value should be surrounded by '"'
-							if (headerItem[i] == '"')
-							{
-								i++;
-								int offset = i;
-								while (i < headerItem.Length && headerItem[i] != '"')
-								{
-									i++;
-								}
-
-								if (i < headerItem.Length && headerItem[i] == '"')
-								{
-									var charray = headerItem.ToCharArray();
-									soapAction = new string(charray, offset, i - offset);
-									break;
-								}
-							}
-						}
-					}
-				}
-
-				if (string.IsNullOrEmpty(soapAction))
-				{
-					soapAction = reader.LocalName;
-				}
-			}
-
-			if (soapAction.Contains('/'))
-			{
-				// soapAction may be a path. Therefore must take the action from the path provided.
-				soapAction = soapAction.Split('/').Last();
-			}
-
-			if (!string.IsNullOrEmpty(soapAction))
-			{
-				// soapAction may have '"' in some cases.
-				soapAction = soapAction.Trim('"');
-			}
-
-			return soapAction;
-		}
-
-		private async Task<Message> ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
+		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			Message responseMessage;
 
 			//Reload the body to ensure we have the full message
-			var mstm = new MemoryStream((int)httpContext.Request.ContentLength.GetValueOrDefault(1024));
-			await httpContext.Request.Body.CopyToAsync(mstm).ConfigureAwait(false);
-			mstm.Seek(0, SeekOrigin.Begin);
-			httpContext.Request.Body = mstm;
+			var memoryStream = new MemoryStream((int)httpContext.Request.ContentLength.GetValueOrDefault(1024));
+			await httpContext.Request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			httpContext.Request.Body = memoryStream;
 
 			//Return metadata if no request, provided this is a GET request
 			if (httpContext.Request.Body.Length == 0 && httpContext.Request.Method?.ToLower() == "get")
 			{
-				return await ProcessMeta(httpContext);
+				await ProcessMeta(httpContext);
+				return;
 			}
 
 			// Get the encoder based on Content Type
 			var messageEncoder = _messageEncoders[0];
 
-			for (var i = 0; i < _messageEncoders.Length; i++)
+			foreach (var encoder in _messageEncoders)
 			{
-				if (_messageEncoders[i].IsContentTypeSupported(httpContext.Request.ContentType))
+				if (encoder.IsContentTypeSupported(httpContext.Request.ContentType))
 				{
-					messageEncoder = _messageEncoders[i];
+					messageEncoder = encoder;
 					break;
 				}
 			}
@@ -282,13 +182,10 @@ namespace SoapCore
 #if ASPNET_21
 			var requestMessage = await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 #endif
+			var messageFilters = serviceProvider.GetServices<IMessageFilter>().ToArray();
+			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
-			// Get MessageFilters, ModelBindingFilters
-			var messageFilters = serviceProvider.GetServices<IMessageFilter>();
-			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>();
-			var modelBindingFilters = serviceProvider.GetServices<IModelBindingFilter>();
-
-			// Execute request message filters
+			//Execute request message filters
 			try
 			{
 				foreach (var messageFilter in messageFilters)
@@ -303,12 +200,12 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
-				return responseMessage;
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				return;
 			}
 
 			var messageInspector = serviceProvider.GetService<IMessageInspector>();
-			var correlationObject = default(object);
+			object correlationObject;
 
 			try
 			{
@@ -316,8 +213,8 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
-				return responseMessage;
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				return;
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
@@ -333,15 +230,15 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
-				return responseMessage;
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				return;
 			}
 
 			// for getting soapaction and parameters in body
 			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
 			{
-				var soapAction = GetSoapAction(httpContext, requestMessage, reader);
+				var soapAction = HeadersHelper.GetSoapAction(httpContext, requestMessage, reader);
 				requestMessage.Headers.Action = soapAction;
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 				if (operation == null)
@@ -356,48 +253,12 @@ namespace SoapCore
 					//Create an instance of the service class
 					var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
 
-					var headerProperty = _service.ServiceType.GetProperty("MessageHeaders");
-					if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
-					{
-						headerProperty.SetValue(serviceInstance, requestMessage.Headers);
-					}
+					SetMessageHeadersToProperty(requestMessage, serviceInstance);
 
 					// Get operation arguments from message
 					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
 
-					// Execute model binding filters
-					object modelBindingOutput = null;
-					foreach (var modelBindingFilter in modelBindingFilters)
-					{
-						foreach (var modelType in modelBindingFilter.ModelTypes)
-						{
-							foreach (var parameterInfo in operation.InParameters)
-							{
-								var arg = arguments[parameterInfo.Index];
-								if (arg != null && arg.GetType() == modelType)
-								{
-									modelBindingFilter.OnModelBound(arg, serviceProvider, out modelBindingOutput);
-								}
-							}
-						}
-					}
-
-					// Execute Mvc ActionFilters
-					foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute"))
-					{
-						var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
-						actionFilter.GetType().GetMethod("OnSoapActionExecuting").Invoke(actionFilter, new object[] { operation.Name, arguments, httpContext, modelBindingOutput });
-					}
-
-					// Invoke OnModelBound
-					_soapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
-
-					// Tune service instance for operation call
-					var serviceOperationTuners = serviceProvider.GetServices<IServiceOperationTuner>();
-					foreach (var operationTuner in serviceOperationTuners)
-					{
-						operationTuner.Tune(httpContext, serviceInstance, operation);
-					}
+					ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
 
 					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
@@ -408,23 +269,7 @@ namespace SoapCore
 						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 					}
 
-					// Create response message
-					var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
-
-					if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
-					{
-						responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
-						responseMessage = new CustomMessage(responseMessage);
-
-						responseMessage.Headers.Action = operation.ReplyAction;
-						responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
-						responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
-					}
-					else
-					{
-						responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
-						responseMessage = new CustomMessage(responseMessage);
-					}
+					responseMessage = CreateResponseMessage(operation, responseObject, resultOutDictionary, soapAction, requestMessage);
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
@@ -450,7 +295,7 @@ namespace SoapCore
 						exception = targetInvocationException.InnerException;
 					}
 
-					_logger.LogWarning(0, exception, exception.Message);
+					_logger.LogWarning(0, exception, exception?.Message);
 					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
 				}
 			}
@@ -471,10 +316,88 @@ namespace SoapCore
 			catch (Exception ex)
 			{
 				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
-				return responseMessage;
+			}
+		}
+
+		private Message CreateResponseMessage(OperationDescription operation, object responseObject, Dictionary<string, object> resultOutDictionary, string soapAction, Message requestMessage)
+		{
+			Message responseMessage;
+
+			// Create response message
+			var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
+
+			if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+			{
+				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
+				responseMessage = new CustomMessage(responseMessage);
+
+				responseMessage.Headers.Action = operation.ReplyAction;
+				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
+				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
+			}
+			else
+			{
+				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
+				responseMessage = new CustomMessage(responseMessage);
+
+				if (responseObject != null)
+				{
+					var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
+					foreach (var messageHeaderMember in messageHeaderMembers)
+					{
+						var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
+						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
+					}
+				}
 			}
 
 			return responseMessage;
+		}
+
+		private void ExecuteFiltersAndTune(HttpContext httpContext, IServiceProvider serviceProvider, OperationDescription operation, object[] arguments, object serviceInstance)
+		{
+			// Execute model binding filters
+			object modelBindingOutput = null;
+			foreach (var modelBindingFilter in serviceProvider.GetServices<IModelBindingFilter>())
+			{
+				foreach (var modelType in modelBindingFilter.ModelTypes)
+				{
+					foreach (var parameterInfo in operation.InParameters)
+					{
+						var arg = arguments[parameterInfo.Index];
+						if (arg != null && arg.GetType() == modelType)
+						{
+							modelBindingFilter.OnModelBound(arg, serviceProvider, out modelBindingOutput);
+						}
+					}
+				}
+			}
+
+			// Execute Mvc ActionFilters
+			foreach (var actionFilterAttr in operation.DispatchMethod.CustomAttributes.Where(a => a.AttributeType.Name == "ServiceFilterAttribute"))
+			{
+				var actionFilter = serviceProvider.GetService(actionFilterAttr.ConstructorArguments[0].Value as Type);
+				actionFilter.GetType().GetMethod("OnSoapActionExecuting")?.Invoke(actionFilter, new[] { operation.Name, arguments, httpContext, modelBindingOutput });
+			}
+
+			// Invoke OnModelBound
+			_soapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
+
+			// Tune service instance for operation call
+			var serviceOperationTuners = serviceProvider.GetServices<IServiceOperationTuner>();
+			foreach (var operationTuner in serviceOperationTuners)
+			{
+				operationTuner.Tune(httpContext, serviceInstance, operation);
+			}
+		}
+
+		private void SetMessageHeadersToProperty(Message requestMessage, object serviceInstance)
+		{
+			var headerProperty = _service.ServiceType.GetProperty("MessageHeaders");
+			if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
+			{
+				headerProperty.SetValue(serviceInstance, requestMessage.Headers);
+			}
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -530,26 +453,45 @@ namespace SoapCore
 
 				var @namespace = parameterInfo.Namespace ?? operation.Contract.Namespace;
 
-				if (messageContractAttribute.IsWrapped)
+				if (messageContractAttribute.IsWrapped && !parameterType.GetMembersWithAttribute<MessageHeaderAttribute>().Any())
 				{
 					// It's wrapped so we treat it like normal!
 					arguments[parameterInfo.Index] = DeserializeInputParameter(xmlReader, parameterInfo.Parameter.ParameterType, parameterInfo.Name, @namespace, parameterInfo);
 				}
 				else
 				{
-					// This object isn't a wrapper element, so we will hunt for the nested message body
-					// member inside of it
-					var messageBodyMembers =
-						parameterType
-							.GetPropertyOrFieldMembers()
-							.Select(mi => new
-							{
-								Member = mi,
-								MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-							})
-							.OrderBy(x => x.MessageBodyMemberAttribute.Order);
+					var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers().Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null).ToArray();
 
 					var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
+
+					for (var i = 0; i < requestMessage.Headers.Count; i++)
+					{
+						var header = requestMessage.Headers[i];
+						var member = messageHeadersMembers.FirstOrDefault(x => x.Name == header.Name);
+
+						if (member != null)
+						{
+							var messageHeaderAttribute = member.GetCustomAttribute<MessageHeaderAttribute>();
+							var reader = requestMessage.Headers.GetReaderAtHeader(i);
+
+							var value = DeserializeInputParameter(reader, member.GetPropertyOrFieldType(), messageHeaderAttribute.Name ?? member.Name, messageHeaderAttribute.Namespace ?? @namespace);
+
+							member.SetValueToPropertyOrField(wrapperObject, value);
+						}
+					}
+
+					// This object isn't a wrapper element, so we will hunt for the nested message body
+					// member inside of it
+					var messageBodyMembers = parameterType.GetPropertyOrFieldMembers().Where(x => x.GetCustomAttribute<MessageBodyMemberAttribute>() != null).Select(mi => new
+					{
+						Member = mi,
+						MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+					}).OrderBy(x => x.MessageBodyMemberAttribute.Order);
+
+					if (messageContractAttribute.IsWrapped)
+					{
+						xmlReader.Read();
+					}
 
 					foreach (var messageBodyMember in messageBodyMembers)
 					{
@@ -557,23 +499,13 @@ namespace SoapCore
 						var messageBodyMemberInfo = messageBodyMember.Member;
 
 						var innerParameterName = messageBodyMemberAttribute.Name ?? messageBodyMemberInfo.Name;
-						var innerParameterNs = messageBodyMemberAttribute.Namespace;
+						var innerParameterNs = messageBodyMemberAttribute.Namespace ?? @namespace;
 						var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
 
+						//xmlReader.MoveToStartElement(innerParameterName, innerParameterNs);
 						var innerParameter = DeserializeInputParameter(xmlReader, innerParameterType, innerParameterName, innerParameterNs, parameterInfo);
 
-						if (messageBodyMemberInfo is FieldInfo fi)
-						{
-							fi.SetValue(wrapperObject, innerParameter);
-						}
-						else if (messageBodyMemberInfo is PropertyInfo pi)
-						{
-							pi.SetValue(wrapperObject, innerParameter);
-						}
-						else
-						{
-							throw new NotImplementedException("Cannot set value of parameter type from " + messageBodyMemberInfo.GetType()?.Name);
-						}
+						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
 					}
 
 					arguments[parameterInfo.Index] = wrapperObject;
@@ -606,7 +538,7 @@ namespace SoapCore
 			return arguments;
 		}
 
-		private object DeserializeInputParameter(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo)
+		private object DeserializeInputParameter(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo = null)
 		{
 			if (xmlReader.IsStartElement(parameterName, parameterNs))
 			{
@@ -617,7 +549,7 @@ namespace SoapCore
 					switch (_serializer)
 					{
 						case SoapSerializer.XmlSerializer:
-							if (!parameterType.IsArray || (parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
+							if (!parameterType.IsArray || (parameterInfo != null && parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
 							{
 								// case [XmlElement("parameter")] int parameter
 								// case int[] parameter
@@ -675,7 +607,7 @@ namespace SoapCore
 			}
 
 			//localName = "ComplexModelInput";
-			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), new[] { elementType });
+			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), elementType);
 			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
 
 			object result = null;
@@ -707,6 +639,12 @@ namespace SoapCore
 
 			lock (serializer)
 			{
+				if (elementType == typeof(Stream) || typeof(Stream).IsAssignableFrom(elementType))
+				{
+					xmlReader.Read();
+					return new MemoryStream(xmlReader.ReadContentAsBase64());
+				}
+
 				return serializer.Deserialize(xmlReader);
 			}
 		}

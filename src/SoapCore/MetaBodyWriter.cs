@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -79,6 +80,120 @@ namespace SoapCore
 			AddBinding(writer);
 
 			AddService(writer);
+		}
+
+		private static string ResolveType(Type type)
+		{
+			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
+			string resolvedType = null;
+
+			switch (typeName)
+			{
+				case "Boolean":
+					resolvedType = "xs:boolean";
+					break;
+				case "Byte":
+					resolvedType = "xs:unsignedByte";
+					break;
+				case "Int16":
+					resolvedType = "xs:short";
+					break;
+				case "Int32":
+					resolvedType = "xs:int";
+					break;
+				case "Int64":
+					resolvedType = "xs:long";
+					break;
+				case "SByte":
+					resolvedType = "xs:byte";
+					break;
+				case "UInt16":
+					resolvedType = "xs:unsignedShort";
+					break;
+				case "UInt32":
+					resolvedType = "xs:unsignedInt";
+					break;
+				case "UInt64":
+					resolvedType = "xs:unsignedLong";
+					break;
+				case "Decimal":
+					resolvedType = "xs:decimal";
+					break;
+				case "Double":
+					resolvedType = "xs:double";
+					break;
+				case "Single":
+					resolvedType = "xs:float";
+					break;
+				case "DateTime":
+					resolvedType = "xs:dateTime";
+					break;
+				case "Guid":
+					resolvedType = "xs:string";
+					break;
+				case "Char":
+					resolvedType = "xs:string";
+					break;
+				case "TimeSpan":
+					resolvedType = "xs:duration";
+					break;
+			}
+
+			if (string.IsNullOrEmpty(resolvedType))
+			{
+				throw new ArgumentException($".NET type {typeName} cannot be resolved into XML schema type");
+			}
+
+			return resolvedType;
+		}
+
+		private static Type GetGenericType(Type collectionType)
+		{
+			// Recursively look through the base class to find the Generic Type of the Enumerable
+			var baseType = collectionType;
+			var baseTypeInfo = collectionType.GetTypeInfo();
+			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
+			{
+				baseType = baseTypeInfo.BaseType;
+				baseTypeInfo = baseType.GetTypeInfo();
+			}
+
+			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		private static bool IsWrappedMessageContractType(Type type)
+		{
+			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
+
+			if (messageContractAttribute != null)
+			{
+				return messageContractAttribute.IsWrapped;
+			}
+
+			return false;
+		}
+
+		private static Type GetMessageContractBodyType(Type type)
+		{
+			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
+
+			if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
+			{
+				var messageBodyMembers =
+					type
+						.GetPropertyOrFieldMembers()
+						.Select(mi => new
+						{
+							Member = mi,
+							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+						})
+						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
+						.ToList();
+
+				return messageBodyMembers[0].Member.GetPropertyOrFieldType();
+			}
+
+			return type;
 		}
 
 		private void WriteParameters(XmlDictionaryWriter writer, SoapMethodParameterInfo[] parameterInfos, bool isMessageContract)
@@ -630,6 +745,13 @@ namespace SoapCore
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:base64Binary");
 				}
+				else if (type == typeof(Stream) || typeof(Stream).IsAssignableFrom(type))
+				{
+					name = "StreamBody";
+
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "xs:base64Binary");
+				}
 				else if (type.IsArray)
 				{
 					if (string.IsNullOrEmpty(name))
@@ -695,120 +817,6 @@ namespace SoapCore
 			}
 
 			writer.WriteEndElement(); // xs:element
-		}
-
-		private string ResolveType(Type type)
-		{
-			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
-			string resolvedType = null;
-
-			switch (typeName)
-			{
-				case "Boolean":
-					resolvedType = "xs:boolean";
-					break;
-				case "Byte":
-					resolvedType = "xs:unsignedByte";
-					break;
-				case "Int16":
-					resolvedType = "xs:short";
-					break;
-				case "Int32":
-					resolvedType = "xs:int";
-					break;
-				case "Int64":
-					resolvedType = "xs:long";
-					break;
-				case "SByte":
-					resolvedType = "xs:byte";
-					break;
-				case "UInt16":
-					resolvedType = "xs:unsignedShort";
-					break;
-				case "UInt32":
-					resolvedType = "xs:unsignedInt";
-					break;
-				case "UInt64":
-					resolvedType = "xs:unsignedLong";
-					break;
-				case "Decimal":
-					resolvedType = "xs:decimal";
-					break;
-				case "Double":
-					resolvedType = "xs:double";
-					break;
-				case "Single":
-					resolvedType = "xs:float";
-					break;
-				case "DateTime":
-					resolvedType = "xs:dateTime";
-					break;
-				case "Guid":
-					resolvedType = "xs:string";
-					break;
-				case "Char":
-					resolvedType = "xs:string";
-					break;
-				case "TimeSpan":
-					resolvedType = "xs:duration";
-					break;
-			}
-
-			if (string.IsNullOrEmpty(resolvedType))
-			{
-				throw new ArgumentException($".NET type {typeName} cannot be resolved into XML schema type");
-			}
-
-			return resolvedType;
-		}
-
-		private Type GetGenericType(Type collectionType)
-		{
-			// Recursively look through the base class to find the Generic Type of the Enumerable
-			var baseType = collectionType;
-			var baseTypeInfo = collectionType.GetTypeInfo();
-			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
-			{
-				baseType = baseTypeInfo.BaseType;
-				baseTypeInfo = baseType.GetTypeInfo();
-			}
-
-			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
-		}
-
-		private static bool IsWrappedMessageContractType(Type type)
-		{
-			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
-
-			if (messageContractAttribute != null)
-			{
-				return messageContractAttribute.IsWrapped;
-			}
-
-			return false;
-		}
-
-		private static Type GetMessageContractBodyType(Type type)
-		{
-			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
-
-			if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
-			{
-				var messageBodyMembers =
-					type
-						.GetPropertyOrFieldMembers()
-						.Select(mi => new
-						{
-							Member = mi,
-							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-						})
-						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
-						.ToList();
-
-				return messageBodyMembers[0].Member.GetPropertyOrFieldType();
-			}
-
-			return type;
 		}
 	}
 }

@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
 using Moq;
@@ -274,6 +277,22 @@ namespace SoapCore.Tests.Serialization
 
 			// check output paremeters serialization
 			emptyParamsMethodResult_client.ShouldDeepEqual(ComplexModel1.CreateSample2());
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestStreamResultSerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var streamData = Guid.NewGuid().ToString();
+			_fixture.ServiceMock.Setup(x => x.GetStream()).Returns(() => new MemoryStream(Encoding.ASCII.GetBytes(streamData)));
+
+			var result = sampleServiceClient.GetStream();
+
+			var resultStream = new MemoryStream();
+			result.CopyTo(resultStream);
+			Assert.Equal(streamData, Encoding.ASCII.GetString(resultStream.ToArray()));
 		}
 	}
 }
