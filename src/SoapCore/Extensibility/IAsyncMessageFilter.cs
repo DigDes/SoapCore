@@ -1,7 +1,7 @@
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	public interface IAsyncMessageFilter
 	{

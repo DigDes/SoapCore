@@ -1,4 +1,4 @@
-namespace SoapCore
+namespace SoapCore.ServiceModel
 {
 	public enum SoapMethodParameterDirection
 	{

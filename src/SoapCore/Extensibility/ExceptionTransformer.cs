@@ -1,6 +1,6 @@
 using System;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	public class ExceptionTransformer
 	{

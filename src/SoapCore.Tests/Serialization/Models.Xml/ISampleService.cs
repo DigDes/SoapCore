@@ -1,3 +1,4 @@
+using System.IO;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -114,5 +115,13 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract]
 		[XmlSerializerFormat]
 		int[] PingIntArray(int[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		DataContractWithStream PingStream(DataContractWithStream model);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		Stream GetStream();
 	}
 }

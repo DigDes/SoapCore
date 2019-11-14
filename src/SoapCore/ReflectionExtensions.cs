@@ -106,6 +106,22 @@ namespace SoapCore
 			return null;
 		}
 
+		internal static void SetValueToPropertyOrField(this MemberInfo memberInfo, object obj, object value)
+		{
+			if (memberInfo is FieldInfo fi)
+			{
+				fi.SetValue(obj, value);
+			}
+			else if (memberInfo is PropertyInfo pi)
+			{
+				pi.SetValue(obj, value);
+			}
+			else
+			{
+				throw new NotImplementedException("Cannot set value of parameter type from " + memberInfo.GetType()?.Name);
+			}
+		}
+
 		internal static object GetPropertyOrFieldValue(this MemberInfo memberInfo, object obj)
 		{
 			if (memberInfo is FieldInfo fi)
@@ -119,6 +135,12 @@ namespace SoapCore
 			}
 
 			throw new NotImplementedException($"Unable to get value out of member with type {memberInfo.GetType()}");
+		}
+
+		internal static IEnumerable<MemberInfo> GetMembersWithAttribute<TAttribute>(this Type type)
+			where TAttribute : Attribute
+		{
+			return GetPropertyOrFieldMembers(type).Where(x => x.GetCustomAttribute<TAttribute>() != null);
 		}
 	}
 }
