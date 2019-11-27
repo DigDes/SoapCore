@@ -154,31 +154,6 @@ namespace SoapCore.Tests.Serialization
 			nullableMethodResult_client.ShouldBe(output_value);
 		}
 
-		// not compatible with DataContractSerializer
-		[Theory]
-		[InlineData(SoapSerializer.XmlWcfSerializer)]
-		public void TestPingComplexModelSerialization(SoapSerializer soapSerializer)
-		{
-			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-
-			_fixture.ServiceMock
-				.Setup(x => x.PingComplexModel(It.IsAny<ComplexModel2>()))
-				.Callback(
-					(ComplexModel2 inputModel_service) =>
-					{
-						// check input paremeters serialization
-						inputModel_service.ShouldDeepEqual(ComplexModel2.CreateSample2());
-					})
-				.Returns(ComplexModel1.CreateSample3);
-
-			var pingComplexModelResult_client =
-				sampleServiceClient
-					.PingComplexModel(ComplexModel2.CreateSample2());
-
-			// check output paremeters serialization
-			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel1.CreateSample3());
-		}
-
 		[Theory]
 		[InlineData(SoapSerializer.XmlWcfSerializer)]
 		public void TestPingComplexArrayModel(SoapSerializer soapSerializer)
