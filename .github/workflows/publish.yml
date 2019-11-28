@@ -18,7 +18,7 @@ jobs:
       run: |
             dotnet restore src
             dotnet pack --configuration Release --output nupkg src/SoapCore
-            dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }}
+            dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }} -s https://api.nuget.org/v3/index.json
 
     - name: Set env
       run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
