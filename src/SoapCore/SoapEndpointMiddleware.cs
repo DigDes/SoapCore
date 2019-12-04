@@ -24,6 +24,7 @@ namespace SoapCore
 	{
 		private readonly ILogger<SoapEndpointMiddleware> _logger;
 		private readonly RequestDelegate _next;
+		private readonly SoapOptions _options;
 		private readonly ServiceDescription _service;
 		private readonly string _endpointPath;
 		private readonly SoapSerializer _serializer;
@@ -62,6 +63,7 @@ namespace SoapCore
 		{
 			_logger = logger;
 			_next = next;
+			_options = options;
 			_endpointPath = options.Path;
 			_serializer = options.SoapSerializer;
 			_serializerHelper = new SerializerHelper(_serializer);
@@ -82,7 +84,25 @@ namespace SoapCore
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
-			httpContext.Request.EnableBuffering();
+			if (_options != null)
+			{
+				if (_options.BufferThreshold > 0 && _options.BufferLimit > 0)
+				{
+					httpContext.Request.EnableBuffering(_options.BufferThreshold, _options.BufferLimit);
+				}
+				else if (_options.BufferThreshold > 0)
+				{
+					httpContext.Request.EnableBuffering(_options.BufferThreshold);
+				}
+				else
+				{
+					httpContext.Request.EnableBuffering();
+				}
+			}
+			else
+			{
+				httpContext.Request.EnableBuffering();
+			}
 
 			var trailPathTuner = serviceProvider.GetServices<TrailingServicePathTuner>().FirstOrDefault();
 
