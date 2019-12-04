@@ -86,7 +86,7 @@ namespace SoapCore
 		{
 			if (_options != null)
 			{
-				if (_options.BufferThreshold > 0 && _options.BufferThreshold > 0)
+				if (_options.BufferThreshold > 0 && _options.BufferLimit > 0)
 				{
 					httpContext.Request.EnableBuffering(_options.BufferThreshold, _options.BufferLimit);
 				}
