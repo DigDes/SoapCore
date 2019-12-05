@@ -188,6 +188,7 @@ namespace SoapCore.Meta
 							Member = mi,
 							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
 						})
+						.Where(x => x.MessageBodyMemberAttribute != null)
 						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
 						.ToList();
 
