@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace SoapCore
+namespace SoapCore.ServiceModel
 {
 	public class SoapMethodParameterInfo
 	{

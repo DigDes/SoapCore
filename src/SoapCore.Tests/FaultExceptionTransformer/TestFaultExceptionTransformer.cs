@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using SoapCore.Extensibility;
 
 namespace SoapCore.Tests.FaultExceptionTransformer
 {

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
@@ -14,7 +14,7 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>1.0.0.0-alpha</Version>
+		<Version>1.0.0.0-alpha.1</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
@@ -68,8 +68,8 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
 	</ItemGroup>
 
-	<ItemGroup>		
-	<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
+	<ItemGroup>
+		<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

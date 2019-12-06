@@ -1,5 +1,7 @@
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using SoapCore.Extensibility;
+using SoapCore.ServiceModel;
 
 namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 {

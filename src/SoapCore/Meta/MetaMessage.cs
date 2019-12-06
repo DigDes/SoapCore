@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using System.Net;
 using System.ServiceModel.Channels;
 using System.Xml;
+using SoapCore.ServiceModel;
 
-namespace SoapCore
+namespace SoapCore.Meta
 {
 	internal class MetaMessage : Message
 	{

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.ServiceModel;
 
-namespace SoapCore
+namespace SoapCore.ServiceModel
 {
 	public class ServiceDescription
 	{
