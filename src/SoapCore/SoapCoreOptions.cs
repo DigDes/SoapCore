@@ -50,5 +50,17 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpsGetEnabled { get; set; } = true;
+
+		/// <summary>
+		/// The maximum size in bytes of the in-memory <see cref="System.Buffers.ArrayPool{Byte}"/> used to buffer the
+		/// stream. Larger request bodies are written to disk.
+		/// </summary>
+		public int BufferThreshold { get; set; } = 1024 * 30;
+
+		/// <summary>
+		/// The maximum size in bytes of the request body. An attempt to read beyond this limit will cause an
+		/// <see cref="System.IO.IOException"/>.
+		/// </summary>
+		public long BufferLimit { get; set; }
 	}
 }

@@ -118,7 +118,9 @@ namespace SoapCore
 				CaseInsensitivePath = opt.CaseInsensitivePath,
 				EncoderOptions = opt.EncoderOptions,
 				SoapModelBounder = opt.SoapModelBounder,
-				SoapSerializer = opt.SoapSerializer
+				SoapSerializer = opt.SoapSerializer,
+				BufferThreshold = opt.BufferThreshold,
+				BufferLimit = opt.BufferLimit
 			};
 
 			return builder.UseMiddleware<SoapEndpointMiddleware>(soapOptions);
@@ -127,12 +129,12 @@ namespace SoapCore
 #if ASPNET_30
 		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
-			return routes.UseSoapEndpoint(typeof(T), path, new [] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
+			return routes.UseSoapEndpoint(typeof(T), path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
 		}
 
 		public static IEndpointConventionBuilder UseSoapEndpoint(this IEndpointRouteBuilder routes, Type type, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
 		{
-			return routes.UseSoapEndpoint(type, path, new [] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
+			return routes.UseSoapEndpoint(type, path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
 		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
