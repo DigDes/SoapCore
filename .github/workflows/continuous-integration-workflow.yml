@@ -3,11 +3,19 @@ name: CI
 on: [push, pull_request, pull_request_review]
 
 jobs:
-  build:
+  netcore2_1:
     runs-on: ubuntu-16.04
-
     container:
-      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.1-alpine
+      image: docker://mcr.microsoft.com/dotnet/core/sdk:2.1-alpine
+    steps:
+      - uses: actions/checkout@v1
+      - name: build and test
+        run: |
+          dotnet test -f netcoreapp2.1 src/SoapCore.Tests
+  netcore3_0:
+    runs-on: ubuntu-16.04
+    container:
+      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.0-alpine
     steps:
       - uses: actions/checkout@v1
       - name: build and test
@@ -15,5 +23,12 @@ jobs:
           dotnet restore src
           dotnet build -f netcoreapp3.0 src
           dotnet test -f netcoreapp3.0 src/SoapCore.Tests
-          dotnet test -f netcoreapp2.1 src/SoapCore.Tests
+  netcore3_1:
+    runs-on: ubuntu-16.04
+    container:
+      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.1-alpine
+    steps:
+      - uses: actions/checkout@v1
+      - name: build and test
+        run: |
           dotnet test -f netcoreapp3.1 src/SoapCore.Tests
