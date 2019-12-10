@@ -22,17 +22,8 @@
 		<LangVersion>8.0</LangVersion>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningsAsErrors />
-	</PropertyGroup>
-
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
 		<DefineConstants>ASPNET_21;SPAN_BUILTIN</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'net461'">
-		<DefineConstants>ASPNET_21</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">
@@ -53,14 +44,6 @@
 
 	<ItemGroup>
 		<AdditionalFiles Include="stylecop.json" />
-	</ItemGroup>
-
-	<ItemGroup Condition="$(TargetFramework) == 'net461'">
-		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
-		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">

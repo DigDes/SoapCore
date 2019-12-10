@@ -237,7 +237,9 @@ namespace SoapCore
 				CaseInsensitivePath = opt.CaseInsensitivePath,
 				EncoderOptions = opt.EncoderOptions,
 				SoapModelBounder = opt.SoapModelBounder,
-				SoapSerializer = opt.SoapSerializer
+				SoapSerializer = opt.SoapSerializer,
+				BufferLimit = opt.BufferLimit,
+				BufferThreshold = opt.BufferThreshold
 			};
 
 			var pipeline = routes
