@@ -718,6 +718,18 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", toBuildName);
 			writer.WriteAttributeString("xmlns:ser", SERIALIZATION_NS);
 
+			if (type.IsValueType && ResolveSystemType(type).name == null)
+			{
+				writer.WriteStartElement("xs:annotation");
+				writer.WriteStartElement("xs:appinfo");
+				writer.WriteStartElement("IsValueType");
+				writer.WriteAttributeString("xmlns", SERIALIZATION_NS);
+				writer.WriteValue(true);
+				writer.WriteEndElement();
+				writer.WriteEndElement();
+				writer.WriteEndElement();
+			}
+
 			var hasBaseType = HasBaseType(type);
 
 			if (hasBaseType)
@@ -1024,10 +1036,15 @@ namespace SoapCore.Meta
 						xsTypename = $"{(sysType.ns == SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
 						writer.WriteAttributeString("nillable", "true");
 					}
-					else
+					else if (ResolveSystemType(type).name != null)
 					{
 						var sysType = ResolveSystemType(type);
 						xsTypename = $"{(sysType.ns == SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
+					}
+					else
+					{
+						var ns = $"q{_namespaceCounter++}";
+						xsTypename = $"{ns}:{typeName}";
 					}
 				}
 
