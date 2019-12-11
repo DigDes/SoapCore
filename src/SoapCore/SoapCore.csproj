@@ -4,7 +4,7 @@
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<VersionPrefix>1.0.0.0</VersionPrefix>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>netcoreapp3.0;netstandard2.0;netcoreapp2.1</TargetFrameworks>
+		<TargetFrameworks>netcoreapp3.0;netstandard2.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
@@ -14,7 +14,7 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>1.0.0.0-alpha.2</Version>
+		<Version>1.0.0.0-alpha.3</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
@@ -31,6 +31,10 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
 		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
 
@@ -59,7 +63,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
 	</ItemGroup>
 
-	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0' OR $(TargetFramework) == 'netcoreapp3.1'">
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
 		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />

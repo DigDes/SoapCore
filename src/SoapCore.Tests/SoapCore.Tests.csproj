@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+		<TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
@@ -20,6 +20,10 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+		<DefineConstants>ASPNET_30</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
 		<DefineConstants>ASPNET_30</DefineConstants>
 	</PropertyGroup>
 
@@ -49,7 +53,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
 	</ItemGroup>
 
-	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0' OR $(TargetFramework) == 'netcoreapp3.1'">
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
 	</ItemGroup>
