@@ -55,6 +55,7 @@ public void ConfigureServices(IServiceCollection services)
 {
     services.AddSoapCore();
     services.TryAddSingleton<ServiceContractImpl>();
+    services.AddMvc();
 }
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
