@@ -451,13 +451,23 @@ namespace SoapCore
 				{
 					var parameterType = parameterInfo.Parameter.ParameterType;
 
+					var ns = operation.Contract.Namespace;
+
 					if (parameterType == typeof(HttpContext))
 					{
 						arguments[parameterInfo.Index] = httpContext;
 					}
 					else
 					{
-						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
+						var argumentValue = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, ns, parameterInfo);
+
+						//fix https://github.com/DigDes/SoapCore/issues/373#issuecomment-565714467 (hack)
+						if (argumentValue == null)
+						{
+							argumentValue = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, parameterInfo.Namespace, parameterInfo);
+						}
+
+						arguments[parameterInfo.Index] = argumentValue;
 					}
 				}
 			}
