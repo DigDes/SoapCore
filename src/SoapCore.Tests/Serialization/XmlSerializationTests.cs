@@ -650,7 +650,7 @@ namespace SoapCore.Tests.Serialization
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
-			var streamData = string.Join(",", Enumerable.Range(1, 300000));
+			var streamData = string.Join(",", Enumerable.Range(1, 900000));
 			_fixture.ServiceMock.Setup(x => x.GetStream()).Returns(() => new MemoryStream(Encoding.ASCII.GetBytes(streamData)));
 
 			var result = sampleServiceClient.GetStream();
@@ -658,6 +658,18 @@ namespace SoapCore.Tests.Serialization
 			var resultStream = new MemoryStream();
 			result.CopyTo(resultStream);
 			Assert.Equal(streamData, Encoding.ASCII.GetString(resultStream.ToArray()));
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestStringBigSerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var streamData = string.Join(",", Enumerable.Range(1, 900000));
+
+			var result = sampleServiceClient.Ping(streamData);
 		}
 
 		//https://github.com/DigDes/SoapCore/issues/379

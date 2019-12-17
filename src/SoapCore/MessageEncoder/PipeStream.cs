@@ -17,10 +17,24 @@ namespace SoapCore.MessageEncoder
 	/// Wraps a <see cref="PipeReader"/> and/or <see cref="PipeWriter"/> as a <see cref="Stream"/> for
 	/// easier interop with existing APIs.
 	/// </summary>
-	internal class PipeStream : Stream, IDisposableObservable
+	/// <summary>
+	/// Wraps a <see cref="PipeReader"/> and/or <see cref="PipeWriter"/> as a <see cref="Stream"/> for
+	/// easier interop with existing APIs.
+	/// </summary>
+	internal partial class PipeStream : Stream, IDisposableObservable
 	{
 		/// <summary>
-		/// A value indicating whether the <see cref="UnderlyingPipeReader"/> should be completed when this instance is disposed.
+		/// The <see cref="PipeWriter"/> to use when writing to this stream. May be null.
+		/// </summary>
+		private readonly PipeWriter? _writer;
+
+		/// <summary>
+		/// The <see cref="PipeReader"/> to use when reading from this stream. May be null.
+		/// </summary>
+		private readonly PipeReader? _reader;
+
+		/// <summary>
+		/// A value indicating whether the <see cref="_writer"/> and <see cref="_reader"/> should be completed when this instance is disposed.
 		/// </summary>
 		private readonly bool _ownsPipe;
 
@@ -32,12 +46,38 @@ namespace SoapCore.MessageEncoder
 		/// <summary>
 		/// Initializes a new instance of the <see cref="PipeStream"/> class.
 		/// </summary>
+		/// <param name="writer">The <see cref="PipeWriter"/> to use when writing to this stream. May be null.</param>
+		/// <param name="ownsPipe"><c>true</c> to complete the underlying reader and writer when the <see cref="Stream"/> is disposed; <c>false</c> to keep them open.</param>
+		internal PipeStream(PipeWriter writer, bool ownsPipe)
+		{
+			Requires.NotNull(writer, nameof(writer));
+			_writer = writer;
+			_ownsPipe = ownsPipe;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="PipeStream"/> class.
+		/// </summary>
 		/// <param name="reader">The <see cref="PipeReader"/> to use when reading from this stream. May be null.</param>
 		/// <param name="ownsPipe"><c>true</c> to complete the underlying reader and writer when the <see cref="Stream"/> is disposed; <c>false</c> to keep them open.</param>
 		internal PipeStream(PipeReader reader, bool ownsPipe)
 		{
 			Requires.NotNull(reader, nameof(reader));
-			UnderlyingPipeReader = reader;
+			_reader = reader;
+			_ownsPipe = ownsPipe;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="PipeStream"/> class.
+		/// </summary>
+		/// <param name="pipe">A full duplex pipe that will serve as the transport for this stream.</param>
+		/// <param name="ownsPipe"><c>true</c> to complete the underlying reader and writer when the <see cref="Stream"/> is disposed; <c>false</c> to keep them open.</param>
+		internal PipeStream(IDuplexPipe pipe, bool ownsPipe)
+		{
+			Requires.NotNull(pipe, nameof(pipe));
+
+			_writer = pipe.Output;
+			_reader = pipe.Input;
 			_ownsPipe = ownsPipe;
 		}
 
@@ -45,13 +85,13 @@ namespace SoapCore.MessageEncoder
 		public bool IsDisposed { get; private set; }
 
 		/// <inheritdoc />
-		public override bool CanRead => !IsDisposed && UnderlyingPipeReader != null;
+		public override bool CanRead => !IsDisposed && _reader != null;
 
 		/// <inheritdoc />
 		public override bool CanSeek => false;
 
 		/// <inheritdoc />
-		public override bool CanWrite => false;
+		public override bool CanWrite => !IsDisposed && _writer != null;
 
 		/// <inheritdoc />
 		public override long Length => throw ThrowDisposedOr(new NotSupportedException());
@@ -66,12 +106,22 @@ namespace SoapCore.MessageEncoder
 		/// <summary>
 		/// Gets the underlying <see cref="PipeReader"/> (for purposes of unwrapping instead of stacking adapters).
 		/// </summary>
-		internal PipeReader UnderlyingPipeReader { get; }
+		internal PipeReader? UnderlyingPipeReader => _reader;
+
+		/// <summary>
+		/// Gets the underlying <see cref="PipeWriter"/> (for purposes of unwrapping instead of stacking adapters).
+		/// </summary>
+		internal PipeWriter? UnderlyingPipeWriter => _writer;
 
 		/// <inheritdoc />
-		public override Task FlushAsync(CancellationToken cancellationToken)
+		public override async Task FlushAsync(CancellationToken cancellationToken)
 		{
-			throw new NotSupportedException();
+			if (_writer == null)
+			{
+				throw new NotSupportedException();
+			}
+
+			await _writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <inheritdoc />
@@ -83,7 +133,7 @@ namespace SoapCore.MessageEncoder
 		/// <inheritdoc />
 		public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
-			throw new NotSupportedException();
+			throw new NotImplementedException();
 		}
 
 		/// <inheritdoc />
@@ -95,7 +145,7 @@ namespace SoapCore.MessageEncoder
 			Requires.Range(count > 0, nameof(count));
 			Verify.NotDisposed(this);
 
-			if (UnderlyingPipeReader == null)
+			if (_reader == null)
 			{
 				throw new NotSupportedException();
 			}
@@ -105,66 +155,71 @@ namespace SoapCore.MessageEncoder
 				return 0;
 			}
 
-			ReadResult readResult = await UnderlyingPipeReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+			ReadResult readResult = await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
 			return ReadHelper(buffer.AsSpan(offset, count), readResult);
 		}
 
 #if SPAN_BUILTIN
-        /// <inheritdoc />
+		/// <inheritdoc />
 		public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            Verify.NotDisposed(this);
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			Verify.NotDisposed(this);
 
-            if (UnderlyingPipeReader == null)
-            {
-                throw new NotSupportedException();
-            }
+			if (_reader == null)
+			{
+				throw new NotSupportedException();
+			}
 
-            if (_readingCompleted)
-            {
-                return 0;
-            }
+			if (_readingCompleted)
+			{
+				return 0;
+			}
 
-            ReadResult readResult = await UnderlyingPipeReader.ReadAsync(cancellationToken).ConfigureAwait(false);
-            return ReadHelper(buffer.Span, readResult);
-        }
+			ReadResult readResult = await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+			return ReadHelper(buffer.Span, readResult);
+		}
 
 		/// <inheritdoc />
 		public override int Read(Span<byte> buffer)
-        {
-            Verify.NotDisposed(this);
-            if (UnderlyingPipeReader == null)
-            {
-                throw new NotSupportedException();
-            }
-
-            if (_readingCompleted)
-            {
-	            return 0;
-            }
-
-            if (UnderlyingPipeReader.TryRead(out var readResult))
-            {
-	            return ReadHelper(buffer, readResult);
+		{
+			Verify.NotDisposed(this);
+			if (_reader == null)
+			{
+				throw new NotSupportedException();
 			}
 
-            UnderlyingPipeReader.ReadAsync();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+			ReadResult readResult = _reader.ReadAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+			return ReadHelper(buffer, readResult);
+		}
 
-            return 0;
-        }
-
-        /// <inheritdoc />
+		/// <inheritdoc />
 		public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-	        throw new NotSupportedException();
-        }
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			Verify.NotDisposed(this);
+			if (_writer == null)
+			{
+				throw new NotSupportedException();
+			}
 
-        /// <inheritdoc />
+			_writer.Write(buffer.Span);
+			return default;
+		}
+
+		/// <inheritdoc />
 		public override void Write(ReadOnlySpan<byte> buffer)
-        {
-	        throw new NotSupportedException();
-        }
+		{
+			Verify.NotDisposed(this);
+			if (_writer == null)
+			{
+				throw new NotSupportedException();
+			}
+
+			_writer.Write(buffer);
+		}
 
 #endif
 
@@ -173,72 +228,47 @@ namespace SoapCore.MessageEncoder
 		/// <inheritdoc />
 		public override void Flush()
 		{
-			throw new NotSupportedException();
-		}
-
-		/// <inheritdoc />
-		public override int Read(byte[] buffer, int offset, int count)
-		{
-			Requires.NotNull(buffer, nameof(buffer));
-			Requires.Range(offset + count <= buffer.Length, nameof(count));
-			Requires.Range(offset >= 0, nameof(offset));
-			Requires.Range(count > 0, nameof(count));
-			Verify.NotDisposed(this);
-
-			if (UnderlyingPipeReader == null)
+			if (_writer == null)
 			{
 				throw new NotSupportedException();
 			}
 
-			if (_readingCompleted)
-			{
-				return 0;
-			}
-
-			return TryReadHelper(buffer.AsSpan(offset, count));
+			_writer.FlushAsync().GetAwaiter().GetResult();
 		}
 
 		/// <inheritdoc />
-		public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+		public override int Read(byte[] buffer, int offset, int count) => ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
+
+		/// <inheritdoc />
+		public override void Write(byte[] buffer, int offset, int count) => WriteAsync(buffer, offset, count).GetAwaiter().GetResult();
+
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 
 		/// <inheritdoc />
 		protected override void Dispose(bool disposing)
 		{
 			IsDisposed = true;
-			UnderlyingPipeReader?.CancelPendingRead();
+			_reader?.CancelPendingRead();
+			_writer?.CancelPendingFlush();
 			if (_ownsPipe)
 			{
-				UnderlyingPipeReader?.Complete();
+				_reader?.Complete();
+				_writer?.Complete();
 			}
 
 			base.Dispose(disposing);
+		}
+
+		private T ReturnIfNotDisposed<T>(T value)
+		{
+			Verify.NotDisposed(this);
+			return value;
 		}
 
 		private Exception ThrowDisposedOr(Exception ex)
 		{
 			Verify.NotDisposed(this);
 			throw ex;
-		}
-
-		private int TryReadHelper(Span<byte> buffer)
-		{
-			if (UnderlyingPipeReader.TryRead(out var readResult))
-			{
-				var bytesRead = ReadHelper(buffer, readResult);
-				UnderlyingPipeReader.ReadAsync();
-				return bytesRead;
-			}
-
-			UnderlyingPipeReader.ReadAsync();
-
-			Thread.Yield();
-
-			if (UnderlyingPipeReader.TryRead(out readResult))
-			{
-				return ReadHelper(buffer, readResult);
-			}
-
-			return 0;
 		}
 
 		private int ReadHelper(Span<byte> buffer, ReadResult readResult)
@@ -250,12 +280,15 @@ namespace SoapCore.MessageEncoder
 
 			long bytesToCopyCount = Math.Min(buffer.Length, readResult.Buffer.Length);
 			ReadOnlySequence<byte> slice = readResult.Buffer.Slice(0, bytesToCopyCount);
+			var isCompleted = readResult.IsCompleted && slice.End.Equals(readResult.Buffer.End);
 			slice.CopyTo(buffer);
-			UnderlyingPipeReader.AdvanceTo(slice.End);
+			_reader!.AdvanceTo(slice.End);
+			readResult.ScrubAfterAdvanceTo();
+			slice = default;
 
-			if (readResult.IsCompleted && slice.End.Equals(readResult.Buffer.End))
+			if (isCompleted)
 			{
-				UnderlyingPipeReader.Complete();
+				_reader.Complete();
 				_readingCompleted = true;
 			}
 

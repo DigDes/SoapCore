@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.ServiceModel;
 using System.Threading;
+using System.Xml;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -23,7 +24,8 @@ namespace SoapCore.Tests.Serialization
 		{
 			var binding = new BasicHttpBinding
 			{
-				MaxReceivedMessageSize = int.MaxValue
+				MaxReceivedMessageSize = int.MaxValue,
+				ReaderQuotas = XmlDictionaryReaderQuotas.Max
 			};
 
 			// start service host
