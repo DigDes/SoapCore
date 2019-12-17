@@ -645,6 +645,7 @@ namespace SoapCore.Tests.Serialization
 
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
+		[InlineData(SoapSerializer.DataContractSerializer)]
 		public void TestStreamBigSerialization(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
