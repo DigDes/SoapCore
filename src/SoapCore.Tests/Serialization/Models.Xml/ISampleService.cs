@@ -123,5 +123,8 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract]
 		[XmlSerializerFormat]
 		Stream GetStream();
+
+		[OperationContract]
+		DataContractWithoutNamespace GetComplexObjectWithXmlElement([XmlElement(Namespace = "http://xmlelement-namespace", ElementName = "Elem")]DataContractWithoutNamespace obj);
 	}
 }

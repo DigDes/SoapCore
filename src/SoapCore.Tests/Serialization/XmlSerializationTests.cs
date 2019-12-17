@@ -1,12 +1,15 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Shouldly;
 using SoapCore.Tests.Serialization.Models.Xml;
 using Xunit;
+using Assert = Xunit.Assert;
 
 namespace SoapCore.Tests.Serialization
 {
@@ -638,6 +641,46 @@ namespace SoapCore.Tests.Serialization
 			var resultStream = new MemoryStream();
 			result.CopyTo(resultStream);
 			Assert.Equal(streamData, Encoding.ASCII.GetString(resultStream.ToArray()));
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestStreamBigSerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var streamData = string.Join(",", Enumerable.Range(1, 300000));
+			_fixture.ServiceMock.Setup(x => x.GetStream()).Returns(() => new MemoryStream(Encoding.ASCII.GetBytes(streamData)));
+
+			var result = sampleServiceClient.GetStream();
+
+			var resultStream = new MemoryStream();
+			result.CopyTo(resultStream);
+			Assert.Equal(streamData, Encoding.ASCII.GetString(resultStream.ToArray()));
+		}
+
+		//https://github.com/DigDes/SoapCore/issues/379
+		[Theory]
+		[Ignore]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestParameterWithXmlElementNamespace(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var obj = new DataContractWithoutNamespace
+			{
+				IntProperty = 1234,
+				StringProperty = "2222"
+			};
+
+			_fixture.ServiceMock.Setup(x => x.GetComplexObjectWithXmlElement(obj)).Returns(obj);
+			_fixture.ServiceMock.Setup(x => x.GetComplexObjectWithXmlElement(It.IsAny<DataContractWithoutNamespace>())).Callback(
+				(DataContractWithoutNamespace o) =>
+				{
+					Assert.Equal(obj.IntProperty, o.IntProperty);
+					Assert.Equal(obj.StringProperty, o.StringProperty);
+				});
+
+			sampleServiceClient.GetComplexObjectWithXmlElement(obj);
 		}
 	}
 }

@@ -21,6 +21,11 @@ namespace SoapCore.Tests.Serialization
 
 		public ServiceFixture()
 		{
+			var binding = new BasicHttpBinding
+			{
+				MaxReceivedMessageSize = int.MaxValue
+			};
+
 			// start service host
 			_host = new WebHostBuilder()
 				.ConfigureServices(services =>
@@ -34,8 +39,8 @@ namespace SoapCore.Tests.Serialization
 				.Configure(appBuilder =>
 				{
 #if ASPNET_21
-					appBuilder.UseSoapEndpoint<TService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
-					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.svc", binding, SoapSerializer.DataContractSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", binding, SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
 #endif
 
@@ -44,8 +49,8 @@ namespace SoapCore.Tests.Serialization
 
 					appBuilder.UseEndpoints(x =>
 					{
-						x.UseSoapEndpoint<TService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
-						x.UseSoapEndpoint<TService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+						x.UseSoapEndpoint<TService>("/Service.svc", binding, SoapSerializer.DataContractSerializer);
+						x.UseSoapEndpoint<TService>("/Service.asmx", binding, SoapSerializer.XmlSerializer);
 					});
 #endif
 				})
@@ -81,8 +86,6 @@ namespace SoapCore.Tests.Serialization
 			var address = addresses.Addresses.Single();
 
 			//make service client
-			var binding = new BasicHttpBinding();
-
 			var endpointXml = new EndpointAddress(new Uri($"{address}/Service.asmx"));
 			var channelFactoryXml = new ChannelFactory<TService>(binding, endpointXml);
 			var serviceClientXml = channelFactoryXml.CreateChannel();
