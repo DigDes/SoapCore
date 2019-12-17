@@ -660,8 +660,7 @@ namespace SoapCore.Tests.Serialization
 		}
 
 		//https://github.com/DigDes/SoapCore/issues/379
-		[Theory]
-		[Ignore]
+		[Theory(Skip = "not reproducible")]
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestParameterWithXmlElementNamespace(SoapSerializer soapSerializer)
 		{
