@@ -667,6 +667,8 @@ namespace SoapCore.Tests.Serialization
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
 
+			_fixture.ServiceMock.Reset();
+
 			var streamData = string.Join(",", Enumerable.Range(1, 900000));
 
 			var result = sampleServiceClient.Ping(streamData);
