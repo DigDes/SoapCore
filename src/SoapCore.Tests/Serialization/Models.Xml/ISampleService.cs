@@ -126,5 +126,8 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 
 		[OperationContract]
 		DataContractWithoutNamespace GetComplexObjectWithXmlElement([XmlElement(Namespace = "http://xmlelement-namespace", ElementName = "Elem")]DataContractWithoutNamespace obj);
+
+		[OperationContract(IsOneWay = true)]
+		void OneWayCall(string s);
 	}
 }

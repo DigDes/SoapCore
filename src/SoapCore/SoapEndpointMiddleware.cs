@@ -286,6 +286,12 @@ namespace SoapCore
 					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
+					if (operation.IsOneWay)
+					{
+						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
+						return;
+					}
+
 					var resultOutDictionary = new Dictionary<string, object>();
 					foreach (var parameterInfo in operation.OutParameters)
 					{

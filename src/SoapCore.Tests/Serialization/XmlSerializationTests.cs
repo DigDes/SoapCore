@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Shouldly;
@@ -672,6 +673,20 @@ namespace SoapCore.Tests.Serialization
 			var streamData = string.Join(",", Enumerable.Range(1, 900000));
 
 			var result = sampleServiceClient.Ping(streamData);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestOneWayCall(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			const string message = "test";
+			_fixture.ServiceMock.Setup(x => x.OneWayCall(It.IsAny<string>())).Callback((string arg) =>
+			{
+				Assert.Equal(message, arg);
+			});
+			sampleServiceClient.OneWayCall(message);
 		}
 
 		//https://github.com/DigDes/SoapCore/issues/379
