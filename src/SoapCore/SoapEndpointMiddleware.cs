@@ -286,6 +286,12 @@ namespace SoapCore
 					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
+					if (operation.IsOneWay)
+					{
+						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
+						return;
+					}
+
 					var resultOutDictionary = new Dictionary<string, object>();
 					foreach (var parameterInfo in operation.OutParameters)
 					{
@@ -457,7 +463,15 @@ namespace SoapCore
 					}
 					else
 					{
-						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
+						var argumentValue = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
+
+						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
+						if (argumentValue == null)
+						{
+							argumentValue = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, parameterInfo.Namespace, parameterInfo);
+						}
+
+						arguments[parameterInfo.Index] = argumentValue;
 					}
 				}
 			}
