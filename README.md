@@ -15,7 +15,6 @@ The following frameworks are supported:
 - .NET Core 3.1 (using ASP.NET Core 3.0)
 - .NET Core 3.0 (using ASP.NET Core 3.0)
 - .NET Core 2.1 (using ASP.NET Core 2.1)
-- .NET Framework 4.6.1 and higher (using ASP.NET Core 2.1)
 - .NET Standard 2.0 (using ASP.NET Core 2.1)
 
 .NET Core 2.2 / ASP.NET Core 2.2 is not explictly supported, but will probably work. We suggest upgrading to .NET Core 3.0 since .NET Core 2.2 is only supported until December 23, 2019.
