@@ -62,7 +62,8 @@ namespace SoapCore
 
 			writer.WriteStartElement(prefix, "Reason", Soap12Namespace);
 			writer.WriteStartElement(prefix, "Text", Soap12Namespace);
-			writer.WriteAttributeString("xml:lang", defaultCulture.IetfLanguageTag);
+
+			writer.WriteAttributeString("xml", "lang", null, defaultCulture.IetfLanguageTag);
 			writer.WriteString(faultString);
 
 			writer.WriteEndElement();
