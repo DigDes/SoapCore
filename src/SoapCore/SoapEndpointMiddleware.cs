@@ -497,10 +497,19 @@ namespace SoapCore
 					if (operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 					{
 						var importer = new SoapReflectionImporter(@namespace);
-						var typeMapping = importer.ImportTypeMapping(parameterType);
-						var accessor = typeMapping.GetType().GetProperty("Accessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(typeMapping);
-						accessor?.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(accessor, parameterInfo.Name);
-						arguments[parameterInfo.Index] = new XmlSerializer(typeMapping).Deserialize(xmlReader);
+						var map = new XmlReflectionMember
+						{
+							IsReturnValue = false,
+							MemberName = parameterInfo.Name,
+							MemberType = parameterType
+						};
+						var mapping = importer.ImportMembersMapping(parameterInfo.Name, @namespace, new[] { map }, false, true);
+						var serializer = XmlSerializer.FromMappings(new[] { mapping })[0];
+						var value = serializer.Deserialize(xmlReader);
+						if (value is object[] o && o.Length > 0)
+						{
+							arguments[parameterInfo.Index] = o[0];
+						}
 					}
 					else
 					{
