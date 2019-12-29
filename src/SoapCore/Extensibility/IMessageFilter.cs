@@ -1,6 +1,6 @@
 using System.ServiceModel.Channels;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	public interface IMessageFilter
 	{

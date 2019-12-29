@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SoapCore.Extensibility;
 using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests.ModelBindingFilter

@@ -1,5 +1,6 @@
 using System;
 using System.ServiceModel.Channels;
+using SoapCore.Extensibility;
 
 namespace SoapCore
 {
@@ -12,6 +13,8 @@ namespace SoapCore
 		public bool CaseInsensitivePath { get; set; }
 		public ISoapModelBounder SoapModelBounder { get; set; }
 		public Binding Binding { get; set; }
+		public int BufferThreshold { get; set; } = 1024 * 30;
+		public long BufferLimit { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether publication of service metadata on HTTP GET request is activated

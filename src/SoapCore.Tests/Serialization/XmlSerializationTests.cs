@@ -1,9 +1,16 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
+using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Shouldly;
 using SoapCore.Tests.Serialization.Models.Xml;
 using Xunit;
+using Assert = Xunit.Assert;
 
 namespace SoapCore.Tests.Serialization
 {
@@ -586,6 +593,123 @@ namespace SoapCore.Tests.Serialization
 
 			// check output paremeters serialization
 			emptyParamsMethodResult_client.ShouldDeepEqual(ComplexModel1.CreateSample2());
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestStreamSerializationWtihModel(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var model = new DataContractWithStream
+			{
+				Data = new MemoryStream(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString())),
+				Header = Guid.NewGuid().ToString()
+			};
+			_fixture.ServiceMock.Setup(x => x.PingStream(It.IsAny<DataContractWithStream>())).Callback((DataContractWithStream inputModel) =>
+			{
+				Assert.Equal(model.Data.Length, inputModel.Data.Length);
+				Assert.Equal(model.Header, inputModel.Header);
+			}).Returns(() =>
+			{
+				return new DataContractWithStream
+				{
+					Data = model.Data,
+					Header = model.Header
+				};
+			});
+
+			var result = sampleServiceClient.PingStream(model);
+
+			model.Data.Position = 0;
+			var resultStream = new MemoryStream();
+			result.Data.CopyTo(resultStream);
+			Assert.Equal(Encoding.ASCII.GetString((model.Data as MemoryStream).ToArray()), Encoding.ASCII.GetString(((MemoryStream)resultStream).ToArray()));
+			Assert.Equal(model.Header, result.Header);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestStreamResultSerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var streamData = Guid.NewGuid().ToString();
+			_fixture.ServiceMock.Setup(x => x.GetStream()).Returns(() => new MemoryStream(Encoding.ASCII.GetBytes(streamData)));
+
+			var result = sampleServiceClient.GetStream();
+
+			var resultStream = new MemoryStream();
+			result.CopyTo(resultStream);
+			Assert.Equal(streamData, Encoding.ASCII.GetString(resultStream.ToArray()));
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestStreamBigSerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var streamData = string.Join(",", Enumerable.Range(1, 900000));
+			_fixture.ServiceMock.Setup(x => x.GetStream()).Returns(() => new MemoryStream(Encoding.ASCII.GetBytes(streamData)));
+
+			var result = sampleServiceClient.GetStream();
+
+			var resultStream = new MemoryStream();
+			result.CopyTo(resultStream);
+			Assert.Equal(streamData, Encoding.ASCII.GetString(resultStream.ToArray()));
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestStringBigSerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock.Reset();
+
+			var streamData = string.Join(",", Enumerable.Range(1, 900000));
+
+			var result = sampleServiceClient.Ping(streamData);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		[InlineData(SoapSerializer.DataContractSerializer)]
+		public void TestOneWayCall(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			const string message = "test";
+			_fixture.ServiceMock.Setup(x => x.OneWayCall(It.IsAny<string>())).Callback((string arg) =>
+			{
+				Assert.Equal(message, arg);
+			});
+			sampleServiceClient.OneWayCall(message);
+		}
+
+		//https://github.com/DigDes/SoapCore/issues/379
+		[Theory(Skip = "not reproducible")]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestParameterWithXmlElementNamespace(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var obj = new DataContractWithoutNamespace
+			{
+				IntProperty = 1234,
+				StringProperty = "2222"
+			};
+
+			_fixture.ServiceMock.Setup(x => x.GetComplexObjectWithXmlElement(obj)).Returns(obj);
+			_fixture.ServiceMock.Setup(x => x.GetComplexObjectWithXmlElement(It.IsAny<DataContractWithoutNamespace>())).Callback(
+				(DataContractWithoutNamespace o) =>
+				{
+					Assert.Equal(obj.IntProperty, o.IntProperty);
+					Assert.Equal(obj.StringProperty, o.StringProperty);
+				});
+
+			sampleServiceClient.GetComplexObjectWithXmlElement(obj);
 		}
 	}
 }

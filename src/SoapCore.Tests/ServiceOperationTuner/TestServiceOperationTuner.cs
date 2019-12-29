@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using SoapCore;
+using SoapCore.Extensibility;
 
 namespace SoapCore.Tests.ServiceOperationTuner
 {
@@ -15,7 +16,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 			IsSetPingValue = false;
 		}
 
-		public void Tune(HttpContext httpContext, object serviceInstance, SoapCore.OperationDescription operation)
+		public void Tune(HttpContext httpContext, object serviceInstance, ServiceModel.OperationDescription operation)
 		{
 			IsCalled = true;
 			if ((serviceInstance != null) && (serviceInstance is TestService)

@@ -140,7 +140,11 @@ namespace SoapCore.MessageEncoder
 			ThrowIfMismatchedMessageVersion(message);
 
 			using var bufferTextWriter = new BufferTextWriter(pipeWriter, _writeEncoding);
-			using var xmlTextWriter = new XmlTextWriter(bufferTextWriter);
+			using var xmlTextWriter = XmlWriter.Create(bufferTextWriter, new XmlWriterSettings
+			{
+				OmitXmlDeclaration = true,
+				Indent = true
+			});
 
 			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
 

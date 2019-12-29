@@ -1,7 +1,7 @@
 using System.Net;
 using System.ServiceModel.Channels;
 
-namespace SoapCore
+namespace SoapCore.Meta
 {
 	internal static class BindingExtensions
 	{

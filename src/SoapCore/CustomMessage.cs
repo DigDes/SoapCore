@@ -40,8 +40,8 @@ namespace SoapCore
 				writer.WriteStartElement("s", "Envelope", "http://www.w3.org/2003/05/soap-envelope");
 			}
 
-			writer.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-			writer.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			writer.WriteAttributeString("xmlns", "xsd", null, "http://www.w3.org/2001/XMLSchema");
+			writer.WriteAttributeString("xmlns", "xsi", null, "http://www.w3.org/2001/XMLSchema-instance");
 		}
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)

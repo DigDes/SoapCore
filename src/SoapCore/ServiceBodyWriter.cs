@@ -9,6 +9,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
 using System.Xml.Serialization;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -46,6 +47,34 @@ namespace SoapCore
 					break;
 				default:
 					throw new NotImplementedException($"Unknown serializer {_serializer}");
+			}
+		}
+
+		private static void WriteStream(XmlDictionaryWriter writer, object value)
+		{
+			int blockSize = 256;
+			int bytesRead = 0;
+			byte[] block = new byte[blockSize];
+			var stream = (Stream)value;
+			stream.Position = 0;
+
+			while (true)
+			{
+				bytesRead = stream.Read(block, 0, blockSize);
+				if (bytesRead > 0)
+				{
+					writer.WriteBase64(block, 0, bytesRead);
+				}
+				else
+				{
+					break;
+				}
+
+				if (blockSize < 65536 && bytesRead == blockSize)
+				{
+					blockSize = blockSize * 16;
+					block = new byte[blockSize];
+				}
 			}
 		}
 
@@ -122,6 +151,7 @@ namespace SoapCore
 				var resultType = _result.GetType();
 
 				var xmlRootAttr = resultType.GetTypeInfo().GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
+				var messageContractAttribute = resultType.GetTypeInfo().GetCustomAttribute<MessageContractAttribute>();
 
 				var xmlName = _operation.ReturnElementName
 					?? (needResponseEnvelope
@@ -130,7 +160,7 @@ namespace SoapCore
 					? resultType.Name
 					: xmlRootAttr.ElementName));
 
-				var xmlNs = _operation.ReturnNamespace
+				var xmlNs = _operation.ReturnNamespace ?? messageContractAttribute?.WrapperNamespace
 					?? (string.IsNullOrWhiteSpace(xmlRootAttr?.Namespace)
 					? _serviceNamespace
 					: xmlRootAttr.Namespace);
@@ -148,22 +178,22 @@ namespace SoapCore
 				}
 				else
 				{
-					var messageContractAttribute = resultType.GetCustomAttribute<MessageContractAttribute>();
-
 					// This behavior is opt-in i.e. you have to explicitly have a [MessageContract(IsWrapped=false)]
 					// to have the message body members inlined.
-					var shouldInline = messageContractAttribute != null && messageContractAttribute.IsWrapped == false;
+					var shouldInline = (messageContractAttribute != null && messageContractAttribute.IsWrapped == false) || resultType.GetMembersWithAttribute<MessageHeaderAttribute>().Any();
 
 					if (shouldInline)
 					{
-						var memberInformation = resultType
-							.GetPropertyOrFieldMembers()
-							.Select(mi => new
-							{
-								Member = mi,
-								MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-							})
-							.OrderBy(x => x.MessageBodyMemberAttribute?.Order ?? 0);
+						var memberInformation = resultType.GetMembersWithAttribute<MessageBodyMemberAttribute>().Select(mi => new
+						{
+							Member = mi,
+							MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+						}).OrderBy(x => x.MessageBodyMemberAttribute?.Order ?? 0);
+
+						if (messageContractAttribute != null && messageContractAttribute.IsWrapped)
+						{
+							writer.WriteStartElement(resultType.Name, xmlNs);
+						}
 
 						foreach (var memberInfo in memberInformation)
 						{
@@ -171,14 +201,30 @@ namespace SoapCore
 							var memberValue = memberInfo.Member.GetPropertyOrFieldValue(_result);
 
 							var memberName = memberInfo.MessageBodyMemberAttribute?.Name ?? memberInfo.Member.Name;
-							var memberNamespace = memberInfo.MessageBodyMemberAttribute?.Namespace ?? xmlNs;
+							var memberNamespace = memberInfo.MessageBodyMemberAttribute?.Namespace ?? _serviceNamespace;
 
 							var serializer = CachedXmlSerializer.GetXmlSerializer(memberType, memberName, memberNamespace);
 
 							lock (serializer)
 							{
-								serializer.Serialize(writer, memberValue);
+								if (memberValue is Stream)
+								{
+									writer.WriteStartElement(memberName, _serviceNamespace);
+
+									WriteStream(writer, memberValue);
+
+									writer.WriteEndElement();
+								}
+								else
+								{
+									serializer.Serialize(writer, memberValue);
+								}
 							}
+						}
+
+						if (messageContractAttribute != null && messageContractAttribute.IsWrapped)
+						{
+							writer.WriteEndElement();
 						}
 					}
 					else
@@ -187,7 +233,26 @@ namespace SoapCore
 
 						lock (serializer)
 						{
-							serializer.Serialize(writer, _result);
+							if (_result is Stream)
+							{
+								writer.WriteStartElement(_resultName, _serviceNamespace);
+								WriteStream(writer, _result);
+								writer.WriteEndElement();
+							}
+							else
+							{
+								https://github.com/DigDes/SoapCore/issues/385
+								if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
+								{
+									var importer = new SoapReflectionImporter(_serviceNamespace);
+									var typeMapping = importer.ImportTypeMapping(resultType);
+									var accessor = typeMapping.GetType().GetProperty("Accessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(typeMapping);
+									accessor?.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(accessor, xmlName);
+									new XmlSerializer(typeMapping).Serialize(writer, _result);
+								}
+
+								serializer.Serialize(writer, _result);
+							}
 						}
 					}
 				}
@@ -253,8 +318,17 @@ namespace SoapCore
 
 			if (_result != null)
 			{
-				var serializer = new DataContractSerializer(_result.GetType(), _resultName, _serviceNamespace);
-				serializer.WriteObject(writer, _result);
+				if (_result is Stream)
+				{
+					writer.WriteStartElement(_resultName, _serviceNamespace);
+					WriteStream(writer, _result);
+					writer.WriteEndElement();
+				}
+				else
+				{
+					var serializer = new DataContractSerializer(_result.GetType(), _resultName, _serviceNamespace);
+					serializer.WriteObject(writer, _result);
+				}
 			}
 
 			writer.WriteEndElement();

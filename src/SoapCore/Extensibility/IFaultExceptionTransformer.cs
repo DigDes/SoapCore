@@ -1,7 +1,7 @@
 using System;
 using System.ServiceModel.Channels;
 
-namespace SoapCore
+namespace SoapCore.Extensibility
 {
 	/// <summary>
 	/// Allows for applications to define their own fault message type

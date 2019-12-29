@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -88,6 +89,47 @@ namespace SoapCore.Tests.Wsdl
 			// We should have in the wsdl the definition of a simple type representing the enum
 			var simpleTypeElements = GetElements(root, _xmlSchema + "simpleType").Where(a => a.Attribute("name")?.Value.Equals("NulEnum") == true).ToList();
 			simpleTypeElements.ShouldNotBeEmpty();
+		}
+
+		[TestMethod]
+		public void CheckStructsInList()
+		{
+			StartService(typeof(StructService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = XElement.Parse(wsdl);
+			var elementsWithEmptyName = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == string.Empty);
+			elementsWithEmptyName.ShouldBeEmpty();
+
+			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
+			elementsWithEmptyType.ShouldBeEmpty();
+
+			var structTypeElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStruct");
+			var annotationNode = structTypeElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
+			var isValueTypeElement = annotationNode.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
+			Assert.IsNotNull(isValueTypeElement);
+			Assert.AreEqual("true", isValueTypeElement.Value);
+			Assert.IsNotNull(annotationNode);
+		}
+
+		[TestMethod]
+		public void CheckStreamDeclaration()
+		{
+			StartService(typeof(StreamService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			XmlNamespaceManager nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:element[@name='GetStreamResponse']/xs:complexType/xs:sequence/xs:element", nsmgr);
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual("StreamBody", element.Attributes["name"].Value);
+			Assert.AreEqual("xs:base64Binary", element.Attributes["type"].Value);
 		}
 
 		[TestCleanup]
