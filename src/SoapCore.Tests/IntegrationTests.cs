@@ -183,6 +183,21 @@ namespace SoapCore.Tests
 			Assert.AreEqual("Detail message", e.Detail.ExceptionProperty);
 		}
 
+		[TestMethod]
+		public void DeserializesDifferentNamespaces()
+		{
+			var client = CreateClientWithNamespaces();
+			var input = new ComplexModelWithNamespacesInput()
+			{
+				ComplexModelNestedInput = new ComplexModelNestedInput()
+				{
+					NestedStringProperty = "Nested"
+				}
+			};
+			var result = client.TestOperation(input);
+			Assert.AreEqual("Nested", result.Output);
+		}
+
 		private ITestService CreateClient(bool caseInsensitivePath = false)
 		{
 			var binding = new BasicHttpBinding();
@@ -200,6 +215,16 @@ namespace SoapCore.Tests
 			var binding = new CustomBinding(textencoding, transport);
 			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+			var serviceClient = channelFactory.CreateChannel();
+			return serviceClient;
+		}
+
+		private ITestServiceWithNamespaces CreateClientWithNamespaces()
+		{
+			var binding = new BasicHttpBinding();
+			var endpoint = new EndpointAddress(new Uri(
+				string.Format("http://{0}:5050/{1}.svc", "localhost", "ServiceWithNamespaces")));
+			var channelFactory = new ChannelFactory<ITestServiceWithNamespaces>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
 		}

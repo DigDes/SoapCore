@@ -17,6 +17,7 @@ namespace SoapCore.Tests
 		{
 			services.AddSoapCore();
 			services.TryAddSingleton<TestService>();
+			services.TryAddSingleton<TestServiceWithNamespaces>();
 			services.AddSoapModelBindingFilter(new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) }));
 			services.AddScoped<ActionFilter.TestActionFilter>();
 			services.AddMvc();
@@ -55,7 +56,7 @@ namespace SoapCore.Tests
 
 				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
 			});
-
+			app.UseSoapEndpoint<TestServiceWithNamespaces>("/ServiceWithNamespaces.svc", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
 			app.UseMvc();
 		}
 #endif
