@@ -57,7 +57,7 @@ namespace SoapCore
 
 			for (var i = 0; i < encoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas, true);
+				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas, true, true);
 			}
 		}
 
@@ -80,7 +80,7 @@ namespace SoapCore
 
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration);
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml);
 			}
 		}
 

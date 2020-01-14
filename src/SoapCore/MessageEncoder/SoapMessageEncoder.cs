@@ -25,9 +25,11 @@ namespace SoapCore.MessageEncoder
 		private readonly Encoding _writeEncoding;
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
+		private readonly bool _indentXml;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml)
 		{
+			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
 			if (writeEncoding == null)
 			{
@@ -145,7 +147,7 @@ namespace SoapCore.MessageEncoder
 			using var xmlTextWriter = XmlWriter.Create(bufferTextWriter, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
-				Indent = true,
+				Indent = _indentXml,
 				Encoding = _writeEncoding
 			});
 			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
@@ -171,7 +173,7 @@ namespace SoapCore.MessageEncoder
 			using var xmlTextWriter = XmlWriter.Create(stream, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
-				Indent = true,
+				Indent = _indentXml,
 				Encoding = _writeEncoding,
 				CloseOutput = false
 			});

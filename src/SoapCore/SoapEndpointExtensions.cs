@@ -163,7 +163,8 @@ namespace SoapCore
 				SoapSerializer = opt.SoapSerializer,
 				BufferThreshold = opt.BufferThreshold,
 				BufferLimit = opt.BufferLimit,
-				OmitXmlDeclaration = opt.OmitXmlDeclaration
+				OmitXmlDeclaration = opt.OmitXmlDeclaration,
+				IndentXml = opt.IndentXml
 			};
 
 			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
@@ -320,7 +321,8 @@ namespace SoapCore
 				SoapSerializer = opt.SoapSerializer,
 				BufferLimit = opt.BufferLimit,
 				BufferThreshold = opt.BufferThreshold,
-				OmitXmlDeclaration = opt.OmitXmlDeclaration
+				OmitXmlDeclaration = opt.OmitXmlDeclaration,
+				IndentXml = opt.IndentXml
 			};
 
 			var pipeline = routes
