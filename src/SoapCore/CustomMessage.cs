@@ -4,49 +4,50 @@ using System.Xml;
 
 namespace SoapCore
 {
-	public class CustomMessage : Message
-	{
-		private readonly Message _message;
+    public class CustomMessage : Message
+    {
+        private readonly Message _message;
 
-		public CustomMessage(Message message)
-		{
-			_message = message;
-		}
+        public CustomMessage(Message message)
+        {
+            _message = message;
+        }
 
-		public override MessageHeaders Headers
-		{
-			get { return _message.Headers; }
-		}
+        public override MessageHeaders Headers
+        {
+            get { return _message.Headers; }
+        }
 
-		public override MessageProperties Properties
-		{
-			get { return _message.Properties; }
-		}
+        public override MessageProperties Properties
+        {
+            get { return _message.Properties; }
+        }
 
-		public override MessageVersion Version
-		{
-			get { return _message.Version; }
-		}
+        public override MessageVersion Version
+        {
+            get { return _message.Version; }
+        }
 
-		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
-		{
-			writer.WriteStartDocument();
-			if (_message.Version.Envelope == EnvelopeVersion.Soap11)
-			{
-				writer.WriteStartElement("s", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
-			}
-			else
-			{
-				writer.WriteStartElement("s", "Envelope", "http://www.w3.org/2003/05/soap-envelope");
-			}
+        protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
+        {
+            writer.WriteStartDocument();
 
-			writer.WriteAttributeString("xmlns", "xsd", null, "http://www.w3.org/2001/XMLSchema");
-			writer.WriteAttributeString("xmlns", "xsi", null, "http://www.w3.org/2001/XMLSchema-instance");
-		}
+            if (_message.Version.Envelope == EnvelopeVersion.Soap11)
+            {
+                writer.WriteStartElement("s", "Envelope", Namespaces.SOAP11_ENVELOPE_NS);
+            }
+            else
+            {
+                writer.WriteStartElement("s", "Envelope", Namespaces.SOAP12_ENVELOPE_NS);
+            }
 
-		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
-		{
-			_message.WriteBodyContents(writer);
-		}
-	}
+            writer.WriteXmlnsAttribute("xsd", Namespaces.XMLNS_XSD);
+            writer.WriteXmlnsAttribute("xsi", Namespaces.XMLNS_XSI);
+        }
+
+        protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
+        {
+            _message.WriteBodyContents(writer);
+        }
+    }
 }
