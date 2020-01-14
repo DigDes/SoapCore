@@ -27,5 +27,7 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpsGetEnabled { get; set; } = true;
+
+		public bool OmitXmlDeclaration { get; set; } = true;
 	}
 }
