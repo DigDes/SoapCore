@@ -126,7 +126,7 @@ public class MyServiceOperationTuner : IServiceOperationTuner
 }
 ```
 
-Register MyServiceOperationTunre in Startup class:
+Register MyServiceOperationTuner in Startup class:
 
 ```csharp
 public class Startup

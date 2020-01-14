@@ -8,7 +8,8 @@ namespace SoapCore
 	/// The default implementation of the fault provider when an unexpected exception occurs. This can be replaced or
 	/// extended by registering your own IFaultExceptionTransformer in the service collection on startup.
 	/// </summary>
-	public class DefaultFaultExceptionTransformer : IFaultExceptionTransformer
+	public class DefaultFaultExceptionTransformer<T_MESSAGE> : IFaultExceptionTransformer
+		where T_MESSAGE : CustomMessage, new()
 	{
 		private readonly ExceptionTransformer _exceptionTransformer;
 
@@ -30,7 +31,12 @@ namespace SoapCore
 
 			var soapCoreFaultMessage = Message.CreateMessage(messageVersion, null, bodyWriter);
 
-			return new CustomMessage(soapCoreFaultMessage);
+			T_MESSAGE customMessage = new T_MESSAGE
+			{
+				Message = soapCoreFaultMessage
+			};
+
+			return customMessage;
 		}
 	}
 }
