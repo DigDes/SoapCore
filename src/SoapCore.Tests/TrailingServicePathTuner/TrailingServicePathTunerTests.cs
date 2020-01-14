@@ -22,7 +22,7 @@ namespace SoapCore.Tests
 			// is registered in app startup.
 
 			// Arrange
-			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
+			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware<CustomMessage>>();
 
 			SoapOptions options = new SoapOptions()
 			{
@@ -42,7 +42,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware soapCore = new SoapEndpointMiddleware(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -66,7 +66,7 @@ namespace SoapCore.Tests
 			// is registered in app startup but a single path-part is not implemented.
 
 			// Arrange
-			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
+			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware<CustomMessage>>();
 
 			SoapOptions options = new SoapOptions()
 			{
@@ -86,7 +86,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware soapCore = new SoapEndpointMiddleware(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -109,7 +109,7 @@ namespace SoapCore.Tests
 			// when the service is not registered in app startup (opted-in).
 
 			// Arrange
-			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware>();
+			var logger = new NullLoggerFactory().CreateLogger<SoapEndpointMiddleware<CustomMessage>>();
 
 			SoapOptions options = new SoapOptions()
 			{
@@ -129,7 +129,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware soapCore = new SoapEndpointMiddleware(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/v1/Service.svc");

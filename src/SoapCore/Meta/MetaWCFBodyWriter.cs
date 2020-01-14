@@ -1033,8 +1033,7 @@ namespace SoapCore.Meta
 					}
 					else
 					{
-						var ns = $"q{_namespaceCounter++}";
-						xsTypename = $"{ns}:{typeName}";
+						xsTypename = $"tns:{typeName}";
 					}
 				}
 
@@ -1257,8 +1256,8 @@ namespace SoapCore.Meta
 			if (schemaNamespace != objectNamespace)
 			{
 				var ns = $"q{_namespaceCounter++}";
-				writer.WriteAttributeString("type", $"{ns}:{typeName}");
 				writer.WriteXmlnsAttribute($"{ns}", GetDataContractNamespace(type));
+				writer.WriteAttributeString("type", $"{ns}:{typeName}");
 			}
 			else
 			{
