@@ -144,12 +144,12 @@ namespace SoapCore.MessageEncoder
 			using var bufferTextWriter = new BufferTextWriter(pipeWriter, _writeEncoding);
 			using var xmlTextWriter = XmlWriter.Create(bufferTextWriter, new XmlWriterSettings
 			{
-				OmitXmlDeclaration = _omitXmlDeclaration,
+				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
 				Indent = true,
 				Encoding = _writeEncoding
 			});
-
-			WriteXmlCore(message, xmlTextWriter);
+			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+			WriteXmlCore(message, xmlWriter);
 
 			await pipeWriter.FlushAsync();
 		}
@@ -170,12 +170,14 @@ namespace SoapCore.MessageEncoder
 
 			using var xmlTextWriter = XmlWriter.Create(stream, new XmlWriterSettings
 			{
-				OmitXmlDeclaration = _omitXmlDeclaration,
+				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
 				Indent = true,
-				Encoding = _writeEncoding
+				Encoding = _writeEncoding,
+				CloseOutput = false
 			});
+			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
 
-			WriteXmlCore(message, xmlTextWriter);
+			WriteXmlCore(message, xmlWriter);
 
 			return Task.CompletedTask;
 		}
@@ -315,21 +317,10 @@ namespace SoapCore.MessageEncoder
 			}
 		}
 
-		private void WriteXmlCore(Message message, XmlWriter xmlTextWriter)
+		private void WriteXmlCore(Message message, XmlWriter xmlWriter)
 		{
-			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-
-			if (_optimizeWriteForUtf8)
-			{
-				message.WriteMessage(xmlWriter);
-			}
-			else
-			{
-				xmlWriter.WriteStartDocument();
-				message.WriteMessage(xmlWriter);
-				xmlWriter.WriteEndDocument();
-			}
-
+			message.WriteMessage(xmlWriter);
+			xmlWriter.WriteEndDocument();
 			xmlWriter.Flush();
 			xmlWriter.Dispose();
 		}
