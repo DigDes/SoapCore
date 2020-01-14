@@ -57,7 +57,7 @@ namespace SoapCore
 
 			for (var i = 0; i < encoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas);
+				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas, true, true);
 			}
 		}
 
@@ -80,7 +80,7 @@ namespace SoapCore
 
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas);
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml);
 			}
 		}
 
@@ -150,6 +150,29 @@ namespace SoapCore
 			}
 		}
 
+#if ASPNET_21
+		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
+		{
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body);
+		}
+
+		private static Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
+		{
+			return messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+		}
+#endif
+#if ASPNET_30
+		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
+		{
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
+		}
+
+		private static Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
+		{
+			return messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
+		}
+#endif
+
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
@@ -161,13 +184,7 @@ namespace SoapCore
 
 			httpContext.Response.ContentType = _messageEncoders[0].ContentType;
 
-#if ASPNET_21
-			await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.Body);
-#endif
-
-#if ASPNET_30
-			await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
-#endif
+			await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
 		}
 
 		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -200,13 +217,7 @@ namespace SoapCore
 			}
 
 			//Get the message
-#if ASPNET_30
-			var requestMessage = await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
-#endif
-
-#if ASPNET_21
-			var requestMessage = await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
-#endif
+			Message requestMessage = await ReadMessageAsync(httpContext, messageEncoder);
 			var messageFilters = serviceProvider.GetServices<IMessageFilter>().ToArray();
 			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
@@ -311,13 +322,7 @@ namespace SoapCore
 
 					SetHttpResponse(httpContext, responseMessage);
 
-#if ASPNET_30
-					await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
-#endif
-
-#if ASPNET_21
-					await _messageEncoders[0].WriteMessageAsync(responseMessage, httpContext.Response.Body);
-#endif
+					await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
 				}
 				catch (Exception exception)
 				{
@@ -502,7 +507,7 @@ namespace SoapCore
 
 				if (messageContractAttribute.IsWrapped && !parameterType.GetMembersWithAttribute<MessageHeaderAttribute>().Any())
 				{
-				https://github.com/DigDes/SoapCore/issues/385
+					//https://github.com/DigDes/SoapCore/issues/385
 					if (operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 					{
 						var importer = new SoapReflectionImporter(@namespace);
@@ -652,13 +657,7 @@ namespace SoapCore
 				faultMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 			}
 
-#if ASPNET_30
-			await _messageEncoders[0].WriteMessageAsync(faultMessage, httpContext.Response.BodyWriter);
-#endif
-
-#if ASPNET_21
-			await _messageEncoders[0].WriteMessageAsync(faultMessage, httpContext.Response.Body);
-#endif
+			await WriteMessageAsync(_messageEncoders[0], faultMessage, httpContext);
 
 			return faultMessage;
 		}

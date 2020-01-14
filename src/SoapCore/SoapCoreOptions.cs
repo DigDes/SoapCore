@@ -62,5 +62,17 @@ namespace SoapCore
 		/// <see cref="System.IO.IOException"/>.
 		/// </summary>
 		public long BufferLimit { get; set; }
+
+		/// <summary>
+		/// Gets or sets a value indicating whether to omit the Xml declaration (<?xml version="1.0" encoding="utf-8"?>) in responses
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool OmitXmlDeclaration { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether to indent the Xml in responses
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool IndentXml { get; set; } = true;
 	}
 }

@@ -6,8 +6,9 @@ namespace SoapCore
 {
 	public class CustomMessage : Message
 	{
-
-		public CustomMessage() { }
+		public CustomMessage()
+		{
+		}
 
 		public CustomMessage(Message message)
 		{
@@ -35,15 +36,15 @@ namespace SoapCore
 			writer.WriteStartDocument();
 			if (Message.Version.Envelope == EnvelopeVersion.Soap11)
 			{
-				writer.WriteStartElement("s", "Envelope", "http://schemas.xmlsoap.org/soap/envelope/");
+				writer.WriteStartElement("s", "Envelope", Namespaces.SOAP11_ENVELOPE_NS);
 			}
 			else
 			{
-				writer.WriteStartElement("s", "Envelope", "http://www.w3.org/2003/05/soap-envelope");
+				writer.WriteStartElement("s", "Envelope", Namespaces.SOAP12_ENVELOPE_NS);
 			}
 
-			writer.WriteAttributeString("xmlns", "xsd", null, "http://www.w3.org/2001/XMLSchema");
-			writer.WriteAttributeString("xmlns", "xsi", null, "http://www.w3.org/2001/XMLSchema-instance");
+			writer.WriteXmlnsAttribute("xsd", Namespaces.XMLNS_XSD);
+			writer.WriteXmlnsAttribute("xsi", Namespaces.XMLNS_XSI);
 		}
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)

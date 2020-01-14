@@ -112,7 +112,6 @@ namespace SoapCore
 			return builder.UseSoapEndpoint<T_MESSAGE>(type, path, encoderOptions, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
-
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, Action<SoapCoreOptions> options)
 		{
 			return builder.UseSoapEndpoint<T, CustomMessage>(options);
@@ -163,12 +162,13 @@ namespace SoapCore
 				SoapModelBounder = opt.SoapModelBounder,
 				SoapSerializer = opt.SoapSerializer,
 				BufferThreshold = opt.BufferThreshold,
-				BufferLimit = opt.BufferLimit
+				BufferLimit = opt.BufferLimit,
+				OmitXmlDeclaration = opt.OmitXmlDeclaration,
+				IndentXml = opt.IndentXml
 			};
 
 			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
 		}
-
 
 #if ASPNET_30
 		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
@@ -217,7 +217,6 @@ namespace SoapCore
 
 		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type type, string pattern, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
 			where T_MESSAGE : CustomMessage, new()
-
 		{
 			var options = new SoapOptions
 			{
@@ -321,7 +320,9 @@ namespace SoapCore
 				SoapModelBounder = opt.SoapModelBounder,
 				SoapSerializer = opt.SoapSerializer,
 				BufferLimit = opt.BufferLimit,
-				BufferThreshold = opt.BufferThreshold
+				BufferThreshold = opt.BufferThreshold,
+				OmitXmlDeclaration = opt.OmitXmlDeclaration,
+				IndentXml = opt.IndentXml
 			};
 
 			var pipeline = routes
@@ -349,7 +350,6 @@ namespace SoapCore
 
 		public static IServiceCollection AddSoapCore<T_MESSAGE>(this IServiceCollection serviceCollection)
 			where T_MESSAGE : CustomMessage, new()
-
 		{
 			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
 			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<T_MESSAGE>>();

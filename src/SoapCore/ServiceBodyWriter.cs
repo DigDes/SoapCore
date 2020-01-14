@@ -131,7 +131,7 @@ namespace SoapCore
 						stream.Position = 0;
 						XmlDocument xdoc = new XmlDocument();
 						xdoc.Load(stream);
-						var attr = xdoc.CreateAttribute("xsi", "type", "http://www.w3.org/2001/XMLSchema-instance");
+						var attr = xdoc.CreateAttribute("xsi", "type", Namespaces.XMLNS_XSI);
 						attr.Value = outResultType.Name;
 						xdoc.DocumentElement.Attributes.Prepend(attr);
 						writer.WriteRaw(xdoc.DocumentElement.OuterXml);
@@ -240,7 +240,7 @@ namespace SoapCore
 							}
 							else
 							{
-								https://github.com/DigDes/SoapCore/issues/385
+								//https://github.com/DigDes/SoapCore/issues/385
 								if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 								{
 									var importer = new SoapReflectionImporter(_serviceNamespace);
