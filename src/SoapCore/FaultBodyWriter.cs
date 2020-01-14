@@ -87,7 +87,7 @@ namespace SoapCore
 
 			For Example, this would result in the response below:
 			throw new System.ServiceModel.FaultException(new FaultReason("faultString1"), new FaultCode("faultCode1", "faultNamespace1"), "action1");
-			<s:Envelope xmlns:xsd=Namespaces.XMLNS_XSD xmlns:xsi=Namespaces.XMLNS_XSI xmlns:s=Namespaces.SOAP_11_NS>
+			<s:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 				<s:Body>
 					<s:Fault>
 						<a:faultcode xmlns:a="faultNamespace1">a:faultCode1</a:faultcode>
@@ -98,7 +98,7 @@ namespace SoapCore
 
 			For Example, this would result in the response below:
 			throw new System.ServiceModel.FaultException(new FaultReason("faultString1"), new FaultCode("faultCode1"), "action1");
-			<s:Envelope xmlns:xsd=Namespaces.XMLNS_XSD xmlns:xsi=Namespaces.XMLNS_XSI xmlns:s=Namespaces.SOAP_11_NS>
+			<s:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 				<s:Body>
 					<s:Fault>
 						<faultcode>s:faultCode1</faultcode>
