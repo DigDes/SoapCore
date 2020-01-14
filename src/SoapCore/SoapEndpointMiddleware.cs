@@ -56,7 +56,7 @@ namespace SoapCore
 
             for (var i = 0; i < encoderOptions.Length; i++)
             {
-                _messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration);
+                _messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas, true);
             }
         }
 
