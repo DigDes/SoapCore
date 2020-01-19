@@ -732,7 +732,7 @@ namespace SoapCore.Meta
 
 				var modelNamespace = GetDataContractNamespace(type.BaseType);
 
-				var typeName = type.BaseType.Name;
+				var typeName = GetTypeName(type.BaseType);
 
 				if (_schemaNamespace != modelNamespace)
 				{
