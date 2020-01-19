@@ -132,6 +132,21 @@ namespace SoapCore.Tests.Wsdl
 			Assert.AreEqual("xs:base64Binary", element.Attributes["type"].Value);
 		}
 
+		[TestMethod]
+		public void CheckDataContractName()
+		{
+			StartService(typeof(DataContractNameService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var childRenamed = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ChildRenamed") == true);
+			Assert.IsNotNull(childRenamed);
+
+			var extension = GetElements(childRenamed, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:BaseRenamed") == true);
+			Assert.IsNotNull(extension);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
