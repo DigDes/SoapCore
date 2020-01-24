@@ -33,6 +33,9 @@ namespace SoapCore.Meta
 
 		private bool _buildDateTimeOffset;
 
+		private MessageVersion _version;
+		private bool _isSoap12 = true;
+
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding) : base(isBuffered: true)
 		{
 			_service = service;
@@ -51,6 +54,8 @@ namespace SoapCore.Meta
 			{
 				BindingName = binding.Name;
 				PortName = binding.Name;
+				_version = binding.MessageVersion;
+				_isSoap12 = _version == MessageVersion.Soap12WSAddressing10 || _version == MessageVersion.Soap12WSAddressingAugust2004;
 			}
 			else
 			{
@@ -579,7 +584,9 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", BindingName);
 			writer.WriteAttributeString("type", "tns:" + BindingType);
 
-			writer.WriteStartElement("soap", "binding", Namespaces.SOAP11_NS);
+			var soap = _isSoap12 ? "soap12" : "soap";
+			var soapNamespace = _isSoap12 ? Namespaces.SOAP12_NS : Namespaces.SOAP11_NS;
+			writer.WriteStartElement(soap, "binding", soapNamespace);
 			writer.WriteAttributeString("transport", Namespaces.TRANSPORT_SCHEMA);
 			writer.WriteEndElement(); // soap:binding
 
@@ -588,19 +595,19 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "operation", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", operation.Name);
 
-				writer.WriteStartElement("soap", "operation", Namespaces.SOAP11_NS);
+				writer.WriteStartElement(soap, "operation", soapNamespace);
 				writer.WriteAttributeString("soapAction", operation.SoapAction);
 				writer.WriteAttributeString("style", "document");
 				writer.WriteEndElement(); // soap:operation
 
 				writer.WriteStartElement("wsdl", "input", Namespaces.WSDL_NS);
-				writer.WriteStartElement("soap", "body", Namespaces.SOAP11_NS);
+				writer.WriteStartElement(soap, "body", soapNamespace);
 				writer.WriteAttributeString("use", "literal");
 				writer.WriteEndElement(); // soap:body
 				writer.WriteEndElement(); // wsdl:input
 
 				writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
-				writer.WriteStartElement("soap", "body", Namespaces.SOAP11_NS);
+				writer.WriteStartElement(soap, "body", soapNamespace);
 				writer.WriteAttributeString("use", "literal");
 				writer.WriteEndElement(); // soap:body
 				writer.WriteEndElement(); // wsdl:output
@@ -613,6 +620,9 @@ namespace SoapCore.Meta
 
 		private void AddService(XmlDictionaryWriter writer)
 		{
+			var soap = _isSoap12 ? "soap12" : "soap";
+			var soapNamespace = _isSoap12 ? Namespaces.SOAP12_NS : Namespaces.SOAP11_NS;
+
 			writer.WriteStartElement("wsdl", "service", Namespaces.WSDL_NS);
 			writer.WriteAttributeString("name", _service.ServiceType.Name);
 
@@ -620,7 +630,7 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", PortName);
 			writer.WriteAttributeString("binding", "tns:" + BindingName);
 
-			writer.WriteStartElement("soap", "address", Namespaces.SOAP11_NS);
+			writer.WriteStartElement(soap, "address", soapNamespace);
 
 			writer.WriteAttributeString("location", _baseUrl);
 			writer.WriteEndElement(); // soap:address
