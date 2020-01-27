@@ -56,7 +56,7 @@ namespace SoapCore.Meta
 			// Soap12
 			else if (Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004)
 			{
-				writer.WriteXmlnsAttribute("soap", Namespaces.SOAP12_NS);
+				writer.WriteXmlnsAttribute("soap12", Namespaces.SOAP12_NS);
 			}
 			else
 			{
