@@ -1000,6 +1000,12 @@ namespace SoapCore.Meta
 				}
 
 				writer.WriteAttributeString("name", name);
+
+				if (isArray)
+				{
+					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("maxOccurs", "unbounded");
+				}
 			}
 			else if (type.IsValueType)
 			{
@@ -1301,7 +1307,6 @@ namespace SoapCore.Meta
 #pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
 		private (string name, string ns) ResolveSystemType(Type type)
 		{
-			type = type.IsEnum ? type.GetEnumUnderlyingType() : type;
 			if (SysTypeDic.ContainsKey(type.FullName))
 			{
 				return SysTypeDic[type.FullName];
