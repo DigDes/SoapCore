@@ -95,6 +95,7 @@ namespace SoapCore
 
 		private object DeserializeArray(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo)
 		{
+			var isEmpty = xmlReader.IsEmptyElement;
 			//if (parameterInfo.ArrayItemName != null)
 			{
 				xmlReader.ReadStartElement(parameterName, parameterNs);
@@ -122,6 +123,7 @@ namespace SoapCore
 			}
 
 			//if (parameterInfo.ArrayItemName != null)
+			if(!isEmpty)
 			{
 				xmlReader.ReadEndElement();
 			}
