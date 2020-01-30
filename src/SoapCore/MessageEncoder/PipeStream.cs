@@ -288,7 +288,10 @@ namespace SoapCore.MessageEncoder
 
 			if (isCompleted)
 			{
-				_reader.Complete();
+				if (_ownsPipe)
+				{
+					_reader.Complete();
+				}
 				_readingCompleted = true;
 			}
 
