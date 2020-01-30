@@ -502,7 +502,7 @@ namespace SoapCore
 
 				if (messageContractAttribute.IsWrapped && !parameterType.GetMembersWithAttribute<MessageHeaderAttribute>().Any())
 				{
-					https://github.com/DigDes/SoapCore/issues/385
+					//https://github.com/DigDes/SoapCore/issues/385
 					if (operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 					{
 						var importer = new SoapReflectionImporter(@namespace);
