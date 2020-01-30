@@ -42,7 +42,9 @@ namespace SoapCore.Tests.ServiceOperationTuner
 		{
 			IsTuneResultCalled = true;
 			if (TuneResultEnabled)
+			{
 				result = "tuner";
+			}
 		}
 	}
 }
