@@ -40,9 +40,9 @@ namespace SoapCore.Tests.ServiceOperationTuner
 
 		public void TuneResult(HttpContext httpContext, object serviceInstance, ServiceModel.OperationDescription operation, ref object result)
 		{
-			IsTuneResultCalled = true;
 			if (TuneResultEnabled)
 			{
+				IsTuneResultCalled = true;
 				result = "tuner";
 			}
 		}

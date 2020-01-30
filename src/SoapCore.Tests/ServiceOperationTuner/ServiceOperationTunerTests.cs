@@ -115,6 +115,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 			Assert.AreEqual("tuner", result);
 			Assert.IsTrue(TestServiceOperationTuner.IsCalled);
 			Assert.IsTrue(TestServiceOperationTuner.IsTuneResultCalled);
+			TestServiceOperationTuner.TuneResultEnabled = false;
 		}
 #endif
 	}
