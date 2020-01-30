@@ -10,9 +10,6 @@ namespace SoapCore
 {
 	public class FaultBodyWriter : BodyWriter
 	{
-		private const string Soap12Namespace = "http://www.w3.org/2003/05/soap-envelope";
-		private const string Soap11Namespace = "http://schemas.xmlsoap.org/soap/envelope/";
-
 		private readonly MessageVersion _version;
 		private readonly Exception _exception;
 		private readonly string _faultStringOverride;
@@ -50,19 +47,20 @@ namespace SoapCore
 
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
-			var prefix = writer.LookupPrefix(Soap12Namespace) ?? "s";
+			var prefix = writer.LookupPrefix(Namespaces.SOAP12_ENVELOPE_NS) ?? "s";
 
-			writer.WriteStartElement(prefix, "Fault", Soap12Namespace);
+			writer.WriteStartElement(prefix, "Fault", Namespaces.SOAP12_ENVELOPE_NS);
 
-			writer.WriteStartElement(prefix, "Code", Soap12Namespace);
-			writer.WriteStartElement(prefix, "Value", Soap12Namespace);
+			writer.WriteStartElement(prefix, "Code", Namespaces.SOAP12_ENVELOPE_NS);
+			writer.WriteStartElement(prefix, "Value", Namespaces.SOAP12_ENVELOPE_NS);
 			writer.WriteString(prefix + ":Sender");
 			writer.WriteEndElement();
 			writer.WriteEndElement();
 
-			writer.WriteStartElement(prefix, "Reason", Soap12Namespace);
-			writer.WriteStartElement(prefix, "Text", Soap12Namespace);
-			writer.WriteAttributeString("xml:lang", defaultCulture.IetfLanguageTag);
+			writer.WriteStartElement(prefix, "Reason", Namespaces.SOAP12_ENVELOPE_NS);
+			writer.WriteStartElement(prefix, "Text", Namespaces.SOAP12_ENVELOPE_NS);
+
+			writer.WriteAttributeString("xml", "lang", null, defaultCulture.IetfLanguageTag);
 			writer.WriteString(faultString);
 
 			writer.WriteEndElement();
@@ -70,7 +68,7 @@ namespace SoapCore
 
 			if (faultDetail != null)
 			{
-				writer.WriteStartElement(prefix, "Detail", Soap12Namespace);
+				writer.WriteStartElement(prefix, "Detail", Namespaces.SOAP12_ENVELOPE_NS);
 				faultDetail.WriteTo(writer);
 				writer.WriteEndElement();
 			}
@@ -83,7 +81,7 @@ namespace SoapCore
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
 
-			writer.WriteStartElement("Fault", Soap11Namespace);
+			writer.WriteStartElement("Fault", Namespaces.SOAP11_ENVELOPE_NS);
 
 			/* SUPPORT FOR SPECIFYING CUSTOM FAULTCODE AND NAMESPACE
 

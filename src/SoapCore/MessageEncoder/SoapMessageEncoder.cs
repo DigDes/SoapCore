@@ -24,9 +24,13 @@ namespace SoapCore.MessageEncoder
 
 		private readonly Encoding _writeEncoding;
 		private readonly bool _optimizeWriteForUtf8;
+		private readonly bool _omitXmlDeclaration;
+		private readonly bool _indentXml;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml)
 		{
+			_indentXml = indentXml;
+			_omitXmlDeclaration = omitXmlDeclaration;
 			if (writeEncoding == null)
 			{
 				throw new ArgumentNullException(nameof(writeEncoding));
@@ -140,23 +144,14 @@ namespace SoapCore.MessageEncoder
 			ThrowIfMismatchedMessageVersion(message);
 
 			using var bufferTextWriter = new BufferTextWriter(pipeWriter, _writeEncoding);
-			using var xmlTextWriter = new XmlTextWriter(bufferTextWriter);
-
+			using var xmlTextWriter = XmlWriter.Create(bufferTextWriter, new XmlWriterSettings
+			{
+				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
+				Indent = _indentXml,
+				Encoding = _writeEncoding
+			});
 			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-
-			if (_optimizeWriteForUtf8)
-			{
-				message.WriteMessage(xmlWriter);
-			}
-			else
-			{
-				xmlWriter.WriteStartDocument();
-				message.WriteMessage(xmlWriter);
-				xmlWriter.WriteEndDocument();
-			}
-
-			xmlWriter.Flush();
-			xmlWriter.Dispose();
+			WriteXmlCore(message, xmlWriter);
 
 			await pipeWriter.FlushAsync();
 		}
@@ -175,22 +170,16 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			XmlDictionaryWriter xmlWriter = XmlDictionaryWriter.CreateTextWriter(stream, _writeEncoding, false);
-
-			if (_optimizeWriteForUtf8)
+			using var xmlTextWriter = XmlWriter.Create(stream, new XmlWriterSettings
 			{
-				message.WriteMessage(xmlWriter);
-			}
-			else
-			{
-				xmlWriter.WriteStartDocument();
-				message.WriteMessage(xmlWriter);
-				xmlWriter.WriteEndDocument();
-			}
+				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
+				Indent = _indentXml,
+				Encoding = _writeEncoding,
+				CloseOutput = false
+			});
+			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
 
-			xmlWriter.Flush();
-
-			xmlWriter.Dispose();
+			WriteXmlCore(message, xmlWriter);
 
 			return Task.CompletedTask;
 		}
@@ -328,6 +317,14 @@ namespace SoapCore.MessageEncoder
 			{
 				throw new InvalidOperationException($"Message version {message.Version.Envelope} doesn't match encoder version {message.Version.Envelope}");
 			}
+		}
+
+		private void WriteXmlCore(Message message, XmlWriter xmlWriter)
+		{
+			message.WriteMessage(xmlWriter);
+			xmlWriter.WriteEndDocument();
+			xmlWriter.Flush();
+			xmlWriter.Dispose();
 		}
 	}
 }
