@@ -287,6 +287,15 @@ namespace SoapCore
 					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
+					var serviceOperationTuners = serviceProvider.GetServices<IServiceOperationTuner>();
+
+#if !ASPNET_21
+					foreach (var operationTuner in serviceOperationTuners)
+					{
+						operationTuner.TuneResult(httpContext, serviceInstance, operation, ref responseObject);
+					}
+#endif
+
 					if (operation.IsOneWay)
 					{
 						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;

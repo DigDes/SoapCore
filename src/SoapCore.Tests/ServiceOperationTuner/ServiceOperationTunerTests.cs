@@ -101,5 +101,20 @@ namespace SoapCore.Tests.ServiceOperationTuner
 			Assert.IsFalse(TestServiceOperationTuner.IsSetPingValue);
 			Assert.AreEqual(expected, result);
 		}
+
+#if !ASPNET_21
+		[TestMethod]
+		public void CheckTuneResultCalled()
+		{
+			Assert.IsFalse(TestServiceOperationTuner.IsCalled);
+			Assert.IsFalse(TestServiceOperationTuner.IsTuneResultCalled);
+
+			var client = CreateClient("bla-bla-bla");
+			var result = client.Ping("ping");
+			Assert.AreEqual("tuner", result);
+			Assert.IsTrue(TestServiceOperationTuner.IsCalled);
+			Assert.IsTrue(TestServiceOperationTuner.IsTuneResultCalled);
+		}
+#endif
 	}
 }

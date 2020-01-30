@@ -28,7 +28,7 @@ namespace SoapCore.ServiceModel
 
 		public ServiceDescription Service { get; private set; }
 		public string Name { get; private set; }
-		public string Namespace { get; private set; }
+		public string Namespace { get; set; }
 		public Type ContractType { get; private set; }
 		public IEnumerable<OperationDescription> Operations { get; private set; }
 	}
