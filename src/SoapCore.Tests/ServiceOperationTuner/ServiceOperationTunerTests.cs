@@ -110,6 +110,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 			Assert.IsFalse(TestServiceOperationTuner.IsTuneResultCalled);
 
 			var client = CreateClient("bla-bla-bla");
+			TestServiceOperationTuner.TuneResultEnabled = true;
 			var result = client.Ping("ping");
 			Assert.AreEqual("tuner", result);
 			Assert.IsTrue(TestServiceOperationTuner.IsCalled);
