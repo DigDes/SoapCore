@@ -101,5 +101,19 @@ namespace SoapCore.Tests.ServiceOperationTuner
 			Assert.IsFalse(TestServiceOperationTuner.IsSetPingValue);
 			Assert.AreEqual(expected, result);
 		}
+
+		[TestMethod]
+		public void CheckThatHttpContextBodyAreAvailableByOperationTuner()
+		{
+			Assert.IsFalse(TestServiceOperationTuner.IsCalled);
+			Assert.IsFalse(TestServiceOperationTuner.IsBodyAvailable);
+
+			var client = CreateClient("bla-bla-bla");
+
+			client.PingWithServiceOperationTuning();
+
+			Assert.IsTrue(TestServiceOperationTuner.IsCalled);
+			Assert.IsTrue(TestServiceOperationTuner.IsBodyAvailable);
+		}
 	}
 }

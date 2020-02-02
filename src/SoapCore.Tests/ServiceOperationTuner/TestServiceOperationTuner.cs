@@ -9,11 +9,13 @@ namespace SoapCore.Tests.ServiceOperationTuner
 	{
 		public static bool IsCalled { get; private set; }
 		public static bool IsSetPingValue { get; private set; }
+		public static bool IsBodyAvailable { get; private set; }
 
 		public static void Reset()
 		{
 			IsCalled = false;
 			IsSetPingValue = false;
+			IsBodyAvailable = false;
 		}
 
 		public void Tune(HttpContext httpContext, object serviceInstance, ServiceModel.OperationDescription operation)
@@ -29,6 +31,11 @@ namespace SoapCore.Tests.ServiceOperationTuner
 				if (httpContext.Request.Headers.TryGetValue("ping_value", out pingValue))
 				{
 					result = pingValue[0];
+				}
+
+				if (httpContext.Request.Body.CanRead)
+				{
+					IsBodyAvailable = true;
 				}
 
 				service.SetPingResult(result);
