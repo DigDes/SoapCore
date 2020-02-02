@@ -120,11 +120,22 @@ namespace SoapCore.Meta
 		{
 			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
 			{
-				type = type.IsArray ? type.GetElementType() : GetGenericType(type);
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null)
+				{
+					if (collectionDataContractAttribute.IsNamespaceSetExplicitly)
+					{
+						return collectionDataContractAttribute.Namespace;
+					}
+					else
+					{
+						type = type.IsArray ? type.GetElementType() : GetGenericType(type);
+					}
+				}
 			}
 
 			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Namespace))
+			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly)
 			{
 				return dataContractAttribute.Namespace;
 			}
@@ -619,6 +630,17 @@ namespace SoapCore.Meta
 				DiscoveryTypesByProperties(type.BaseType, false);
 			}
 
+			if ((type.IsArray || typeof(IEnumerable).IsAssignableFrom(type)) && type.IsGenericType)
+			{
+				var genericType = GetGenericType(type);
+				var (name, _) = ResolveSystemType(genericType);
+				if (string.IsNullOrEmpty(name))
+				{
+					_complexTypeToBuild[genericType] = GetDataContractNamespace(genericType);
+					DiscoveryTypesByProperties(genericType, true);
+				}
+			}
+
 			foreach (var property in type.GetProperties().Where(prop =>
 						prop.DeclaringType == type
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
@@ -751,7 +773,15 @@ namespace SoapCore.Meta
 			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
 			{
 				var elementType = type.IsArray ? type.GetElementType() : GetGenericType(type);
-				AddSchemaType(writer, elementType, null, true, GetDataContractNamespace(type));
+
+				string elementName = null;
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null && collectionDataContractAttribute.IsItemNameSetExplicitly)
+				{
+					elementName = collectionDataContractAttribute.ItemName;
+				}
+
+				AddSchemaType(writer, elementType, elementName, true, GetDataContractNamespace(type));
 			}
 			else
 			{
@@ -773,7 +803,7 @@ namespace SoapCore.Meta
 					{
 						if (attr is DataMemberAttribute dataContractAttribute)
 						{
-							if (!string.IsNullOrEmpty(dataContractAttribute.Name))
+							if (dataContractAttribute.IsNameSetExplicitly)
 							{
 								propertyName = dataContractAttribute.Name;
 							}
@@ -1148,7 +1178,14 @@ namespace SoapCore.Meta
 				}
 				else if (typeof(IEnumerable).IsAssignableFrom(type))
 				{
-					var elType = type.IsArray ? type.GetElementType() : GetGenericType(type);
+					var elType = type;
+
+					var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+					if (collectionDataContractAttribute == null)
+					{
+						elType = elType.IsArray ? type.GetElementType() : GetGenericType(type);
+					}
+
 					var sysType = ResolveSystemType(elType);
 					if (sysType.name != null)
 					{
@@ -1206,6 +1243,12 @@ namespace SoapCore.Meta
 
 			if (typeof(IEnumerable).IsAssignableFrom(type))
 			{
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null)
+				{
+					return true;
+				}
+
 				resultType = type.IsArray ? type.GetElementType() : GetGenericType(type);
 				type = resultType;
 			}
@@ -1290,12 +1333,34 @@ namespace SoapCore.Meta
 
 			if (typeof(IEnumerable).IsAssignableFrom(type))
 			{
-				return "ArrayOf" + GetTypeName(GetGenericType(type));
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null)
+				{
+					var typeName = collectionDataContractAttribute.IsNameSetExplicitly
+						? collectionDataContractAttribute.Name
+						: type.Name.Replace("`1", string.Empty);
+
+					if (type.IsGenericType)
+					{
+						var genericType = GetGenericType(type);
+
+						var (name, _) = ResolveSystemType(genericType);
+						var genericTypeName = string.IsNullOrEmpty(name) ? GetTypeName(genericType) : name;
+
+						typeName = string.Format(typeName, genericTypeName);
+					}
+
+					return typeName;
+				}
+				else
+				{
+					return "ArrayOf" + GetTypeName(GetGenericType(type));
+				}
 			}
 
 			// Make use of DataContract attribute, if set, as it may contain a Name override
 			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Name))
+			if (dataContractAttribute != null && dataContractAttribute.IsNameSetExplicitly)
 			{
 				return dataContractAttribute.Name;
 			}
