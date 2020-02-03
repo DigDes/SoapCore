@@ -174,6 +174,38 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckCollectionDataContract()
+		{
+			StartService(typeof(CollectionDataContractService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var listStringsResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListStringsResult") == true);
+			Assert.IsNotNull(listStringsResult);
+			Assert.AreEqual("http://testnamespace.org", listStringsResult.Attribute(XNamespace.Xmlns + "q1").Value);
+			Assert.AreEqual("q1:MystringList", listStringsResult.Attribute("type").Value);
+
+			var myStringList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MystringList") == true);
+			Assert.IsNotNull(myStringList);
+
+			var myStringElement = GetElements(myStringList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
+			Assert.IsNotNull(myStringElement);
+
+			var listMyTypesResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListMyTypesResult") == true);
+			Assert.IsNotNull(listMyTypesResult);
+			Assert.AreEqual("http://testnamespace.org", listMyTypesResult.Attribute(XNamespace.Xmlns + "q2").Value);
+			Assert.AreEqual("q2:MyMyTypeList", listMyTypesResult.Attribute("type").Value);
+
+			var myMyTypeList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyMyTypeList") == true);
+			Assert.IsNotNull(myMyTypeList);
+
+			var myMyTypeElement = GetElements(myMyTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
+			Assert.IsNotNull(myMyTypeElement);
+		}
+
+		[TestMethod]
 		public async Task CheckDateTimeOffsetServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
