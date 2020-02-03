@@ -27,7 +27,7 @@ namespace SoapCore
 		{
 			_serializer = serializer;
 			_operation = operation;
-			_serviceNamespace = operation.Contract.Namespace;
+			_serviceNamespace = !string.IsNullOrEmpty(operation.Contract.AlternateNamespace) ? operation.Contract.AlternateNamespace : operation.Contract.Namespace;
 			_envelopeName = operation.Name + "Response";
 			_resultName = operation.ReturnName;
 			_result = result;

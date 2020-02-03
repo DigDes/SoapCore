@@ -311,6 +311,15 @@ namespace SoapCore
 						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 					}
 
+					// Get Alternate Namespace
+					var alternateNamespace = httpContext.Items["AlternateNamespace"] as string;
+
+					operation.Contract.AlternateNamespace = null;
+					if (!string.IsNullOrEmpty(alternateNamespace))
+					{
+						operation.Contract.AlternateNamespace = alternateNamespace;
+					}
+
 					responseMessage = CreateResponseMessage(operation, responseObject, resultOutDictionary, soapAction, requestMessage);
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
