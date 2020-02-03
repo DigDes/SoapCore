@@ -1013,6 +1013,11 @@ namespace SoapCore.Meta
 				type = typeInfo.GetElementType();
 			}
 
+			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.DataContractSerializer))
+			{
+				return;
+			}
+
 			writer.WriteStartElement("xs", "element", Namespaces.XMLNS_XSD);
 
 			if (objectNamespace == null)
@@ -1110,19 +1115,6 @@ namespace SoapCore.Meta
 				{
 					writer.WriteAttributeString("name", "anyType");
 					writer.WriteAttributeString("type", "xs:anyType");
-				}
-				else if (type == typeof(System.Xml.Linq.XElement))
-				{
-					writer.WriteAttributeString("name", name);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteStartElement("xs", "complexType", Namespaces.XMLNS_XSD);
-					writer.WriteStartElement("xs", "sequence", Namespaces.XMLNS_XSD);
-					writer.WriteStartElement("xs", "any", Namespaces.XMLNS_XSD);
-					writer.WriteAttributeString("minOccurs", "0");
-					writer.WriteAttributeString("processContents", "lax");
-					writer.WriteEndElement();
-					writer.WriteEndElement();
-					writer.WriteEndElement();
 				}
 				else if (type == typeof(DataTable))
 				{
@@ -1368,8 +1360,6 @@ namespace SoapCore.Meta
 			return type.Name;
 		}
 
-#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
-#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
 		private (string name, string ns) ResolveSystemType(Type type)
 		{
 			if (SysTypeDic.ContainsKey(type.FullName))
@@ -1379,8 +1369,6 @@ namespace SoapCore.Meta
 
 			return (null, null);
 		}
-#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
-#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
 
 		private bool HasBaseType(Type type)
 		{
