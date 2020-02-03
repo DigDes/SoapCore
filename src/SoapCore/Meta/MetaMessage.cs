@@ -6,7 +6,7 @@ using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
 {
-	internal class MetaMessage : Message
+	public class MetaMessage : Message
 	{
 		private readonly Message _message;
 		private readonly ServiceDescription _service;

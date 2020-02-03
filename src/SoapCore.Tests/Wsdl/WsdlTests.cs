@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.ServiceModel.Channels;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -12,6 +14,9 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
+using SoapCore.MessageEncoder;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 using SoapCore.Tests.Wsdl.Services;
 
 namespace SoapCore.Tests.Wsdl
@@ -168,10 +173,66 @@ namespace SoapCore.Tests.Wsdl
 			Assert.AreEqual("unbounded", element.Attribute("maxOccurs").Value);
 		}
 
+		[TestMethod]
+		public void CheckCollectionDataContract()
+		{
+			StartService(typeof(CollectionDataContractService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var listStringsResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListStringsResult") == true);
+			Assert.IsNotNull(listStringsResult);
+			Assert.AreEqual("http://testnamespace.org", listStringsResult.Attribute(XNamespace.Xmlns + "q1").Value);
+			Assert.AreEqual("q1:MystringList", listStringsResult.Attribute("type").Value);
+
+			var myStringList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MystringList") == true);
+			Assert.IsNotNull(myStringList);
+
+			var myStringElement = GetElements(myStringList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
+			Assert.IsNotNull(myStringElement);
+
+			var listMyTypesResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListMyTypesResult") == true);
+			Assert.IsNotNull(listMyTypesResult);
+			Assert.AreEqual("http://testnamespace.org", listMyTypesResult.Attribute(XNamespace.Xmlns + "q2").Value);
+			Assert.AreEqual("q2:MyMyTypeList", listMyTypesResult.Attribute("type").Value);
+
+			var myMyTypeList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyMyTypeList") == true);
+			Assert.IsNotNull(myMyTypeList);
+
+			var myMyTypeElement = GetElements(myMyTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
+			Assert.IsNotNull(myMyTypeElement);
+		}
+
+		[TestMethod]
+		public async Task CheckDateTimeOffsetServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
+		public async Task CheckXmlSchemaProviderTypeServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
+		public async Task CheckTestMultipleTypesServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
-			_host.StopAsync();
+			_host?.StopAsync();
 		}
 
 		private string GetWsdl()
@@ -185,6 +246,24 @@ namespace SoapCore.Tests.Wsdl
 			{
 				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
 			}
+		}
+
+		private async Task<string> GetWsdlFromMetaBodyWriter<T>()
+		{
+			var service = new ServiceDescription(typeof(T));
+			var baseUrl = "http://tempuri.org/";
+			var bodyWriter = new MetaBodyWriter(service, baseUrl, null);
+			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true);
+			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
+			responseMessage = new MetaMessage(responseMessage, service, null);
+
+			var memoryStream = new MemoryStream();
+			await encoder.WriteMessageAsync(responseMessage, memoryStream);
+			memoryStream.Position = 0;
+
+			var streamReader = new StreamReader(memoryStream);
+			var result = streamReader.ReadToEnd();
+			return result;
 		}
 
 		private void StartService(Type serviceType)

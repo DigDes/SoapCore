@@ -120,11 +120,22 @@ namespace SoapCore.Meta
 		{
 			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
 			{
-				type = type.IsArray ? type.GetElementType() : GetGenericType(type);
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null)
+				{
+					if (collectionDataContractAttribute.IsNamespaceSetExplicitly)
+					{
+						return collectionDataContractAttribute.Namespace;
+					}
+					else
+					{
+						type = type.IsArray ? type.GetElementType() : GetGenericType(type);
+					}
+				}
 			}
 
 			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Namespace))
+			if (dataContractAttribute != null && dataContractAttribute.IsNamespaceSetExplicitly)
 			{
 				return dataContractAttribute.Namespace;
 			}
@@ -619,6 +630,17 @@ namespace SoapCore.Meta
 				DiscoveryTypesByProperties(type.BaseType, false);
 			}
 
+			if ((type.IsArray || typeof(IEnumerable).IsAssignableFrom(type)) && type.IsGenericType)
+			{
+				var genericType = GetGenericType(type);
+				var (name, _) = ResolveSystemType(genericType);
+				if (string.IsNullOrEmpty(name))
+				{
+					_complexTypeToBuild[genericType] = GetDataContractNamespace(genericType);
+					DiscoveryTypesByProperties(genericType, true);
+				}
+			}
+
 			foreach (var property in type.GetProperties().Where(prop =>
 						prop.DeclaringType == type
 						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
@@ -751,7 +773,15 @@ namespace SoapCore.Meta
 			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
 			{
 				var elementType = type.IsArray ? type.GetElementType() : GetGenericType(type);
-				AddSchemaType(writer, elementType, null, true, GetDataContractNamespace(type));
+
+				string elementName = null;
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null && collectionDataContractAttribute.IsItemNameSetExplicitly)
+				{
+					elementName = collectionDataContractAttribute.ItemName;
+				}
+
+				AddSchemaType(writer, elementType, elementName, true, GetDataContractNamespace(type));
 			}
 			else
 			{
@@ -773,7 +803,7 @@ namespace SoapCore.Meta
 					{
 						if (attr is DataMemberAttribute dataContractAttribute)
 						{
-							if (!string.IsNullOrEmpty(dataContractAttribute.Name))
+							if (dataContractAttribute.IsNameSetExplicitly)
 							{
 								propertyName = dataContractAttribute.Name;
 							}
@@ -983,6 +1013,11 @@ namespace SoapCore.Meta
 				type = typeInfo.GetElementType();
 			}
 
+			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.DataContractSerializer))
+			{
+				return;
+			}
+
 			writer.WriteStartElement("xs", "element", Namespaces.XMLNS_XSD);
 
 			if (objectNamespace == null)
@@ -1081,19 +1116,6 @@ namespace SoapCore.Meta
 					writer.WriteAttributeString("name", "anyType");
 					writer.WriteAttributeString("type", "xs:anyType");
 				}
-				else if (type == typeof(System.Xml.Linq.XElement))
-				{
-					writer.WriteAttributeString("name", name);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteStartElement("xs", "complexType", Namespaces.XMLNS_XSD);
-					writer.WriteStartElement("xs", "sequence", Namespaces.XMLNS_XSD);
-					writer.WriteStartElement("xs", "any", Namespaces.XMLNS_XSD);
-					writer.WriteAttributeString("minOccurs", "0");
-					writer.WriteAttributeString("processContents", "lax");
-					writer.WriteEndElement();
-					writer.WriteEndElement();
-					writer.WriteEndElement();
-				}
 				else if (type == typeof(DataTable))
 				{
 					_buildDataTable = true;
@@ -1148,7 +1170,14 @@ namespace SoapCore.Meta
 				}
 				else if (typeof(IEnumerable).IsAssignableFrom(type))
 				{
-					var elType = type.IsArray ? type.GetElementType() : GetGenericType(type);
+					var elType = type;
+
+					var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+					if (collectionDataContractAttribute == null)
+					{
+						elType = elType.IsArray ? type.GetElementType() : GetGenericType(type);
+					}
+
 					var sysType = ResolveSystemType(elType);
 					if (sysType.name != null)
 					{
@@ -1206,6 +1235,12 @@ namespace SoapCore.Meta
 
 			if (typeof(IEnumerable).IsAssignableFrom(type))
 			{
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null)
+				{
+					return true;
+				}
+
 				resultType = type.IsArray ? type.GetElementType() : GetGenericType(type);
 				type = resultType;
 			}
@@ -1290,12 +1325,34 @@ namespace SoapCore.Meta
 
 			if (typeof(IEnumerable).IsAssignableFrom(type))
 			{
-				return "ArrayOf" + GetTypeName(GetGenericType(type));
+				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
+				if (collectionDataContractAttribute != null)
+				{
+					var typeName = collectionDataContractAttribute.IsNameSetExplicitly
+						? collectionDataContractAttribute.Name
+						: type.Name.Replace("`1", string.Empty);
+
+					if (type.IsGenericType)
+					{
+						var genericType = GetGenericType(type);
+
+						var (name, _) = ResolveSystemType(genericType);
+						var genericTypeName = string.IsNullOrEmpty(name) ? GetTypeName(genericType) : name;
+
+						typeName = string.Format(typeName, genericTypeName);
+					}
+
+					return typeName;
+				}
+				else
+				{
+					return "ArrayOf" + GetTypeName(GetGenericType(type));
+				}
 			}
 
 			// Make use of DataContract attribute, if set, as it may contain a Name override
 			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
-			if (dataContractAttribute != null && !string.IsNullOrEmpty(dataContractAttribute.Name))
+			if (dataContractAttribute != null && dataContractAttribute.IsNameSetExplicitly)
 			{
 				return dataContractAttribute.Name;
 			}
@@ -1303,8 +1360,6 @@ namespace SoapCore.Meta
 			return type.Name;
 		}
 
-#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
-#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
 		private (string name, string ns) ResolveSystemType(Type type)
 		{
 			if (SysTypeDic.ContainsKey(type.FullName))
@@ -1314,8 +1369,6 @@ namespace SoapCore.Meta
 
 			return (null, null);
 		}
-#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
-#pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
 
 		private bool HasBaseType(Type type)
 		{
