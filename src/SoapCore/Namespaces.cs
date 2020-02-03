@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Schema;
 
 namespace SoapCore
 {
 	public static class Namespaces
 	{
 #pragma warning disable SA1310 // Field names must not contain underscore
-		public const string XMLNS_XSD = "http://www.w3.org/2001/XMLSchema";
-		public const string XMLNS_XSI = "http://www.w3.org/2001/XMLSchema-instance";
+		public const string XMLNS_XSD = XmlSchema.Namespace;
+		public const string XMLNS_XSI = XmlSchema.InstanceNamespace;
 		public const string TRANSPORT_SCHEMA = "http://schemas.xmlsoap.org/soap/http";
 		public const string WSDL_NS = "http://schemas.xmlsoap.org/wsdl/";
 		public const string SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";

@@ -9,12 +9,13 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
 {
-	internal class MetaBodyWriter : BodyWriter
+	public class MetaBodyWriter : BodyWriter
 	{
 		private static int _namespaceCounter = 1;
 
@@ -292,7 +293,11 @@ namespace SoapCore.Meta
 					if (doWriteInlineType)
 					{
 						var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+						writer.WriteStartElement("xs", "complexType", Namespaces.XMLNS_XSD);
+						writer.WriteStartElement("xs", "sequence", Namespaces.XMLNS_XSD);
 						AddSchemaType(writer, returnType, returnName);
+						writer.WriteEndElement();
+						writer.WriteEndElement();
 					}
 					else
 					{
@@ -646,6 +651,11 @@ namespace SoapCore.Meta
 				type = typeInfo.GetElementType();
 			}
 
+			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer))
+			{
+				return;
+			}
+
 			writer.WriteStartElement("xs", "element", Namespaces.XMLNS_XSD);
 
 			// Check for null, since we may use empty NS
@@ -729,18 +739,6 @@ namespace SoapCore.Meta
 
 					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:string");
-				}
-				else if (type == typeof(System.Xml.Linq.XElement))
-				{
-					writer.WriteAttributeString("name", name);
-
-					writer.WriteStartElement("xs", "complexType", Namespaces.XMLNS_XSD);
-					writer.WriteAttributeString("mixed", "true");
-					writer.WriteStartElement("xs:sequence");
-					writer.WriteStartElement("xs:any");
-					writer.WriteEndElement();
-					writer.WriteEndElement();
-					writer.WriteEndElement();
 				}
 				else if (type.Name == "Byte[]")
 				{
