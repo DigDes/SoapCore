@@ -77,7 +77,7 @@ namespace SoapCore
 			_binding = options.Binding;
 			_httpGetEnabled = options.HttpGetEnabled;
 			_httpsGetEnabled = options.HttpsGetEnabled;
-			_xmlNamespaceManager = options.XmlNamespacePrefixOverrides;
+			_xmlNamespaceManager = options.XmlNamespacePrefixOverrides ?? Namespaces.CreateDefaultXmlNamespaceManager();
 			Namespaces.AddDefaultNamespaces(_xmlNamespaceManager);
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
