@@ -541,7 +541,7 @@ namespace SoapCore.Meta
 						returnType = returnType.GetGenericArguments().First();
 					}
 
-					if (!IsWrappedMessageContractType(returnType))
+					if (operation.IsMessageContractResponse && !IsWrappedMessageContractType(returnType))
 					{
 						responseTypeName = GetMessageContractBodyType(returnType).Name;
 					}
