@@ -1,4 +1,5 @@
 using System.ServiceModel.Channels;
+using System.Xml;
 using SoapCore.Extensibility;
 
 namespace SoapCore
@@ -74,5 +75,10 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool IndentXml { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
+		/// </summary>
+		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; } = new XmlNamespaceManager(new NameTable());
 	}
 }

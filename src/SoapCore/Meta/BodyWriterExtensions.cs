@@ -14,7 +14,7 @@ namespace SoapCore.Meta
 		//switches to easily revert to previous behaviour if there is a problem
 		private static bool useXmlSchemaProvider = true;
 		private static bool useXmlReflectionImporter = false;
-		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer)
+		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, XmlNamespaceManager xmlNamespaceManager = null)
 		{
 			if (!useXmlSchemaProvider && !useXmlReflectionImporter)
 			{
@@ -48,11 +48,15 @@ namespace SoapCore.Meta
 				return true;
 			}
 
-			var xmlSchemaSet = new XmlSchemaSet();
+			var xmlSchemaSet = xmlNamespaceManager == null ? new XmlSchemaSet() : new XmlSchemaSet(xmlNamespaceManager.NameTable);
 			var xmlSchemaProviderAttribute = type.GetCustomAttribute<XmlSchemaProviderAttribute>(true);
 			if (xmlSchemaProviderAttribute != null && true)
 			{
 				XmlSchema schema = new XmlSchema();
+				if (xmlNamespaceManager != null)
+				{
+					schema.Namespaces = xmlNamespaceManager.Convert();
+				}
 				if (xmlSchemaProviderAttribute.IsAny)
 				{
 					//MetaWCFBodyWriter usage....
@@ -113,5 +117,15 @@ namespace SoapCore.Meta
 			return false;
 		}
 
+		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)
+		{
+			XmlSerializerNamespaces xmlSerializerNamespaces = new XmlSerializerNamespaces();
+			foreach (var ns in xmlNamespaceManager.GetNamespacesInScope(XmlNamespaceScope.Local))
+			{
+				xmlSerializerNamespaces.Add(ns.Key, ns.Value);
+			}
+
+			return xmlSerializerNamespaces;
+		}
 	}
 }

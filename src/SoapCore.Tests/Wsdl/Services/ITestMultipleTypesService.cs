@@ -18,6 +18,12 @@ namespace SoapCore.Tests.Wsdl.Services
 		DateTimeOffset GetDateTimeOffset(DateTimeOffset input);
 
 		[OperationContract]
+		int GetInt(int input);
+
+		[OperationContract]
+		byte[] GetBytes(byte[] input);
+
+		[OperationContract]
 		string GetString(string input);
 
 		[OperationContract]
@@ -36,6 +42,11 @@ namespace SoapCore.Tests.Wsdl.Services
 			throw new NotImplementedException();
 		}
 
+		public int GetInt(int input)
+		{
+			throw new NotImplementedException();
+		}
+
 		public string GetString(string input)
 		{
 			throw new NotImplementedException();
@@ -49,6 +60,11 @@ namespace SoapCore.Tests.Wsdl.Services
 		public MyClass GetMyClass(MyClass input)
 		{
 			return input;
+		}
+
+		public byte[] GetBytes(byte[] input)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

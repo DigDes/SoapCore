@@ -11,9 +11,11 @@ namespace SoapCore.Meta
 		private readonly Message _message;
 		private readonly ServiceDescription _service;
 		private readonly Binding _binding;
+		private readonly XmlNamespaceManager _xmlNamespaceManager;
 
-		public MetaMessage(Message message, ServiceDescription service, Binding binding)
+		public MetaMessage(Message message, ServiceDescription service, Binding binding, XmlNamespaceManager xmlNamespaceManager)
 		{
+			_xmlNamespaceManager = xmlNamespaceManager;
 			_message = message;
 			_service = service;
 			_binding = binding;
@@ -36,45 +38,43 @@ namespace SoapCore.Meta
 
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
-			const string WSP_NS = Namespaces.WSP_NS;
-			const string HTTP_NS = "http://schemas.microsoft.com/ws/06/2004/policy/http";
-
-			writer.WriteStartElement("wsdl", "definitions", Namespaces.WSDL_NS);
-			writer.WriteXmlnsAttribute("wsdl", Namespaces.WSDL_NS);
-			writer.WriteXmlnsAttribute("xsd", Namespaces.XMLNS_XSD);
-			writer.WriteXmlnsAttribute("msc", "http://schemas.microsoft.com/ws/2005/12/wsdl/contract");
-			writer.WriteXmlnsAttribute("wsp", WSP_NS);
-			writer.WriteXmlnsAttribute("wsu", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd");
-			writer.WriteXmlnsAttribute("http", HTTP_NS);
+			writer.WriteStartElement(_xmlNamespaceManager.LookupPrefix(Namespaces.WSDL_NS), "definitions", Namespaces.WSDL_NS);
 
 			// Soap11
 			if (Version == MessageVersion.Soap11 || Version == MessageVersion.Soap11WSAddressingAugust2004 || Version == MessageVersion.Soap11WSAddressingAugust2004)
 			{
-				writer.WriteXmlnsAttribute("soap", Namespaces.SOAP11_NS);
+				WriteXmlnsAttribute(writer, Namespaces.SOAP11_NS);
 			}
 
 			// Soap12
 			else if (Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004)
 			{
-				writer.WriteXmlnsAttribute("soap12", Namespaces.SOAP12_NS);
+				WriteXmlnsAttribute(writer, Namespaces.SOAP12_NS);
 			}
 			else
 			{
 				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
 			}
 
-			writer.WriteXmlnsAttribute("tns", _service.Contracts.First().Namespace);
-			writer.WriteXmlnsAttribute("wsam", Namespaces.WSAM_NS);
+			_xmlNamespaceManager.AddNamespace("tns", _service.Contracts.First().Namespace);
+			WriteXmlnsAttribute(writer, _service.Contracts.First().Namespace);
+			WriteXmlnsAttribute(writer, Namespaces.XMLNS_XSD);
+			WriteXmlnsAttribute(writer, Namespaces.HTTP_NS);
+			WriteXmlnsAttribute(writer, Namespaces.MSC_NS);
+			WriteXmlnsAttribute(writer, Namespaces.WSP_NS);
+			WriteXmlnsAttribute(writer, Namespaces.WSU_NS);
+			WriteXmlnsAttribute(writer, Namespaces.WSAM_NS);
 			writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
 			writer.WriteAttributeString("name", _service.ServiceType.Name);
+			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
 			if (_binding != null && _binding.HasBasicAuth())
 			{
-				writer.WriteStartElement("wsp", "Policy", WSP_NS);
-				writer.WriteAttributeString("Id", "wsu", $"{_binding.Name}_{_service.Contracts.First().Name}_policy");
-				writer.WriteStartElement("wsp", "ExactlyOne", WSP_NS);
-				writer.WriteStartElement("wsp", "All", WSP_NS);
-				writer.WriteStartElement("http", "BasicAuthentication", HTTP_NS);
+				writer.WriteStartElement("Policy", Namespaces.WSP_NS);
+				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_binding.Name}_{_service.Contracts.First().Name}_policy");
+				writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
+				writer.WriteStartElement("All", Namespaces.WSP_NS);
+				writer.WriteStartElement("BasicAuthentication", Namespaces.HTTP_NS);
 				writer.WriteEndElement();
 				writer.WriteEndElement();
 				writer.WriteEndElement();
@@ -89,6 +89,12 @@ namespace SoapCore.Meta
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
 			_message.WriteBodyContents(writer);
+		}
+
+		private void WriteXmlnsAttribute(XmlDictionaryWriter writer, string namespaceUri)
+		{
+			string prefix = _xmlNamespaceManager.LookupPrefix(namespaceUri);
+			writer.WriteXmlnsAttribute(prefix, namespaceUri);
 		}
 	}
 }
