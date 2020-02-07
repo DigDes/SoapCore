@@ -2,13 +2,14 @@ using System;
 using System.Net;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Xml;
 using SoapCore.Extensibility;
 
 namespace SoapCore.Tests.FaultExceptionTransformer
 {
 	public class TestFaultExceptionTransformer : IFaultExceptionTransformer
 	{
-		public Message ProvideFault(Exception exception, MessageVersion messageVersion)
+		public Message ProvideFault(Exception exception, MessageVersion messageVersion, XmlNamespaceManager xmlNamespaceManager)
 		{
 			var fault = new TestFault
 			{

@@ -645,7 +645,7 @@ namespace SoapCore
 			HttpContext httpContext)
 		{
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion, _xmlNamespaceManager);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
