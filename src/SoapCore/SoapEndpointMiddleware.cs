@@ -369,7 +369,8 @@ namespace SoapCore
 				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
-					Message = responseMessage
+					Message = responseMessage,
+					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
 				//responseMessage.Message = responseMessage;
@@ -382,7 +383,8 @@ namespace SoapCore
 				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
-					Message = responseMessage
+					Message = responseMessage,
+					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
 

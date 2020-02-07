@@ -681,7 +681,7 @@ namespace SoapCore.Meta
 						name = typeName;
 					}
 
-					Namespaces.AddNamespaceIfNotAlreadyPresent(_xmlNamespaceManager, "nsdto", Namespaces.SYSTEM_NS);
+					Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(_xmlNamespaceManager, "nsdto", Namespaces.SYSTEM_NS);
 					xsTypename = new XmlQualifiedName(typeName, Namespaces.SYSTEM_NS);
 
 					_buildDateTimeOffset = true;

@@ -29,26 +29,38 @@ namespace SoapCore
 
 		public static void AddDefaultNamespaces(XmlNamespaceManager xmlNamespaceManager)
 		{
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "xsd", Namespaces.XMLNS_XSD);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "wsdl", Namespaces.WSDL_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "msc", Namespaces.MSC_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "wsp", Namespaces.WSP_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "wsu", Namespaces.WSU_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "http", Namespaces.HTTP_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "http", Namespaces.TRANSPORT_SCHEMA);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "soap", Namespaces.SOAP11_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "soap12", Namespaces.SOAP12_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "ser", Namespaces.SERIALIZATION_NS);
-			AddNamespaceIfNotAlreadyPresent(xmlNamespaceManager, "wsam", Namespaces.WSAM_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "xsd", Namespaces.XMLNS_XSD);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsdl", Namespaces.WSDL_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "msc", Namespaces.MSC_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsp", Namespaces.WSP_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsu", Namespaces.WSU_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "http", Namespaces.HTTP_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "http", Namespaces.TRANSPORT_SCHEMA);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "soap", Namespaces.SOAP11_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "soap12", Namespaces.SOAP12_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "ser", Namespaces.SERIALIZATION_NS);
+			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsam", Namespaces.WSAM_NS);
 		}
 
-		public static string AddNamespaceIfNotAlreadyPresent(XmlNamespaceManager xmlNamespaceManager, string prefix, string uri)
+		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceManager xmlNamespaceManager, string preferredPrefix, string uri)
 		{
 			var existingPrefix = xmlNamespaceManager.LookupPrefix(uri);
 			if (existingPrefix == null)
 			{
-				xmlNamespaceManager.AddNamespace(prefix, uri);
-				return prefix;
+				var localPrefix = preferredPrefix;
+				for (int i = 1; ; i++)
+				{
+					var existingNamespace = xmlNamespaceManager.LookupNamespace(localPrefix);
+					if (existingNamespace == null)
+					{
+						break;
+					}
+
+					localPrefix = $"prefix{i}";
+				}
+
+				xmlNamespaceManager.AddNamespace(localPrefix, uri);
+				return localPrefix;
 			}
 
 			return existingPrefix;
