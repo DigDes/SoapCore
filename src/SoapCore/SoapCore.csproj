@@ -3,14 +3,14 @@
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<VersionPrefix>1.0.0.2-alpha</VersionPrefix>
-		<Authors>Digital Design</Authors>
-		<TargetFrameworks>netcoreapp3.0;netstandard2.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+		<Authors>Digital Design, (MicroKnights)</Authors>
+		<TargetFrameworks>netstandard2.0;</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
-		<PackageId>SoapCore</PackageId>
+		<PackageId>MicroKnights.SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
-		<PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/microknights/SoapCore</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
-		<RepositoryUrl>https://github.com/DigDes/SoapCore</RepositoryUrl>
+		<RepositoryUrl>https://github.com/microknights/SoapCore</RepositoryUrl>
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
@@ -22,14 +22,17 @@
 		<LangVersion>8.0</LangVersion>
 	</PropertyGroup>
 
+	<!--
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
 		<DefineConstants>ASPNET_21;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
 
+	-->
 	<PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">
 		<DefineConstants>ASPNET_21</DefineConstants>
 	</PropertyGroup>
 
+	<!--
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
 		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
@@ -37,6 +40,7 @@
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
 		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
+	-->
 
 	<ItemGroup>
 		<None Remove="stylecop.json" />
@@ -55,6 +59,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
 	</ItemGroup>
 
+	<!--
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
 		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
 		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
@@ -71,6 +76,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
 	</ItemGroup>
+	-->
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
