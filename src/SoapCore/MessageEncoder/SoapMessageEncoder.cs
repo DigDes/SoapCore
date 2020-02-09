@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -26,6 +27,7 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
 		private readonly bool _indentXml;
+		private readonly bool _supportXmlDictionaryReader;
 
 		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml)
 		{
@@ -36,17 +38,15 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(writeEncoding));
 			}
 
-			SoapMessageEncoderDefaults.ValidateEncoding(writeEncoding);
+			_supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(writeEncoding, out _);
 
 			_writeEncoding = writeEncoding;
 			_optimizeWriteForUtf8 = IsUtf8Encoding(writeEncoding);
 
 			MessageVersion = version ?? throw new ArgumentNullException(nameof(version));
 
-			MessageVersion = version;
-
 			ReaderQuotas = new XmlDictionaryReaderQuotas();
-			quotas.CopyTo(ReaderQuotas);
+			(quotas ?? XmlDictionaryReaderQuotas.Max).CopyTo(ReaderQuotas);
 
 			MediaType = GetMediaType(version);
 			ContentType = GetContentType(MediaType, writeEncoding);
@@ -122,7 +122,9 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			XmlReader reader = XmlDictionaryReader.CreateTextReader(stream, ReaderQuotas);
+			XmlReader reader = _supportXmlDictionaryReader ?
+			 	XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { }) :
+				XmlReader.Create(stream, new XmlReaderSettings());
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 
