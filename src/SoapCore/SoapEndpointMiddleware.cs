@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -196,6 +197,7 @@ namespace SoapCore
 			await httpContext.Request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
 			memoryStream.Seek(0, SeekOrigin.Begin);
 			httpContext.Request.Body = memoryStream;
+			var soapXml = Encoding.UTF8.GetString(memoryStream.ToArray());
 
 			//Return metadata if no request, provided this is a GET request
 			if (httpContext.Request.Body.Length == 0 && httpContext.Request.Method?.ToLower() == "get")
@@ -290,6 +292,7 @@ namespace SoapCore
 					var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
 
 					SetMessageHeadersToProperty(requestMessage, serviceInstance);
+					SetSoapXmlToProperty(soapXml, serviceInstance);
 
 					// Get operation arguments from message
 					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
@@ -441,6 +444,15 @@ namespace SoapCore
 			if (headerProperty != null && headerProperty.PropertyType == requestMessage.Headers.GetType())
 			{
 				headerProperty.SetValue(serviceInstance, requestMessage.Headers);
+			}
+		}
+
+		private void SetSoapXmlToProperty(string soapXml, object serviceInstance)
+		{
+			var soapxmlProperty = _service.ServiceType.GetProperty("SoapXml");
+			if (soapxmlProperty != null && soapxmlProperty.PropertyType == typeof(string))
+			{
+				soapxmlProperty.SetValue(serviceInstance, soapXml);
 			}
 		}
 
