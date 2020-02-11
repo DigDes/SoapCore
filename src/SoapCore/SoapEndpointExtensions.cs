@@ -150,22 +150,7 @@ namespace SoapCore
 				opt.EncoderOptions = encoderOptions;
 			}
 
-			var soapOptions = new SoapOptions
-			{
-				ServiceType = typeof(T),
-				Path = opt.Path,
-				HttpsGetEnabled = opt.HttpsGetEnabled,
-				HttpGetEnabled = opt.HttpGetEnabled,
-				Binding = opt.Binding,
-				CaseInsensitivePath = opt.CaseInsensitivePath,
-				EncoderOptions = opt.EncoderOptions,
-				SoapModelBounder = opt.SoapModelBounder,
-				SoapSerializer = opt.SoapSerializer,
-				BufferThreshold = opt.BufferThreshold,
-				BufferLimit = opt.BufferLimit,
-				OmitXmlDeclaration = opt.OmitXmlDeclaration,
-				IndentXml = opt.IndentXml
-			};
+			var soapOptions = SoapOptions.FromSoapCoreOptions<T>(opt);
 
 			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
 		}
@@ -308,22 +293,7 @@ namespace SoapCore
 				opt.EncoderOptions = encoderOptions;
 			}
 
-			var soapOptions = new SoapOptions
-			{
-				ServiceType = typeof(T),
-				Path = opt.Path,
-				HttpsGetEnabled = opt.HttpsGetEnabled,
-				HttpGetEnabled = opt.HttpGetEnabled,
-				Binding = opt.Binding,
-				CaseInsensitivePath = opt.CaseInsensitivePath,
-				EncoderOptions = opt.EncoderOptions,
-				SoapModelBounder = opt.SoapModelBounder,
-				SoapSerializer = opt.SoapSerializer,
-				BufferLimit = opt.BufferLimit,
-				BufferThreshold = opt.BufferThreshold,
-				OmitXmlDeclaration = opt.OmitXmlDeclaration,
-				IndentXml = opt.IndentXml
-			};
+			var soapOptions = SoapOptions.FromSoapCoreOptions<T>(opt);
 
 			var pipeline = routes
 				.CreateApplicationBuilder()

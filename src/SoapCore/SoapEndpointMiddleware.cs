@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -37,6 +38,7 @@ namespace SoapCore
 		private readonly bool _httpsGetEnabled;
 		private readonly SoapMessageEncoder[] _messageEncoders;
 		private readonly SerializerHelper _serializerHelper;
+		private readonly XmlNamespaceManager _xmlNamespaceManager;
 
 		[Obsolete]
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
@@ -75,6 +77,8 @@ namespace SoapCore
 			_binding = options.Binding;
 			_httpGetEnabled = options.HttpGetEnabled;
 			_httpsGetEnabled = options.HttpsGetEnabled;
+			_xmlNamespaceManager = options.XmlNamespacePrefixOverrides ?? Namespaces.CreateDefaultXmlNamespaceManager();
+			Namespaces.AddDefaultNamespaces(_xmlNamespaceManager);
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
@@ -176,11 +180,9 @@ namespace SoapCore
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-
-			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
-
+			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding, _xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
 			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, _service, _binding);
+			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
 
 			httpContext.Response.ContentType = _messageEncoders[0].ContentType;
 
@@ -367,7 +369,8 @@ namespace SoapCore
 				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
-					Message = responseMessage
+					Message = responseMessage,
+					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
 				//responseMessage.Message = responseMessage;
@@ -380,7 +383,8 @@ namespace SoapCore
 				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
-					Message = responseMessage
+					Message = responseMessage,
+					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
 
@@ -641,7 +645,7 @@ namespace SoapCore
 			HttpContext httpContext)
 		{
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion, _xmlNamespaceManager);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;

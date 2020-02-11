@@ -1,5 +1,6 @@
 using System;
 using System.ServiceModel.Channels;
+using System.Xml;
 
 namespace SoapCore.Extensibility
 {
@@ -17,8 +18,9 @@ namespace SoapCore.Extensibility
 		/// </summary>
 		/// <param name="exception">Exception to transform</param>
 		/// <param name="messageVersion">SOAP message version</param>
+		/// <param name="xmlNamespaceManager">Namespace manager</param>
 		/// <returns>Fully formatted SOAP Message</returns>
 		/// <seealso cref="MessageFaultBodyWriter"/>
-		Message ProvideFault(Exception exception, MessageVersion messageVersion);
+		Message ProvideFault(Exception exception, MessageVersion messageVersion, XmlNamespaceManager xmlNamespaceManager);
 	}
 }

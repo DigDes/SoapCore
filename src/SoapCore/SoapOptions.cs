@@ -1,5 +1,6 @@
 using System;
 using System.ServiceModel.Channels;
+using System.Xml;
 using SoapCore.Extensibility;
 
 namespace SoapCore
@@ -31,5 +32,30 @@ namespace SoapCore
 		public bool OmitXmlDeclaration { get; set; } = true;
 
 		public bool IndentXml { get; set; } = true;
+
+		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
+
+		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
+		{
+			var soapOptions = new SoapOptions
+			{
+				ServiceType = typeof(T),
+				Path = opt.Path,
+				EncoderOptions = opt.EncoderOptions,
+				SoapSerializer = opt.SoapSerializer,
+				CaseInsensitivePath = opt.CaseInsensitivePath,
+				SoapModelBounder = opt.SoapModelBounder,
+				Binding = opt.Binding,
+				BufferThreshold = opt.BufferThreshold,
+				BufferLimit = opt.BufferLimit,
+				HttpsGetEnabled = opt.HttpsGetEnabled,
+				HttpGetEnabled = opt.HttpGetEnabled,
+				OmitXmlDeclaration = opt.OmitXmlDeclaration,
+				IndentXml = opt.IndentXml,
+				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides
+			};
+
+			return soapOptions;
+		}
 	}
 }
