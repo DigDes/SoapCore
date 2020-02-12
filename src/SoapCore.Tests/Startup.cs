@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +55,17 @@ namespace SoapCore.Tests
 				var textEncodingBinding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
 
 				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA11ISO88591Service.svc"), app2 =>
+			{
+				var soapEncodingOptions = new SoapEncoderOptions
+				{
+					MessageVersion = MessageVersion.Soap11,
+					WriteEncoding = Encoding.GetEncoding("ISO-8859-1")
+				};
+
+				app.UseSoapEndpoint<TestService>("/WSA11ISO88591Service.svc", soapEncodingOptions, SoapSerializer.DataContractSerializer);
 			});
 
 			app.UseMvc();
@@ -113,6 +125,17 @@ namespace SoapCore.Tests
 				app2.UseRouting();
 
 				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA11ISO88591Service.svc"), app2 =>
+			{
+				var soapEncodingOptions = new SoapEncoderOptions
+				{
+					MessageVersion = MessageVersion.Soap11,
+					WriteEncoding = Encoding.GetEncoding("ISO-8859-1")
+				};
+
+				app.UseSoapEndpoint<TestService>("/WSA11ISO88591Service.svc", soapEncodingOptions, SoapSerializer.DataContractSerializer);
 			});
 		}
 #endif
