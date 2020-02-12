@@ -126,6 +126,17 @@ namespace SoapCore.Tests
 
 				app.UseSoapEndpoint<TestService>("/WSA10Service.svc", new CustomBinding(transportBinding, textEncodingBinding), SoapSerializer.DataContractSerializer);
 			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA11ISO88591Service.svc"), app2 =>
+			{
+				var soapEncodingOptions = new SoapEncoderOptions
+				{
+					MessageVersion = MessageVersion.Soap11,
+					WriteEncoding = Encoding.GetEncoding("ISO-8859-1")
+				};
+
+				app.UseSoapEndpoint<TestService>("/WSA11ISO88591Service.svc", soapEncodingOptions, SoapSerializer.DataContractSerializer);
+			});
 		}
 #endif
 	}
