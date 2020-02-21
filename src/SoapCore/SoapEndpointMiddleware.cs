@@ -533,23 +533,28 @@ namespace SoapCore
 				}
 				else
 				{
-					var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers().Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null).ToArray();
+					var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers()
+						.Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null)
+						.Select(mi => new
+						{
+							MemberInfo = mi,
+							MessageHeaderMemberAttribute = mi.GetCustomAttribute<MessageHeaderAttribute>()
+						}).ToArray();
 
 					var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
 
 					for (var i = 0; i < requestMessage.Headers.Count; i++)
 					{
 						var header = requestMessage.Headers[i];
-						var member = messageHeadersMembers.FirstOrDefault(x => x.Name == header.Name);
+						var member = messageHeadersMembers.FirstOrDefault(x => x.MessageHeaderMemberAttribute.Name == header.Name || x.MemberInfo.Name == header.Name);
 
 						if (member != null)
 						{
-							var messageHeaderAttribute = member.GetCustomAttribute<MessageHeaderAttribute>();
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-							var value = _serializerHelper.DeserializeInputParameter(reader, member.GetPropertyOrFieldType(), messageHeaderAttribute.Name ?? member.Name, messageHeaderAttribute.Namespace ?? @namespace);
+							var value = _serializerHelper.DeserializeInputParameter(reader, member.MemberInfo.GetPropertyOrFieldType(), member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name, member.MessageHeaderMemberAttribute.Namespace ?? @namespace);
 
-							member.SetValueToPropertyOrField(wrapperObject, value);
+							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
 						}
 					}
 
