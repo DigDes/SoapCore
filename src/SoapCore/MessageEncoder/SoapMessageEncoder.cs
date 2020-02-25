@@ -49,12 +49,15 @@ namespace SoapCore.MessageEncoder
 			(quotas ?? XmlDictionaryReaderQuotas.Max).CopyTo(ReaderQuotas);
 
 			MediaType = GetMediaType(version);
-			ContentType = GetContentType(MediaType, writeEncoding);
+			CharSet = SoapMessageEncoderDefaults.EncodingToCharSet(writeEncoding);
+			ContentType = GetContentType(MediaType, CharSet);
 		}
 
 		public string ContentType { get; }
 
 		public string MediaType { get; }
+
+		public string CharSet { get; }
 
 		public MessageVersion MessageVersion { get; }
 
@@ -210,9 +213,9 @@ namespace SoapCore.MessageEncoder
 			return mediaType;
 		}
 
-		internal static string GetContentType(string mediaType, Encoding encoding)
+		internal static string GetContentType(string mediaType, string charSet)
 		{
-			return string.Format(CultureInfo.InvariantCulture, "{0}; charset={1}", mediaType, SoapMessageEncoderDefaults.EncodingToCharSet(encoding));
+			return string.Format(CultureInfo.InvariantCulture, "{0}; charset={1}", mediaType, charSet);
 		}
 
 		internal bool IsContentTypeSupported(string contentType, string supportedContentType, string supportedMediaType)
@@ -305,7 +308,8 @@ namespace SoapCore.MessageEncoder
 
 		internal virtual bool IsCharSetSupported(string charset)
 		{
-			return false;
+			return CharSet?.Equals(charset, StringComparison.OrdinalIgnoreCase)
+			       ?? false;
 		}
 
 		private static bool IsUtf8Encoding(Encoding encoding)
