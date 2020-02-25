@@ -313,7 +313,8 @@ namespace SoapCore
 						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 					}
 
-					responseMessage = CreateResponseMessage(operation, responseObject, resultOutDictionary, soapAction, requestMessage);
+					responseMessage = CreateResponseMessage(
+						operation, responseObject, resultOutDictionary, soapAction, requestMessage, messageEncoder);
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
@@ -324,7 +325,7 @@ namespace SoapCore
 
 					SetHttpResponse(httpContext, responseMessage);
 
-					await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
+					await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
 				}
 				catch (Exception exception)
 				{
@@ -357,16 +358,22 @@ namespace SoapCore
 			}
 		}
 
-		private Message CreateResponseMessage(OperationDescription operation, object responseObject, Dictionary<string, object> resultOutDictionary, string soapAction, Message requestMessage)
+		private Message CreateResponseMessage(
+			OperationDescription operation,
+			object responseObject,
+			Dictionary<string, object> resultOutDictionary,
+			string soapAction,
+			Message requestMessage,
+			SoapMessageEncoder soapMessageEncoder)
 		{
 			Message responseMessage;
 
 			// Create response message
 			var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
 
-			if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+			if (soapMessageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
-				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
+				responseMessage = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
 					Message = responseMessage,
@@ -380,7 +387,7 @@ namespace SoapCore
 			}
 			else
 			{
-				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
+				responseMessage = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
 					Message = responseMessage,
