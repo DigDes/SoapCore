@@ -252,10 +252,11 @@ namespace SoapCore.Tests.Wsdl
 		{
 			var service = new ServiceDescription(typeof(T));
 			var baseUrl = "http://tempuri.org/";
-			var bodyWriter = new MetaBodyWriter(service, baseUrl, null);
+			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
+			var bodyWriter = new MetaBodyWriter(service, baseUrl, null, xmlNamespaceManager);
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, service, null);
+			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
 
 			var memoryStream = new MemoryStream();
 			await encoder.WriteMessageAsync(responseMessage, memoryStream);

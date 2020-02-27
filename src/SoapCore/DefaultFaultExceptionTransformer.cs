@@ -1,5 +1,6 @@
 using System;
 using System.ServiceModel.Channels;
+using System.Xml;
 using SoapCore.Extensibility;
 
 namespace SoapCore
@@ -23,7 +24,7 @@ namespace SoapCore
 			_exceptionTransformer = exceptionTransformer;
 		}
 
-		public Message ProvideFault(Exception exception, MessageVersion messageVersion)
+		public Message ProvideFault(Exception exception, MessageVersion messageVersion, XmlNamespaceManager xmlNamespaceManager)
 		{
 			var bodyWriter = _exceptionTransformer == null ?
 				new FaultBodyWriter(exception, messageVersion) :
@@ -33,7 +34,8 @@ namespace SoapCore
 
 			T_MESSAGE customMessage = new T_MESSAGE
 			{
-				Message = soapCoreFaultMessage
+				Message = soapCoreFaultMessage,
+				NamespaceManager = xmlNamespaceManager
 			};
 
 			return customMessage;

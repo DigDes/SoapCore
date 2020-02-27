@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -26,6 +27,7 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
 		private readonly bool _indentXml;
+		private readonly bool _supportXmlDictionaryReader;
 
 		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml)
 		{
@@ -36,25 +38,26 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(writeEncoding));
 			}
 
-			SoapMessageEncoderDefaults.ValidateEncoding(writeEncoding);
+			_supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(writeEncoding, out _);
 
 			_writeEncoding = writeEncoding;
 			_optimizeWriteForUtf8 = IsUtf8Encoding(writeEncoding);
 
 			MessageVersion = version ?? throw new ArgumentNullException(nameof(version));
 
-			MessageVersion = version;
-
 			ReaderQuotas = new XmlDictionaryReaderQuotas();
-			quotas.CopyTo(ReaderQuotas);
+			(quotas ?? XmlDictionaryReaderQuotas.Max).CopyTo(ReaderQuotas);
 
 			MediaType = GetMediaType(version);
-			ContentType = GetContentType(MediaType, writeEncoding);
+			CharSet = SoapMessageEncoderDefaults.EncodingToCharSet(writeEncoding);
+			ContentType = GetContentType(MediaType, CharSet);
 		}
 
 		public string ContentType { get; }
 
 		public string MediaType { get; }
+
+		public string CharSet { get; }
 
 		public MessageVersion MessageVersion { get; }
 
@@ -122,7 +125,9 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			XmlReader reader = XmlDictionaryReader.CreateTextReader(stream, ReaderQuotas);
+			XmlReader reader = _supportXmlDictionaryReader ?
+			 	XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { }) :
+				XmlReader.Create(stream, new XmlReaderSettings());
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 
@@ -208,9 +213,9 @@ namespace SoapCore.MessageEncoder
 			return mediaType;
 		}
 
-		internal static string GetContentType(string mediaType, Encoding encoding)
+		internal static string GetContentType(string mediaType, string charSet)
 		{
-			return string.Format(CultureInfo.InvariantCulture, "{0}; charset={1}", mediaType, SoapMessageEncoderDefaults.EncodingToCharSet(encoding));
+			return string.Format(CultureInfo.InvariantCulture, "{0}; charset={1}", mediaType, charSet);
 		}
 
 		internal bool IsContentTypeSupported(string contentType, string supportedContentType, string supportedMediaType)
@@ -303,7 +308,8 @@ namespace SoapCore.MessageEncoder
 
 		internal virtual bool IsCharSetSupported(string charset)
 		{
-			return false;
+			return CharSet?.Equals(charset, StringComparison.OrdinalIgnoreCase)
+			       ?? false;
 		}
 
 		private static bool IsUtf8Encoding(Encoding encoding)

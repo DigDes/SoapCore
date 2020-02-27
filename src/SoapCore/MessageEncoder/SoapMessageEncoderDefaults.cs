@@ -23,6 +23,14 @@ namespace SoapCore.MessageEncoder
 
 		public static void ValidateEncoding(Encoding encoding)
 		{
+			if (TryValidateEncoding(encoding, out var error) == false)
+			{
+				throw error;
+			}
+		}
+
+		public static bool TryValidateEncoding(Encoding encoding, out Exception exception)
+		{
 			string charSet = encoding.WebName;
 			Encoding[] supportedEncodings = SupportedEncodings;
 
@@ -30,11 +38,13 @@ namespace SoapCore.MessageEncoder
 			{
 				if (charSet == supportedEncodings[i].WebName)
 				{
-					return;
+					exception = null;
+					return true;
 				}
 			}
 
-			throw new ArgumentException($"The text encoding '{charSet}' used in the text message format is not supported.", nameof(encoding));
+			exception = new ArgumentException($"The text encoding '{charSet}' used in the text message format is not supported.", nameof(encoding));
+			return false;
 		}
 
 		public static string EncodingToCharSet(Encoding encoding)

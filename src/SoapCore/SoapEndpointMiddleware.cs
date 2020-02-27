@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -37,6 +38,7 @@ namespace SoapCore
 		private readonly bool _httpsGetEnabled;
 		private readonly SoapMessageEncoder[] _messageEncoders;
 		private readonly SerializerHelper _serializerHelper;
+		private readonly XmlNamespaceManager _xmlNamespaceManager;
 
 		[Obsolete]
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
@@ -75,6 +77,8 @@ namespace SoapCore
 			_binding = options.Binding;
 			_httpGetEnabled = options.HttpGetEnabled;
 			_httpsGetEnabled = options.HttpsGetEnabled;
+			_xmlNamespaceManager = options.XmlNamespacePrefixOverrides ?? Namespaces.CreateDefaultXmlNamespaceManager();
+			Namespaces.AddDefaultNamespaces(_xmlNamespaceManager);
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
@@ -176,11 +180,9 @@ namespace SoapCore
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-
-			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
-
+			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding, _xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
 			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, _service, _binding);
+			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
 
 			httpContext.Response.ContentType = _messageEncoders[0].ContentType;
 
@@ -311,7 +313,8 @@ namespace SoapCore
 						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 					}
 
-					responseMessage = CreateResponseMessage(operation, responseObject, resultOutDictionary, soapAction, requestMessage);
+					responseMessage = CreateResponseMessage(
+						operation, responseObject, resultOutDictionary, soapAction, requestMessage, messageEncoder);
 
 					httpContext.Response.ContentType = httpContext.Request.ContentType;
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
@@ -322,7 +325,7 @@ namespace SoapCore
 
 					SetHttpResponse(httpContext, responseMessage);
 
-					await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
+					await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
 				}
 				catch (Exception exception)
 				{
@@ -355,19 +358,26 @@ namespace SoapCore
 			}
 		}
 
-		private Message CreateResponseMessage(OperationDescription operation, object responseObject, Dictionary<string, object> resultOutDictionary, string soapAction, Message requestMessage)
+		private Message CreateResponseMessage(
+			OperationDescription operation,
+			object responseObject,
+			Dictionary<string, object> resultOutDictionary,
+			string soapAction,
+			Message requestMessage,
+			SoapMessageEncoder soapMessageEncoder)
 		{
 			Message responseMessage;
 
 			// Create response message
 			var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
 
-			if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+			if (soapMessageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
-				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, soapAction, bodyWriter);
+				responseMessage = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
-					Message = responseMessage
+					Message = responseMessage,
+					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
 				//responseMessage.Message = responseMessage;
@@ -377,10 +387,11 @@ namespace SoapCore
 			}
 			else
 			{
-				responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
+				responseMessage = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter);
 				T_MESSAGE customMessage = new T_MESSAGE
 				{
-					Message = responseMessage
+					Message = responseMessage,
+					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
 
@@ -533,23 +544,28 @@ namespace SoapCore
 				}
 				else
 				{
-					var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers().Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null).ToArray();
+					var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers()
+						.Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null)
+						.Select(mi => new
+						{
+							MemberInfo = mi,
+							MessageHeaderMemberAttribute = mi.GetCustomAttribute<MessageHeaderAttribute>()
+						}).ToArray();
 
 					var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
 
 					for (var i = 0; i < requestMessage.Headers.Count; i++)
 					{
 						var header = requestMessage.Headers[i];
-						var member = messageHeadersMembers.FirstOrDefault(x => x.Name == header.Name);
+						var member = messageHeadersMembers.FirstOrDefault(x => x.MessageHeaderMemberAttribute.Name == header.Name || x.MemberInfo.Name == header.Name);
 
 						if (member != null)
 						{
-							var messageHeaderAttribute = member.GetCustomAttribute<MessageHeaderAttribute>();
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-							var value = _serializerHelper.DeserializeInputParameter(reader, member.GetPropertyOrFieldType(), messageHeaderAttribute.Name ?? member.Name, messageHeaderAttribute.Namespace ?? @namespace);
+							var value = _serializerHelper.DeserializeInputParameter(reader, member.MemberInfo.GetPropertyOrFieldType(), member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name, member.MessageHeaderMemberAttribute.Namespace ?? @namespace);
 
-							member.SetValueToPropertyOrField(wrapperObject, value);
+							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
 						}
 					}
 
@@ -641,7 +657,7 @@ namespace SoapCore
 			HttpContext httpContext)
 		{
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion, _xmlNamespaceManager);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
