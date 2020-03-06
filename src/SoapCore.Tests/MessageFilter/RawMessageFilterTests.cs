@@ -13,13 +13,13 @@ namespace SoapCore.Tests.MessageFilter
 	[TestClass]
 	public class RawMessageFilterTests
 	{
-		private static TestServer host;
+		private static TestServer _host;
 
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
 		{
 			var host = new WebHostBuilder().UseStartup<Startup>();
-			RawMessageFilterTests.host = new TestServer(host);
+			RawMessageFilterTests._host = new TestServer(host);
 		}
 
 		public ITestService CreateClient(Dictionary<string, object> headers = null)
@@ -43,11 +43,11 @@ namespace SoapCore.Tests.MessageFilter
   </soapenv:Body>
 </soapenv:Envelope>
 ";
-			using (var client = host.CreateClient())
+			using (var client = _host.CreateClient())
 			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
 			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				using (var res = _host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
 				{
 					Assert.IsFalse(res.IsSuccessStatusCode);
 					Task.Run(async () =>
@@ -69,7 +69,7 @@ namespace SoapCore.Tests.MessageFilter
     <wsse:Security xmlns:wsse=""http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"">
       <wsse:UsernameToken>
         <wsse:Username>yourusername</wsse:Username>
-        <wsse:Password Type=""wsse:PasswordText"">yourpassword</wsse:Password>
+        <wsse:Password Type=""http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"">yourpassword</wsse:Password>
       </wsse:UsernameToken>
     </wsse:Security>
   </soapenv:Header>
@@ -80,11 +80,11 @@ namespace SoapCore.Tests.MessageFilter
   </soapenv:Body>
 </soapenv:Envelope>
 ";
-			using (var client = host.CreateClient())
+			using (var client = _host.CreateClient())
 			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
 			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				using (var res = _host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
 				{
 					Assert.IsTrue(res.IsSuccessStatusCode);
 					Task.Run(async () =>
@@ -106,7 +106,7 @@ namespace SoapCore.Tests.MessageFilter
     <wsse:Security xmlns:wsse=""http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"">
       <wsse:UsernameToken>
         <wsse:Username>INVALID_USERNAME</wsse:Username>
-        <wsse:Password Type=""wsse:PasswordText"">INAVLID_PASSWORD</wsse:Password>
+        <wsse:Password Type=""http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"">INVALID_PASSWORD</wsse:Password>
       </wsse:UsernameToken>
     </wsse:Security>
   </soapenv:Header>
@@ -117,11 +117,11 @@ namespace SoapCore.Tests.MessageFilter
   </soapenv:Body>
 </soapenv:Envelope>
 ";
-			using (var client = host.CreateClient())
+			using (var client = _host.CreateClient())
 			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
 			{
 				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
-				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				using (var res = _host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
 				{
 					Assert.IsFalse(res.IsSuccessStatusCode);
 					Task.Run(async () =>
