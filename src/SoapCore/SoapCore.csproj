@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
@@ -49,36 +49,37 @@
 	<ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
 		<PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
-		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
 		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
-		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.1.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0' OR $(TargetFramework) == 'netcoreapp3.1'">
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
-		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.2" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
 		<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.CodeDom" Version="4.6.0" />
+		<PackageReference Include="System.CodeDom" Version="4.7.0" />
 		<PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
 		<PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
 	</ItemGroup>
