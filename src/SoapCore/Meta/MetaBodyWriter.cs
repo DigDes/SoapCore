@@ -668,7 +668,7 @@ namespace SoapCore.Meta
 			{
 				writer.WriteAttributeString("targetNamespace", @namespace);
 			}
-			else if (typeInfo.IsEnum || (typeInfo.IsValueType && typeInfo.Namespace.StartsWith("System"))
+			else if (typeInfo.IsEnum || (typeInfo.IsValueType && typeInfo.Namespace != null && typeInfo.Namespace.StartsWith("System"))
 				|| (type.Name == "String")
 				|| (type.Name == "Byte[]")
 				)
