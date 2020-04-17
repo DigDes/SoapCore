@@ -238,7 +238,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				return;
 			}
 
@@ -251,7 +251,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				return;
 			}
 
@@ -268,7 +268,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				return;
 			}
 
@@ -335,7 +335,7 @@ namespace SoapCore
 					}
 
 					_logger.LogWarning(0, exception, exception?.Message);
-					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 			}
 
@@ -354,7 +354,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, httpContext);
+				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 		}
 
@@ -642,6 +642,9 @@ namespace SoapCore
 		/// <param name="requestMessage">
 		/// The Message for the incoming request
 		/// </param>
+		/// <param name="messageEncoder">
+		/// Message encoder of incoming request
+		/// </param>
 		/// <param name="httpContext">
 		/// The HTTP context that received the response message.
 		/// </param>
@@ -654,18 +657,18 @@ namespace SoapCore
 			int statusCode,
 			IServiceProvider serviceProvider,
 			Message requestMessage,
+			SoapMessageEncoder messageEncoder,
 			HttpContext httpContext)
 		{
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, _messageEncoders[0].MessageVersion, _xmlNamespaceManager);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, _xmlNamespaceManager);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
 			httpContext.Response.StatusCode = statusCode;
 
 			SetHttpResponse(httpContext, faultMessage);
-
-			if (_messageEncoders[0].MessageVersion.Addressing == AddressingVersion.WSAddressing10)
+			if (messageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
 				// TODO: Some additional work needs to be done in order to support setting the action. Simply setting it to
 				// "http://www.w3.org/2005/08/addressing/fault" will cause the WCF Client to not be able to figure out the type
@@ -673,7 +676,7 @@ namespace SoapCore
 				faultMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 			}
 
-			await WriteMessageAsync(_messageEncoders[0], faultMessage, httpContext);
+			await WriteMessageAsync(messageEncoder, faultMessage, httpContext);
 
 			return faultMessage;
 		}
