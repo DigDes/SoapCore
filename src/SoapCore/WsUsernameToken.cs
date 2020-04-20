@@ -1,13 +1,30 @@
-using System.Runtime.Serialization;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace SoapCore
 {
-	[DataContract(Name = "UsernameToken", Namespace = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd")]
+	[XmlRoot("UsernameToken", Namespace = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd")]
 	public class WsUsernameToken
 	{
-		[DataMember(Name = "Username", Order = 1, IsRequired = true)]
+		[XmlElement("Username")]
 		public string Username { get; set; }
-		[DataMember(Name = "Password", Order = 2, IsRequired = true)]
-		public string Password { get; set; }
+
+		[XmlElement("Password")]
+		public PasswordString Password { get; set; }
+
+		[XmlElement("Nonce", DataType = "base64Binary")]
+		public byte[] Nonce { get; set; }
+
+		[XmlElement("Created", Namespace = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd")]
+		public string Created { get; set; }
+
+		public class PasswordString
+		{
+			[XmlText]
+			public string Value { get; set; }
+
+			[XmlAttribute("Type")]
+			public string Type { get; set; }
+		}
 	}
 }

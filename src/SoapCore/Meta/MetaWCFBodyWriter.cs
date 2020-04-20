@@ -1188,11 +1188,11 @@ namespace SoapCore.Meta
 
 						var ns = $"q{_namespaceCounter++}";
 
-						writer.WriteAttributeString($"xmlns:{ns}", Namespaces.ARRAYS_NS);
+						writer.WriteXmlnsAttribute($"{ns}", Namespaces.ARRAYS_NS);
 						writer.WriteAttributeString("name", name);
 						writer.WriteAttributeString("nillable", "true");
 						writer.WriteAttributeString("type", $"{ns}:ArrayOf{sysType.name}");
-
+						
 						_arrayToBuild.Enqueue(type);
 					}
 					else

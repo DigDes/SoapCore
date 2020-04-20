@@ -126,7 +126,7 @@ namespace SoapCore.Tests.Wsdl
 			var root = new XmlDocument();
 			root.LoadXml(wsdl);
 
-			XmlNamespaceManager nsmgr = new XmlNamespaceManager(root.NameTable);
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
 			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
 
