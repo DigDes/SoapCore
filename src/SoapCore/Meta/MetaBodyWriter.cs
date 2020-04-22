@@ -361,7 +361,7 @@ namespace SoapCore.Meta
 						{
 							foreach (var property in toBuildBodyType.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
 							{
-								AddSchemaType(writer, property.PropertyType, property.Name, typeof(IEnumerable).IsAssignableFrom(property.PropertyType), isRequired: property.GetCustomAttribute<DataMemberAttribute>()?.IsRequired ?? false);
+								AddSchemaType(writer, property.PropertyType, property.Name, isRequired: property.GetCustomAttribute<DataMemberAttribute>()?.IsRequired ?? false);
 							}
 						}
 						else
