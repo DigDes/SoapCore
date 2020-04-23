@@ -361,7 +361,7 @@ namespace SoapCore.Meta
 						{
 							foreach (var property in toBuildBodyType.GetProperties().Where(prop => !prop.CustomAttributes.Any(attr => attr.AttributeType == typeof(IgnoreDataMemberAttribute))))
 							{
-								AddSchemaType(writer, property.PropertyType, property.Name);
+								AddSchemaType(writer, property.PropertyType, property.Name, isRequired: property.GetCustomAttribute<DataMemberAttribute>()?.IsRequired ?? false);
 							}
 						}
 						else
@@ -646,7 +646,7 @@ namespace SoapCore.Meta
 			writer.WriteEndElement(); // wsdl:port
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null, bool isRequired = false)
 		{
 			var typeInfo = type.GetTypeInfo();
 			if (typeInfo.IsByRef)
@@ -727,7 +727,7 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				writer.WriteAttributeString("minOccurs", "0");
+				writer.WriteAttributeString("minOccurs", isRequired ? "1" : "0");
 				if (isArray)
 				{
 					writer.WriteAttributeString("maxOccurs", "unbounded");
