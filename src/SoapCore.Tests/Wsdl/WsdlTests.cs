@@ -229,6 +229,28 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(wsdl);
 		}
 
+		[TestMethod]
+		public void CheckSchemaObjectWithArrayService()
+		{
+			StartService(typeof(ObjectWithArrayService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = XElement.Parse(wsdl);
+			var elementsWithEmptyName = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == string.Empty);
+			elementsWithEmptyName.ShouldBeEmpty();
+
+			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
+			elementsWithEmptyType.ShouldBeEmpty();
+
+			var elementsWithEmptyComplexType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "tns:");
+			elementsWithEmptyComplexType.ShouldBeEmpty();
+
+			var typeWithArrayElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "ArrayOfMyClass");
+			var typeDescriptionElements = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == "MyClass");
+			Assert.IsNotNull(typeWithArrayElement);
+			Assert.AreEqual(typeDescriptionElements.Count(), 2);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
