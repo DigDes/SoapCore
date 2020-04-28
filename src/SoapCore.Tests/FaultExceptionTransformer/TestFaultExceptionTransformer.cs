@@ -9,7 +9,7 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 {
 	public class TestFaultExceptionTransformer : IFaultExceptionTransformer
 	{
-		public Message ProvideFault(Exception exception, MessageVersion messageVersion, XmlNamespaceManager xmlNamespaceManager)
+		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, XmlNamespaceManager xmlNamespaceManager)
 		{
 			var fault = new TestFault
 			{
