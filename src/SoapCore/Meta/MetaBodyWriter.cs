@@ -830,17 +830,14 @@ namespace SoapCore.Meta
 				typeName = xmlTypeAttribute.TypeName;
 			}
 
-			if (isArrayPropertyDeclaration == false)
+			if (type.IsArray && isArrayPropertyDeclaration == false)
 			{
-				if (type.IsArray)
-				{
-					typeName = "ArrayOf" + typeName.Replace("[]", string.Empty);
-				}
+				typeName = "ArrayOf" + typeName.Replace("[]", string.Empty);
+			}
 
-				if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
-				{
-					typeName = "ArrayOf" + typeName;
-				}
+			if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType && isArrayPropertyDeclaration == false)
+			{
+				typeName = "ArrayOf" + typeName;
 			}
 
 			return typeName;
