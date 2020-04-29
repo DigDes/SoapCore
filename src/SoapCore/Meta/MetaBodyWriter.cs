@@ -654,7 +654,7 @@ namespace SoapCore.Meta
 				type = typeInfo.GetElementType();
 			}
 
-			var typeName = GetSerialsedTypeName(type);
+			var typeName = GetSerialsedTypeName(type, true);
 
 			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer, _xmlNamespaceManager))
 			{
@@ -811,7 +811,7 @@ namespace SoapCore.Meta
 			writer.WriteEndElement(); // element
 		}
 
-		private static string GetSerialsedTypeName(Type type)
+		private static string GetSerialsedTypeName(Type type, bool isArrayPropertyDeclaration = false)
 		{
 			var namedType = type;
 			if (type.IsArray)
@@ -830,12 +830,12 @@ namespace SoapCore.Meta
 				typeName = xmlTypeAttribute.TypeName;
 			}
 
-			if (type.IsArray)
+			if (type.IsArray && isArrayPropertyDeclaration == false)
 			{
 				typeName = "ArrayOf" + typeName.Replace("[]", string.Empty);
 			}
 
-			if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
+			if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType && isArrayPropertyDeclaration == false)
 			{
 				typeName = "ArrayOf" + typeName;
 			}
