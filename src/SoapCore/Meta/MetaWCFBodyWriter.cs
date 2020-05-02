@@ -880,7 +880,7 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("name", "detail");
 				var ns = $"q{_namespaceCounter++}";
 				writer.WriteAttributeString("element", $"{ns}:{fault.Name}");
-				writer.WriteAttributeString("xmlns", ns, null, GetDataContractNamespace(fault));
+				writer.WriteAttributeString(ns, "xmlns", GetDataContractNamespace(fault));
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}
