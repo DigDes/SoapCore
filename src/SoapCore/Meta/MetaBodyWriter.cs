@@ -661,6 +661,15 @@ namespace SoapCore.Meta
 				return;
 			}
 
+			var underlyingType = Nullable.GetUnderlyingType(type);
+
+			//if type is a nullable non-system struct
+			if (underlyingType?.IsValueType == true && !underlyingType.IsEnum && underlyingType.Namespace != null && underlyingType.Namespace != "System" && !underlyingType.Namespace.StartsWith("System."))
+			{
+				AddSchemaType(writer, underlyingType, name, isArray, @namespace);
+				return;
+			}
+
 			writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
 
 			// Check for null, since we may use empty NS
@@ -668,7 +677,8 @@ namespace SoapCore.Meta
 			{
 				writer.WriteAttributeString("targetNamespace", @namespace);
 			}
-			else if (typeInfo.IsEnum || (typeInfo.IsValueType && typeInfo.Namespace != null && typeInfo.Namespace.StartsWith("System"))
+			else if (typeInfo.IsEnum
+				|| (typeInfo.IsValueType && typeInfo.Namespace != null && (typeInfo.Namespace == "System" || typeInfo.Namespace.StartsWith("System.")))
 				|| (type.Name == "String")
 				|| (type.Name == "Byte[]")
 				)
@@ -693,7 +703,6 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					var underlyingType = Nullable.GetUnderlyingType(type);
 					if (underlyingType != null)
 					{
 						xsTypename = ResolveType(underlyingType);
