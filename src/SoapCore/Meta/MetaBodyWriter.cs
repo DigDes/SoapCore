@@ -677,7 +677,7 @@ namespace SoapCore.Meta
 			{
 				writer.WriteAttributeString("targetNamespace", @namespace);
 			}
-			else if (typeInfo.IsEnum
+			else if (typeInfo.IsEnum || underlyingType?.IsEnum == true
 				|| (typeInfo.IsValueType && typeInfo.Namespace != null && (typeInfo.Namespace == "System" || typeInfo.Namespace.StartsWith("System.")))
 				|| (type.Name == "String")
 				|| (type.Name == "Byte[]")
@@ -700,6 +700,11 @@ namespace SoapCore.Meta
 				{
 					xsTypename = new XmlQualifiedName(typeName, _xmlNamespaceManager.LookupNamespace("tns"));
 					_enumToBuild.Enqueue(type);
+				}
+				else if (underlyingType?.IsEnum == true)
+				{
+					xsTypename = new XmlQualifiedName(GetSerialsedTypeName(underlyingType), _xmlNamespaceManager.LookupNamespace("tns"));
+					_enumToBuild.Enqueue(underlyingType);
 				}
 				else
 				{
