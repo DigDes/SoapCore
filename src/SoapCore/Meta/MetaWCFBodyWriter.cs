@@ -729,7 +729,7 @@ namespace SoapCore.Meta
 
 			writer.WriteStartElement("xs", "complexType", Namespaces.XMLNS_XSD);
 			writer.WriteAttributeString("name", toBuildName);
-			writer.WriteAttributeString("ser", "xmlns", Namespaces.SERIALIZATION_NS);
+			writer.WriteAttributeString("xmlns", "ser", null, Namespaces.SERIALIZATION_NS);
 
 			if (type.IsValueType && ResolveSystemType(type).name == null)
 			{
@@ -760,7 +760,7 @@ namespace SoapCore.Meta
 				{
 					var ns = $"q{_namespaceCounter++}";
 					writer.WriteAttributeString("base", $"{ns}:{typeName}");
-					writer.WriteAttributeString($"{ns}", "xmlns", modelNamespace);
+					writer.WriteAttributeString("xmlns", ns, null, modelNamespace);
 				}
 				else
 				{
@@ -880,7 +880,7 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("name", "detail");
 				var ns = $"q{_namespaceCounter++}";
 				writer.WriteAttributeString("element", $"{ns}:{fault.Name}");
-				writer.WriteAttributeString($"xmlns:{ns}", GetDataContractNamespace(fault));
+				writer.WriteAttributeString("xmlns", ns, null, GetDataContractNamespace(fault));
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 			}
