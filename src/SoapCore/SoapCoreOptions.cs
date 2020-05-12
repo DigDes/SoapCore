@@ -80,5 +80,10 @@ namespace SoapCore
 		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
 		/// </summary>
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; } = new XmlNamespaceManager(new NameTable());
+
+		/// <summary>
+		/// Gets or sets a value indicating the kind of serializer to use for meta generation - if not provided the SoapSerializer setting is used instead
+		/// </summary>
+		public SoapSerializer? MetaSerializer { get; set; }
 	}
 }

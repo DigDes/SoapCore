@@ -180,7 +180,10 @@ namespace SoapCore
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding, _xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
+			var bodyWriter = (_options?.MetaSerializer ?? _serializer) == SoapSerializer.XmlSerializer
+				? new MetaBodyWriter(_service, baseUrl, _binding, _xmlNamespaceManager)
+				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
+
 			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
 
