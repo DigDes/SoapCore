@@ -206,6 +206,42 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckStringArrayNameWsdl()
+		{
+			//StartService(typeof(StringListService));
+			//var wsdl = GetWsdl();
+			//StopServer();
+			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// Check complexType exists for xmlserializer meta
+			var testResultElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("type") != null && a.Attribute("name")?.Value.Equals("TestResult") == true);
+			Assert.IsNotNull(testResultElement);
+
+			// Now check if we can match the array type up with it's decleration
+			var split = testResultElement.Attribute("type").Value.Split(':');
+			var typeNamespace = testResultElement.GetNamespaceOfPrefix(split[0]);
+
+			var matchingSchema = GetElements(root, _xmlSchema + "schema").Where(schema => schema.Attribute("targetNamespace")?.Value.Equals(typeNamespace.NamespaceName) == true);
+			Assert.IsTrue(matchingSchema.Count() > 0);
+
+			var matched = false;
+			foreach (var schema in matchingSchema)
+			{
+				var matchingElement = GetElements(schema, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals(split[1]) == true);
+				if (matchingElement != null)
+				{
+					matched = true;
+				}
+			}
+
+			Assert.IsTrue(matched);
+		}
+
+		[TestMethod]
 		public async Task CheckDateTimeOffsetServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
