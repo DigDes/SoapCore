@@ -785,7 +785,7 @@ namespace SoapCore.Meta
 						writer.WriteAttributeString("name", name);
 						writer.WriteAttributeString("nillable", "true");
 
-						writer.WriteAttributeString("type", $"{ns}:{typeName.ToLower()}");
+						writer.WriteAttributeString("type", $"{ns}:{typeName}");
 
 						_arrayToBuild.Enqueue(type);
 					}
