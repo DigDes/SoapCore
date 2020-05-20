@@ -1,15 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.ServiceModel.Channels;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
+using SoapCore.MessageEncoder;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 using SoapCore.Tests.Wsdl.Services;
 
 namespace SoapCore.Tests.Wsdl
@@ -17,16 +24,15 @@ namespace SoapCore.Tests.Wsdl
 	[TestClass]
 	public class WsdlTests
 	{
-		private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		private readonly XNamespace _xmlSchema = "http://www.w3.org/2001/XMLSchema";
-		private readonly Random _portRandom = new Random();
+
+		private IWebHost _host;
 
 		[TestMethod]
 		public void CheckTaskReturnMethod()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(TaskNoReturnService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(TaskNoReturnService));
+			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
@@ -35,9 +41,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckDataContractContainsItself()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(DataContractContainsItselfService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(DataContractContainsItselfService));
+			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
@@ -46,9 +51,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckDataContractCircularReference()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(DataContractCircularReferenceService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(DataContractCircularReferenceService));
+			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
@@ -57,9 +61,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckNullableEnum()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(NullableEnumService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(NullableEnumService));
+			var wsdl = GetWsdl();
 			StopServer();
 
 			// Parse wsdl content as XML
@@ -77,9 +80,8 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public void CheckNonNullableEnum()
 		{
-			var serviceUrl = $"http://localhost:{5000 + _portRandom.Next(2000)}";
-			StartService(typeof(NonNullableEnumService), serviceUrl);
-			var wsdl = GetWsdl(serviceUrl);
+			StartService(typeof(NonNullableEnumService));
+			var wsdl = GetWsdl();
 			StopServer();
 
 			// Parse wsdl content as XML
@@ -94,32 +96,231 @@ namespace SoapCore.Tests.Wsdl
 			simpleTypeElements.ShouldNotBeEmpty();
 		}
 
+		[TestMethod]
+		public void CheckStructsInList()
+		{
+			StartService(typeof(StructService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = XElement.Parse(wsdl);
+			var elementsWithEmptyName = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == string.Empty);
+			elementsWithEmptyName.ShouldBeEmpty();
+
+			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
+			elementsWithEmptyType.ShouldBeEmpty();
+
+			var structTypeElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStruct");
+			var annotationNode = structTypeElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
+			var isValueTypeElement = annotationNode.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
+			Assert.IsNotNull(isValueTypeElement);
+			Assert.AreEqual("true", isValueTypeElement.Value);
+			Assert.IsNotNull(annotationNode);
+		}
+
+		[TestMethod]
+		public void CheckStreamDeclaration()
+		{
+			StartService(typeof(StreamService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:element[@name='GetStreamResponse']/xs:complexType/xs:sequence/xs:element", nsmgr);
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual("StreamBody", element.Attributes["name"].Value);
+			Assert.AreEqual("xs:base64Binary", element.Attributes["type"].Value);
+		}
+
+		[TestMethod]
+		public void CheckDataContractName()
+		{
+			StartService(typeof(DataContractNameService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var childRenamed = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ChildRenamed") == true);
+			Assert.IsNotNull(childRenamed);
+
+			var extension = GetElements(childRenamed, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:BaseRenamed") == true);
+			Assert.IsNotNull(extension);
+		}
+
+		[TestMethod]
+		public void CheckEnumList()
+		{
+			StartService(typeof(EnumListService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var listResponse = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListResult") == true);
+			Assert.IsNotNull(listResponse);
+			Assert.AreEqual("q1:ArrayOfTestEnum", listResponse.Attribute("type").Value);
+
+			var arrayOfTestEnum = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ArrayOfTestEnum") == true);
+			Assert.IsNotNull(arrayOfTestEnum);
+
+			var element = GetElements(arrayOfTestEnum, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("TestEnum") == true);
+			Assert.IsNotNull(element);
+			Assert.AreEqual("0", element.Attribute("minOccurs").Value);
+			Assert.AreEqual("unbounded", element.Attribute("maxOccurs").Value);
+		}
+
+		[TestMethod]
+		public void CheckCollectionDataContract()
+		{
+			StartService(typeof(CollectionDataContractService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var listStringsResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListStringsResult") == true);
+			Assert.IsNotNull(listStringsResult);
+			Assert.AreEqual("http://testnamespace.org", listStringsResult.Attribute(XNamespace.Xmlns + "q1").Value);
+			Assert.AreEqual("q1:MystringList", listStringsResult.Attribute("type").Value);
+
+			var myStringList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MystringList") == true);
+			Assert.IsNotNull(myStringList);
+
+			var myStringElement = GetElements(myStringList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
+			Assert.IsNotNull(myStringElement);
+
+			var listMyTypesResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ListMyTypesResult") == true);
+			Assert.IsNotNull(listMyTypesResult);
+			Assert.AreEqual("http://testnamespace.org", listMyTypesResult.Attribute(XNamespace.Xmlns + "q2").Value);
+			Assert.AreEqual("q2:MyMyTypeList", listMyTypesResult.Attribute("type").Value);
+
+			var myMyTypeList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyMyTypeList") == true);
+			Assert.IsNotNull(myMyTypeList);
+
+			var myMyTypeElement = GetElements(myMyTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
+			Assert.IsNotNull(myMyTypeElement);
+		}
+
+		[TestMethod]
+		public async Task CheckStringArrayNameWsdl()
+		{
+			//StartService(typeof(StringListService));
+			//var wsdl = GetWsdl();
+			//StopServer();
+			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// Check complexType exists for xmlserializer meta
+			var testResultElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("type") != null && a.Attribute("name")?.Value.Equals("TestResult") == true);
+			Assert.IsNotNull(testResultElement);
+
+			// Now check if we can match the array type up with it's decleration
+			var split = testResultElement.Attribute("type").Value.Split(':');
+			var typeNamespace = testResultElement.GetNamespaceOfPrefix(split[0]);
+
+			var matchingSchema = GetElements(root, _xmlSchema + "schema").Where(schema => schema.Attribute("targetNamespace")?.Value.Equals(typeNamespace.NamespaceName) == true);
+			Assert.IsTrue(matchingSchema.Count() > 0);
+
+			var matched = false;
+			foreach (var schema in matchingSchema)
+			{
+				var matchingElement = GetElements(schema, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals(split[1]) == true);
+				if (matchingElement != null)
+				{
+					matched = true;
+				}
+			}
+
+			Assert.IsTrue(matched);
+		}
+
+		[TestMethod]
+		public async Task CheckDateTimeOffsetServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
+		public async Task CheckXmlSchemaProviderTypeServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
+		public async Task CheckTestMultipleTypesServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
-			_cancellationTokenSource.Cancel();
+			_host?.StopAsync();
 		}
 
-		private string GetWsdl(string serviceUrl, string serviceName = "Service.svc")
+		private string GetWsdl()
 		{
+			var serviceName = "Service.svc";
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
 			using (var httpClient = new HttpClient())
 			{
-				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", serviceUrl, serviceName)).Result;
+				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
 			}
 		}
 
-		private void StartService(Type serviceType, string serviceUrl)
+		private async Task<string> GetWsdlFromMetaBodyWriter<T>()
 		{
-			Task.Run(async () =>
+			var service = new ServiceDescription(typeof(T));
+			var baseUrl = "http://tempuri.org/";
+			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
+			var bodyWriter = new MetaBodyWriter(service, baseUrl, null, xmlNamespaceManager);
+			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true);
+			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
+			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
+
+			var memoryStream = new MemoryStream();
+			await encoder.WriteMessageAsync(responseMessage, memoryStream);
+			memoryStream.Position = 0;
+
+			var streamReader = new StreamReader(memoryStream);
+			var result = streamReader.ReadToEnd();
+			return result;
+		}
+
+		private void StartService(Type serviceType)
+		{
+			Task.Run(() =>
 			{
-				var host = new WebHostBuilder()
-					.UseKestrel(x => x.AllowSynchronousIO = true)
-					.UseUrls(serviceUrl)
+				_host = new WebHostBuilder()
+					.UseKestrel()
+					.UseUrls("http://127.0.0.1:0")
 					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
 					.UseStartup<Startup>()
 					.Build();
-				await host.RunAsync(_cancellationTokenSource.Token);
-			}).Wait(1000);
+
+				_host.Run();
+			});
+
+			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+			{
+				Thread.Sleep(2000);
+			}
 		}
 
 		private List<XElement> GetElements(XElement root, XName name)

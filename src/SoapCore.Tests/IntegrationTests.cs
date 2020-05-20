@@ -1,10 +1,12 @@
 using System;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SoapCore.Tests.Model;
+using SoapCore.Tests.Utilities;
 
 namespace SoapCore.Tests
 {
@@ -38,6 +40,14 @@ namespace SoapCore.Tests
 		public void PingSoap12()
 		{
 			var client = CreateSoap12Client();
+			var result = client.Ping("hello, world");
+			Assert.AreEqual("hello, world", result);
+		}
+
+		[TestMethod]
+		public void PingSoap11Iso55891()
+		{
+			var client = CreateSoap11Iso88591Client();
 			var result = client.Ping("hello, world");
 			Assert.AreEqual("hello, world", result);
 		}
@@ -158,6 +168,19 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void ExceptionMessageSoap11iso88591()
+		{
+			var client = CreateSoap11Iso88591Client();
+
+			var e = Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowExceptionWithMessage("Your error message here");
+			});
+
+			Assert.AreEqual("Your error message here", e.Message);
+		}
+
+		[TestMethod]
 		public void ThrowsDetailedFault()
 		{
 			var client = CreateClient();
@@ -199,6 +222,17 @@ namespace SoapCore.Tests
 			var textencoding = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, System.Text.Encoding.UTF8);
 			var binding = new CustomBinding(textencoding, transport);
 			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/Service.svc", "localhost")));
+			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
+			var serviceClient = channelFactory.CreateChannel();
+			return serviceClient;
+		}
+
+		private ITestService CreateSoap11Iso88591Client()
+		{
+			var transport = new HttpTransportBindingElement();
+			var textencoding = new CustomTextMessageBindingElement("iso-8859-1", "text/xml", MessageVersion.Soap11);
+			var binding = new CustomBinding(textencoding, transport);
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5050/WSA11ISO88591Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;

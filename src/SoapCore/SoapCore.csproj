@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
-		<VersionPrefix>0.9.9.1</VersionPrefix>
+		<VersionPrefix>1.1.0.0-alpha</VersionPrefix>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.0;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+		<TargetFrameworks>netcoreapp3.0;netstandard2.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
@@ -14,16 +14,28 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>0.9.9.8-alpha</Version>
+		<Version>1.1.0.0-alpha</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
+		<LangVersion>8.0</LangVersion>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningsAsErrors />
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
+		<DefineConstants>ASPNET_21;SPAN_BUILTIN</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">
+		<DefineConstants>ASPNET_21</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
+		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -34,20 +46,41 @@
 		<AdditionalFiles Include="stylecop.json" />
 	</ItemGroup>
 
+	<ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
+		<PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0' OR $(TargetFramework) == 'netcoreapp3.1'">
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.2" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.CodeDom" Version="4.6.0" />
-		<PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
-		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
+		<PackageReference Include="System.CodeDom" Version="4.7.0" />
+		<PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
 		<PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-		<PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
 	</ItemGroup>
 </Project>

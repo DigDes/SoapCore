@@ -1,21 +1,40 @@
 using System;
 using System.ServiceModel.Channels;
+using System.Text;
+using System.Xml;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using SoapCore.Extensibility;
+
+#if ASPNET_30
+using Microsoft.AspNetCore.Routing;
+#endif
 
 namespace SoapCore
 {
 	public static class SoapEndpointExtensions
 	{
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
-			return builder.UseSoapEndpoint(typeof(T), path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
+			return builder.UseSoapEndpoint(typeof(T), path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, MessageEncoder encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+		public static IApplicationBuilder UseSoapEndpoint<T, T_MESSAGE>(this IApplicationBuilder builder, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
 		{
-			return builder.UseSoapEndpoint(type, path, new MessageEncoder[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
+			return builder.UseSoapEndpoint<T_MESSAGE>(typeof(T), path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+		{
+			return builder.UseSoapEndpoint(type, path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint<T_MESSAGE>(this IApplicationBuilder builder, Type type, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return builder.UseSoapEndpoint<T_MESSAGE>(type, path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
@@ -23,78 +42,287 @@ namespace SoapCore
 			return builder.UseSoapEndpoint(typeof(T), path, binding, serializer, caseInsensitivePath, soapModelBounder);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, MessageEncoder[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		public static IApplicationBuilder UseSoapEndpoint<T, T_MESSAGE>(this IApplicationBuilder builder, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return builder.UseSoapEndpoint<T_MESSAGE>(typeof(T), path, binding, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, string path, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
 			return builder.UseSoapEndpoint(typeof(T), path, encoders, serializer, caseInsensitivePath, soapModelBounder, null);
 		}
 
-		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, MessageEncoder[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+		public static IApplicationBuilder UseSoapEndpoint<T, T_MESSAGE>(this IApplicationBuilder builder, string path, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return builder.UseSoapEndpoint<T_MESSAGE>(typeof(T), path, encoders, serializer, caseInsensitivePath, soapModelBounder, null);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+		{
+			return builder.UseSoapEndpoint<CustomMessage>(type, path, encoderOptions, serializer, caseInsensitivePath, soapModelBounder, binding);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint<T_MESSAGE>(this IApplicationBuilder builder, Type type, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+			where T_MESSAGE : CustomMessage, new()
 		{
 			var options = new SoapOptions
 			{
 				Binding = binding,
 				CaseInsensitivePath = caseInsensitivePath,
-				MessageEncoders = encoders,
+				EncoderOptions = encoderOptions,
 				Path = path,
 				ServiceType = type,
 				SoapSerializer = serializer,
 				SoapModelBounder = soapModelBounder
 			};
-			return builder.UseMiddleware<SoapEndpointMiddleware>(options);
+			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(options);
 		}
 
 		public static IApplicationBuilder UseSoapEndpoint(this IApplicationBuilder builder, Type type, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
 		{
+			return builder.UseSoapEndpoint<CustomMessage>(type, path, binding, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint<T_MESSAGE>(this IApplicationBuilder builder, Type type, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
 			var elements = binding.CreateBindingElements().FindAll<MessageEncodingBindingElement>();
-			var encoders = new MessageEncoder[elements.Count];
-			for (int i = 0; i < encoders.Length; i++)
+			var encoderOptions = new SoapEncoderOptions[elements.Count];
+
+			for (var i = 0; i < encoderOptions.Length; i++)
 			{
-				var factory = elements[i].CreateMessageEncoderFactory();
-				encoders[i] = factory.Encoder;
+				var encoderOption = new SoapEncoderOptions
+				{
+					MessageVersion = elements[i].MessageVersion,
+					WriteEncoding = Encoding.UTF8,
+					ReaderQuotas = XmlDictionaryReaderQuotas.Max
+				};
+
+				if (elements[i] is TextMessageEncodingBindingElement textMessageEncodingBindingElement)
+				{
+					encoderOption.WriteEncoding = textMessageEncodingBindingElement.WriteEncoding;
+					encoderOption.ReaderQuotas = textMessageEncodingBindingElement.ReaderQuotas;
+				}
+
+				encoderOptions[i] = encoderOption;
 			}
 
-			return builder.UseSoapEndpoint(type, path, encoders, serializer, caseInsensitivePath, soapModelBounder, binding);
+			return builder.UseSoapEndpoint<T_MESSAGE>(type, path, encoderOptions, serializer, caseInsensitivePath, soapModelBounder, binding);
 		}
 
 		public static IApplicationBuilder UseSoapEndpoint<T>(this IApplicationBuilder builder, Action<SoapCoreOptions> options)
+		{
+			return builder.UseSoapEndpoint<T, CustomMessage>(options);
+		}
+
+		public static IApplicationBuilder UseSoapEndpoint<T, T_MESSAGE>(this IApplicationBuilder builder, Action<SoapCoreOptions> options)
+			where T_MESSAGE : CustomMessage, new()
 		{
 			var opt = new SoapCoreOptions();
 			options(opt);
 
 			// Generate encoders from Binding when they are not provided
-			if (opt.MessageEncoders is null && opt.Binding != null)
+			if (opt.EncoderOptions is null && opt.Binding != null)
 			{
 				var elements = opt.Binding.CreateBindingElements().FindAll<MessageEncodingBindingElement>();
-				var encoders = new MessageEncoder[elements.Count];
-				for (var i = 0; i < encoders.Length; i++)
+				var encoderOptions = new SoapEncoderOptions[elements.Count];
+
+				for (var i = 0; i < encoderOptions.Length; i++)
 				{
-					var factory = elements[i].CreateMessageEncoderFactory();
-					encoders[i] = factory.Encoder;
+					var encoderOption = new SoapEncoderOptions
+					{
+						MessageVersion = elements[i].MessageVersion,
+						WriteEncoding = Encoding.UTF8,
+						ReaderQuotas = XmlDictionaryReaderQuotas.Max
+					};
+
+					if (elements[i] is TextMessageEncodingBindingElement textMessageEncodingBindingElement)
+					{
+						encoderOption.WriteEncoding = textMessageEncodingBindingElement.WriteEncoding;
+						encoderOption.ReaderQuotas = textMessageEncodingBindingElement.ReaderQuotas;
+					}
+
+					encoderOptions[i] = encoderOption;
 				}
 
-				opt.MessageEncoders = encoders;
+				opt.EncoderOptions = encoderOptions;
 			}
 
-			var soapOptions = new SoapOptions
+			var soapOptions = SoapOptions.FromSoapCoreOptions<T>(opt);
+
+			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
+		}
+
+#if ASPNET_30
+		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		{
+			return routes.UseSoapEndpoint(typeof(T), path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return routes.UseSoapEndpoint<T_MESSAGE>(typeof(T), path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint(this IEndpointRouteBuilder routes, Type type, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+		{
+			return routes.UseSoapEndpoint(type, path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type type, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return routes.UseSoapEndpoint<T_MESSAGE>(type, path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, binding);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		{
+			return routes.UseSoapEndpoint(typeof(T), path, binding, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return routes.UseSoapEndpoint<T_MESSAGE>(typeof(T), path, binding, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		{
+			return routes.UseSoapEndpoint(typeof(T), path, encoders, serializer, caseInsensitivePath, soapModelBounder, null);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return routes.UseSoapEndpoint<T_MESSAGE>(typeof(T), path, encoders, serializer, caseInsensitivePath, soapModelBounder, null);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type type, string pattern, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			var options = new SoapOptions
 			{
-				ServiceType = typeof(T),
-				Path = opt.Path,
-				HttpsGetEnabled = opt.HttpsGetEnabled,
-				HttpGetEnabled = opt.HttpGetEnabled,
-				Binding = opt.Binding,
-				CaseInsensitivePath = opt.CaseInsensitivePath,
-				MessageEncoders = opt.MessageEncoders,
-				SoapModelBounder = opt.SoapModelBounder,
-				SoapSerializer = opt.SoapSerializer
+				Binding = binding,
+				CaseInsensitivePath = caseInsensitivePath,
+				EncoderOptions = encoders,
+				Path = pattern,
+				ServiceType = type,
+				SoapSerializer = serializer,
+				SoapModelBounder = soapModelBounder
 			};
 
-			return builder.UseMiddleware<SoapEndpointMiddleware>(soapOptions);
+			var pipeline = routes
+				.CreateApplicationBuilder()
+				.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(options)
+				.Build();
+
+			return routes.Map(pattern, pipeline)
+				.WithDisplayName("SoapCore");
 		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint(this IEndpointRouteBuilder routes, Type type, string pattern, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, Binding binding = null)
+		{
+			return UseSoapEndpoint<CustomMessage>(routes, type, pattern, encoders, serializer, caseInsensitivePath, soapModelBounder, binding);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type type, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			var elements = binding.CreateBindingElements().FindAll<MessageEncodingBindingElement>();
+			var encoderOptions = new SoapEncoderOptions[elements.Count];
+
+			for (var i = 0; i < encoderOptions.Length; i++)
+			{
+				var encoderOption = new SoapEncoderOptions
+				{
+					MessageVersion = elements[i].MessageVersion,
+					WriteEncoding = Encoding.UTF8,
+					ReaderQuotas = XmlDictionaryReaderQuotas.Max
+				};
+
+				if (elements[i] is TextMessageEncodingBindingElement textMessageEncodingBindingElement)
+				{
+					encoderOption.WriteEncoding = textMessageEncodingBindingElement.WriteEncoding;
+					encoderOption.ReaderQuotas = textMessageEncodingBindingElement.ReaderQuotas;
+				}
+
+				encoderOptions[i] = encoderOption;
+			}
+
+			return routes.UseSoapEndpoint<T_MESSAGE>(type, path, encoderOptions, serializer, caseInsensitivePath, soapModelBounder, binding);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint(this IEndpointRouteBuilder routes, Type type, string path, Binding binding, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null)
+		{
+			return UseSoapEndpoint<CustomMessage>(routes, type, path, binding, serializer, caseInsensitivePath, soapModelBounder);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, Action<SoapCoreOptions> options)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			var opt = new SoapCoreOptions();
+			options(opt);
+
+			// Generate encoders from Binding when they are not provided
+			if (opt.EncoderOptions is null && opt.Binding != null)
+			{
+				var elements = opt.Binding.CreateBindingElements().FindAll<MessageEncodingBindingElement>();
+				var encoderOptions = new SoapEncoderOptions[elements.Count];
+
+				for (var i = 0; i < encoderOptions.Length; i++)
+				{
+					var encoderOption = new SoapEncoderOptions
+					{
+						MessageVersion = elements[i].MessageVersion,
+						WriteEncoding = Encoding.UTF8,
+						ReaderQuotas = XmlDictionaryReaderQuotas.Max
+					};
+
+					if (elements[i] is TextMessageEncodingBindingElement textMessageEncodingBindingElement)
+					{
+						encoderOption.WriteEncoding = textMessageEncodingBindingElement.WriteEncoding;
+						encoderOption.ReaderQuotas = textMessageEncodingBindingElement.ReaderQuotas;
+					}
+
+					encoderOptions[i] = encoderOption;
+				}
+
+				opt.EncoderOptions = encoderOptions;
+			}
+
+			var soapOptions = SoapOptions.FromSoapCoreOptions<T>(opt);
+
+			var pipeline = routes
+				.CreateApplicationBuilder()
+				.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions)
+				.Build();
+
+			return routes.Map(soapOptions.Path, pipeline)
+				.WithDisplayName("SoapCore");
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, Action<SoapCoreOptions> options)
+		{
+			return UseSoapEndpoint<T, CustomMessage>(routes, options);
+		}
+#endif
 
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)
 		{
 			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
-			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer>();
+			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<CustomMessage>>();
+
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapCore<T_MESSAGE>(this IServiceCollection serviceCollection)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
+			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<T_MESSAGE>>();
 
 			return serviceCollection;
 		}

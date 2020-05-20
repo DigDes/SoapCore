@@ -1,7 +1,9 @@
+
+
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+		<TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
@@ -9,6 +11,22 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningsAsErrors />
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
+		<DefineConstants>ASPNET_21</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">
+		<DefineConstants>ASPNET_21</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+		<DefineConstants>ASPNET_30</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
+		<DefineConstants>ASPNET_30</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -19,11 +37,31 @@
 		<AdditionalFiles Include="stylecop.json" />
 	</ItemGroup>
 
+	<ItemGroup Condition="$(TargetFramework) =='netcoreapp2.1'">
+		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetFramework) =='net461'">
+		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetFramework) =='netstandard2.0'">
+		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0' OR $(TargetFramework) == 'netcoreapp3.1'">
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.2" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="DeepEqual.SuperJMN" Version="2.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
 		<PackageReference Include="MSTest.TestAdapter" Version="2.0.0" />
 		<PackageReference Include="MSTest.TestFramework" Version="2.0.0" />
@@ -31,7 +69,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.ServiceModel.Http" Version="4.6.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
 		<PackageReference Include="Moq" Version="4.13.0" />
 		<PackageReference Include="Shouldly" Version="3.0.2" />
 		<PackageReference Include="xunit" Version="2.4.1" />
@@ -46,7 +84,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Serialization\Models.DataContract\" />
 		<Folder Include="Serialization\Models.Models.Xml\" />
 	</ItemGroup>
 

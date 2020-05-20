@@ -1,3 +1,4 @@
+using System.IO;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -114,5 +115,19 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract]
 		[XmlSerializerFormat]
 		int[] PingIntArray(int[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		DataContractWithStream PingStream(DataContractWithStream model);
+
+		[OperationContract]
+		[XmlSerializerFormat]
+		Stream GetStream();
+
+		[OperationContract]
+		DataContractWithoutNamespace GetComplexObjectWithXmlElement([XmlElement(Namespace = "http://xmlelement-namespace", ElementName = "Elem")]DataContractWithoutNamespace obj);
+
+		[OperationContract(IsOneWay = true)]
+		void OneWayCall(string s);
 	}
 }

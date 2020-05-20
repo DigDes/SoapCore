@@ -1,5 +1,6 @@
 using System.Linq;
 using System.ServiceModel;
+using SoapCore.ServiceModel;
 using SoapCore.Tests.OperationDescription;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace SoapCore.Tests
 
 			OperationContractAttribute contractAttribute = new OperationContractAttribute();
 
-			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+			ServiceModel.OperationDescription operationDescription = new ServiceModel.OperationDescription(contractDescription, method, contractAttribute);
 
 			Assert.True(operationDescription.IsMessageContractResponse);
 		}
@@ -32,7 +33,7 @@ namespace SoapCore.Tests
 
 			OperationContractAttribute contractAttribute = new OperationContractAttribute();
 
-			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+			ServiceModel.OperationDescription operationDescription = new ServiceModel.OperationDescription(contractDescription, method, contractAttribute);
 
 			Assert.True(operationDescription.IsMessageContractResponse);
 		}
@@ -47,7 +48,7 @@ namespace SoapCore.Tests
 
 			OperationContractAttribute contractAttribute = new OperationContractAttribute();
 
-			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+			ServiceModel.OperationDescription operationDescription = new ServiceModel.OperationDescription(contractDescription, method, contractAttribute);
 
 			Assert.False(operationDescription.IsMessageContractResponse);
 		}
@@ -62,7 +63,7 @@ namespace SoapCore.Tests
 
 			OperationContractAttribute contractAttribute = new OperationContractAttribute();
 
-			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+			ServiceModel.OperationDescription operationDescription = new ServiceModel.OperationDescription(contractDescription, method, contractAttribute);
 
 			var faultInfo = Assert.Single(operationDescription.Faults);
 			Assert.Equal("TypedSoapFault", faultInfo.Name);
@@ -82,7 +83,7 @@ namespace SoapCore.Tests
 
 			OperationContractAttribute contractAttribute = new OperationContractAttribute();
 
-			SoapCore.OperationDescription operationDescription = new SoapCore.OperationDescription(contractDescription, method, contractAttribute);
+			ServiceModel.OperationDescription operationDescription = new ServiceModel.OperationDescription(contractDescription, method, contractAttribute);
 
 			Assert.True(operationDescription.IsMessageContractResponse);
 			Assert.Equal("GetMyAsyncClass", operationDescription.Name);

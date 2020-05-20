@@ -1,14 +1,15 @@
 using System;
-using System.Collections.Generic;
+using System.Net;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
-using System.Text;
+using System.Xml;
+using SoapCore.Extensibility;
 
 namespace SoapCore.Tests.FaultExceptionTransformer
 {
 	public class TestFaultExceptionTransformer : IFaultExceptionTransformer
 	{
-		public Message ProvideFault(Exception exception, MessageVersion messageVersion)
+		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, XmlNamespaceManager xmlNamespaceManager)
 		{
 			var fault = new TestFault
 			{
@@ -21,6 +22,8 @@ namespace SoapCore.Tests.FaultExceptionTransformer
 			var messageFault = faultException.CreateMessageFault();
 			var bodyWriter = new MessageFaultBodyWriter(messageFault, messageVersion);
 			var faultMessage = Message.CreateMessage(messageVersion, null, bodyWriter);
+
+			faultMessage.Properties.Add(HttpResponseMessageProperty.Name, new HttpResponseMessageProperty { StatusCode = HttpStatusCode.OK, StatusDescription = "test description" });
 
 			return faultMessage;
 		}

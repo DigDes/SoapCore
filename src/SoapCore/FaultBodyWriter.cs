@@ -10,9 +10,6 @@ namespace SoapCore
 {
 	public class FaultBodyWriter : BodyWriter
 	{
-		private const string Soap12Namespace = "http://www.w3.org/2003/05/soap-envelope";
-		private const string Soap11Namespace = "http://schemas.xmlsoap.org/soap/envelope/";
-
 		private readonly MessageVersion _version;
 		private readonly Exception _exception;
 		private readonly string _faultStringOverride;
@@ -50,19 +47,20 @@ namespace SoapCore
 
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
-			var prefix = writer.LookupPrefix(Soap12Namespace) ?? "s";
+			var prefix = writer.LookupPrefix(Namespaces.SOAP12_ENVELOPE_NS) ?? "s";
 
-			writer.WriteStartElement(prefix, "Fault", Soap12Namespace);
+			writer.WriteStartElement(prefix, "Fault", Namespaces.SOAP12_ENVELOPE_NS);
 
-			writer.WriteStartElement(prefix, "Code", Soap12Namespace);
-			writer.WriteStartElement(prefix, "Value", Soap12Namespace);
+			writer.WriteStartElement(prefix, "Code", Namespaces.SOAP12_ENVELOPE_NS);
+			writer.WriteStartElement(prefix, "Value", Namespaces.SOAP12_ENVELOPE_NS);
 			writer.WriteString(prefix + ":Sender");
 			writer.WriteEndElement();
 			writer.WriteEndElement();
 
-			writer.WriteStartElement(prefix, "Reason", Soap12Namespace);
-			writer.WriteStartElement(prefix, "Text", Soap12Namespace);
-			writer.WriteAttributeString("xml:lang", defaultCulture.IetfLanguageTag);
+			writer.WriteStartElement(prefix, "Reason", Namespaces.SOAP12_ENVELOPE_NS);
+			writer.WriteStartElement(prefix, "Text", Namespaces.SOAP12_ENVELOPE_NS);
+
+			writer.WriteAttributeString("xml", "lang", null, defaultCulture.IetfLanguageTag);
 			writer.WriteString(faultString);
 
 			writer.WriteEndElement();
@@ -70,7 +68,7 @@ namespace SoapCore
 
 			if (faultDetail != null)
 			{
-				writer.WriteStartElement(prefix, "Detail", Soap12Namespace);
+				writer.WriteStartElement(prefix, "Detail", Namespaces.SOAP12_ENVELOPE_NS);
 				faultDetail.WriteTo(writer);
 				writer.WriteEndElement();
 			}
@@ -83,8 +81,56 @@ namespace SoapCore
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
 
-			writer.WriteStartElement("Fault", Soap11Namespace);
-			writer.WriteElementString("faultcode", "s:Client");
+			writer.WriteStartElement("Fault", Namespaces.SOAP11_ENVELOPE_NS);
+
+			/* SUPPORT FOR SPECIFYING CUSTOM FAULTCODE AND NAMESPACE
+
+			For Example, this would result in the response below:
+			throw new System.ServiceModel.FaultException(new FaultReason("faultString1"), new FaultCode("faultCode1", "faultNamespace1"), "action1");
+			<s:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+				<s:Body>
+					<s:Fault>
+						<a:faultcode xmlns:a="faultNamespace1">a:faultCode1</a:faultcode>
+						<faultstring>faultString1</faultstring>
+					</s:Fault>
+				</s:Body>
+			</s:Envelope>
+
+			For Example, this would result in the response below:
+			throw new System.ServiceModel.FaultException(new FaultReason("faultString1"), new FaultCode("faultCode1"), "action1");
+			<s:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+				<s:Body>
+					<s:Fault>
+						<faultcode>s:faultCode1</faultcode>
+						<faultstring>faultString1</faultstring>
+					</s:Fault>
+				</s:Body>
+			</s:Envelope>
+			*/
+			if (_exception is FaultException)
+			{
+				var faultException = (FaultException)_exception;
+				if (faultException != null && faultException.Code != null && !string.IsNullOrEmpty(faultException.Code.Name))
+				{
+					if (!string.IsNullOrEmpty(faultException.Code.Namespace))
+					{
+						writer.WriteElementString("a", "faultcode", faultException.Code.Namespace, "a:" + faultException.Code.Name);
+					}
+					else
+					{
+						writer.WriteElementString("faultcode", "s:" + faultException.Code.Name);
+					}
+				}
+				else
+				{
+					writer.WriteElementString("faultcode", "s:Client");
+				}
+			}
+			else
+			{
+				writer.WriteElementString("faultcode", "s:Client");
+			}
+
 			writer.WriteElementString("faultstring", faultString);
 
 			if (faultDetail != null)
