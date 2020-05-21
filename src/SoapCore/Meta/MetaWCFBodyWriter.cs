@@ -121,16 +121,13 @@ namespace SoapCore.Meta
 			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
 			{
 				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
-				if (collectionDataContractAttribute != null)
+				if (collectionDataContractAttribute != null && collectionDataContractAttribute.IsNamespaceSetExplicitly)
 				{
-					if (collectionDataContractAttribute.IsNamespaceSetExplicitly)
-					{
-						return collectionDataContractAttribute.Namespace;
-					}
-					else
-					{
-						type = type.IsArray ? type.GetElementType() : GetGenericType(type);
-					}
+					return collectionDataContractAttribute.Namespace;
+				}
+				else
+				{
+					type = type.IsArray ? type.GetElementType() : GetGenericType(type);
 				}
 			}
 
@@ -1192,7 +1189,7 @@ namespace SoapCore.Meta
 						writer.WriteAttributeString("name", name);
 						writer.WriteAttributeString("nillable", "true");
 						writer.WriteAttributeString("type", $"{ns}:ArrayOf{sysType.name}");
-						
+
 						_arrayToBuild.Enqueue(type);
 					}
 					else
