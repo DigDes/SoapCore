@@ -127,5 +127,11 @@ namespace SoapCore.Meta
 
 			return xmlSerializerNamespaces;
 		}
+
+		public static bool IsAttribute(this PropertyInfo property)
+		{
+			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
+			return attributeItem != null;
+		}
 	}
 }

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -211,7 +212,7 @@ namespace SoapCore.Tests.Wsdl
 			//StartService(typeof(StringListService));
 			//var wsdl = GetWsdl();
 			//StopServer();
-			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -263,6 +264,23 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
+		public async Task CheckXmlAnonymousTypeServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", Namespaces.CreateDefaultXmlNamespaceManager());
+			Assert.IsNotNull(propRootAttribute);
+
+			var propAnonAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropAnonymous']", Namespaces.CreateDefaultXmlNamespaceManager());
+			Assert.IsNotNull(propAnonAttribute);
 		}
 
 		[TestCleanup]
