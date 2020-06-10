@@ -620,36 +620,48 @@ namespace SoapCore.Meta
 				{
 					if (!isWrappedBodyType)
 					{
-						var properties = toBuildBodyType.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute)));
-						var hasElements =properties.Any(t => !t.IsAttribute());
-						if (hasElements)
+						var properties = toBuildBodyType.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute)))
+							.ToList();
+
+						var elements = properties.Where(t => !t.IsAttribute()).ToList();
+						if (elements.Any())
 						{
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-						}
+							foreach (var element in elements)
+							{
+								AddSchemaTypeProperty(writer, element);
+							}
 
-						foreach (var property in properties)
-						{
-							AddSchemaTypeProperty(writer, property);
-						}
-
-						if (hasElements)
-						{
 							writer.WriteEndElement(); // sequence
+						}
+
+						var attributes = properties.Where(t => t.IsAttribute());
+						foreach (var attribute in attributes)
+						{
+							AddSchemaTypeProperty(writer, attribute);
 						}
 					}
 					else
 					{
-						var properties = toBuild.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute)));
+						var properties = toBuild.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute)))
+							.ToList();
 
-						var hasElements =properties.Any(t => !t.IsAttribute());
-						if (hasElements)
+						var elements = properties.Where(t => !t.IsAttribute()).ToList();
+						if (elements.Any())
 						{
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
+							foreach (var element in elements)
+							{
+								AddSchemaTypeProperty(writer, element);
+							}
+
+							writer.WriteEndElement(); // sequence
 						}
 
-						foreach (var property in properties)
+						var attributes = properties.Where(t => t.IsAttribute());
+						foreach (var attribute in attributes)
 						{
-							AddSchemaTypeProperty(writer, property);
+							AddSchemaTypeProperty(writer, attribute);
 						}
 
 						var messageBodyMemberFields = toBuild.GetFields()
@@ -663,11 +675,6 @@ namespace SoapCore.Meta
 							var fieldName = messageBodyMember.Name ?? field.Name;
 
 							AddSchemaType(writer, field.FieldType, fieldName);
-						}
-
-						if (hasElements)
-						{
-							writer.WriteEndElement(); // sequence
 						}
 					}
 				}
@@ -692,7 +699,7 @@ namespace SoapCore.Meta
 			var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
 			if (arrayItem != null && !string.IsNullOrWhiteSpace(arrayItem.ElementName))
 			{
-				_arrayItemElementNameToTypeName.Add(GetGenericType(property.PropertyType), arrayItem.ElementName);
+				_arrayItemElementNameToTypeName.TryAdd(GetGenericType(property.PropertyType), arrayItem.ElementName);
 			}
 
 			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();

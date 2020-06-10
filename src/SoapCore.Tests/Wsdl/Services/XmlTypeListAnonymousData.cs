@@ -34,6 +34,9 @@ namespace SoapCore.Tests.Wsdl.Services
 		[System.Xml.Serialization.XmlArrayItemAttribute("Data", IsNullable = false)]
 		public List<TestDataTypeData> DataList { get; set; }
 
+		[System.Xml.Serialization.XmlArrayItemAttribute("Data", IsNullable = false)]
+		public List<TestDataTypeData> DataList2 { get; set; }
+
 		[XmlAttributeAttribute]
 		public string PropRoot { get; set; }
 	}
