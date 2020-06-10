@@ -44,6 +44,9 @@ namespace SoapCore.Tests.Wsdl.Services
 
 		[XmlAttributeAttribute]
 		public string PropRoot { get; set; }
+
+		[XmlIgnore]
+		public string PropIgnore { get; set; }
 	}
 
 	[Serializable]

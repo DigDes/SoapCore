@@ -279,6 +279,9 @@ namespace SoapCore.Tests.Wsdl
 			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", Namespaces.CreateDefaultXmlNamespaceManager());
 			Assert.IsNotNull(propRootAttribute);
 
+			var propIgnoreAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropIgnore']", Namespaces.CreateDefaultXmlNamespaceManager());
+			Assert.IsNull(propIgnoreAttribute);
+
 			var propAnonAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropAnonymous']", Namespaces.CreateDefaultXmlNamespaceManager());
 			Assert.IsNotNull(propAnonAttribute);
 		}

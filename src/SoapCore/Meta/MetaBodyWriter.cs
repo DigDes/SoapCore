@@ -620,7 +620,7 @@ namespace SoapCore.Meta
 				{
 					if (!isWrappedBodyType)
 					{
-						var properties = toBuildBodyType.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute)))
+						var properties = toBuildBodyType.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute) && attr.AttributeType != typeof(XmlIgnoreAttribute)))
 							.ToList();
 
 						var elements = properties.Where(t => !t.IsAttribute()).ToList();
@@ -643,7 +643,7 @@ namespace SoapCore.Meta
 					}
 					else
 					{
-						var properties = toBuild.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute)))
+						var properties = toBuild.GetProperties().Where(prop => prop.CustomAttributes.All(attr => attr.AttributeType != typeof(IgnoreDataMemberAttribute) && attr.AttributeType != typeof(XmlIgnoreAttribute)))
 							.ToList();
 
 						var elements = properties.Where(t => !t.IsAttribute()).ToList();
