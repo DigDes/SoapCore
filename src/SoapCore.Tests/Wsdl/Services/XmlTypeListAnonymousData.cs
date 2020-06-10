@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Xml.Serialization;
 
@@ -37,6 +38,10 @@ namespace SoapCore.Tests.Wsdl.Services
 		[System.Xml.Serialization.XmlArrayItemAttribute("Data", IsNullable = false)]
 		public List<TestDataTypeData> DataList2 { get; set; }
 
+		[System.Xml.Serialization.XmlElementAttribute("Data")]
+		[DataMember]
+		public List<TestDataTypeData2> Data { get; set; }
+
 		[XmlAttributeAttribute]
 		public string PropRoot { get; set; }
 	}
@@ -46,6 +51,16 @@ namespace SoapCore.Tests.Wsdl.Services
 	public class TestDataTypeData
 	{
 		[XmlAttributeAttribute]
+		public string PropAnonymous { get; set; }
+	}
+
+	[Serializable]
+	[XmlType(AnonymousType=true)]
+	[DataContract]
+	public class TestDataTypeData2
+	{
+		[XmlAttributeAttribute]
+		[DataMember]
 		public string PropAnonymous { get; set; }
 	}
 }

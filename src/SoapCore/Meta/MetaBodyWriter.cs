@@ -702,6 +702,12 @@ namespace SoapCore.Meta
 				_arrayItemElementNameToTypeName.TryAdd(GetGenericType(property.PropertyType), arrayItem.ElementName);
 			}
 
+			var elementItem = property.GetCustomAttribute<XmlElementAttribute>();
+			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
+			{
+				_arrayItemElementNameToTypeName.TryAdd(GetGenericType(property.PropertyType), elementItem.ElementName);
+			}
+
 			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
 			if (attributeItem != null)
 			{
