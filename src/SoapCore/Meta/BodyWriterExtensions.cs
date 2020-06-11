@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
 using System.Xml.Schema;
@@ -117,6 +119,21 @@ namespace SoapCore.Meta
 			return false;
 		}
 
+		public static bool IsAttribute(this PropertyInfo property)
+		{
+			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
+			return attributeItem != null;
+		}
+
+		public static bool IsIgnored(this PropertyInfo property)
+		{
+			return property
+				.CustomAttributes
+				.All(attr =>
+					attr.AttributeType == typeof(IgnoreDataMemberAttribute) ||
+					attr.AttributeType == typeof(XmlIgnoreAttribute));
+		}
+
 		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)
 		{
 			XmlSerializerNamespaces xmlSerializerNamespaces = new XmlSerializerNamespaces();
@@ -126,12 +143,6 @@ namespace SoapCore.Meta
 			}
 
 			return xmlSerializerNamespaces;
-		}
-
-		public static bool IsAttribute(this PropertyInfo property)
-		{
-			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
-			return attributeItem != null;
 		}
 	}
 }

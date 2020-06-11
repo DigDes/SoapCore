@@ -212,7 +212,7 @@ namespace SoapCore.Tests.Wsdl
 			//StartService(typeof(StringListService));
 			//var wsdl = GetWsdl();
 			//StopServer();
-			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
