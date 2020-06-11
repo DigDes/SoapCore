@@ -130,9 +130,19 @@ namespace SoapCore.Meta
 		{
 			return property
 				.CustomAttributes
-				.All(attr =>
+				.Any(attr =>
 					attr.AttributeType == typeof(IgnoreDataMemberAttribute) ||
 					attr.AttributeType == typeof(XmlIgnoreAttribute));
+		}
+
+		public static bool IsEnumerableType(this Type collectionType)
+		{
+			if (collectionType.IsArray)
+			{
+				return true;
+			}
+
+			return typeof(IEnumerable).IsAssignableFrom(collectionType);
 		}
 
 		public static Type GetGenericType(this Type collectionType)

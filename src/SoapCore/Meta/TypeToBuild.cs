@@ -10,13 +10,13 @@ namespace SoapCore.Meta
 		{
 			Type = type;
 			TypeName = type.GetSerializedTypeName();
-			AnonymousTypeRootElementName = null;
+			ChildElementName = null;
 			IsAnonumous = type.GetCustomAttribute<XmlTypeAttribute>()?.AnonymousType == true;
 		}
 
 		public bool IsAnonumous { get; }
 		public Type Type { get; }
 		public string TypeName { get; set; }
-		public string AnonymousTypeRootElementName { get; set; }
+		public string ChildElementName { get; set; }
 	}
 }

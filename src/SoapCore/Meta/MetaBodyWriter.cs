@@ -591,13 +591,13 @@ namespace SoapCore.Meta
 				if (toBuildType.IsArray)
 				{
 					writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-					AddSchemaType(writer, toBuildType.GetElementType(), null, true, elementName: toBuild.AnonymousTypeRootElementName);
+					AddSchemaType(writer, toBuildType.GetElementType(), toBuild.ChildElementName, true);
 					writer.WriteEndElement(); // sequence
 				}
 				else if (typeof(IEnumerable).IsAssignableFrom(toBuildType))
 				{
 					writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-					AddSchemaType(writer, toBuildType.GetGenericType(), null, true, elementName: toBuild.AnonymousTypeRootElementName);
+					AddSchemaType(writer, toBuildType.GetGenericType(), toBuild.ChildElementName, true);
 					writer.WriteEndElement(); // sequence
 				}
 				else
@@ -680,18 +680,20 @@ namespace SoapCore.Meta
 
 		private void AddSchemaTypeProperty(XmlDictionaryWriter writer, PropertyInfo property, TypeToBuild parentTypeToBuild)
 		{
+			var selfContainedArray = false;
 			var toBuild = new TypeToBuild(property.PropertyType);
 
 			var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
 			if (arrayItem != null && !string.IsNullOrWhiteSpace(arrayItem.ElementName))
 			{
-				toBuild.AnonymousTypeRootElementName = arrayItem.ElementName;
+				toBuild.ChildElementName = arrayItem.ElementName;
 			}
 
 			var elementItem = property.GetCustomAttribute<XmlElementAttribute>();
 			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
 			{
-				toBuild.AnonymousTypeRootElementName = elementItem.ElementName;
+				toBuild.ChildElementName = elementItem.ElementName;
+				selfContainedArray = toBuild.Type.IsEnumerableType();
 			}
 
 			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
@@ -707,16 +709,16 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				AddSchemaType(writer, toBuild, property.Name, elementName: parentTypeToBuild?.AnonymousTypeRootElementName);
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: selfContainedArray, selfContainedList: selfContainedArray);
 			}
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, string elementName = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null, bool isAttribute = false)
 		{
-			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, elementName );
+			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, string elementName = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool selfContainedList = false)
 		{
 			var type = toBuild.Type;
 			var typeInfo = type.GetTypeInfo();
@@ -737,7 +739,7 @@ namespace SoapCore.Meta
 			//if type is a nullable non-system struct
 			if (underlyingType?.IsValueType == true && !underlyingType.IsEnum && underlyingType.Namespace != null && underlyingType.Namespace != "System" && !underlyingType.Namespace.StartsWith("System."))
 			{
-				AddSchemaType(writer, new TypeToBuild(underlyingType) { AnonymousTypeRootElementName = toBuild.TypeName }, name, isArray, @namespace, isAttribute, elementName);
+				AddSchemaType(writer, new TypeToBuild(underlyingType) { ChildElementName = toBuild.TypeName }, name, isArray, @namespace, isAttribute);
 				return;
 			}
 
@@ -818,9 +820,9 @@ namespace SoapCore.Meta
 			{
 				var newTypeToBuild = new TypeToBuild(type);
 
-				if (!string.IsNullOrWhiteSpace(toBuild.AnonymousTypeRootElementName))
+				if (!string.IsNullOrWhiteSpace(toBuild.ChildElementName))
 				{
-					newTypeToBuild.AnonymousTypeRootElementName = toBuild.AnonymousTypeRootElementName;
+					newTypeToBuild.ChildElementName = toBuild.ChildElementName;
 					if (_builtComplexTypes.Contains(newTypeToBuild.TypeName))
 					{
 						newTypeToBuild.TypeName += $"{_typeCounter++}";
@@ -889,14 +891,27 @@ namespace SoapCore.Meta
 							writer.WriteAttributeString("nillable", "true");
 						}
 
-						writer.WriteAttributeString("type", "tns:" + typeName);
+						if (selfContainedList)
+						{
+							newTypeToBuild = new TypeToBuild(newTypeToBuild.Type.GetGenericType());
+							typeName = newTypeToBuild.TypeName;
+						}
 
-						_complexTypeToBuild.Enqueue(newTypeToBuild);
+						if (newTypeToBuild.IsAnonumous)
+						{
+							AddSchemaComplexType(writer, newTypeToBuild);
+						}
+						else
+						{
+							writer.WriteAttributeString("type", "tns:" + typeName);
+
+							_complexTypeToBuild.Enqueue(newTypeToBuild);
+						}
 					}
 				}
 				else if (toBuild.IsAnonumous)
 				{
-					writer.WriteAttributeString("name", elementName);
+					writer.WriteAttributeString("name", name);
 					AddSchemaComplexType(writer, newTypeToBuild);
 				}
 				else
