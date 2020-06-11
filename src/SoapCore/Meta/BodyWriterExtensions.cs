@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -132,6 +133,52 @@ namespace SoapCore.Meta
 				.All(attr =>
 					attr.AttributeType == typeof(IgnoreDataMemberAttribute) ||
 					attr.AttributeType == typeof(XmlIgnoreAttribute));
+		}
+
+		public static Type GetGenericType(this Type collectionType)
+		{
+			// Recursively look through the base class to find the Generic Type of the Enumerable
+			var baseType = collectionType;
+			var baseTypeInfo = collectionType.GetTypeInfo();
+			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
+			{
+				baseType = baseTypeInfo.BaseType;
+				baseTypeInfo = baseType.GetTypeInfo();
+			}
+
+			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		public static string GetSerializedTypeName(this Type type)
+		{
+			var namedType = type;
+			if (type.IsArray)
+			{
+				namedType = type.GetElementType();
+			}
+			else if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
+			{
+				namedType = GetGenericType(type);
+			}
+
+			string typeName = namedType.Name;
+			var xmlTypeAttribute = namedType.GetCustomAttribute<XmlTypeAttribute>(true);
+			if (xmlTypeAttribute != null && !string.IsNullOrWhiteSpace(xmlTypeAttribute.TypeName))
+			{
+				typeName = xmlTypeAttribute.TypeName;
+			}
+
+			if (type.IsArray)
+			{
+				typeName = "ArrayOf" + typeName.Replace("[]", string.Empty);
+			}
+
+			if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
+			{
+				typeName = "ArrayOf" + typeName;
+			}
+
+			return typeName;
 		}
 
 		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)
