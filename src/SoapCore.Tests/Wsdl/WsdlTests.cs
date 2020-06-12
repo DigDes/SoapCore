@@ -284,13 +284,16 @@ namespace SoapCore.Tests.Wsdl
 			var reponseTypeElement = root.XPathSelectElement("//xsd:element[@name='ResponseRoot']", nm);
 			Assert.IsNotNull(reponseTypeElement);
 
+			var referenceToExistingDynamicType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='DataList3' and @type='tns:ArrayOfTestDataTypeData']", nm);
+			Assert.IsNotNull(referenceToExistingDynamicType);
+
 			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
 			Assert.IsNotNull(selfContainedType);
 
-			var dynamicTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData1']/xsd:sequence/xsd:element[@name='Data']", nm);
+			var dynamicTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData']/xsd:sequence/xsd:element[@name='Data']", nm);
 			Assert.IsNotNull(dynamicTypeElement);
 
-			var dynamicTypeElement2 = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData2']/xsd:sequence/xsd:element[@name='Data2']", nm);
+			var dynamicTypeElement2 = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData1']/xsd:sequence/xsd:element[@name='Data2']", nm);
 			Assert.IsNotNull(dynamicTypeElement2);
 
 			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", nm);

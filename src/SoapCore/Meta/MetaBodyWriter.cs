@@ -16,7 +16,6 @@ namespace SoapCore.Meta
 	public class MetaBodyWriter : BodyWriter
 	{
 		private static int _namespaceCounter = 1;
-		private static int _typeCounter = 1;
 
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
@@ -29,7 +28,7 @@ namespace SoapCore.Meta
 		private readonly HashSet<string> _builtEnumTypes;
 		private readonly HashSet<string> _builtComplexTypes;
 		private readonly HashSet<string> _buildArrayTypes;
-		private readonly HashSet<Type> _anonymousTypes;
+		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
 		private readonly Dictionary<Type, Type> _wrappedTypes;
 
@@ -50,7 +49,7 @@ namespace SoapCore.Meta
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
-			_anonymousTypes = new HashSet<Type>();
+			_requestedDynamicTypes = new Dictionary<string, Dictionary<string, string>>();
 
 			_wrappedTypes = new Dictionary<Type, Type>();
 
@@ -837,7 +836,7 @@ namespace SoapCore.Meta
 				if (!string.IsNullOrWhiteSpace(toBuild.ChildElementName))
 				{
 					newTypeToBuild.ChildElementName = toBuild.ChildElementName;
-					newTypeToBuild.TypeName += $"{_typeCounter++}";
+					SetUniqueNameForDynamicType(newTypeToBuild);
 				}
 
 				writer.WriteAttributeString("minOccurs", "0");
@@ -939,6 +938,27 @@ namespace SoapCore.Meta
 			}
 
 			writer.WriteEndElement(); // element
+		}
+
+		private void SetUniqueNameForDynamicType(TypeToBuild dynamicType)
+		{
+			if (!_requestedDynamicTypes.TryGetValue(dynamicType.TypeName, out var elementsList))
+			{
+				var elementsMap = new Dictionary<string, string> { { dynamicType.ChildElementName, "" } };
+				_requestedDynamicTypes.Add(dynamicType.TypeName, elementsMap);
+				return;
+			}
+
+			if (elementsList.TryGetValue(dynamicType.ChildElementName, out var assotiatedPostfix))
+			{
+				dynamicType.TypeName += $"{assotiatedPostfix}";
+			}
+			else
+			{
+				var newPostfix = $"{elementsList.Count}";
+				dynamicType.TypeName += $"{newPostfix}";
+				elementsList.Add(dynamicType.ChildElementName, newPostfix);
+			}
 		}
 	}
 }

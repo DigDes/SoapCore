@@ -49,6 +49,9 @@ namespace SoapCore.Tests.Wsdl.Services
 		[System.Xml.Serialization.XmlArrayItemAttribute("Data2")]
 		public List<TestDataTypeData> DataList2 { get; set; }
 
+		[System.Xml.Serialization.XmlArrayItemAttribute("Data")]
+		public List<TestDataTypeData> DataList3 { get; set; }
+
 		[System.Xml.Serialization.XmlElementAttribute("Data3")]
 		[DataMember]
 		public List<TestDataTypeData2> Data { get; set; }
