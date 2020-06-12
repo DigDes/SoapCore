@@ -12,19 +12,30 @@ namespace SoapCore.Tests.Wsdl.Services
 	public interface IXmlModelsService
 	{
 		[OperationContract]
-		TestResponseType GetResponse();
+		TestResponseType GetResponse(TestRequestType request);
 	}
 
 	public class XmlModelsService : IXmlModelsService
 	{
-		public TestResponseType GetResponse()
+		public TestResponseType GetResponse(TestRequestType request)
 		{
 			return new TestResponseType();
 		}
 	}
 
 	[SerializableAttribute]
-	[XmlRoot("QueryReportResponse", Namespace = "http://bagov.net/", IsNullable = false)]
+	[XmlRoot("RequestRoot", Namespace = "http://bagov.net/", IsNullable = false)]
+	public class TestRequestType
+	{
+		[XmlAttributeAttribute]
+		public string PropRoot { get; set; }
+
+		[XmlIgnore]
+		public string PropIgnore { get; set; }
+	}
+
+	[SerializableAttribute]
+	[XmlRoot("ResponseRoot", Namespace = "http://bagov.net/", IsNullable = false)]
 	public class TestResponseType
 	{
 		public TestResponseType()
