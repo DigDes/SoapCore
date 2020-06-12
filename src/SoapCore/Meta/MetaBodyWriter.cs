@@ -217,9 +217,15 @@ namespace SoapCore.Meta
 					}
 
 					var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
-					var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
-						? elementAttribute.ElementName
-						: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
+					var elementName = string.IsNullOrWhiteSpace(elementAttribute?.ElementName) ? null : elementAttribute.ElementName;
+
+					var xmlRootAttr = parameterInfo.Parameter.ParameterType.GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
+					var typeRootName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? null : xmlRootAttr.ElementName;
+
+					var parameterName = elementName
+					                    ?? parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
+					                    ?? typeRootName
+					                    ?? parameterInfo.Parameter.Name;
 
 					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
 				}
@@ -293,7 +299,17 @@ namespace SoapCore.Meta
 
 					if (doWriteInlineType)
 					{
-						var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
+						var elementAttribute = operation.DispatchMethod.ReturnType.GetCustomAttribute<XmlElementAttribute>();
+						var elementName = string.IsNullOrWhiteSpace(elementAttribute?.ElementName) ? null : elementAttribute.ElementName;
+
+						var xmlRootAttr = returnType.GetTypeInfo().GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
+						var typeRootName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? null : xmlRootAttr.ElementName;
+
+						var returnName = elementName
+										?? operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
+										?? typeRootName
+										?? operation.Name + "Result";
+
 						writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
 						writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
 						AddSchemaType(writer, returnType, returnName);

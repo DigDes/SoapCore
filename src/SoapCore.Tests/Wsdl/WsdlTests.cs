@@ -267,7 +267,7 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
-		public async Task CheckXmlAnonymousTypeServiceWsdl()
+		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
 			Trace.TraceInformation(wsdl);
@@ -276,6 +276,10 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsFalse(wsdl.Contains("name=\"\""));
 
 			var root = XElement.Parse(wsdl);
+
+			var reponseTypeElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']", Namespaces.CreateDefaultXmlNamespaceManager());
+			Assert.IsNotNull(reponseTypeElement);
+
 			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", Namespaces.CreateDefaultXmlNamespaceManager());
 			Assert.IsNotNull(propRootAttribute);
 
