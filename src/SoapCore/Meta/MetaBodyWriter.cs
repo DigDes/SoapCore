@@ -839,10 +839,7 @@ namespace SoapCore.Meta
 				if (!string.IsNullOrWhiteSpace(toBuild.ChildElementName))
 				{
 					newTypeToBuild.ChildElementName = toBuild.ChildElementName;
-					if (_builtComplexTypes.Contains(newTypeToBuild.TypeName))
-					{
-						newTypeToBuild.TypeName += $"{_typeCounter++}";
-					}
+					newTypeToBuild.TypeName += $"{_typeCounter++}";
 				}
 
 				writer.WriteAttributeString("minOccurs", "0");

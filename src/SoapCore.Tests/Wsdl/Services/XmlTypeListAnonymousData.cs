@@ -8,7 +8,7 @@ namespace SoapCore.Tests.Wsdl.Services
 {
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
-	[ServiceContract]
+	[ServiceContract(Namespace = "http://bagov.net/")]
 	public interface IXmlModelsService
 	{
 		[OperationContract]
@@ -35,10 +35,10 @@ namespace SoapCore.Tests.Wsdl.Services
 		[System.Xml.Serialization.XmlArrayItemAttribute("Data", IsNullable = false)]
 		public List<TestDataTypeData> DataList { get; set; }
 
-		[System.Xml.Serialization.XmlArrayItemAttribute("Data")]
+		[System.Xml.Serialization.XmlArrayItemAttribute("Data2")]
 		public List<TestDataTypeData> DataList2 { get; set; }
 
-		[System.Xml.Serialization.XmlElementAttribute("Data")]
+		[System.Xml.Serialization.XmlElementAttribute("Data3")]
 		[DataMember]
 		public List<TestDataTypeData2> Data { get; set; }
 
