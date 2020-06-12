@@ -4,12 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Schema;
 using System.Xml.Serialization;
 using SoapCore.ServiceModel;
 
@@ -696,7 +694,7 @@ namespace SoapCore.Meta
 
 		private void AddSchemaTypeProperty(XmlDictionaryWriter writer, PropertyInfo property, TypeToBuild parentTypeToBuild)
 		{
-			var selfContainedArray = false;
+			var createListWithoutProxyType = false;
 			var toBuild = new TypeToBuild(property.PropertyType);
 
 			var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
@@ -709,7 +707,7 @@ namespace SoapCore.Meta
 			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
 			{
 				toBuild.ChildElementName = elementItem.ElementName;
-				selfContainedArray = toBuild.Type.IsEnumerableType();
+				createListWithoutProxyType = toBuild.Type.IsEnumerableType();
 			}
 
 			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
@@ -725,7 +723,7 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: selfContainedArray, selfContainedList: selfContainedArray);
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
 		}
 
@@ -734,7 +732,7 @@ namespace SoapCore.Meta
 			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool selfContainedList = false)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false)
 		{
 			var type = toBuild.Type;
 			var typeInfo = type.GetTypeInfo();
@@ -904,7 +902,7 @@ namespace SoapCore.Meta
 							writer.WriteAttributeString("nillable", "true");
 						}
 
-						if (selfContainedList)
+						if (isListWithoutWrapper)
 						{
 							newTypeToBuild = new TypeToBuild(newTypeToBuild.Type.GetGenericType());
 							typeName = newTypeToBuild.TypeName;
