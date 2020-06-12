@@ -865,7 +865,7 @@ namespace SoapCore.Meta
 					}
 
 					writer.WriteAttributeString("name", name);
-					writer.WriteAttributeString("type", "tns:" + typeName);
+					writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
 					_complexTypeToBuild.Enqueue(newTypeToBuild);
 				}
@@ -884,7 +884,7 @@ namespace SoapCore.Meta
 						writer.WriteAttributeString("name", name);
 						writer.WriteAttributeString("nillable", "true");
 
-						writer.WriteAttributeString("type", $"{ns}:{typeName}");
+						writer.WriteAttributeString("type", $"{ns}:{newTypeToBuild.TypeName}");
 
 						_arrayToBuild.Enqueue(type);
 					}
@@ -905,7 +905,6 @@ namespace SoapCore.Meta
 						if (isListWithoutWrapper)
 						{
 							newTypeToBuild = new TypeToBuild(newTypeToBuild.Type.GetGenericType());
-							typeName = newTypeToBuild.TypeName;
 						}
 
 						if (newTypeToBuild.IsAnonumous)
@@ -914,7 +913,7 @@ namespace SoapCore.Meta
 						}
 						else
 						{
-							writer.WriteAttributeString("type", "tns:" + typeName);
+							writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
 							_complexTypeToBuild.Enqueue(newTypeToBuild);
 						}
