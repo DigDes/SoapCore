@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -263,6 +264,46 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
+		public async Task CheckXmlAnnotatedTypeServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var requestTypeElement = root.XPathSelectElement("//xsd:element[@name='RequestRoot']", nm);
+			Assert.IsNotNull(requestTypeElement);
+
+			var reponseTypeElement = root.XPathSelectElement("//xsd:element[@name='ResponseRoot']", nm);
+			Assert.IsNotNull(reponseTypeElement);
+
+			var referenceToExistingDynamicType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='DataList3' and @type='tns:ArrayOfTestDataTypeData']", nm);
+			Assert.IsNotNull(referenceToExistingDynamicType);
+
+			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
+			Assert.IsNotNull(selfContainedType);
+
+			var dynamicTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData']/xsd:sequence/xsd:element[@name='Data']", nm);
+			Assert.IsNotNull(dynamicTypeElement);
+
+			var dynamicTypeElement2 = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData1']/xsd:sequence/xsd:element[@name='Data2']", nm);
+			Assert.IsNotNull(dynamicTypeElement2);
+
+			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", nm);
+			Assert.IsNotNull(propRootAttribute);
+
+			var propIgnoreAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropIgnore']", nm);
+			Assert.IsNull(propIgnoreAttribute);
+
+			var propAnonAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropAnonymous']", nm);
+			Assert.IsNotNull(propAnonAttribute);
 		}
 
 		[TestCleanup]
