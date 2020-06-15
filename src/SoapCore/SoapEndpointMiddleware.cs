@@ -184,7 +184,8 @@ namespace SoapCore
 			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
 
-			httpContext.Response.ContentType = _messageEncoders[0].ContentType;
+			//we should use text/xml in wsdl page for browser compability.
+			httpContext.Response.ContentType = "text/xml;charset=UTF-8";// _messageEncoders[0].ContentType;
 
 			await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
 		}

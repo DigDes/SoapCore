@@ -154,7 +154,9 @@ namespace SoapCore
 
 				var xmlName = _operation.ReturnElementName
 					?? (needResponseEnvelope
-					? _resultName
+					? (string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName)
+						? _resultName
+						: xmlRootAttr.ElementName)
 					: (string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName)
 					? resultType.Name
 					: xmlRootAttr.ElementName));

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -206,6 +207,42 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckStringArrayNameWsdl()
+		{
+			//StartService(typeof(StringListService));
+			//var wsdl = GetWsdl();
+			//StopServer();
+			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// Check complexType exists for xmlserializer meta
+			var testResultElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("type") != null && a.Attribute("name")?.Value.Equals("TestResult") == true);
+			Assert.IsNotNull(testResultElement);
+
+			// Now check if we can match the array type up with it's decleration
+			var split = testResultElement.Attribute("type").Value.Split(':');
+			var typeNamespace = testResultElement.GetNamespaceOfPrefix(split[0]);
+
+			var matchingSchema = GetElements(root, _xmlSchema + "schema").Where(schema => schema.Attribute("targetNamespace")?.Value.Equals(typeNamespace.NamespaceName) == true);
+			Assert.IsTrue(matchingSchema.Count() > 0);
+
+			var matched = false;
+			foreach (var schema in matchingSchema)
+			{
+				var matchingElement = GetElements(schema, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals(split[1]) == true);
+				if (matchingElement != null)
+				{
+					matched = true;
+				}
+			}
+
+			Assert.IsTrue(matched);
+		}
+
+		[TestMethod]
 		public async Task CheckDateTimeOffsetServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
@@ -230,25 +267,43 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
-		public void CheckSchemaObjectWithArrayService()
+		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
-			StartService(typeof(ObjectWithArrayService));
-			var wsdl = GetWsdl();
-			StopServer();
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
 			var root = XElement.Parse(wsdl);
-			var elementsWithEmptyName = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == string.Empty);
-			elementsWithEmptyName.ShouldBeEmpty();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
 
-			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
-			elementsWithEmptyType.ShouldBeEmpty();
+			var requestTypeElement = root.XPathSelectElement("//xsd:element[@name='RequestRoot']", nm);
+			Assert.IsNotNull(requestTypeElement);
 
-			var elementsWithEmptyComplexType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "tns:");
-			elementsWithEmptyComplexType.ShouldBeEmpty();
+			var reponseTypeElement = root.XPathSelectElement("//xsd:element[@name='ResponseRoot']", nm);
+			Assert.IsNotNull(reponseTypeElement);
 
-			var typeWithArrayElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "ArrayOfMyClass");
-			var typeDescriptionElements = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == "MyClass");
-			Assert.IsNotNull(typeWithArrayElement);
-			Assert.AreEqual(typeDescriptionElements.Count(), 2);
+			var referenceToExistingDynamicType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='DataList3' and @type='tns:ArrayOfTestDataTypeData']", nm);
+			Assert.IsNotNull(referenceToExistingDynamicType);
+
+			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
+			Assert.IsNotNull(selfContainedType);
+
+			var dynamicTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData']/xsd:sequence/xsd:element[@name='Data']", nm);
+			Assert.IsNotNull(dynamicTypeElement);
+
+			var dynamicTypeElement2 = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData1']/xsd:sequence/xsd:element[@name='Data2']", nm);
+			Assert.IsNotNull(dynamicTypeElement2);
+
+			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", nm);
+			Assert.IsNotNull(propRootAttribute);
+
+			var propIgnoreAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropIgnore']", nm);
+			Assert.IsNull(propIgnoreAttribute);
+
+			var propAnonAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropAnonymous']", nm);
+			Assert.IsNotNull(propAnonAttribute);
 		}
 
 		[TestCleanup]
