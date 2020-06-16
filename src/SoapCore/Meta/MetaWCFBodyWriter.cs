@@ -1081,7 +1081,7 @@ namespace SoapCore.Meta
 					}
 				}
 
-				writer.WriteAttributeString("minOccurs", , isRequired ? "1" : "0");
+				writer.WriteAttributeString("minOccurs", isRequired ? "1" : "0");
 				if (isArray)
 				{
 					writer.WriteAttributeString("maxOccurs", "unbounded");
@@ -1097,7 +1097,7 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				writer.WriteAttributeString("minOccurs", , isRequired ? "1" : "0");
+				writer.WriteAttributeString("minOccurs", isRequired ? "1" : "0");
 				if (isArray)
 				{
 					writer.WriteAttributeString("maxOccurs", "unbounded");
