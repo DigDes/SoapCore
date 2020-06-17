@@ -7,5 +7,6 @@ namespace SoapCore.ServiceModel
 		public Type Type { get; set; }
 		public string Name { get; set; }
 		public int? Order { get; set; }
+		public bool IsRequired { get; set; }
 	}
 }
