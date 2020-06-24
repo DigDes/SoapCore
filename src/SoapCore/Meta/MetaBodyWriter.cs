@@ -559,11 +559,14 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // soap:body
 				writer.WriteEndElement(); // wsdl:input
 
-				writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
-				writer.WriteStartElement(soap, "body", soapNamespace);
-				writer.WriteAttributeString("use", "literal");
-				writer.WriteEndElement(); // soap:body
-				writer.WriteEndElement(); // wsdl:output
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
+					writer.WriteStartElement(soap, "body", soapNamespace);
+					writer.WriteAttributeString("use", "literal");
+					writer.WriteEndElement(); // soap:body
+					writer.WriteEndElement(); // wsdl:output
+				}
 
 				writer.WriteEndElement(); // wsdl:operation
 			}
