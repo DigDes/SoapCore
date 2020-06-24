@@ -861,13 +861,16 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // wsdl:message
 
 				// output
-				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
-				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
-				writer.WriteEndElement(); // wsdl:part
-				writer.WriteEndElement(); // wsdl:message
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", "parameters");
+					writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
+					writer.WriteEndElement(); // wsdl:part
+					writer.WriteEndElement(); // wsdl:message
+				}
 
 				AddMessageFaults(writer, operation);
 			}
@@ -901,10 +904,14 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction);
 				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_InputMessage");
 				writer.WriteEndElement(); // wsdl:input
-				writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction + "Response");
-				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
-				writer.WriteEndElement(); // wsdl:output
+
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction + "Response");
+					writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteEndElement(); // wsdl:output
+				}
 
 				AddPortTypeFaults(writer, operation);
 

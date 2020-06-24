@@ -220,9 +220,9 @@ namespace SoapCore.Meta
 					var typeRootName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? null : xmlRootAttr.ElementName;
 
 					var parameterName = elementName
-					                    ?? parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
-					                    ?? typeRootName
-					                    ?? parameterInfo.Parameter.Name;
+										?? parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
+										?? typeRootName
+										?? parameterInfo.Parameter.Name;
 
 					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
 				}
@@ -495,13 +495,16 @@ namespace SoapCore.Meta
 				}
 
 				// output
-				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
-				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + responseTypeName);
-				writer.WriteEndElement(); // wsdl:part
-				writer.WriteEndElement(); // wsdl:message
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", "parameters");
+					writer.WriteAttributeString("element", "tns:" + responseTypeName);
+					writer.WriteEndElement(); // wsdl:part
+					writer.WriteEndElement(); // wsdl:message
+				}
 			}
 		}
 
@@ -516,9 +519,12 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "input", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_InputMessage");
 				writer.WriteEndElement(); // wsdl:input
-				writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
-				writer.WriteEndElement(); // wsdl:output
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteEndElement(); // wsdl:output
+				}
 				writer.WriteEndElement(); // wsdl:operation
 			}
 
