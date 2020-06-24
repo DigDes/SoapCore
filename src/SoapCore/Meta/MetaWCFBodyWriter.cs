@@ -172,7 +172,8 @@ namespace SoapCore.Meta
 				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
 										? elementAttribute.ElementName
 										: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
-				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, objectNamespace: elementAttribute?.Namespace ?? (parameterInfo.Namespace != "http://tempuri.org/" ? parameterInfo.Namespace : null));
+				var isRequired = !parameterInfo.Parameter.IsOptional;
+				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, objectNamespace: elementAttribute?.Namespace ?? (parameterInfo.Namespace != "http://tempuri.org/" ? parameterInfo.Namespace : null), isRequired: isRequired);
 			}
 		}
 
@@ -270,7 +271,8 @@ namespace SoapCore.Meta
 					}
 
 					var returnName = operation.DispatchMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? operation.Name + "Result";
-					AddSchemaType(writer, returnType, returnName, false, GetDataContractNamespace(returnType));
+					var isRequired = !operation.DispatchMethod.ReturnParameter.IsOptional;
+					AddSchemaType(writer, returnType, returnName, false, GetDataContractNamespace(returnType), isRequired: isRequired);
 				}
 
 				WriteParameters(writer, operation.OutParameters);
@@ -796,6 +798,7 @@ namespace SoapCore.Meta
 
 					var attributes = property.GetCustomAttributes(true);
 					int order = 0;
+					bool isRequired = false;
 					foreach (var attr in attributes)
 					{
 						if (attr is DataMemberAttribute dataContractAttribute)
@@ -810,6 +813,8 @@ namespace SoapCore.Meta
 								order = dataContractAttribute.Order;
 							}
 
+							isRequired = dataContractAttribute.IsRequired;
+
 							break;
 						}
 					}
@@ -818,13 +823,14 @@ namespace SoapCore.Meta
 					{
 						Name = propertyName,
 						Type = property.PropertyType,
-						Order = order
+						Order = order,
+						IsRequired = isRequired
 					});
 				}
 
 				foreach (var p in dataMembersToWrite.OrderBy(x => x.Order).ThenBy(p => p.Name, StringComparer.Ordinal))
 				{
-					AddSchemaType(writer, p.Type, p.Name, false, GetDataContractNamespace(p.Type));
+					AddSchemaType(writer, p.Type, p.Name, false, GetDataContractNamespace(p.Type), p.IsRequired);
 				}
 			}
 
@@ -855,13 +861,16 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // wsdl:message
 
 				// output
-				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
-				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
-				writer.WriteEndElement(); // wsdl:part
-				writer.WriteEndElement(); // wsdl:message
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", "parameters");
+					writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
+					writer.WriteEndElement(); // wsdl:part
+					writer.WriteEndElement(); // wsdl:message
+				}
 
 				AddMessageFaults(writer, operation);
 			}
@@ -895,10 +904,14 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction);
 				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_InputMessage");
 				writer.WriteEndElement(); // wsdl:input
-				writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction + "Response");
-				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
-				writer.WriteEndElement(); // wsdl:output
+
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction + "Response");
+					writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteEndElement(); // wsdl:output
+				}
 
 				AddPortTypeFaults(writer, operation);
 
@@ -953,11 +966,14 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // soap:body
 				writer.WriteEndElement(); // wsdl:input
 
-				writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
-				writer.WriteStartElement("soap", "body", Namespaces.SOAP11_NS);
-				writer.WriteAttributeString("use", "literal");
-				writer.WriteEndElement(); // soap:body
-				writer.WriteEndElement(); // wsdl:output
+				if (!operation.IsOneWay)
+				{
+					writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
+					writer.WriteStartElement("soap", "body", Namespaces.SOAP11_NS);
+					writer.WriteAttributeString("use", "literal");
+					writer.WriteEndElement(); // soap:body
+					writer.WriteEndElement(); // wsdl:output
+				}
 
 				AddBindingFaults(writer, operation);
 
@@ -1000,7 +1016,7 @@ namespace SoapCore.Meta
 			writer.WriteEndElement(); // wsdl:port
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string objectNamespace = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string objectNamespace = null, bool isRequired = false)
 		{
 			var typeInfo = type.GetTypeInfo();
 			var typeName = GetTypeName(type);
@@ -1035,7 +1051,7 @@ namespace SoapCore.Meta
 
 				if (isArray)
 				{
-					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("minOccurs", isRequired ? "1" : "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
 				}
 			}
@@ -1075,7 +1091,7 @@ namespace SoapCore.Meta
 					}
 				}
 
-				writer.WriteAttributeString("minOccurs", "0");
+				writer.WriteAttributeString("minOccurs", isRequired ? "1" : "0");
 				if (isArray)
 				{
 					writer.WriteAttributeString("maxOccurs", "unbounded");
@@ -1091,7 +1107,7 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				writer.WriteAttributeString("minOccurs", "0");
+				writer.WriteAttributeString("minOccurs", isRequired ? "1" : "0");
 				if (isArray)
 				{
 					writer.WriteAttributeString("maxOccurs", "unbounded");
