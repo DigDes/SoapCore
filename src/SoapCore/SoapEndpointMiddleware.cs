@@ -335,7 +335,7 @@ namespace SoapCore
 						exception = targetInvocationException.InnerException;
 					}
 
-					_logger.LogWarning(0, exception, exception?.Message);
+					_logger.LogError(0, exception, exception?.Message);
 					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 			}
