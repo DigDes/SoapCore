@@ -49,6 +49,8 @@ namespace SoapCore.Meta
 		private readonly string _baseUrl;
 		private readonly Binding _binding;
 
+		private readonly string[] _numbers = new string[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
 		private readonly Dictionary<Type, string> _complexTypeToBuild = new Dictionary<Type, string>();
 		private readonly HashSet<Type> _complexTypeProcessed = new HashSet<Type>(); // Contains types that have been discovered
 		private readonly Queue<Type> _arrayToBuild;
@@ -142,8 +144,21 @@ namespace SoapCore.Meta
 
 		private static Type GetGenericType(Type collectionType)
 		{
+			return GetGenericTypes(collectionType).DefaultIfEmpty(typeof(object)).FirstOrDefault();
+		}
+
+		private static Type[] GetGenericTypes(Type collectionType)
+		{
 			// Recursively look through the base class to find the Generic Type of the Enumerable
 			var baseType = collectionType;
+
+			var collectionInterfaceTypeInfo = baseType.GetInterfaces().Where(a => a.Name == "ICollection`1").FirstOrDefault();
+			if (collectionInterfaceTypeInfo != null)
+			{
+				//handle Dictionary KeyValuePair's and other collections with more than one generic parameter as a simple return type
+				return collectionInterfaceTypeInfo.GetGenericArguments();
+			}
+
 			var baseTypeInfo = collectionType.GetTypeInfo();
 			while (!baseTypeInfo.IsGenericType && baseTypeInfo.BaseType != null)
 			{
@@ -151,7 +166,7 @@ namespace SoapCore.Meta
 				baseTypeInfo = baseType.GetTypeInfo();
 			}
 
-			return baseType.GetTypeInfo().GetGenericArguments().DefaultIfEmpty(typeof(object)).FirstOrDefault();
+			return baseType.GetTypeInfo().GetGenericArguments();
 		}
 
 		private string GetModelNamespace(Type type)
@@ -1321,13 +1336,19 @@ namespace SoapCore.Meta
 
 		private string GetTypeName(Type type)
 		{
+			//special case as string is IEnumerable
+			if (type == typeof(string))
+			{
+				return type.Name;
+			}
+
 			if (type.IsGenericType && !type.IsArray && !typeof(IEnumerable).IsAssignableFrom(type))
 			{
-				var genericType = GetGenericType(type);
-				var genericTypeName = GetTypeName(genericType);
+				var genericTypes = GetGenericTypes(type);
+				var genericTypeNames = genericTypes.Select(a => GetTypeName(a));
 
-				var typeName = type.Name.Replace("`1", string.Empty);
-				typeName = typeName + "Of" + genericTypeName;
+				var typeName = ReplaceGenericNames(type.Name);
+				typeName = typeName + "Of" + string.Concat(genericTypeNames);
 				return typeName;
 			}
 
@@ -1343,7 +1364,7 @@ namespace SoapCore.Meta
 				{
 					var typeName = collectionDataContractAttribute.IsNameSetExplicitly
 						? collectionDataContractAttribute.Name
-						: type.Name.Replace("`1", string.Empty);
+						: ReplaceGenericNames(type.Name);
 
 					if (type.IsGenericType)
 					{
@@ -1371,6 +1392,24 @@ namespace SoapCore.Meta
 			}
 
 			return type.Name;
+		}
+
+		private string ReplaceGenericNames(string name)
+		{
+			if (name.Contains("`"))
+			{
+				//Regex would be easier
+				foreach (var number in _numbers)
+				{
+					name = name.Replace("`" + number, "`" + string.Empty);
+				}
+
+				return name.Replace("`", string.Empty);
+			}
+			else
+			{
+				return name;
+			}
 		}
 
 		private (string name, string ns) ResolveSystemType(Type type)
