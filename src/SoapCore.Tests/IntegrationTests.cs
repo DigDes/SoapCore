@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Numerics;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
@@ -131,6 +133,37 @@ namespace SoapCore.Tests
 			string message = string.Empty;
 			client.RefParam(ref message);
 			Assert.AreEqual("hello, world", message);
+		}
+
+		[TestMethod]
+		public void ArrayInput()
+		{
+			var client = CreateClient();
+			List<ComplexModelInput> complexModelInputs = new List<ComplexModelInput>();
+			complexModelInputs.Add(new ComplexModelInput());
+			var e = client.ArrayOfComplexItems(complexModelInputs.ToArray());
+			Assert.AreEqual(e.Length, complexModelInputs.Count);
+		}
+
+		[TestMethod]
+		public void ListInput()
+		{
+			var client = CreateClient();
+			List<ComplexModelInput> complexModelInputs = new List<ComplexModelInput>();
+			complexModelInputs.Add(new ComplexModelInput());
+			var e = client.ListOfComplexItems(complexModelInputs);
+			Assert.AreEqual(e.Count, complexModelInputs.Count);
+		}
+
+		[TestMethod]
+		public void DictionaryInput()
+		{
+			var client = CreateClient();
+			Dictionary<string, string> dictionaryInputs = new Dictionary<string, string>();
+			dictionaryInputs.Add("1", "2");
+			var e = client.ListOfDictionaryItems(dictionaryInputs);
+			Assert.AreEqual(e["1"], dictionaryInputs["1"]);
+			Assert.AreEqual(e.Count, dictionaryInputs.Count);
 		}
 
 		[TestMethod]
