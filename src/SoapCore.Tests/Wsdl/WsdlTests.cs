@@ -356,13 +356,17 @@ namespace SoapCore.Tests.Wsdl
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
 
-			var memoryStream = new MemoryStream();
-			await encoder.WriteMessageAsync(responseMessage, memoryStream);
-			memoryStream.Position = 0;
+			using (var memoryStream = new MemoryStream())
+			{
+				await encoder.WriteMessageAsync(responseMessage, memoryStream);
+				memoryStream.Position = 0;
 
-			var streamReader = new StreamReader(memoryStream);
-			var result = streamReader.ReadToEnd();
-			return result;
+				using (var streamReader = new StreamReader(memoryStream))
+				{
+					var result = streamReader.ReadToEnd();
+					return result;
+				}
+			}
 		}
 
 		private void StartService(Type serviceType)
@@ -379,7 +383,9 @@ namespace SoapCore.Tests.Wsdl
 				_host.Run();
 			});
 
-			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+			//There's a race condition without this check, the host may not have an address immediately and we need to wait for it but the collection
+			//may actually be totally empty, All() will be true if the collection is empty.
+			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.All(a => a.EndsWith(":0")))
 			{
 				Thread.Sleep(2000);
 			}
