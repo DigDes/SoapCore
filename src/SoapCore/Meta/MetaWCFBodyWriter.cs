@@ -1336,12 +1336,6 @@ namespace SoapCore.Meta
 
 		private string GetTypeName(Type type)
 		{
-			//special case as string is IEnumerable
-			if (type == typeof(string))
-			{
-				return type.Name;
-			}
-
 			if (type.IsGenericType && !type.IsArray && !typeof(IEnumerable).IsAssignableFrom(type))
 			{
 				var genericTypes = GetGenericTypes(type);
@@ -1357,7 +1351,8 @@ namespace SoapCore.Meta
 				return "ArrayOf" + GetTypeName(type.GetElementType());
 			}
 
-			if (typeof(IEnumerable).IsAssignableFrom(type))
+			//Special case as string is IEnumerable and we don't want to turn it into System.Object
+			if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
 			{
 				var collectionDataContractAttribute = type.GetCustomAttribute<CollectionDataContractAttribute>();
 				if (collectionDataContractAttribute != null)
