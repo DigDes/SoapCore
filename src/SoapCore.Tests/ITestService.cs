@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -66,5 +67,14 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		string PingWithServiceOperationTuning();
+
+		[OperationContract]
+		ComplexModelInput[] ArrayOfComplexItems(ComplexModelInput[] items);
+
+		[OperationContract]
+		List<ComplexModelInput> ListOfComplexItems(List<ComplexModelInput> items);
+
+		[OperationContract]
+		Dictionary<string, string> ListOfDictionaryItems(Dictionary<string, string> items);
 	}
 }

@@ -207,6 +207,27 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckDictionaryTypeDataContract()
+		{
+			StartService(typeof(DictionaryTypeListService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var dictionaryItems = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("thing") == true);
+			Assert.IsNotNull(dictionaryItems);
+			Assert.AreEqual("http://schemas.datacontract.org/2004/07/System.Collections.Generic", dictionaryItems.Attribute(XNamespace.Xmlns + "q2").Value);
+			Assert.AreEqual("q2:ArrayOfKeyValuePairOfStringString", dictionaryItems.Attribute("type").Value);
+
+			var complexTypeList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ComplexModelInput") == true);
+			Assert.IsNotNull(complexTypeList);
+
+			var myStringElement = GetElements(complexTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("StringProperty") == true);
+			Assert.IsNotNull(myStringElement);
+		}
+
+		[TestMethod]
 		public async Task CheckStringArrayNameWsdl()
 		{
 			//StartService(typeof(StringListService));
@@ -335,13 +356,17 @@ namespace SoapCore.Tests.Wsdl
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
 
-			var memoryStream = new MemoryStream();
-			await encoder.WriteMessageAsync(responseMessage, memoryStream);
-			memoryStream.Position = 0;
+			using (var memoryStream = new MemoryStream())
+			{
+				await encoder.WriteMessageAsync(responseMessage, memoryStream);
+				memoryStream.Position = 0;
 
-			var streamReader = new StreamReader(memoryStream);
-			var result = streamReader.ReadToEnd();
-			return result;
+				using (var streamReader = new StreamReader(memoryStream))
+				{
+					var result = streamReader.ReadToEnd();
+					return result;
+				}
+			}
 		}
 
 		private void StartService(Type serviceType)
@@ -358,7 +383,9 @@ namespace SoapCore.Tests.Wsdl
 				_host.Run();
 			});
 
-			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+			//There's a race condition without this check, the host may not have an address immediately and we need to wait for it but the collection
+			//may actually be totally empty, All() will be true if the collection is empty.
+			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.All(a => a.EndsWith(":0")))
 			{
 				Thread.Sleep(2000);
 			}

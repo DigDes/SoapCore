@@ -112,5 +112,20 @@ namespace SoapCore.Tests
 		{
 			return _pingResultValue.Value;
 		}
+
+		public ComplexModelInput[] ArrayOfComplexItems(ComplexModelInput[] items)
+		{
+			return items;
+		}
+
+		public List<ComplexModelInput> ListOfComplexItems(List<ComplexModelInput> items)
+		{
+			return items;
+		}
+
+		public Dictionary<string, string> ListOfDictionaryItems(Dictionary<string, string> items)
+		{
+			return items;
+		}
 	}
 }
