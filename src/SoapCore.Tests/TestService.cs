@@ -127,5 +127,26 @@ namespace SoapCore.Tests
 		{
 			return items;
 		}
+
+		public ComplexInheritanceModelInputBase GetComplexInheritanceModel(ComplexInheritanceModelInputBase input)
+		{
+			switch (input)
+			{
+				case ComplexInheritanceModelInputB _:
+					{
+						return new ComplexInheritanceModelInputB();
+					}
+
+				case ComplexInheritanceModelInputA _:
+					{
+						return new ComplexInheritanceModelInputA();
+					}
+
+				default:
+					{
+						throw new NotImplementedException();
+					}
+			}
+		}
 	}
 }

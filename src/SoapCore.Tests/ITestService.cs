@@ -76,5 +76,8 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		Dictionary<string, string> ListOfDictionaryItems(Dictionary<string, string> items);
+
+		[OperationContract]
+		ComplexInheritanceModelInputBase GetComplexInheritanceModel(ComplexInheritanceModelInputBase input);
 	}
 }

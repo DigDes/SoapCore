@@ -327,7 +327,13 @@ namespace SoapCore
 				}
 				else
 				{
-					var serializer = new DataContractSerializer(_result.GetType(), _resultName, _serviceNamespace);
+					Type resultType = _result.GetType();
+
+					// When `KnownTypeAttribute` is present the `DataContractSerializer` adds `i:type` attribute with the correct object type
+					DataContractSerializer serializer = resultType.TryGetBaseTypeWithKnownTypes(out Type resultBaseTypeWithKnownTypes)
+						? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace)
+						: new DataContractSerializer(resultType, _resultName, _serviceNamespace);
+
 					serializer.WriteObject(writer, _result);
 				}
 			}
