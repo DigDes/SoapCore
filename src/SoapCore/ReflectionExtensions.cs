@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace SoapCore
 {
@@ -141,6 +143,42 @@ namespace SoapCore
 			where TAttribute : Attribute
 		{
 			return GetPropertyOrFieldMembers(type).Where(x => x.GetCustomAttribute<TAttribute>() != null);
+		}
+
+		internal static bool TryGetBaseTypeWithKnownTypes(this Type type, out Type result)
+		{
+			if (type is null)
+			{
+				throw new ArgumentNullException(nameof(type));
+			}
+
+			if (type.IsEnum || type.IsPrimitive || type.IsValueType)
+			{
+				result = null;
+				return false;
+			}
+
+			if (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				result = null;
+				return false;
+			}
+
+			Type baseType = type.GetTypeInfo().BaseType;
+			if (baseType is null || baseType.Name.Equals("Object"))
+			{
+				result = null;
+				return false;
+			}
+
+			bool hasKnownTypes = baseType
+				.GetCustomAttributes<KnownTypeAttribute>()
+				.Any();
+
+			result = hasKnownTypes
+				? baseType
+				: null;
+			return hasKnownTypes;
 		}
 	}
 }

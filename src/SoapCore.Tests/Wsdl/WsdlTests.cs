@@ -175,6 +175,23 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckInheritance()
+		{
+			StartService(typeof(InheritanceService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			File.WriteAllText("test.wsdl", wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var childRenamed = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
+			Assert.IsNotNull(childRenamed);
+
+			var extension = GetElements(childRenamed, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(extension);
+		}
+
+		[TestMethod]
 		public void CheckCollectionDataContract()
 		{
 			StartService(typeof(CollectionDataContractService));
