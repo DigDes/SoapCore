@@ -11,6 +11,7 @@ namespace SoapCore.ServiceModel
 		public ServiceDescription(Type serviceType)
 		{
 			ServiceType = serviceType;
+			ServiceKnownTypes = serviceType.GetCustomAttributes<ServiceKnownTypeAttribute>(inherit: false);
 
 			var types = Enumerable.Empty<Type>().Concat(ServiceType.GetInterfaces());
 			types = types.Concat(new[] { ServiceType });
@@ -28,6 +29,7 @@ namespace SoapCore.ServiceModel
 		}
 
 		public Type ServiceType { get; private set; }
+		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; private set; }
 		public IEnumerable<ContractDescription> Contracts { get; private set; }
 		public IEnumerable<OperationDescription> Operations => Contracts.SelectMany(c => c.Operations);
 	}

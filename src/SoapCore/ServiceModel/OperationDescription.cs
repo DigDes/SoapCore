@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -57,6 +58,8 @@ namespace SoapCore.ServiceModel
 				.Where(a => a.DetailType?.Name != null)
 				.Select(a => a.DetailType)
 				.ToArray();
+
+			ServiceKnownTypes = operationMethod.GetCustomAttributes<ServiceKnownTypeAttribute>(inherit: false);
 		}
 
 		public ContractDescription Contract { get; private set; }
@@ -74,6 +77,26 @@ namespace SoapCore.ServiceModel
 		public string ReturnName { get; private set; }
 		public string ReturnElementName { get; private set; }
 		public string ReturnNamespace { get; private set; }
+		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; private set; }
+
+		public IEnumerable<ServiceKnownTypeAttribute> GetServiceKnownTypesHierarchy()
+		{
+			foreach (ServiceKnownTypeAttribute serviceKnownType in ServiceKnownTypes)
+			{
+				yield return serviceKnownType;
+			}
+
+			foreach (ServiceKnownTypeAttribute serviceKnownType in Contract.ServiceKnownTypes)
+			{
+				yield return serviceKnownType;
+			}
+
+			// TODO: should we process service implementation service known type attributes
+			foreach (ServiceKnownTypeAttribute serviceKnownType in Contract.Service.ServiceKnownTypes)
+			{
+				yield return serviceKnownType;
+			}
+		}
 
 		private static SoapMethodParameterInfo CreateParameterInfo(ParameterInfo info, int index, ContractDescription contract)
 		{

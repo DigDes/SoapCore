@@ -98,6 +98,27 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckServiceKnownTypes()
+		{
+			StartService(typeof(ServiceKnownTypesService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var dogElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
+			Assert.IsNotNull(dogElement);
+
+			var catElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Cat") == true);
+			Assert.IsNotNull(dogElement);
+
+			var animalElement = GetElements(dogElement, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(animalElement);
+
+			animalElement = GetElements(catElement, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(animalElement);
+		}
+
+		[TestMethod]
 		public void CheckStructsInList()
 		{
 			StartService(typeof(StructService));
@@ -180,8 +201,6 @@ namespace SoapCore.Tests.Wsdl
 			StartService(typeof(InheritanceService));
 			var wsdl = GetWsdl();
 			StopServer();
-
-			File.WriteAllText("test.wsdl", wsdl);
 
 			var root = XElement.Parse(wsdl);
 			var childRenamed = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
