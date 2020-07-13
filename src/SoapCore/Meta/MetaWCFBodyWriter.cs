@@ -1015,7 +1015,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "fault", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, $"{operation.SoapAction}{fault.Name}Fault");
 				writer.WriteAttributeString("name", $"{fault.Name}Fault");
-				writer.WriteAttributeString("message", $"tns:{operation.Contract.Name}_{operation.Name}_{fault.Name}Fault_FaultMessage");
+				writer.WriteAttributeString("message", $"tns:{_service.GeneralContract}_{operation.Name}_{fault.Name}Fault_FaultMessage");
 				writer.WriteEndElement(); // wsdl:fault
 			}
 		}
