@@ -125,8 +125,6 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = GetWsdl();
 			StopServer();
 
-			File.WriteAllText("test-ano.wsdl", wsdl);
-
 			var root = XElement.Parse(wsdl);
 			var dogElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
 			Assert.IsNotNull(dogElement);
@@ -202,8 +200,6 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = GetWsdl();
 			StopServer();
 
-			File.WriteAllText("test.wsdl", wsdl);
-
 			var root = new XmlDocument();
 			root.LoadXml(wsdl);
 
@@ -215,6 +211,26 @@ namespace SoapCore.Tests.Wsdl
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(element.Attributes["name"]?.Value, nameof(IPortTypeService));
+		}
+
+		[TestMethod]
+		public void CheckSystemTypes()
+		{
+			StartService(typeof(SystemTypesService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:element[@name='Method']/xs:complexType/xs:sequence/xs:element", nsmgr);
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["type"]?.Value, "xs:anyURI");
 		}
 
 		[TestMethod]

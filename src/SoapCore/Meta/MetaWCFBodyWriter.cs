@@ -1,4 +1,3 @@
-using SoapCore.ServiceModel;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,6 +11,7 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
 {
@@ -38,7 +38,8 @@ namespace SoapCore.Meta
 			["System.Guid"] = ("guid", Namespaces.SERIALIZATION_NS),
 			["System.Char"] = ("char", Namespaces.SERIALIZATION_NS),
 			["System.TimeSpan"] = ("duration", Namespaces.SERIALIZATION_NS),
-			["System.Object"] = ("anyType", Namespaces.SERIALIZATION_NS)
+			["System.Object"] = ("anyType", Namespaces.SERIALIZATION_NS),
+			["System.Uri"] = ("anyUri", Namespaces.SERIALIZATION_NS),
 		};
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 #pragma warning restore SA1009 // Closing parenthesis must be spaced correctly
@@ -1220,8 +1221,24 @@ namespace SoapCore.Meta
 				}
 				else if (type.Name == "Object" || type.Name == "Object&")
 				{
-					writer.WriteAttributeString("name", "anyType");
+					if (string.IsNullOrEmpty(name))
+					{
+						name = "anyType";
+					}
+
+					writer.WriteAttributeString("name", name);
 					writer.WriteAttributeString("type", "xs:anyType");
+				}
+				else if (type.Name == "Uri" || type.Name == "Uri&")
+				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = "anyURI";
+					}
+
+					// TODO: should we compare namespace to `System.Uri` or ensure type assembly is mscorelib/System
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("type", "xs:anyURI");
 				}
 				else if (type == typeof(DataTable))
 				{
