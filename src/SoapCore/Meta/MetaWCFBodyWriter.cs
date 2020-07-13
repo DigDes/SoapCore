@@ -1,4 +1,3 @@
-using SoapCore.ServiceModel;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,6 +11,7 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
 {
@@ -192,6 +192,23 @@ namespace SoapCore.Meta
 			}
 		}
 
+		private void EnsureServiceKnownTypes(IEnumerable<ServiceKnownTypeAttribute> serviceKnownTypes)
+		{
+			foreach (ServiceKnownTypeAttribute knownType in serviceKnownTypes)
+			{
+				if (knownType.Type is null)
+				{
+					throw new NotSupportedException($"Only type property of `{nameof(ServiceKnownTypeAttribute)}` is supported.");
+				}
+
+				// Add service known type
+				_complexTypeToBuild[knownType.Type] = GetDataContractNamespace(knownType.Type);
+
+				// Discover type known types
+				DiscoverTypes(knownType.Type, false);
+			}
+		}
+
 		private void AddOperations(XmlDictionaryWriter writer)
 		{
 			writer.WriteStartElement("xs", "schema", Namespaces.XMLNS_XSD);
@@ -206,6 +223,9 @@ namespace SoapCore.Meta
 			//discovery all parameters types which namespaceses diff with service namespace
 			foreach (var operation in _service.Operations)
 			{
+				// Ensure operation service known type attributes
+				EnsureServiceKnownTypes(operation.ServiceKnownTypes);
+
 				foreach (var parameter in operation.AllParameters)
 				{
 					var type = parameter.Parameter.ParameterType;
@@ -218,12 +238,12 @@ namespace SoapCore.Meta
 					if (TypeIsComplexForWsdl(type, out type))
 					{
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
-						DiscoveryTypes(type, true);
+						DiscoverTypes(type, true);
 					}
 					else if (type.IsEnum || Nullable.GetUnderlyingType(type)?.IsEnum == true)
 					{
 						_complexTypeToBuild[type] = GetDataContractNamespace(type);
-						DiscoveryTypes(type, true);
+						DiscoverTypes(type, true);
 					}
 				}
 
@@ -238,12 +258,12 @@ namespace SoapCore.Meta
 					if (TypeIsComplexForWsdl(returnType, out returnType))
 					{
 						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
-						DiscoveryTypes(returnType, true);
+						DiscoverTypes(returnType, true);
 					}
 					else if (returnType.IsEnum || Nullable.GetUnderlyingType(returnType)?.IsEnum == true)
 					{
 						_complexTypeToBuild[returnType] = GetDataContractNamespace(returnType);
-						DiscoveryTypes(returnType, true);
+						DiscoverTypes(returnType, true);
 					}
 				}
 			}
@@ -312,19 +332,28 @@ namespace SoapCore.Meta
 				}
 
 				_complexTypeToBuild[faultType] = GetDataContractNamespace(faultType);
-				DiscoveryTypes(faultType, true);
+				DiscoverTypes(faultType, true);
 			}
 		}
 
 		private void AddTypes(XmlDictionaryWriter writer)
 		{
 			writer.WriteStartElement("wsdl", "types", Namespaces.WSDL_NS);
+
+			// Ensure service known type attributes
+			// TODO: should we parse only contact attributes ??
+			EnsureServiceKnownTypes(_service.ServiceKnownTypes);
+
+			// Ensure service contract service known type attributes
+			EnsureServiceKnownTypes(_service.Contracts.SelectMany(x => x.ServiceKnownTypes));
+
 			AddOperations(writer);
 			AddMSSerialization(writer);
 			AddComplexTypes(writer);
 			AddArrayTypes(writer);
 			AddSystemTypes(writer);
-			writer.WriteEndElement(); // wsdl:types
+
+			writer.WriteEndElement();
 		}
 
 		private void AddSystemTypes(XmlDictionaryWriter writer)
@@ -569,7 +598,7 @@ namespace SoapCore.Meta
 			foreach (var type in _complexTypeToBuild.ToArray())
 			{
 				_complexTypeToBuild[type.Key] = GetDataContractNamespace(type.Key);
-				DiscoveryTypes(type.Key, true);
+				DiscoverTypes(type.Key, true);
 			}
 
 			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Value).ToDictionary(x => x.Key, x => x.Select(k => k.Key));
@@ -620,7 +649,7 @@ namespace SoapCore.Meta
 			}
 		}
 
-		private void DiscoveryTypes(Type type, bool isRootType)
+		private void DiscoverTypes(Type type, bool isRootType)
 		{
 			//guard against infinity recursion
 			//check is made against _complexTypeProcessed, which contains types that have been
@@ -642,17 +671,22 @@ namespace SoapCore.Meta
 			IEnumerable<KnownTypeAttribute> knownTypes = type.GetCustomAttributes<KnownTypeAttribute>(inherit: false);
 			foreach (KnownTypeAttribute knownType in knownTypes)
 			{
+				if (knownType.Type is null)
+				{
+					throw new NotSupportedException($"Only type property of `{nameof(KnownTypeAttribute)}` is supported.");
+				}
+
 				// add known type
 				_complexTypeToBuild[knownType.Type] = GetDataContractNamespace(knownType.Type);
 
 				// discover recursive
-				DiscoveryTypes(knownType.Type, false);
+				DiscoverTypes(knownType.Type, false);
 			}
 
 			if (HasBaseType(type) && type.BaseType != null)
 			{
 				_complexTypeToBuild[type.BaseType] = GetDataContractNamespace(type.BaseType);
-				DiscoveryTypes(type.BaseType, false);
+				DiscoverTypes(type.BaseType, false);
 			}
 
 			if ((type.IsArray || typeof(IEnumerable).IsAssignableFrom(type)) && type.IsGenericType)
@@ -662,7 +696,7 @@ namespace SoapCore.Meta
 				if (string.IsNullOrEmpty(name))
 				{
 					_complexTypeToBuild[genericType] = GetDataContractNamespace(genericType);
-					DiscoveryTypes(genericType, true);
+					DiscoverTypes(genericType, true);
 				}
 			}
 
@@ -701,7 +735,7 @@ namespace SoapCore.Meta
 					}
 
 					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
-					DiscoveryTypes(propertyType, false);
+					DiscoverTypes(propertyType, false);
 				}
 			}
 		}

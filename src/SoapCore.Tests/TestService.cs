@@ -148,5 +148,30 @@ namespace SoapCore.Tests
 					}
 			}
 		}
+
+		public ComplexModelInput ComplexModelInputFromServiceKnownType(object value)
+		{
+			if (value is null)
+			{
+				throw new ArgumentNullException(nameof(value));
+			}
+
+			if (value is ComplexModelInput input)
+			{
+				return input;
+			}
+
+			throw new Exception($"Invalid object type `{value.GetType()}`.");
+		}
+
+		public object ObjectFromServiceKnownType(ComplexModelInput value)
+		{
+			if (value is null)
+			{
+				throw new ArgumentNullException(nameof(value));
+			}
+
+			return value;
+		}
 	}
 }

@@ -79,5 +79,13 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		ComplexInheritanceModelInputBase GetComplexInheritanceModel(ComplexInheritanceModelInputBase input);
+
+		[ServiceKnownType(typeof(ComplexModelInput))]
+		[OperationContract]
+		ComplexModelInput ComplexModelInputFromServiceKnownType(object value);
+
+		[ServiceKnownType(typeof(ComplexModelInput))]
+		[OperationContract]
+		object ObjectFromServiceKnownType(ComplexModelInput value);
 	}
 }
