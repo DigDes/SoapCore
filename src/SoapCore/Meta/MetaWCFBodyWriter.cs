@@ -1111,6 +1111,13 @@ namespace SoapCore.Meta
 						var sysType = ResolveSystemType(type);
 						xsTypename = $"{(sysType.ns == Namespaces.SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
 					}
+					else if (_schemaNamespace != objectNamespace)
+					{
+						var ns = $"q{_namespaceCounter++}";
+						writer.WriteXmlnsAttribute($"{ns}", GetDataContractNamespace(type));
+
+						xsTypename = $"{ns}:{typeName}";
+					}
 					else
 					{
 						xsTypename = $"tns:{typeName}";
