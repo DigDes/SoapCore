@@ -76,7 +76,8 @@ namespace SoapCore.Meta
 			_buildArrayTypes = new HashSet<string>();
 			_builtSerializationElements = new HashSet<string>();
 
-			BindingType = service.Contracts.First().Name;
+			BindingType = service.GeneralContract.Name;
+			TargetNameSpace = service.GeneralContract.Namespace;
 
 			if (binding != null)
 			{
@@ -85,21 +86,21 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				BindingName = "BasicHttpBinding_" + _service.Contracts.First().Name;
-				PortName = "BasicHttpBinding_" + _service.Contracts.First().Name;
+				BindingName = "BasicHttpBinding_" + BindingType;
+				PortName = "BasicHttpBinding_" + BindingType;
 			}
 		}
 
 		private string BindingName { get; }
 		private string BindingType { get; }
 		private string PortName { get; }
-		private string TargetNameSpace => _service.Contracts.First().Namespace;
+		private string TargetNameSpace { get; }
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
 			AddTypes(writer);
 
-			AddMessage(writer);
+			AddMessages(writer);
 
 			AddPortType(writer);
 
@@ -907,7 +908,7 @@ namespace SoapCore.Meta
 			_builtComplexTypes.Add(toBuildName);
 		}
 
-		private void AddMessage(XmlDictionaryWriter writer)
+		private void AddMessages(XmlDictionaryWriter writer)
 		{
 			foreach (var operation in _service.Operations)
 			{
@@ -916,7 +917,17 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
 				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + operation.Name);
+
+				string inputElement = "tns:" + operation.Name;
+				if (operation.Contract.Name != BindingType)
+				{
+					var ns = $"q{_namespaceCounter++}";
+					writer.WriteXmlnsAttribute($"{ns}", operation.Contract.Namespace);
+
+					inputElement = $"{ns}:{operation.Name}";
+				}
+
+				writer.WriteAttributeString("element", inputElement);
 				writer.WriteEndElement(); // wsdl:part
 				writer.WriteEndElement(); // wsdl:message
 
@@ -927,7 +938,17 @@ namespace SoapCore.Meta
 					writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
 					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 					writer.WriteAttributeString("name", "parameters");
-					writer.WriteAttributeString("element", "tns:" + operation.Name + "Response");
+
+					string outputElement = "tns:" + operation.Name + "Response";
+					if (operation.Contract.Name != BindingType)
+					{
+						var ns = $"q{_namespaceCounter++}";
+						writer.WriteXmlnsAttribute($"{ns}", operation.Contract.Namespace);
+
+						outputElement = $"{ns}:{operation.Name}Response";
+					}
+
+					writer.WriteAttributeString("element", outputElement);
 					writer.WriteEndElement(); // wsdl:part
 					writer.WriteEndElement(); // wsdl:message
 				}
@@ -988,7 +1009,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "fault", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, $"{operation.SoapAction}{fault.Name}Fault");
 				writer.WriteAttributeString("name", $"{fault.Name}Fault");
-				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_{fault.Name}Fault_FaultMessage");
+				writer.WriteAttributeString("message", $"tns:{operation.Contract.Name}_{operation.Name}_{fault.Name}Fault_FaultMessage");
 				writer.WriteEndElement(); // wsdl:fault
 			}
 		}
@@ -1002,7 +1023,7 @@ namespace SoapCore.Meta
 			if (_binding.HasBasicAuth())
 			{
 				writer.WriteStartElement("wsp", "PolicyReference", Namespaces.WSP_NS);
-				writer.WriteAttributeString("URI", $"#{_binding.Name}_{_service.Contracts.First().Name}_policy");
+				writer.WriteAttributeString("URI", $"#{_binding.Name}_{BindingType}_policy");
 				writer.WriteEndElement();
 			}
 

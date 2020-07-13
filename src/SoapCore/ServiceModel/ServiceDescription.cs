@@ -21,16 +21,31 @@ namespace SoapCore.ServiceModel
 			{
 				foreach (var serviceContract in contractType.GetTypeInfo().GetCustomAttributes<ServiceContractAttribute>())
 				{
-					contracts.Add(new ContractDescription(this, contractType, serviceContract));
+					var contractDescription = new ContractDescription(this, contractType, serviceContract);
+
+					contracts.Add(contractDescription);
+
+					if (GeneralContract is null)
+					{
+						GeneralContract = contractDescription;
+					}
+					else
+					{
+						if (GeneralContract.GetType().IsAssignableFrom(contractDescription.GetType()))
+						{
+							GeneralContract = contractDescription;
+						}
+					}
 				}
 			}
 
 			Contracts = contracts;
 		}
 
-		public Type ServiceType { get; private set; }
-		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; private set; }
-		public IEnumerable<ContractDescription> Contracts { get; private set; }
+		public Type ServiceType { get; }
+		public ContractDescription GeneralContract { get; }
+		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; }
+		public IEnumerable<ContractDescription> Contracts { get; }
 		public IEnumerable<OperationDescription> Operations => Contracts.SelectMany(c => c.Operations);
 	}
 }

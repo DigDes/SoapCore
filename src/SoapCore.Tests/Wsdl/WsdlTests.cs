@@ -196,6 +196,28 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckPortType()
+		{
+			StartService(typeof(PortTypeServiceBase.PortTypeService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			File.WriteAllText("test.wsdl", wsdl);
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:portType", nsmgr);
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["name"]?.Value, nameof(IPortTypeService));
+		}
+
+		[TestMethod]
 		public void CheckStreamDeclaration()
 		{
 			StartService(typeof(StreamService));
