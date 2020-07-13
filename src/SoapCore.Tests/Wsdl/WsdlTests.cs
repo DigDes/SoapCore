@@ -119,6 +119,36 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckValueTypes()
+		{
+			StartService(typeof(ValueTypeService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = XElement.Parse(wsdl);
+			var elementsWithEmptyName = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == string.Empty);
+			elementsWithEmptyName.ShouldBeEmpty();
+
+			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
+			elementsWithEmptyType.ShouldBeEmpty();
+
+			var inputElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStructInput");
+			var inputAnnotation = inputElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
+			var inputIsValueType = inputAnnotation.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
+
+			var outputElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStructOutput");
+			var outputAnnotation = outputElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
+			var outputIsValueType = outputAnnotation.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
+
+			Assert.IsNotNull(inputIsValueType);
+			Assert.AreEqual("true", inputIsValueType.Value);
+			Assert.IsNotNull(inputAnnotation);
+
+			Assert.IsNotNull(outputIsValueType);
+			Assert.AreEqual("true", outputIsValueType.Value);
+			Assert.IsNotNull(outputAnnotation);
+		}
+
+		[TestMethod]
 		public void CheckStreamDeclaration()
 		{
 			StartService(typeof(StreamService));

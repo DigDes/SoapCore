@@ -1265,8 +1265,8 @@ namespace SoapCore.Meta
 		private bool TypeIsComplexForWsdl(Type type, out Type resultType)
 		{
 			var typeInfo = type.GetTypeInfo();
-			resultType = null;
 			resultType = type;
+
 			if (typeInfo.IsByRef)
 			{
 				type = typeInfo.GetElementType();
@@ -1284,7 +1284,7 @@ namespace SoapCore.Meta
 				type = resultType;
 			}
 
-			if (typeInfo.IsEnum || typeInfo.IsValueType)
+			if (typeInfo.IsEnum)
 			{
 				return false;
 			}
