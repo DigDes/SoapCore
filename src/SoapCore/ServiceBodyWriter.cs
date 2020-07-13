@@ -1,4 +1,3 @@
-using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,6 +9,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
 using System.Xml.Serialization;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -334,7 +334,8 @@ namespace SoapCore
 				}
 				else
 				{
-					Type resultType = _result.GetType();
+					// When operation return type is `System.Object` the `DataContractSerializer` adds `i:type` attribute with the correct object type
+					Type resultType = _operation.ReturnType;
 					IEnumerable<Type> serviceKnownTypes = _operation
 						.GetServiceKnownTypesHierarchy()
 						.Select(x => x.Type);

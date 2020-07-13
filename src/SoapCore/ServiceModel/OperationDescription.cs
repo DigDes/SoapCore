@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -19,15 +20,14 @@ namespace SoapCore.ServiceModel
 			IsOneWay = contractAttribute.IsOneWay;
 			DispatchMethod = operationMethod;
 
-			var returnType = operationMethod.ReturnType;
-
-			if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+			ReturnType = operationMethod.ReturnType;
+			if (ReturnType.IsGenericType && ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
 			{
-				returnType = returnType.GenericTypeArguments[0];
+				ReturnType = ReturnType.GenericTypeArguments[0];
 			}
 
-			IsMessageContractResponse = returnType.CustomAttributes
-					 .FirstOrDefault(ca => ca.AttributeType == typeof(MessageContractAttribute)) != null;
+			IsMessageContractResponse = ReturnType.CustomAttributes
+				.FirstOrDefault(ca => ca.AttributeType == typeof(MessageContractAttribute)) != null;
 
 			AllParameters = operationMethod.GetParameters()
 				.Select((info, index) => CreateParameterInfo(info, index, contract))
@@ -77,6 +77,7 @@ namespace SoapCore.ServiceModel
 		public string ReturnName { get; private set; }
 		public string ReturnElementName { get; private set; }
 		public string ReturnNamespace { get; private set; }
+		public Type ReturnType { get; private set; }
 		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; private set; }
 
 		public IEnumerable<ServiceKnownTypeAttribute> GetServiceKnownTypesHierarchy()
