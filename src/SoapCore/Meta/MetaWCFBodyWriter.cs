@@ -210,11 +210,13 @@ namespace SoapCore.Meta
 			}
 		}
 
-		private void AddOperations(XmlDictionaryWriter writer)
+		private void AddContractOperations(XmlDictionaryWriter writer, ContractDescription contract)
 		{
+			IEnumerable<OperationDescription> operations = contract.Operations;
+
 			writer.WriteStartElement("xs", "schema", Namespaces.XMLNS_XSD);
 			writer.WriteAttributeString("elementFormDefault", "qualified");
-			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
+			writer.WriteAttributeString("targetNamespace", contract.Namespace);
 			writer.WriteXmlnsAttribute("xs", Namespaces.XMLNS_XSD);
 			writer.WriteXmlnsAttribute("ser", Namespaces.SERIALIZATION_NS);
 
@@ -222,7 +224,7 @@ namespace SoapCore.Meta
 			_namespaceCounter = 1;
 
 			//discovery all parameters types which namespaceses diff with service namespace
-			foreach (var operation in _service.Operations)
+			foreach (OperationDescription operation in operations)
 			{
 				// Ensure operation service known type attributes
 				EnsureServiceKnownTypes(operation.ServiceKnownTypes);
@@ -278,7 +280,7 @@ namespace SoapCore.Meta
 				writer.WriteEndElement();
 			}
 
-			foreach (var operation in _service.Operations)
+			foreach (OperationDescription operation in operations)
 			{
 				// input parameters of operation
 				writer.WriteStartElement("xs", "element", Namespaces.XMLNS_XSD);
@@ -348,7 +350,11 @@ namespace SoapCore.Meta
 			// Ensure service contract service known type attributes
 			EnsureServiceKnownTypes(_service.Contracts.SelectMany(x => x.ServiceKnownTypes));
 
-			AddOperations(writer);
+			foreach (ContractDescription contract in _service.Contracts)
+			{
+				AddContractOperations(writer, contract);
+			}
+
 			AddMSSerialization(writer);
 			AddComplexTypes(writer);
 			AddArrayTypes(writer);
