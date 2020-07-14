@@ -228,6 +228,7 @@ namespace SoapCore.Meta
 			foreach (OperationDescription operation in operations)
 			{
 				// Ensure operation service known type attributes
+				EnsureServiceKnownTypes(operation.ServiceKnownTypes);
 
 				foreach (var parameter in operation.AllParameters)
 				{
@@ -349,7 +350,7 @@ namespace SoapCore.Meta
 
 			// Ensure service contract service known type attributes
 			EnsureServiceKnownTypes(_service.Contracts.SelectMany(x => x.ServiceKnownTypes));
-      
+
 			foreach (ContractDescription contract in _service.Contracts)
 			{
 				AddContractOperations(writer, contract);
