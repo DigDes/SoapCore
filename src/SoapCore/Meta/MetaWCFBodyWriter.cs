@@ -1133,21 +1133,48 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					var underlyingType = Nullable.GetUnderlyingType(type);
+					Type underlyingType = Nullable.GetUnderlyingType(type);
 					if (underlyingType != null)
 					{
-						var sysType = ResolveSystemType(underlyingType);
-						xsTypename = $"{(sysType.ns == Namespaces.SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
-						writer.WriteAttributeString("nillable", "true");
-					}
-					else if (ResolveSystemType(type).name != null)
-					{
-						var sysType = ResolveSystemType(type);
-						xsTypename = $"{(sysType.ns == Namespaces.SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
+						objectNamespace = GetDataContractNamespace(underlyingType);
+						typeName = GetTypeName(underlyingType);
+
+						if (ResolveSystemType(underlyingType).name != null)
+						{
+							var sysType = ResolveSystemType(underlyingType);
+							xsTypename = $"{(sysType.ns == Namespaces.SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
+							writer.WriteAttributeString("nillable", "true");
+						}
+						else if (_schemaNamespace != objectNamespace)
+						{
+							var ns = $"q{_namespaceCounter++}";
+							writer.WriteXmlnsAttribute($"{ns}", GetDataContractNamespace(type));
+
+							xsTypename = $"{ns}:{typeName}";
+						}
+						else
+						{
+							xsTypename = $"tns:{typeName}";
+						}
 					}
 					else
 					{
-						xsTypename = $"tns:{typeName}";
+						if (ResolveSystemType(type).name != null)
+						{
+							var sysType = ResolveSystemType(type);
+							xsTypename = $"{(sysType.ns == Namespaces.SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";
+						}
+						else if (_schemaNamespace != objectNamespace)
+						{
+							var ns = $"q{_namespaceCounter++}";
+							writer.WriteXmlnsAttribute($"{ns}", GetDataContractNamespace(type));
+
+							xsTypename = $"{ns}:{typeName}";
+						}
+						else
+						{
+							xsTypename = $"tns:{typeName}";
+						}
 					}
 				}
 
@@ -1299,8 +1326,8 @@ namespace SoapCore.Meta
 		private bool TypeIsComplexForWsdl(Type type, out Type resultType)
 		{
 			var typeInfo = type.GetTypeInfo();
-			resultType = null;
 			resultType = type;
+
 			if (typeInfo.IsByRef)
 			{
 				type = typeInfo.GetElementType();
@@ -1318,7 +1345,7 @@ namespace SoapCore.Meta
 				type = resultType;
 			}
 
-			if (typeInfo.IsEnum || typeInfo.IsValueType)
+			if (typeInfo.IsEnum)
 			{
 				return false;
 			}
