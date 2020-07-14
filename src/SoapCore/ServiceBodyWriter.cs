@@ -301,7 +301,14 @@ namespace SoapCore
 					using (var ms = new MemoryStream())
 					using (var stream = new BufferedStream(ms))
 					{
-						new DataContractSerializer(outResult.Value.GetType()).WriteObject(ms, outResult.Value);
+						Type outResultType = outResult.Value.GetType();
+						IEnumerable<Type> serviceKnownTypes = _operation
+							.GetServiceKnownTypesHierarchy()
+							.Select(x => x.Type);
+
+						var serializer = new DataContractSerializer(outResultType, serviceKnownTypes);
+						serializer.WriteObject(ms, outResult.Value);
+
 						stream.Position = 0;
 						using (var reader = XmlReader.Create(stream))
 						{
@@ -327,12 +334,16 @@ namespace SoapCore
 				}
 				else
 				{
-					Type resultType = _result.GetType();
+					// When operation return type is `System.Object` the `DataContractSerializer` adds `i:type` attribute with the correct object type
+					Type resultType = _operation.ReturnType;
+					IEnumerable<Type> serviceKnownTypes = _operation
+						.GetServiceKnownTypesHierarchy()
+						.Select(x => x.Type);
 
 					// When `KnownTypeAttribute` is present the `DataContractSerializer` adds `i:type` attribute with the correct object type
 					DataContractSerializer serializer = resultType.TryGetBaseTypeWithKnownTypes(out Type resultBaseTypeWithKnownTypes)
-						? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace)
-						: new DataContractSerializer(resultType, _resultName, _serviceNamespace);
+						? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace, serviceKnownTypes)
+						: new DataContractSerializer(resultType, _resultName, _serviceNamespace, serviceKnownTypes);
 
 					serializer.WriteObject(writer, _result);
 				}

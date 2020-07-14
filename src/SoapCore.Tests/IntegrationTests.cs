@@ -176,6 +176,35 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void ComplexModelInputFromServiceKnownType()
+		{
+			var client = CreateClient();
+			var input = new ComplexModelInput
+			{
+				IntProperty = 123,
+				StringProperty = "Test string",
+			};
+			var output = client.ComplexModelInputFromServiceKnownType(input);
+			Assert.AreEqual(input.IntProperty, output.IntProperty);
+			Assert.AreEqual(input.StringProperty, output.StringProperty);
+		}
+
+		[TestMethod]
+		public void ObjectFromServiceKnownType()
+		{
+			var client = CreateClient();
+			var input = new ComplexModelInput
+			{
+				IntProperty = 123,
+				StringProperty = "Test string",
+			};
+			var output = client.ObjectFromServiceKnownType(input);
+			Assert.IsInstanceOfType(output, typeof(ComplexModelInput));
+			Assert.AreEqual(input.IntProperty, ((ComplexModelInput)output).IntProperty);
+			Assert.AreEqual(input.StringProperty, ((ComplexModelInput)output).StringProperty);
+		}
+
+		[TestMethod]
 		public void ThrowsFaultException()
 		{
 			var client = CreateClient();

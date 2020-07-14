@@ -461,6 +461,10 @@ namespace SoapCore
 		{
 			var arguments = new object[operation.AllParameters.Length];
 
+			IEnumerable<Type> serviceKnownTypes = operation
+				.GetServiceKnownTypesHierarchy()
+				.Select(x => x.Type);
+
 			// if any ordering issues, possible to rewrite like:
 			/*while (!xmlReader.EOF)
 			{
@@ -490,12 +494,24 @@ namespace SoapCore
 					}
 					else
 					{
-						var argumentValue = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, operation.Contract.Namespace, parameterInfo);
+						var argumentValue = _serializerHelper.DeserializeInputParameter(
+							xmlReader,
+							parameterType,
+							parameterInfo.Name,
+							operation.Contract.Namespace,
+							parameterInfo,
+							serviceKnownTypes);
 
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(xmlReader, parameterType, parameterInfo.Name, parameterInfo.Namespace, parameterInfo);
+							argumentValue = _serializerHelper.DeserializeInputParameter(
+								xmlReader,
+								parameterType,
+								parameterInfo.Name,
+								parameterInfo.Namespace,
+								parameterInfo,
+								serviceKnownTypes);
 						}
 
 						arguments[parameterInfo.Index] = argumentValue;
@@ -540,7 +556,13 @@ namespace SoapCore
 					else
 					{
 						// It's wrapped so we treat it like normal!
-						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(xmlReader, parameterInfo.Parameter.ParameterType, parameterInfo.Name, @namespace, parameterInfo);
+						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(
+							xmlReader,
+							parameterInfo.Parameter.ParameterType,
+							parameterInfo.Name,
+							@namespace,
+							parameterInfo,
+							serviceKnownTypes);
 					}
 				}
 				else
@@ -564,7 +586,12 @@ namespace SoapCore
 						{
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-							var value = _serializerHelper.DeserializeInputParameter(reader, member.MemberInfo.GetPropertyOrFieldType(), member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name, member.MessageHeaderMemberAttribute.Namespace ?? @namespace);
+							var value = _serializerHelper.DeserializeInputParameter(
+								reader, member.MemberInfo.GetPropertyOrFieldType(),
+								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
+								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
+								parameterInfo: null,
+								serviceKnownTypes);
 
 							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
 						}
@@ -593,7 +620,13 @@ namespace SoapCore
 						var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
 
 						//xmlReader.MoveToStartElement(innerParameterName, innerParameterNs);
-						var innerParameter = _serializerHelper.DeserializeInputParameter(xmlReader, innerParameterType, innerParameterName, innerParameterNs, parameterInfo);
+						var innerParameter = _serializerHelper.DeserializeInputParameter(
+							xmlReader,
+							innerParameterType,
+							innerParameterName,
+							innerParameterNs,
+							parameterInfo,
+							serviceKnownTypes);
 
 						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
 					}

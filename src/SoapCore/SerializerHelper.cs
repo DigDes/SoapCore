@@ -1,11 +1,10 @@
+using Microsoft.CSharp;
+using SoapCore.ServiceModel;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using System.Text;
-using Microsoft.CSharp;
-using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -18,7 +17,13 @@ namespace SoapCore
 			_serializer = serializer;
 		}
 
-		public object DeserializeInputParameter(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo = null)
+		public object DeserializeInputParameter(
+			System.Xml.XmlDictionaryReader xmlReader,
+			Type parameterType,
+			string parameterName,
+			string parameterNs,
+			SoapMethodParameterInfo parameterInfo = null,
+			IEnumerable<Type> knownTypes = null)
 		{
 			if (xmlReader.IsStartElement(parameterName, parameterNs))
 			{
@@ -44,7 +49,7 @@ namespace SoapCore
 							}
 
 						case SoapSerializer.DataContractSerializer:
-							return DeserializeDataContract(xmlReader, parameterType, parameterName, parameterNs);
+							return DeserializeDataContract(xmlReader, parameterType, parameterName, parameterNs, knownTypes);
 
 						default:
 							throw new NotImplementedException();
@@ -79,7 +84,12 @@ namespace SoapCore
 			}
 		}
 
-		private static object DeserializeDataContract(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs)
+		private static object DeserializeDataContract(
+			System.Xml.XmlDictionaryReader xmlReader,
+			Type parameterType,
+			string parameterName,
+			string parameterNs,
+			IEnumerable<Type> knownTypes = null)
 		{
 			var elementType = parameterType.GetElementType();
 
@@ -88,7 +98,9 @@ namespace SoapCore
 				elementType = parameterType;
 			}
 
-			var serializer = new DataContractSerializer(elementType, parameterName, parameterNs);
+			var serializer = knownTypes is null
+				? new DataContractSerializer(elementType, parameterName, parameterNs)
+				: new DataContractSerializer(elementType, parameterName, parameterNs, knownTypes);
 
 			return serializer.ReadObject(xmlReader, verifyObjectName: true);
 		}
@@ -123,7 +135,7 @@ namespace SoapCore
 			}
 
 			//if (parameterInfo.ArrayItemName != null)
-			if(!isEmpty)
+			if (!isEmpty)
 			{
 				xmlReader.ReadEndElement();
 			}
