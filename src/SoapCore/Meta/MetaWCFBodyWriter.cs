@@ -1099,8 +1099,9 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					var underlyingType = Nullable.GetUnderlyingType(type);
-					if (underlyingType != null)
+					Type underlyingType = Nullable.GetUnderlyingType(type);
+					if (underlyingType != null
+						&& ResolveSystemType(underlyingType).name != null)
 					{
 						var sysType = ResolveSystemType(underlyingType);
 						xsTypename = $"{(sysType.ns == Namespaces.SERIALIZATION_NS ? "ser" : "xs")}:{sysType.name}";

@@ -131,6 +131,8 @@ namespace SoapCore.Tests.Wsdl
 			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
 			elementsWithEmptyType.ShouldBeEmpty();
 
+			File.WriteAllText("test.wsdl", wsdl);
+
 			var inputElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStructInput");
 			var inputAnnotation = inputElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
 			var inputIsValueType = inputAnnotation.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
