@@ -719,6 +719,7 @@ namespace SoapCore.Meta
 			}
 
 			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
+			var messageBodyMemberAttribute = property.GetCustomAttribute<MessageBodyMemberAttribute>();
 			if (attributeItem != null)
 			{
 				var name = attributeItem.AttributeName;
@@ -728,6 +729,16 @@ namespace SoapCore.Meta
 				}
 
 				AddSchemaType(writer, toBuild, name, isAttribute: true);
+			}
+			else if (messageBodyMemberAttribute != null)
+			{
+				var name = messageBodyMemberAttribute.Name;
+				if (string.IsNullOrWhiteSpace(name))
+				{
+					name = property.Name;
+				}
+
+				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
 			else
 			{
