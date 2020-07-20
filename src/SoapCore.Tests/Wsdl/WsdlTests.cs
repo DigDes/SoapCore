@@ -459,6 +459,22 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(propAnonAttribute);
 		}
 
+		[TestMethod]
+		public async Task CheckMessageHeadersServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<MessageHeadersService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var stringPropertyElement = root.XPathSelectElement("//xsd:element[@name='ModifiedStringProperty']", nm);
+			Assert.IsNotNull(stringPropertyElement);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
