@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -131,6 +131,77 @@ namespace SoapCore.Tests
 			string message = string.Empty;
 			client.RefParam(ref message);
 			Assert.AreEqual("hello, world", message);
+		}
+
+		[TestMethod]
+		public void ArrayInput()
+		{
+			var client = CreateClient();
+			List<ComplexModelInput> complexModelInputs = new List<ComplexModelInput>();
+			complexModelInputs.Add(new ComplexModelInput());
+			var e = client.ArrayOfComplexItems(complexModelInputs.ToArray());
+			Assert.AreEqual(e.Length, complexModelInputs.Count);
+		}
+
+		[TestMethod]
+		public void ListInput()
+		{
+			var client = CreateClient();
+			List<ComplexModelInput> complexModelInputs = new List<ComplexModelInput>();
+			complexModelInputs.Add(new ComplexModelInput());
+			var e = client.ListOfComplexItems(complexModelInputs);
+			Assert.AreEqual(e.Count, complexModelInputs.Count);
+		}
+
+		[TestMethod]
+		public void DictionaryInput()
+		{
+			var client = CreateClient();
+			Dictionary<string, string> dictionaryInputs = new Dictionary<string, string>();
+			dictionaryInputs.Add("1", "2");
+			var e = client.ListOfDictionaryItems(dictionaryInputs);
+			Assert.AreEqual(e["1"], dictionaryInputs["1"]);
+			Assert.AreEqual(e.Count, dictionaryInputs.Count);
+		}
+
+		[TestMethod]
+		[DataRow(typeof(ComplexInheritanceModelInputA))]
+		[DataRow(typeof(ComplexInheritanceModelInputB))]
+		public void GetComplexInheritanceModel(Type type)
+		{
+			var client = CreateClient();
+			var input = (ComplexInheritanceModelInputBase)Activator.CreateInstance(type);
+			var output = client.GetComplexInheritanceModel(input);
+			Assert.AreEqual(input.GetType(), output.GetType());
+		}
+
+		[TestMethod]
+		public void ComplexModelInputFromServiceKnownType()
+		{
+			var client = CreateClient();
+			var input = new ComplexModelInput
+			{
+				IntProperty = 123,
+				StringProperty = "Test string",
+			};
+			var output = client.ComplexModelInputFromServiceKnownType(input);
+			Assert.AreEqual(input.IntProperty, output.IntProperty);
+			Assert.AreEqual(input.StringProperty, output.StringProperty);
+		}
+
+		[TestMethod]
+		public void ObjectFromServiceKnownType()
+		{
+			var client = CreateClient();
+			var input = new ComplexModelInput
+			{
+				IntProperty = 123,
+				StringProperty = "Test string",
+			};
+			var output = client.ObjectFromServiceKnownType(input);
+			Assert.IsInstanceOfType(output, typeof(ComplexModelInput));
+			Assert.AreEqual(input.IntProperty, ((ComplexModelInput)output).IntProperty);
+			Assert.AreEqual(input.StringProperty, ((ComplexModelInput)output).StringProperty);
 		}
 
 		[TestMethod]

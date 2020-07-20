@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.ServiceModel;
@@ -56,22 +55,22 @@ namespace SoapCore.Meta
 				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
 			}
 
-			_xmlNamespaceManager.AddNamespace("tns", _service.Contracts.First().Namespace);
-			WriteXmlnsAttribute(writer, _service.Contracts.First().Namespace);
+			_xmlNamespaceManager.AddNamespace("tns", _service.GeneralContract.Namespace);
+			WriteXmlnsAttribute(writer, _service.GeneralContract.Namespace);
 			WriteXmlnsAttribute(writer, Namespaces.XMLNS_XSD);
 			WriteXmlnsAttribute(writer, Namespaces.HTTP_NS);
 			WriteXmlnsAttribute(writer, Namespaces.MSC_NS);
 			WriteXmlnsAttribute(writer, Namespaces.WSP_NS);
 			WriteXmlnsAttribute(writer, Namespaces.WSU_NS);
 			WriteXmlnsAttribute(writer, Namespaces.WSAM_NS);
-			writer.WriteAttributeString("targetNamespace", _service.Contracts.First().Namespace);
+			writer.WriteAttributeString("targetNamespace", _service.GeneralContract.Namespace);
 			writer.WriteAttributeString("name", _service.ServiceType.Name);
 			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
 			if (_binding != null && _binding.HasBasicAuth())
 			{
 				writer.WriteStartElement("Policy", Namespaces.WSP_NS);
-				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_binding.Name}_{_service.Contracts.First().Name}_policy");
+				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_binding.Name}_{_service.GeneralContract.Name}_policy");
 				writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
 				writer.WriteStartElement("All", Namespaces.WSP_NS);
 				writer.WriteStartElement("BasicAuthentication", Namespaces.HTTP_NS);

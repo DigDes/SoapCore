@@ -98,6 +98,51 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckServiceKnownTypes()
+		{
+			StartService(typeof(ServiceKnownTypesService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var dogElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
+			Assert.IsNotNull(dogElement);
+
+			var catElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Cat") == true);
+			Assert.IsNotNull(dogElement);
+
+			var animalElement = GetElements(dogElement, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(animalElement);
+
+			animalElement = GetElements(catElement, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(animalElement);
+		}
+
+		[TestMethod]
+		public void CheckAnonymousServiceKnownType()
+		{
+			StartService(typeof(AnonymousServiceKnownTypesService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var dogElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
+			Assert.IsNotNull(dogElement);
+
+			var catElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Cat") == true);
+			Assert.IsNotNull(dogElement);
+
+			var animalElement = GetElements(dogElement, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(animalElement);
+
+			animalElement = GetElements(catElement, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(animalElement);
+
+			var squirrelElement = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Squirrel") == true);
+			Assert.IsNotNull(dogElement);
+		}
+
+		[TestMethod]
 		public void CheckStructsInList()
 		{
 			StartService(typeof(StructService));
@@ -116,6 +161,78 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(isValueTypeElement);
 			Assert.AreEqual("true", isValueTypeElement.Value);
 			Assert.IsNotNull(annotationNode);
+		}
+
+		[TestMethod]
+		public void CheckValueTypes()
+		{
+			StartService(typeof(ValueTypeService));
+			var wsdl = GetWsdl();
+			StopServer();
+			var root = XElement.Parse(wsdl);
+			var elementsWithEmptyName = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("name")?.Value == string.Empty);
+			elementsWithEmptyName.ShouldBeEmpty();
+
+			var elementsWithEmptyType = GetElements(root, _xmlSchema + "element").Where(x => x.Attribute("type")?.Value == "xs:");
+			elementsWithEmptyType.ShouldBeEmpty();
+
+			File.WriteAllText("test.wsdl", wsdl);
+
+			var inputElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStructInput");
+			var inputAnnotation = inputElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
+			var inputIsValueType = inputAnnotation.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
+
+			var outputElement = GetElements(root, _xmlSchema + "complexType").Single(x => x.Attribute("name")?.Value == "AnyStructOutput");
+			var outputAnnotation = outputElement.Descendants(_xmlSchema + "annotation").SingleOrDefault();
+			var outputIsValueType = outputAnnotation.Descendants(_xmlSchema + "appinfo").Descendants(XNamespace.Get("http://schemas.microsoft.com/2003/10/Serialization/") + "IsValueType").SingleOrDefault();
+
+			Assert.IsNotNull(inputIsValueType);
+			Assert.AreEqual("true", inputIsValueType.Value);
+			Assert.IsNotNull(inputAnnotation);
+
+			Assert.IsNotNull(outputIsValueType);
+			Assert.AreEqual("true", outputIsValueType.Value);
+			Assert.IsNotNull(outputAnnotation);
+		}
+
+		[TestMethod]
+		public void CheckPortType()
+		{
+			StartService(typeof(PortTypeServiceBase.PortTypeService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:portType", nsmgr);
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["name"]?.Value, nameof(IPortTypeService));
+		}
+
+		[TestMethod]
+		public void CheckSystemTypes()
+		{
+			StartService(typeof(SystemTypesService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:element[@name='Method']/xs:complexType/xs:sequence/xs:element", nsmgr);
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["type"]?.Value, "xs:anyURI");
 		}
 
 		[TestMethod]
@@ -175,6 +292,21 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckInheritance()
+		{
+			StartService(typeof(InheritanceService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var childRenamed = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("Dog") == true);
+			Assert.IsNotNull(childRenamed);
+
+			var extension = GetElements(childRenamed, _xmlSchema + "extension").SingleOrDefault(a => a.Attribute("base")?.Value.Equals("tns:Animal") == true);
+			Assert.IsNotNull(extension);
+		}
+
+		[TestMethod]
 		public void CheckCollectionDataContract()
 		{
 			StartService(typeof(CollectionDataContractService));
@@ -204,6 +336,27 @@ namespace SoapCore.Tests.Wsdl
 
 			var myMyTypeElement = GetElements(myMyTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("MyItem") == true);
 			Assert.IsNotNull(myMyTypeElement);
+		}
+
+		[TestMethod]
+		public void CheckDictionaryTypeDataContract()
+		{
+			StartService(typeof(DictionaryTypeListService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var dictionaryItems = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("thing") == true);
+			Assert.IsNotNull(dictionaryItems);
+			Assert.AreEqual("http://schemas.datacontract.org/2004/07/System.Collections.Generic", dictionaryItems.Attribute(XNamespace.Xmlns + "q2").Value);
+			Assert.AreEqual("q2:ArrayOfKeyValuePairOfStringString", dictionaryItems.Attribute("type").Value);
+
+			var complexTypeList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ComplexModelInput") == true);
+			Assert.IsNotNull(complexTypeList);
+
+			var myStringElement = GetElements(complexTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("StringProperty") == true);
+			Assert.IsNotNull(myStringElement);
 		}
 
 		[TestMethod]
@@ -306,6 +459,22 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(propAnonAttribute);
 		}
 
+		[TestMethod]
+		public async Task CheckMessageHeadersServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<MessageHeadersService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var stringPropertyElement = root.XPathSelectElement("//xsd:element[@name='ModifiedStringProperty']", nm);
+			Assert.IsNotNull(stringPropertyElement);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
@@ -335,13 +504,17 @@ namespace SoapCore.Tests.Wsdl
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
 
-			var memoryStream = new MemoryStream();
-			await encoder.WriteMessageAsync(responseMessage, memoryStream);
-			memoryStream.Position = 0;
+			using (var memoryStream = new MemoryStream())
+			{
+				await encoder.WriteMessageAsync(responseMessage, memoryStream);
+				memoryStream.Position = 0;
 
-			var streamReader = new StreamReader(memoryStream);
-			var result = streamReader.ReadToEnd();
-			return result;
+				using (var streamReader = new StreamReader(memoryStream))
+				{
+					var result = streamReader.ReadToEnd();
+					return result;
+				}
+			}
 		}
 
 		private void StartService(Type serviceType)
@@ -358,7 +531,9 @@ namespace SoapCore.Tests.Wsdl
 				_host.Run();
 			});
 
-			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First().EndsWith(":0"))
+			//There's a race condition without this check, the host may not have an address immediately and we need to wait for it but the collection
+			//may actually be totally empty, All() will be true if the collection is empty.
+			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.All(a => a.EndsWith(":0")))
 			{
 				Thread.Sleep(2000);
 			}

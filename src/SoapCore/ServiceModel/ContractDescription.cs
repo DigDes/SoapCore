@@ -11,6 +11,7 @@ namespace SoapCore.ServiceModel
 		{
 			Service = service;
 			ContractType = contractType;
+			ServiceKnownTypes = contractType.GetCustomAttributes<ServiceKnownTypeAttribute>(inherit: false);
 			Namespace = attribute.Namespace ?? "http://tempuri.org/"; // Namespace defaults to http://tempuri.org/
 			Name = attribute.Name ?? ContractType.Name; // Name defaults to the type name
 
@@ -26,10 +27,11 @@ namespace SoapCore.ServiceModel
 			Operations = operations;
 		}
 
-		public ServiceDescription Service { get; private set; }
-		public string Name { get; private set; }
-		public string Namespace { get; private set; }
-		public Type ContractType { get; private set; }
-		public IEnumerable<OperationDescription> Operations { get; private set; }
+		public ServiceDescription Service { get; }
+		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; }
+		public string Name { get; }
+		public string Namespace { get; }
+		public Type ContractType { get; }
+		public IEnumerable<OperationDescription> Operations { get; }
 	}
 }
