@@ -279,7 +279,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("name", operation.Name + "Response");
 
-				if (operation.DispatchMethod.ReturnType != typeof(void))
+				if (operation.DispatchMethod.ReturnType != typeof(void) && operation.DispatchMethod.ReturnType != typeof(Task))
 				{
 					var returnType = operation.DispatchMethod.ReturnType;
 					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
