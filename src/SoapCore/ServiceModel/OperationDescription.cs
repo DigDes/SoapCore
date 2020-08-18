@@ -103,9 +103,11 @@ namespace SoapCore.ServiceModel
 		{
 			var elementAttribute = info.GetCustomAttribute<XmlElementAttribute>();
 			var arrayAttribute = info.GetCustomAttribute<XmlArrayAttribute>();
+			var rootAttribute = (XmlRootAttribute)Attribute.GetCustomAttribute(info.ParameterType, typeof(XmlRootAttribute));
 			var arrayItemAttribute = info.GetCustomAttribute<XmlArrayItemAttribute>();
 			var parameterName = elementAttribute?.ElementName
 				?? arrayAttribute?.ElementName
+				?? rootAttribute?.ElementName
 				?? info.GetCustomAttribute<MessageParameterAttribute>()?.Name
 				?? info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName
 				?? info.Name;
