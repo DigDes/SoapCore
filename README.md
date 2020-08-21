@@ -146,7 +146,7 @@ Change your service to get possibility to store information from http header:
 ```csharp
 public class MyService : IMyServiceService
 {
-    // Use ThreadLocal or some of thread sinchronization stuff if service registered as singleton.
+    // Use ThreadLocal or some of thread synchronization stuff if service registered as singleton.
     private ThreadLocal<string> _paramValue = new ThreadLocal<string>() { Value = string.Empty };
 
     // ...

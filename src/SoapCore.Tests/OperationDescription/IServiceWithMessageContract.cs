@@ -12,6 +12,8 @@ namespace SoapCore.Tests.OperationDescription
 
 		CoolResponseClass GetMyOtherClass();
 
+		ClassWithXmlRoot GetClassWithXmlRoot(ClassWithXmlRoot classWithXmlRoot);
+
 		string GetMyStringClass();
 
 		[FaultContract(typeof(TypedSoapFault))]

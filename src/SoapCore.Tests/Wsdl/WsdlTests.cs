@@ -36,6 +36,10 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = GetWsdl();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
+
+			wsdl = GetWsdlFromAsmx();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
 			StopServer();
 		}
 
@@ -484,6 +488,24 @@ namespace SoapCore.Tests.Wsdl
 		private string GetWsdl()
 		{
 			var serviceName = "Service.svc";
+
+			return GetWsdlFromService(serviceName);
+		}
+
+		private string GetWsdlFromService(string serviceName)
+		{
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			using (var httpClient = new HttpClient())
+			{
+				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
+			}
+		}
+
+		private string GetWsdlFromAsmx()
+		{
+			var serviceName = "Service.asmx";
 
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
