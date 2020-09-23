@@ -219,8 +219,17 @@ namespace SoapCore
 				}
 			}
 
+			Message requestMessage;
 			//Get the message
-			Message requestMessage = await ReadMessageAsync(httpContext, messageEncoder);
+			try
+			{
+				requestMessage = await ReadMessageAsync(httpContext, messageEncoder);
+			}
+			catch (Exception ex)
+			{
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
+				return;
+			}
 			var messageFilters = serviceProvider.GetServices<IMessageFilter>().ToArray();
 			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
