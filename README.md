@@ -166,4 +166,11 @@ public class MyService : IMyServiceService
 
 See [Contributing guide](CONTRIBUTING.md)
 
+### Contributors
+<a href="https://github.com/digdes/soapcore/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=digdes/soapcore" />
+</a>
+
+Made with [contributors-img](https://contributors-img.web.app).
+
 ![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg)
