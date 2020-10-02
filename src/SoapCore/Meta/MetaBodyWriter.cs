@@ -702,47 +702,71 @@ namespace SoapCore.Meta
 
 		private void AddSchemaTypeProperty(XmlDictionaryWriter writer, PropertyInfo property, TypeToBuild parentTypeToBuild)
 		{
-			var createListWithoutProxyType = false;
-			var toBuild = new TypeToBuild(property.PropertyType);
-
-			var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
-			if (arrayItem != null && !string.IsNullOrWhiteSpace(arrayItem.ElementName))
+			if (property.IsChoice())
 			{
-				toBuild.ChildElementName = arrayItem.ElementName;
-			}
+				writer.WriteStartElement("choice", Namespaces.XMLNS_XSD);
 
-			var elementItem = property.GetCustomAttribute<XmlElementAttribute>();
-			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
-			{
-				toBuild.ChildElementName = elementItem.ElementName;
-				createListWithoutProxyType = toBuild.Type.IsEnumerableType();
-			}
-
-			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
-			var messageBodyMemberAttribute = property.GetCustomAttribute<MessageBodyMemberAttribute>();
-			if (attributeItem != null)
-			{
-				var name = attributeItem.AttributeName;
-				if (string.IsNullOrWhiteSpace(name))
+				if (property.PropertyType.IsEnumerableType())
 				{
-					name = property.Name;
+					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("maxOccurs", "unbounded");
 				}
 
-				AddSchemaType(writer, toBuild, name, isAttribute: true);
-			}
-			else if (messageBodyMemberAttribute != null)
-			{
-				var name = messageBodyMemberAttribute.Name;
-				if (string.IsNullOrWhiteSpace(name))
+				var elementItems = property.GetCustomAttributes<XmlElementAttribute>();
+				foreach (var elementItem in elementItems)
 				{
-					name = property.Name;
+					if (elementItem != null)
+					{
+						AddSchemaType(writer, elementItem.Type ?? property.PropertyType, elementItem.ElementName ?? property.Name);
+					}
 				}
 
-				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				writer.WriteEndElement(); // choice
 			}
 			else
 			{
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				var createListWithoutProxyType = false;
+				var toBuild = new TypeToBuild(property.PropertyType);
+
+				var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
+				if (arrayItem != null && !string.IsNullOrWhiteSpace(arrayItem.ElementName))
+				{
+					toBuild.ChildElementName = arrayItem.ElementName;
+				}
+
+				var elementItem = property.GetCustomAttribute<XmlElementAttribute>();
+				if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
+				{
+					toBuild.ChildElementName = elementItem.ElementName;
+					createListWithoutProxyType = toBuild.Type.IsEnumerableType();
+				}
+
+				var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
+				var messageBodyMemberAttribute = property.GetCustomAttribute<MessageBodyMemberAttribute>();
+				if (attributeItem != null)
+				{
+					var name = attributeItem.AttributeName;
+					if (string.IsNullOrWhiteSpace(name))
+					{
+						name = property.Name;
+					}
+
+					AddSchemaType(writer, toBuild, name, isAttribute: true);
+				}
+				else if (messageBodyMemberAttribute != null)
+				{
+					var name = messageBodyMemberAttribute.Name;
+					if (string.IsNullOrWhiteSpace(name))
+					{
+						name = property.Name;
+					}
+
+					AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				}
+				else
+				{
+					AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				}
 			}
 		}
 

@@ -56,6 +56,11 @@ namespace SoapCore.Tests.Wsdl.Services
 		[DataMember]
 		public List<TestDataTypeData2> Data { get; set; }
 
+		[XmlElement("Data4", typeof(TestDataTypeData), IsNullable = false)]
+		[XmlElement("Data5", typeof(TestDataTypeData2), IsNullable = false)]
+		[XmlChoiceIdentifier]
+		public List<object> DataList45 { get; set; }
+
 		[XmlAttributeAttribute]
 		public string PropRoot { get; set; }
 
