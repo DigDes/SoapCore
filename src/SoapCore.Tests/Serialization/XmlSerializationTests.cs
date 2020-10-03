@@ -711,5 +711,35 @@ namespace SoapCore.Tests.Serialization
 
 			sampleServiceClient.GetComplexObjectWithXmlElement(obj);
 		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexMessageHeaderArraySerialization(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var myHeaderValue = new[] { ComplexModel1.CreateSample1() };
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexMessageHeaderArray(It.IsAny<PingComplexMessageHeaderArrayRequest>()))
+				.Callback(
+					(PingComplexMessageHeaderArrayRequest request_service) =>
+					{
+						// check input paremeters serialization
+						request_service.MyHeaderValue.ShouldDeepEqual(myHeaderValue);
+					})
+				.Returns(
+					() => new PingComplexMessageHeaderArrayResponse());
+
+			var pingComplexMessageHeaderArrayResult_client =
+				sampleServiceClient.PingComplexMessageHeaderArray(
+					new PingComplexMessageHeaderArrayRequest
+					{
+						MyHeaderValue = myHeaderValue
+					});
+
+			// Verify method has been called
+			pingComplexMessageHeaderArrayResult_client.ShouldNotBeNull();
+			_fixture.ServiceMock.Verify(x => x.PingComplexMessageHeaderArray(It.IsAny<PingComplexMessageHeaderArrayRequest>()), Times.Once());
+		}
 	}
 }
