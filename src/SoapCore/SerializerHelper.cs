@@ -1,10 +1,10 @@
-using Microsoft.CSharp;
-using SoapCore.ServiceModel;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
+using Microsoft.CSharp;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -116,7 +116,7 @@ namespace SoapCore
 			var elementType = parameterType.GetElementType();
 
 			var localName = parameterInfo.ArrayItemName ?? elementType.Name;
-			if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
+			if (parameterInfo.ArrayItemName == null && elementType.Namespace?.StartsWith("System") == true)
 			{
 				var compiler = new CSharpCodeProvider();
 				var type = new CodeTypeReference(elementType);
@@ -125,13 +125,15 @@ namespace SoapCore
 
 			//localName = "ComplexModelInput";
 			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), elementType);
-			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
+			var ns = parameterInfo.Namespace ?? parameterNs;
+
+			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, ns);
 
 			object result = null;
 
 			lock (serializer)
 			{
-				result = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
+				result = deserializeMethod.Invoke(null, new object[] { serializer, localName, ns, xmlReader });
 			}
 
 			//if (parameterInfo.ArrayItemName != null)
