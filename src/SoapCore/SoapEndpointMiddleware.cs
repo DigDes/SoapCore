@@ -599,7 +599,7 @@ namespace SoapCore
 								reader, member.MemberInfo.GetPropertyOrFieldType(),
 								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
 								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
-								member.MemberInfo,//parameterInfo:pi,
+								member.MemberInfo,
 								serviceKnownTypes);
 
 							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
