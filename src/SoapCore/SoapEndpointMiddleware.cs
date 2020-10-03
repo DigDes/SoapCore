@@ -508,7 +508,7 @@ namespace SoapCore
 							parameterType,
 							parameterInfo.Name,
 							operation.Contract.Namespace,
-							parameterInfo,
+							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
@@ -519,7 +519,7 @@ namespace SoapCore
 								parameterType,
 								parameterInfo.Name,
 								parameterInfo.Namespace,
-								parameterInfo,
+								parameterInfo.Parameter.Member,
 								serviceKnownTypes);
 						}
 
@@ -570,7 +570,7 @@ namespace SoapCore
 							parameterInfo.Parameter.ParameterType,
 							parameterInfo.Name,
 							@namespace,
-							parameterInfo,
+							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 					}
 				}
@@ -595,15 +595,11 @@ namespace SoapCore
 						{
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-							XmlArrayAttribute xmlArrayAttribute =  member.MemberInfo.GetCustomAttribute(typeof(XmlArrayAttribute)) as XmlArrayAttribute;
-							XmlArrayItemAttribute xmlArrayItemAttribute = member.MemberInfo.GetCustomAttribute(typeof(XmlArrayItemAttribute)) as XmlArrayItemAttribute;
-							var pi = new SoapMethodParameterInfo(parameterInfo.Parameter, 0, member.MemberInfo.Name, xmlArrayAttribute?.ElementName ?? member.MemberInfo.Name, xmlArrayItemAttribute?.ElementName, xmlArrayItemAttribute?.Namespace);
-
 							var value = _serializerHelper.DeserializeInputParameter(
 								reader, member.MemberInfo.GetPropertyOrFieldType(),
 								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
 								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
-								parameterInfo:pi,
+								member.MemberInfo,//parameterInfo:pi,
 								serviceKnownTypes);
 
 							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
@@ -638,7 +634,7 @@ namespace SoapCore
 							innerParameterType,
 							innerParameterName,
 							innerParameterNs,
-							parameterInfo,
+							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 
 						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
