@@ -1,10 +1,11 @@
-using Microsoft.CSharp;
-using SoapCore.ServiceModel;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Runtime.Serialization;
+using System.Xml.Serialization;
+using Microsoft.CSharp;
 
 namespace SoapCore
 {
@@ -22,7 +23,7 @@ namespace SoapCore
 			Type parameterType,
 			string parameterName,
 			string parameterNs,
-			SoapMethodParameterInfo parameterInfo = null,
+			MemberInfo memberInfo,
 			IEnumerable<Type> knownTypes = null)
 		{
 			if (xmlReader.IsStartElement(parameterName, parameterNs))
@@ -34,18 +35,18 @@ namespace SoapCore
 					switch (_serializer)
 					{
 						case SoapSerializer.XmlSerializer:
-							if (!parameterType.IsArray || (parameterInfo != null && parameterInfo.ArrayName != null && parameterInfo.ArrayItemName == null))
+							if (!parameterType.IsArray)
 							{
 								// case [XmlElement("parameter")] int parameter
-								// case int[] parameter
 								// case [XmlArray("parameter")] int[] parameter
 								return DeserializeObject(xmlReader, parameterType, parameterName, parameterNs);
 							}
 							else
 							{
+								// case int[] parameter
 								// case [XmlElement("parameter")] int[] parameter
 								// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
-								return DeserializeArray(xmlReader, parameterType, parameterName, parameterNs, parameterInfo);
+								return DeserializeArrayXmlSerializer(xmlReader, parameterType, parameterName, parameterNs, memberInfo);
 							}
 
 						case SoapSerializer.DataContractSerializer:
@@ -105,36 +106,35 @@ namespace SoapCore
 			return serializer.ReadObject(xmlReader, verifyObjectName: true);
 		}
 
-		private object DeserializeArray(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, SoapMethodParameterInfo parameterInfo)
+		private object DeserializeArrayXmlSerializer(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, MemberInfo memberInfo)
 		{
+			XmlArrayItemAttribute xmlArrayItemAttribute = memberInfo.GetCustomAttribute(typeof(XmlArrayItemAttribute)) as XmlArrayItemAttribute;
+
 			var isEmpty = xmlReader.IsEmptyElement;
-			//if (parameterInfo.ArrayItemName != null)
-			{
-				xmlReader.ReadStartElement(parameterName, parameterNs);
-			}
+			xmlReader.ReadStartElement(parameterName, parameterNs);
 
 			var elementType = parameterType.GetElementType();
 
-			var localName = parameterInfo.ArrayItemName ?? elementType.Name;
-			if (parameterInfo.ArrayItemName == null && elementType.Namespace.StartsWith("System"))
+			var arrayItemName = xmlArrayItemAttribute?.ElementName ?? elementType.Name;
+			if (xmlArrayItemAttribute?.ElementName == null && elementType.Namespace?.StartsWith("System") == true)
 			{
 				var compiler = new CSharpCodeProvider();
 				var type = new CodeTypeReference(elementType);
-				localName = compiler.GetTypeOutput(type);
+				arrayItemName = compiler.GetTypeOutput(type);
 			}
 
-			//localName = "ComplexModelInput";
 			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), elementType);
-			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, localName, parameterNs);
+			var arrayItemNamespace = xmlArrayItemAttribute?.Namespace ?? parameterNs;
+
+			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, arrayItemName, arrayItemNamespace);
 
 			object result = null;
 
 			lock (serializer)
 			{
-				result = deserializeMethod.Invoke(null, new object[] { serializer, localName, parameterNs, xmlReader });
+				result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
 			}
 
-			//if (parameterInfo.ArrayItemName != null)
 			if (!isEmpty)
 			{
 				xmlReader.ReadEndElement();

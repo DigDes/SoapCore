@@ -129,5 +129,9 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 
 		[OperationContract(IsOneWay = true)]
 		void OneWayCall(string s);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexMessageHeaderArray), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		PingComplexMessageHeaderArrayResponse PingComplexMessageHeaderArray(PingComplexMessageHeaderArrayRequest request);
 	}
 }
