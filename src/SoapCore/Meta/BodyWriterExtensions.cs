@@ -118,6 +118,12 @@ namespace SoapCore.Meta
 			return false;
 		}
 
+		public static bool IsChoice(this PropertyInfo property)
+		{
+			var choiceItem = property.GetCustomAttribute<XmlChoiceIdentifierAttribute>();
+			return choiceItem != null;
+		}
+
 		public static bool IsAttribute(this PropertyInfo property)
 		{
 			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();

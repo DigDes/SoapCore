@@ -6,6 +6,13 @@ using System.Xml.Serialization;
 
 namespace SoapCore.Tests.Wsdl.Services
 {
+	[XmlType(IncludeInSchema = false)]
+	public enum DataChoiceType
+	{
+		Data4,
+		Data5
+	}
+
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
 	[ServiceContract(Namespace = "http://bagov.net/")]
@@ -41,6 +48,7 @@ namespace SoapCore.Tests.Wsdl.Services
 		public TestResponseType()
 		{
 			DataList = new List<TestDataTypeData>();
+			DataTypes = new[] { DataChoiceType.Data4, DataChoiceType.Data5 };
 		}
 
 		[System.Xml.Serialization.XmlArrayItemAttribute("Data", IsNullable = false)]
@@ -55,6 +63,14 @@ namespace SoapCore.Tests.Wsdl.Services
 		[System.Xml.Serialization.XmlElementAttribute("Data3")]
 		[DataMember]
 		public List<TestDataTypeData2> Data { get; set; }
+
+		[XmlIgnore]
+		public DataChoiceType[] DataTypes { get; set; }
+
+		[XmlChoiceIdentifier("DataTypes")]
+		[XmlElement("Data4", typeof(TestDataTypeData))]
+		[XmlElement("Data5", typeof(TestDataTypeData2))]
+		public List<object> DataList45 { get; set; }
 
 		[XmlAttributeAttribute]
 		public string PropRoot { get; set; }

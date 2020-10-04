@@ -453,6 +453,12 @@ namespace SoapCore.Tests.Wsdl
 			var dynamicTypeElement2 = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData1']/xsd:sequence/xsd:element[@name='Data2']", nm);
 			Assert.IsNotNull(dynamicTypeElement2);
 
+			var choiceTypeElement = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:choice[@minOccurs='0'and @maxOccurs='unbounded']/xsd:element[@name='Data4']", nm);
+			Assert.IsNotNull(choiceTypeElement);
+
+			var choiceTypeElement2 = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:choice[@minOccurs='0'and @maxOccurs='unbounded']/xsd:element[@name='Data5']", nm);
+			Assert.IsNotNull(choiceTypeElement2);
+
 			var propRootAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropRoot']", nm);
 			Assert.IsNotNull(propRootAttribute);
 

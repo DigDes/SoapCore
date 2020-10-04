@@ -702,6 +702,29 @@ namespace SoapCore.Meta
 
 		private void AddSchemaTypeProperty(XmlDictionaryWriter writer, PropertyInfo property, TypeToBuild parentTypeToBuild)
 		{
+			if (property.IsChoice())
+			{
+				writer.WriteStartElement("choice", Namespaces.XMLNS_XSD);
+
+				if (property.PropertyType.IsEnumerableType())
+				{
+					writer.WriteAttributeString("minOccurs", "0");
+					writer.WriteAttributeString("maxOccurs", "unbounded");
+				}
+
+				var choiceElements = property.GetCustomAttributes<XmlElementAttribute>();
+				foreach (var choiceElement in choiceElements)
+				{
+					if (choiceElement != null)
+					{
+						AddSchemaType(writer, choiceElement.Type ?? property.PropertyType, choiceElement.ElementName ?? property.Name);
+					}
+				}
+
+				writer.WriteEndElement(); // choice
+				return;
+			}
+
 			var createListWithoutProxyType = false;
 			var toBuild = new TypeToBuild(property.PropertyType);
 

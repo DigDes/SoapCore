@@ -508,7 +508,7 @@ namespace SoapCore
 							parameterType,
 							parameterInfo.Name,
 							operation.Contract.Namespace,
-							parameterInfo,
+							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
@@ -519,7 +519,7 @@ namespace SoapCore
 								parameterType,
 								parameterInfo.Name,
 								parameterInfo.Namespace,
-								parameterInfo,
+								parameterInfo.Parameter.Member,
 								serviceKnownTypes);
 						}
 
@@ -570,7 +570,7 @@ namespace SoapCore
 							parameterInfo.Parameter.ParameterType,
 							parameterInfo.Name,
 							@namespace,
-							parameterInfo,
+							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 					}
 				}
@@ -599,7 +599,7 @@ namespace SoapCore
 								reader, member.MemberInfo.GetPropertyOrFieldType(),
 								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
 								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
-								parameterInfo: null,
+								member.MemberInfo,
 								serviceKnownTypes);
 
 							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
@@ -634,7 +634,7 @@ namespace SoapCore
 							innerParameterType,
 							innerParameterName,
 							innerParameterNs,
-							parameterInfo,
+							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 
 						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
