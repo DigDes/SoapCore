@@ -152,7 +152,7 @@ namespace SoapCore
 				var xmlRootAttr = resultType.GetTypeInfo().GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
 				var messageContractAttribute = resultType.GetTypeInfo().GetCustomAttribute<MessageContractAttribute>();
 
-				var xmlName = _operation.ReturnElementName
+				var xmlName = _operation.ReturnElementName ?? messageContractAttribute?.WrapperName
 					?? (needResponseEnvelope
 					? (string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName)
 						? _resultName
