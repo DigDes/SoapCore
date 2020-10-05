@@ -741,5 +741,24 @@ namespace SoapCore.Tests.Serialization
 			pingComplexMessageHeaderArrayResult_client.ShouldNotBeNull();
 			_fixture.ServiceMock.Verify(x => x.PingComplexMessageHeaderArray(It.IsAny<PingComplexMessageHeaderArrayRequest>()), Times.Once());
 		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingResponseWithMessageContractAttributeWrapperNameDifferentFromClass(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingResponseWithMessageContractAttributeWrapperNameDifferentFromClass(It.IsAny<PingComplexMessageHeaderArrayRequest>()))
+				.Returns(
+					() => new PingComplexMessageMessageContractAttributeResponse { ComplexProperty = new ComplexModel1 { IntProperty = 291 } });
+
+			var result =
+				sampleServiceClient.PingResponseWithMessageContractAttributeWrapperNameDifferentFromClass(new PingComplexMessageHeaderArrayRequest());
+
+			// Verify method has been called
+			result.ShouldNotBeNull();
+			result.ComplexProperty.IntProperty.ShouldBe(291);
+		}
 	}
 }

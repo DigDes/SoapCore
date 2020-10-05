@@ -133,5 +133,9 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract(Action = ServiceNamespace.Value + nameof(PingComplexMessageHeaderArray), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		PingComplexMessageHeaderArrayResponse PingComplexMessageHeaderArray(PingComplexMessageHeaderArrayRequest request);
+
+		[OperationContract(Action = ServiceNamespace.Value + nameof(PingResponseWithMessageContractAttributeWrapperNameDifferentFromClass), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		PingComplexMessageMessageContractAttributeResponse PingResponseWithMessageContractAttributeWrapperNameDifferentFromClass(PingComplexMessageHeaderArrayRequest request);
 	}
 }
