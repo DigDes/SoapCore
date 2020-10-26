@@ -89,61 +89,6 @@ namespace SoapCore
 				writer.WriteStartElement(_envelopeName, _serviceNamespace);
 			}
 
-			foreach (var outResult in _outResults)
-			{
-				string value = null;
-				if (outResult.Value is Guid)
-				{
-					value = outResult.Value.ToString();
-				}
-				else if (outResult.Value is bool)
-				{
-					value = outResult.Value.ToString().ToLower();
-				}
-				else if (outResult.Value is string)
-				{
-					value = System.Security.SecurityElement.Escape(outResult.Value.ToString());
-				}
-				else if (outResult.Value is Enum)
-				{
-					value = outResult.Value.ToString();
-				}
-				else if (outResult.Value == null)
-				{
-					value = null;
-				}
-				else
-				{
-					//for complex types
-					using (var ms = new MemoryStream())
-					using (var stream = new BufferedStream(ms))
-					{
-						// write element with name as outResult.Key and type information as outResultType
-						// i.e. <outResult.Key xsi:type="outResultType" ... />
-						var outResultType = outResult.Value.GetType();
-						var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
-						lock (serializer)
-						{
-							serializer.Serialize(stream, outResult.Value);
-						}
-
-						//add outResultType. ugly, but working
-						stream.Position = 0;
-						XmlDocument xdoc = new XmlDocument();
-						xdoc.Load(stream);
-						var attr = xdoc.CreateAttribute("xsi", "type", Namespaces.XMLNS_XSI);
-						attr.Value = outResultType.Name;
-						xdoc.DocumentElement.Attributes.Prepend(attr);
-						writer.WriteRaw(xdoc.DocumentElement.OuterXml);
-					}
-				}
-
-				if (value != null)
-				{
-					writer.WriteRaw(string.Format("<{0}>{1}</{0}>", outResult.Key, value));
-				}
-			}
-
 			if (_result != null)
 			{
 				// see https://referencesource.microsoft.com/System.Xml/System/Xml/Serialization/XmlSerializer.cs.html#c97688a6c07294d5
@@ -259,6 +204,61 @@ namespace SoapCore
 				}
 			}
 
+			foreach (var outResult in _outResults)
+			{
+				string value = null;
+				if (outResult.Value is Guid)
+				{
+					value = outResult.Value.ToString();
+				}
+				else if (outResult.Value is bool)
+				{
+					value = outResult.Value.ToString().ToLower();
+				}
+				else if (outResult.Value is string)
+				{
+					value = System.Security.SecurityElement.Escape(outResult.Value.ToString());
+				}
+				else if (outResult.Value is Enum)
+				{
+					value = outResult.Value.ToString();
+				}
+				else if (outResult.Value == null)
+				{
+					value = null;
+				}
+				else
+				{
+					//for complex types
+					using (var ms = new MemoryStream())
+					using (var stream = new BufferedStream(ms))
+					{
+						// write element with name as outResult.Key and type information as outResultType
+						// i.e. <outResult.Key xsi:type="outResultType" ... />
+						var outResultType = outResult.Value.GetType();
+						var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
+						lock (serializer)
+						{
+							serializer.Serialize(stream, outResult.Value);
+						}
+
+						//add outResultType. ugly, but working
+						stream.Position = 0;
+						XmlDocument xdoc = new XmlDocument();
+						xdoc.Load(stream);
+						var attr = xdoc.CreateAttribute("xsi", "type", Namespaces.XMLNS_XSI);
+						attr.Value = outResultType.Name;
+						xdoc.DocumentElement.Attributes.Prepend(attr);
+						writer.WriteRaw(xdoc.DocumentElement.OuterXml);
+					}
+				}
+
+				if (value != null)
+				{
+					writer.WriteRaw(string.Format("<{0}>{1}</{0}>", outResult.Key, value));
+				}
+			}
+
 			if (needResponseEnvelope)
 			{
 				writer.WriteEndElement();
@@ -270,6 +270,31 @@ namespace SoapCore
 			Debug.Assert(_outResults != null, "Object should set empty out results");
 
 			writer.WriteStartElement(_envelopeName, _serviceNamespace);
+
+			if (_result != null)
+			{
+				if (_result is Stream)
+				{
+					writer.WriteStartElement(_resultName, _serviceNamespace);
+					WriteStream(writer, _result);
+					writer.WriteEndElement();
+				}
+				else
+				{
+					// When operation return type is `System.Object` the `DataContractSerializer` adds `i:type` attribute with the correct object type
+					Type resultType = _operation.ReturnType;
+					IEnumerable<Type> serviceKnownTypes = _operation
+						.GetServiceKnownTypesHierarchy()
+						.Select(x => x.Type);
+
+					// When `KnownTypeAttribute` is present the `DataContractSerializer` adds `i:type` attribute with the correct object type
+					DataContractSerializer serializer = resultType.TryGetBaseTypeWithKnownTypes(out Type resultBaseTypeWithKnownTypes)
+						? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace, serviceKnownTypes)
+						: new DataContractSerializer(resultType, _resultName, _serviceNamespace, serviceKnownTypes);
+
+					serializer.WriteObject(writer, _result);
+				}
+			}
 
 			foreach (var outResult in _outResults)
 			{
@@ -321,31 +346,6 @@ namespace SoapCore
 				if (value != null)
 				{
 					writer.WriteRaw(string.Format("<{0}>{1}</{0}>", outResult.Key, value));
-				}
-			}
-
-			if (_result != null)
-			{
-				if (_result is Stream)
-				{
-					writer.WriteStartElement(_resultName, _serviceNamespace);
-					WriteStream(writer, _result);
-					writer.WriteEndElement();
-				}
-				else
-				{
-					// When operation return type is `System.Object` the `DataContractSerializer` adds `i:type` attribute with the correct object type
-					Type resultType = _operation.ReturnType;
-					IEnumerable<Type> serviceKnownTypes = _operation
-						.GetServiceKnownTypesHierarchy()
-						.Select(x => x.Type);
-
-					// When `KnownTypeAttribute` is present the `DataContractSerializer` adds `i:type` attribute with the correct object type
-					DataContractSerializer serializer = resultType.TryGetBaseTypeWithKnownTypes(out Type resultBaseTypeWithKnownTypes)
-						? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace, serviceKnownTypes)
-						: new DataContractSerializer(resultType, _resultName, _serviceNamespace, serviceKnownTypes);
-
-					serializer.WriteObject(writer, _result);
 				}
 			}
 
