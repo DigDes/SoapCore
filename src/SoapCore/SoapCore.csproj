@@ -14,7 +14,7 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>1.1.0.3-beta</Version>
+		<Version>1.1.0.4-beta</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
