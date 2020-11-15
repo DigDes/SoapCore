@@ -339,6 +339,13 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
+		public static IServiceCollection AddSoapMessageInspector<TService>(this IServiceCollection serviceCollection)
+			where TService : class, IMessageInspector2
+		{
+			serviceCollection.AddScoped<IMessageInspector2, TService>();
+			return serviceCollection;
+		}
+
 		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector2 messageInspector)
 		{
 			serviceCollection.AddSingleton(messageInspector);
@@ -360,6 +367,13 @@ namespace SoapCore
 		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter)
 		{
 			serviceCollection.TryAddSingleton(modelBindingFilter);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapServiceOperationTuner<TService>(this IServiceCollection serviceCollection)
+			where TService : class, IServiceOperationTuner
+		{
+			serviceCollection.AddScoped<IServiceOperationTuner, TService>();
 			return serviceCollection;
 		}
 
