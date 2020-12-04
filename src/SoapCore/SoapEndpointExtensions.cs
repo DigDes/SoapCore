@@ -260,7 +260,18 @@ namespace SoapCore
 			return UseSoapEndpoint<CustomMessage>(routes, type, path, binding, serializer, caseInsensitivePath, soapModelBounder);
 		}
 
+		public static IEndpointConventionBuilder UseSoapEndpoint(this IEndpointRouteBuilder routes, Type serviceType, Action<SoapCoreOptions> options)
+		{
+			return routes.UseSoapEndpoint<CustomMessage>(serviceType, options);
+		}
+
 		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, Action<SoapCoreOptions> options)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return routes.UseSoapEndpoint<T_MESSAGE>(typeof(T), options);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type serviceType, Action<SoapCoreOptions> options)
 			where T_MESSAGE : CustomMessage, new()
 		{
 			var opt = new SoapCoreOptions();
@@ -293,7 +304,7 @@ namespace SoapCore
 				opt.EncoderOptions = encoderOptions;
 			}
 
-			var soapOptions = SoapOptions.FromSoapCoreOptions<T>(opt);
+			var soapOptions = SoapOptions.FromSoapCoreOptions(opt, serviceType);
 
 			var pipeline = routes
 				.CreateApplicationBuilder()
