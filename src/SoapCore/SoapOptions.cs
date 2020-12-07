@@ -37,9 +37,14 @@ namespace SoapCore
 
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
+			return FromSoapCoreOptions(opt, typeof(T));
+		}
+
+		public static SoapOptions FromSoapCoreOptions(SoapCoreOptions opt, Type serviceType)
+		{
 			var soapOptions = new SoapOptions
 			{
-				ServiceType = typeof(T),
+				ServiceType = serviceType,
 				Path = opt.Path,
 				EncoderOptions = opt.EncoderOptions,
 				SoapSerializer = opt.SoapSerializer,
