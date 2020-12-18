@@ -13,16 +13,16 @@ namespace SoapCore.Meta
 	public static class BodyWriterExtensions
 	{
 		//switches to easily revert to previous behaviour if there is a problem
-		private static bool useXmlSchemaProvider = true;
-		private static bool useXmlReflectionImporter = false;
+		private static readonly bool UseXmlSchemaProvider = true;
+		private static readonly bool UseXmlReflectionImporter = false;
 		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, XmlNamespaceManager xmlNamespaceManager = null)
 		{
-			if (!useXmlSchemaProvider && !useXmlReflectionImporter)
+			if (!UseXmlSchemaProvider && !UseXmlReflectionImporter)
 			{
 				return false;
 			}
 
-			if (useXmlReflectionImporter)
+			if (UseXmlReflectionImporter)
 			{
 				var schemas = new XmlSchemas();
 				var xmlImporter = new XmlReflectionImporter();
@@ -37,6 +37,7 @@ namespace SoapCore.Meta
 				{
 					schema.Write(memoryStream);
 				}
+
 				memoryStream.Position = 0;
 
 				var streamReader = new StreamReader(memoryStream);
@@ -58,6 +59,7 @@ namespace SoapCore.Meta
 				{
 					schema.Namespaces = xmlNamespaceManager.Convert();
 				}
+
 				if (xmlSchemaProviderAttribute.IsAny)
 				{
 					//MetaWCFBodyWriter usage....
@@ -82,7 +84,7 @@ namespace SoapCore.Meta
 						MinOccurs = 0,
 						MaxOccurs = 1,
 						Name = name,
-						IsNillable = serializer == SoapSerializer.DataContractSerializer ? true : false,
+						IsNillable = serializer == SoapSerializer.DataContractSerializer,
 						SchemaType = complex
 					};
 					schema.Items.Add(element);

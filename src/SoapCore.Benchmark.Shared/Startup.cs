@@ -15,10 +15,10 @@ namespace SoapCore.Benchmark
 		}
 
 #if ASPNET_21
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+		public void Configure(IApplicationBuilder app)
 #endif
 #if ASPNET_30
-		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+		public void Configure(IApplicationBuilder app)
 #endif
 		{
 

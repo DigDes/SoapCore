@@ -185,7 +185,7 @@ namespace SoapCore
 			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
 
 			//we should use text/xml in wsdl page for browser compability.
-			httpContext.Response.ContentType = "text/xml;charset=UTF-8";// _messageEncoders[0].ContentType;
+			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
 
 			await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
 		}
@@ -220,6 +220,7 @@ namespace SoapCore
 			}
 
 			Message requestMessage;
+
 			//Get the message
 			try
 			{
@@ -230,6 +231,7 @@ namespace SoapCore
 				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
 				return;
 			}
+
 			var messageFilters = serviceProvider.GetServices<IMessageFilter>().ToArray();
 			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
@@ -266,15 +268,11 @@ namespace SoapCore
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
-#pragma warning disable SA1009 // StyleCop has not yet been updated to support tuples
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
-#pragma warning restore SA1009
 
 			try
 			{
-#pragma warning disable SA1008 // StyleCop has not yet been updated to support tuples
 				correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
-#pragma warning restore SA1008
 			}
 			catch (Exception ex)
 			{
@@ -390,7 +388,6 @@ namespace SoapCore
 					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
-				//responseMessage.Message = responseMessage;
 				responseMessage.Headers.Action = operation.ReplyAction;
 				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
 				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
@@ -596,7 +593,8 @@ namespace SoapCore
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
 							var value = _serializerHelper.DeserializeInputParameter(
-								reader, member.MemberInfo.GetPropertyOrFieldType(),
+								reader,
+								member.MemberInfo.GetPropertyOrFieldType(),
 								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
 								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
 								member.MemberInfo,
@@ -727,9 +725,7 @@ namespace SoapCore
 		private void SetHttpResponse(HttpContext httpContext, Message message)
 		{
 			if (!message.Properties.TryGetValue(HttpResponseMessageProperty.Name, out var value)
-#pragma warning disable SA1119 // StatementMustNotUseUnnecessaryParenthesis
 				|| !(value is HttpResponseMessageProperty httpProperty))
-#pragma warning restore SA1119 // StatementMustNotUseUnnecessaryParenthesis
 			{
 				return;
 			}
