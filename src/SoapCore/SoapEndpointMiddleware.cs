@@ -401,15 +401,15 @@ namespace SoapCore
 					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
+			}
 
-				if (responseObject != null)
+			if (responseObject != null)
+			{
+				var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
+				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
-					var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
-					foreach (var messageHeaderMember in messageHeaderMembers)
-					{
-						var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
-					}
+					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
+					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
 				}
 			}
 
