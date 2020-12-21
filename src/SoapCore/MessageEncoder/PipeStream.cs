@@ -100,6 +100,7 @@ namespace SoapCore.MessageEncoder
 		}
 
 #nullable enable
+
 		/// <summary>
 		/// Gets the underlying <see cref="PipeReader"/> (for purposes of unwrapping instead of stacking adapters).
 		/// </summary>
