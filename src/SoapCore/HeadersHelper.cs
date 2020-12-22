@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.ServiceModel.Channels;
-using System.Text;
 using Microsoft.AspNetCore.Http;
 
 namespace SoapCore
 {
 	internal static class HeadersHelper
 	{
+		private static readonly char[] ContentTypeSeparators = new[] { ';' };
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static string GetSoapAction(HttpContext httpContext, Message requestMessage, System.Xml.XmlDictionaryReader reader)
+		public static string GetSoapAction(HttpContext httpContext, System.Xml.XmlDictionaryReader reader)
 		{
 			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
 			if (soapAction == "\"\"")
@@ -21,7 +21,8 @@ namespace SoapCore
 
 			if (string.IsNullOrEmpty(soapAction))
 			{
-				foreach (var headerItem in httpContext.Request.Headers["Content-Type"])
+				var contentTypes = GetContentTypes(httpContext);
+				foreach (string headerItem in contentTypes)
 				{
 					// I want to avoid allocation as possible as I can(I hope to use Span<T> or Utf8String)
 					// soap1.2: action name is in Content-Type(like 'action="[action url]"') or body
@@ -104,6 +105,13 @@ namespace SoapCore
 			}
 
 			return soapAction;
+		}
+
+		private static IEnumerable<string> GetContentTypes(HttpContext httpContext)
+		{
+			// in a single header entry is possible to find several content-types separated by ';'
+			return httpContext.Request.Headers["Content-Type"]
+				.SelectMany(c => c.Split(ContentTypeSeparators, StringSplitOptions.RemoveEmptyEntries));
 		}
 	}
 }

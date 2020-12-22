@@ -284,7 +284,7 @@ namespace SoapCore
 			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
 			{
-				var soapAction = HeadersHelper.GetSoapAction(httpContext, requestMessage, reader);
+				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 				if (operation == null)
@@ -401,15 +401,15 @@ namespace SoapCore
 					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
+			}
 
-				if (responseObject != null)
+			if (responseObject != null)
+			{
+				var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
+				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
-					var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
-					foreach (var messageHeaderMember in messageHeaderMembers)
-					{
-						var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
-					}
+					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
+					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
 				}
 			}
 
