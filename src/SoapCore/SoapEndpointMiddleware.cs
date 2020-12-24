@@ -166,6 +166,7 @@ namespace SoapCore
 		}
 #endif
 #if ASPNET_30
+
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
@@ -175,6 +176,7 @@ namespace SoapCore
 		{
 			return messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
 		}
+
 #endif
 
 		private async Task ProcessMeta(HttpContext httpContext)
@@ -463,7 +465,7 @@ namespace SoapCore
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation, HttpContext httpContext)
+		private object[] GetRequestArguments(Message requestMessage, XmlDictionaryReader xmlReader, OperationDescription operation, HttpContext httpContext)
 		{
 			var arguments = new object[operation.AllParameters.Length];
 
@@ -471,57 +473,47 @@ namespace SoapCore
 				.GetServiceKnownTypesHierarchy()
 				.Select(x => x.Type);
 
-			// if any ordering issues, possible to rewrite like:
-			/*while (!xmlReader.EOF)
-			{
-				var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName && p.Namespace == xmlReader.NamespaceURI);
-				if (parameterInfo == null)
-				{
-					xmlReader.Skip();
-					continue;
-				}
-				var parameterName = parameterInfo.Name;
-				var parameterNs = parameterInfo.Namespace;
-				...
-			}*/
-
-			// Find the element for the operation's data
 			if (!operation.IsMessageContractRequest)
 			{
 				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
-
-				foreach (var parameterInfo in operation.InParameters)
+				while (!xmlReader.EOF)
 				{
+					var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName);
+					if (parameterInfo == null)
+					{
+						xmlReader.Skip();
+						continue;
+					}
+
 					var parameterType = parameterInfo.Parameter.ParameterType;
 
-					if (parameterType == typeof(HttpContext))
+					var argumentValue = _serializerHelper.DeserializeInputParameter(
+						xmlReader,
+						parameterType,
+						parameterInfo.Name,
+						operation.Contract.Namespace,
+						parameterInfo.Parameter.Member,
+						serviceKnownTypes);
+
+					//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
+					if (argumentValue == null)
 					{
-						arguments[parameterInfo.Index] = httpContext;
-					}
-					else
-					{
-						var argumentValue = _serializerHelper.DeserializeInputParameter(
+						argumentValue = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
 							parameterType,
 							parameterInfo.Name,
-							operation.Contract.Namespace,
+							parameterInfo.Namespace,
 							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
-
-						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
-						if (argumentValue == null)
-						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
-								xmlReader,
-								parameterType,
-								parameterInfo.Name,
-								parameterInfo.Namespace,
-								parameterInfo.Parameter.Member,
-								serviceKnownTypes);
-						}
-
-						arguments[parameterInfo.Index] = argumentValue;
 					}
+
+					arguments[parameterInfo.Index] = argumentValue;
+				}
+
+				var httpContextParameter = operation.InParameters.FirstOrDefault(x => x.Parameter.ParameterType == typeof(HttpContext));
+				if (httpContextParameter != default)
+				{
+					arguments[httpContextParameter.Index] = httpContext;
 				}
 			}
 			else
