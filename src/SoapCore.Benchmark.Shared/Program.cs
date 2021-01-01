@@ -21,7 +21,7 @@ namespace SoapCore.Benchmark
 		// 0 measures overhead of creating host
 		[Params(100)]
 		public int LoopNum;
-		static string EchoContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
+		static readonly string EchoContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soap:Body>
     <Echo xmlns=""http://example.org/PingService""><str>abc</str></Echo>
@@ -51,18 +51,14 @@ namespace SoapCore.Benchmark
 		{
 			for (int i = 0; i < LoopNum; i++)
 			{
-				using (var content = new StringContent(EchoContent, Encoding.UTF8, "text/xml"))
-				{
-					using (var res = await m_Host.CreateRequest("/")
-						.AddHeader("SOAPAction", "http://example.org/PingService/Echo")
-						.And(msg =>
-						{
-							msg.Content = content;
-						}).PostAsync().ConfigureAwait(false))
+				using var content = new StringContent(EchoContent, Encoding.UTF8, "text/xml");
+				using var res = await m_Host.CreateRequest("/")
+					.AddHeader("SOAPAction", "http://example.org/PingService/Echo")
+					.And(msg =>
 					{
-						res.EnsureSuccessStatusCode();
-					}
-				}
+						msg.Content = content;
+					}).PostAsync().ConfigureAwait(false);
+				res.EnsureSuccessStatusCode();
 			}
 		}
 		[Benchmark]
@@ -70,26 +66,22 @@ namespace SoapCore.Benchmark
 		{
 			for (int i = 0; i < LoopNum; i++)
 			{
-				using (var content = new StringContent(EchoContent, Encoding.UTF8, "text/xml"))
-				{
-					using (var res = await m_Host.CreateRequest("/TestService.asmx")
-						.AddHeader("SOAPAction", "http://example.org/PingService/Echo")
-						.And(msg =>
-						{
-							msg.Content = content;
-						}).PostAsync().ConfigureAwait(false))
+				using var content = new StringContent(EchoContent, Encoding.UTF8, "text/xml");
+				using var res = await m_Host.CreateRequest("/TestService.asmx")
+					.AddHeader("SOAPAction", "http://example.org/PingService/Echo")
+					.And(msg =>
 					{
-						res.EnsureSuccessStatusCode();
-					}
-				}
+						msg.Content = content;
+					}).PostAsync().ConfigureAwait(false);
+				res.EnsureSuccessStatusCode();
 			}
 		}
 	}
 	class Program
 	{
-		static void Main(string[] args)
+		static void Main()
 		{
-			var reporter = BenchmarkRunner.Run<EchoBench>();
+			BenchmarkRunner.Run<EchoBench>();
 		}
 	}
 }

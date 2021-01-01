@@ -260,7 +260,18 @@ namespace SoapCore
 			return UseSoapEndpoint<CustomMessage>(routes, type, path, binding, serializer, caseInsensitivePath, soapModelBounder);
 		}
 
+		public static IEndpointConventionBuilder UseSoapEndpoint(this IEndpointRouteBuilder routes, Type serviceType, Action<SoapCoreOptions> options)
+		{
+			return routes.UseSoapEndpoint<CustomMessage>(serviceType, options);
+		}
+
 		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, Action<SoapCoreOptions> options)
+			where T_MESSAGE : CustomMessage, new()
+		{
+			return routes.UseSoapEndpoint<T_MESSAGE>(typeof(T), options);
+		}
+
+		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type serviceType, Action<SoapCoreOptions> options)
 			where T_MESSAGE : CustomMessage, new()
 		{
 			var opt = new SoapCoreOptions();
@@ -293,7 +304,7 @@ namespace SoapCore
 				opt.EncoderOptions = encoderOptions;
 			}
 
-			var soapOptions = SoapOptions.FromSoapCoreOptions<T>(opt);
+			var soapOptions = SoapOptions.FromSoapCoreOptions(opt, serviceType);
 
 			var pipeline = routes
 				.CreateApplicationBuilder()
@@ -339,6 +350,13 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
+		public static IServiceCollection AddSoapMessageInspector<TService>(this IServiceCollection serviceCollection)
+			where TService : class, IMessageInspector2
+		{
+			serviceCollection.AddScoped<IMessageInspector2, TService>();
+			return serviceCollection;
+		}
+
 		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector2 messageInspector)
 		{
 			serviceCollection.AddSingleton(messageInspector);
@@ -360,6 +378,13 @@ namespace SoapCore
 		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter)
 		{
 			serviceCollection.TryAddSingleton(modelBindingFilter);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapServiceOperationTuner<TService>(this IServiceCollection serviceCollection)
+			where TService : class, IServiceOperationTuner
+		{
+			serviceCollection.AddScoped<IServiceOperationTuner, TService>();
 			return serviceCollection;
 		}
 

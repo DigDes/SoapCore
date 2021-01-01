@@ -11,18 +11,13 @@ using Microsoft;
 
 namespace SoapCore.MessageEncoder
 {
-#pragma warning disable AvoidAsyncSuffix // Avoid Async suffix
-
-	/// <summary>
-	/// Wraps a <see cref="PipeReader"/> and/or <see cref="PipeWriter"/> as a <see cref="Stream"/> for
-	/// easier interop with existing APIs.
-	/// </summary>
 	/// <summary>
 	/// Wraps a <see cref="PipeReader"/> and/or <see cref="PipeWriter"/> as a <see cref="Stream"/> for
 	/// easier interop with existing APIs.
 	/// </summary>
 	internal partial class PipeStream : Stream, IDisposableObservable
 	{
+#nullable enable
 		/// <summary>
 		/// The <see cref="PipeWriter"/> to use when writing to this stream. May be null.
 		/// </summary>
@@ -32,6 +27,7 @@ namespace SoapCore.MessageEncoder
 		/// The <see cref="PipeReader"/> to use when reading from this stream. May be null.
 		/// </summary>
 		private readonly PipeReader? _reader;
+#nullable disable
 
 		/// <summary>
 		/// A value indicating whether the <see cref="_writer"/> and <see cref="_reader"/> should be completed when this instance is disposed.
@@ -103,6 +99,8 @@ namespace SoapCore.MessageEncoder
 			set => throw ThrowDisposedOr(new NotSupportedException());
 		}
 
+#nullable enable
+
 		/// <summary>
 		/// Gets the underlying <see cref="PipeReader"/> (for purposes of unwrapping instead of stacking adapters).
 		/// </summary>
@@ -112,6 +110,7 @@ namespace SoapCore.MessageEncoder
 		/// Gets the underlying <see cref="PipeWriter"/> (for purposes of unwrapping instead of stacking adapters).
 		/// </summary>
 		internal PipeWriter? UnderlyingPipeWriter => _writer;
+#nullable disable
 
 		/// <inheritdoc />
 		public override async Task FlushAsync(CancellationToken cancellationToken)
@@ -189,9 +188,7 @@ namespace SoapCore.MessageEncoder
 				throw new NotSupportedException();
 			}
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
 			ReadResult readResult = _reader.ReadAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 			return ReadHelper(buffer, readResult);
 		}
 
@@ -223,8 +220,6 @@ namespace SoapCore.MessageEncoder
 
 #endif
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
-
 		/// <inheritdoc />
 		public override void Flush()
 		{
@@ -241,8 +236,6 @@ namespace SoapCore.MessageEncoder
 
 		/// <inheritdoc />
 		public override void Write(byte[] buffer, int offset, int count) => WriteAsync(buffer, offset, count).GetAwaiter().GetResult();
-
-#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 
 		/// <inheritdoc />
 		protected override void Dispose(bool disposing)
@@ -292,6 +285,7 @@ namespace SoapCore.MessageEncoder
 				{
 					_reader.Complete();
 				}
+
 				_readingCompleted = true;
 			}
 

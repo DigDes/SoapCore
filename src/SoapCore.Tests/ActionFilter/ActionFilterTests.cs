@@ -12,7 +12,9 @@ namespace SoapCore.Tests.ActionFilter
 	public class ActionFilterTests
 	{
 		[ClassInitialize]
-		public static void StartServer(TestContext testContext)
+#pragma warning disable IDE0060 // Remove unused parameter
+		public static void StartServer(TestContext context)
+#pragma warning restore IDE0060 // Remove unused parameter
 		{
 			Task.Run(() =>
 			{
@@ -25,7 +27,7 @@ namespace SoapCore.Tests.ActionFilter
 			}).Wait(1000);
 		}
 
-		public ITestService CreateClient(Dictionary<string, object> headers = null)
+		public ITestService CreateClient()
 		{
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:5052/Service.svc", "localhost")));

@@ -166,6 +166,7 @@ namespace SoapCore
 		}
 #endif
 #if ASPNET_30
+
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
@@ -175,6 +176,7 @@ namespace SoapCore
 		{
 			return messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
 		}
+
 #endif
 
 		private async Task ProcessMeta(HttpContext httpContext)
@@ -185,7 +187,7 @@ namespace SoapCore
 			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
 
 			//we should use text/xml in wsdl page for browser compability.
-			httpContext.Response.ContentType = "text/xml;charset=UTF-8";// _messageEncoders[0].ContentType;
+			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
 
 			await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
 		}
@@ -220,6 +222,7 @@ namespace SoapCore
 			}
 
 			Message requestMessage;
+
 			//Get the message
 			try
 			{
@@ -230,6 +233,7 @@ namespace SoapCore
 				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
 				return;
 			}
+
 			var messageFilters = serviceProvider.GetServices<IMessageFilter>().ToArray();
 			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
@@ -266,15 +270,11 @@ namespace SoapCore
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
-#pragma warning disable SA1009 // StyleCop has not yet been updated to support tuples
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
-#pragma warning restore SA1009
 
 			try
 			{
-#pragma warning disable SA1008 // StyleCop has not yet been updated to support tuples
 				correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
-#pragma warning restore SA1008
 			}
 			catch (Exception ex)
 			{
@@ -286,7 +286,7 @@ namespace SoapCore
 			// GetReaderAtBodyContents must not be called twice in one request
 			using (var reader = requestMessage.GetReaderAtBodyContents())
 			{
-				var soapAction = HeadersHelper.GetSoapAction(httpContext, requestMessage, reader);
+				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 				if (operation == null)
@@ -390,7 +390,6 @@ namespace SoapCore
 					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
-				//responseMessage.Message = responseMessage;
 				responseMessage.Headers.Action = operation.ReplyAction;
 				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
 				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
@@ -404,15 +403,15 @@ namespace SoapCore
 					NamespaceManager = _xmlNamespaceManager
 				};
 				responseMessage = customMessage;
+			}
 
-				if (responseObject != null)
+			if (responseObject != null)
+			{
+				var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
+				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
-					var messageHeaderMembers = responseObject.GetType().GetMembersWithAttribute<MessageHeaderAttribute>();
-					foreach (var messageHeaderMember in messageHeaderMembers)
-					{
-						var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
-					}
+					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
+					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
 				}
 			}
 
@@ -466,7 +465,7 @@ namespace SoapCore
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private object[] GetRequestArguments(Message requestMessage, System.Xml.XmlDictionaryReader xmlReader, OperationDescription operation, HttpContext httpContext)
+		private object[] GetRequestArguments(Message requestMessage, XmlDictionaryReader xmlReader, OperationDescription operation, HttpContext httpContext)
 		{
 			var arguments = new object[operation.AllParameters.Length];
 
@@ -474,57 +473,47 @@ namespace SoapCore
 				.GetServiceKnownTypesHierarchy()
 				.Select(x => x.Type);
 
-			// if any ordering issues, possible to rewrite like:
-			/*while (!xmlReader.EOF)
-			{
-				var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName && p.Namespace == xmlReader.NamespaceURI);
-				if (parameterInfo == null)
-				{
-					xmlReader.Skip();
-					continue;
-				}
-				var parameterName = parameterInfo.Name;
-				var parameterNs = parameterInfo.Namespace;
-				...
-			}*/
-
-			// Find the element for the operation's data
 			if (!operation.IsMessageContractRequest)
 			{
 				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
-
-				foreach (var parameterInfo in operation.InParameters)
+				while (!xmlReader.EOF)
 				{
+					var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName);
+					if (parameterInfo == null)
+					{
+						xmlReader.Skip();
+						continue;
+					}
+
 					var parameterType = parameterInfo.Parameter.ParameterType;
 
-					if (parameterType == typeof(HttpContext))
+					var argumentValue = _serializerHelper.DeserializeInputParameter(
+						xmlReader,
+						parameterType,
+						parameterInfo.Name,
+						operation.Contract.Namespace,
+						parameterInfo.Parameter.Member,
+						serviceKnownTypes);
+
+					//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
+					if (argumentValue == null)
 					{
-						arguments[parameterInfo.Index] = httpContext;
-					}
-					else
-					{
-						var argumentValue = _serializerHelper.DeserializeInputParameter(
+						argumentValue = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
 							parameterType,
 							parameterInfo.Name,
-							operation.Contract.Namespace,
+							parameterInfo.Namespace,
 							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
-
-						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
-						if (argumentValue == null)
-						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
-								xmlReader,
-								parameterType,
-								parameterInfo.Name,
-								parameterInfo.Namespace,
-								parameterInfo.Parameter.Member,
-								serviceKnownTypes);
-						}
-
-						arguments[parameterInfo.Index] = argumentValue;
 					}
+
+					arguments[parameterInfo.Index] = argumentValue;
+				}
+
+				var httpContextParameter = operation.InParameters.FirstOrDefault(x => x.Parameter.ParameterType == typeof(HttpContext));
+				if (httpContextParameter != default)
+				{
+					arguments[httpContextParameter.Index] = httpContext;
 				}
 			}
 			else
@@ -596,7 +585,8 @@ namespace SoapCore
 							var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
 							var value = _serializerHelper.DeserializeInputParameter(
-								reader, member.MemberInfo.GetPropertyOrFieldType(),
+								reader,
+								member.MemberInfo.GetPropertyOrFieldType(),
 								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
 								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
 								member.MemberInfo,
@@ -727,9 +717,7 @@ namespace SoapCore
 		private void SetHttpResponse(HttpContext httpContext, Message message)
 		{
 			if (!message.Properties.TryGetValue(HttpResponseMessageProperty.Name, out var value)
-#pragma warning disable SA1119 // StatementMustNotUseUnnecessaryParenthesis
 				|| !(value is HttpResponseMessageProperty httpProperty))
-#pragma warning restore SA1119 // StatementMustNotUseUnnecessaryParenthesis
 			{
 				return;
 			}

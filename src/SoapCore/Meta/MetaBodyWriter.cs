@@ -30,12 +30,10 @@ namespace SoapCore.Meta
 		private readonly HashSet<string> _buildArrayTypes;
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
-		private readonly Dictionary<Type, Type> _wrappedTypes;
+		private readonly MessageVersion _version;
+		private readonly bool _isSoap12 = true;
 
 		private bool _buildDateTimeOffset;
-
-		private MessageVersion _version;
-		private bool _isSoap12 = true;
 
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null) : base(isBuffered: true)
 		{
@@ -50,8 +48,6 @@ namespace SoapCore.Meta
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
 			_requestedDynamicTypes = new Dictionary<string, Dictionary<string, string>>();
-
-			_wrappedTypes = new Dictionary<Type, Type>();
 
 			if (binding != null)
 			{
@@ -525,6 +521,7 @@ namespace SoapCore.Meta
 					writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
 					writer.WriteEndElement(); // wsdl:output
 				}
+
 				writer.WriteEndElement(); // wsdl:operation
 			}
 
@@ -809,8 +806,7 @@ namespace SoapCore.Meta
 			else if (typeInfo.IsEnum || underlyingType?.IsEnum == true
 				|| (typeInfo.IsValueType && typeInfo.Namespace != null && (typeInfo.Namespace == "System" || typeInfo.Namespace.StartsWith("System.")))
 				|| (type.Name == "String")
-				|| (type.Name == "Byte[]")
-				)
+				|| (type.Name == "Byte[]"))
 			{
 				XmlQualifiedName xsTypename;
 				if (typeof(DateTimeOffset).IsAssignableFrom(type))
@@ -892,6 +888,7 @@ namespace SoapCore.Meta
 				{
 					writer.WriteAttributeString("maxOccurs", "1");
 				}
+
 				if (type == typeof(Stream) || typeof(Stream).IsAssignableFrom(type))
 				{
 					name = "StreamBody";
@@ -987,7 +984,7 @@ namespace SoapCore.Meta
 		{
 			if (!_requestedDynamicTypes.TryGetValue(dynamicType.TypeName, out var elementsList))
 			{
-				var elementsMap = new Dictionary<string, string> { { dynamicType.ChildElementName, "" } };
+				var elementsMap = new Dictionary<string, string> { { dynamicType.ChildElementName, string.Empty } };
 				_requestedDynamicTypes.Add(dynamicType.TypeName, elementsMap);
 				return;
 			}
