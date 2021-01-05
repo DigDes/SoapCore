@@ -291,7 +291,9 @@ namespace SoapCore
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
 				if (operation == null)
 				{
-					throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
+					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
+					await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					return;
 				}
 
 				_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
