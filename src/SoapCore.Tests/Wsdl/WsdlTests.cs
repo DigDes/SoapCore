@@ -147,6 +147,29 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckEmptyMembersServiceASMX()
+		{
+			//This did not work without fixing the MetaBodyWriter
+			StartService(typeof(OperationContractEmptyMembersService));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			Assert.IsNotNull(root);
+		}
+
+		[TestMethod]
+		public void CheckEmptyMembersService()
+		{
+			StartService(typeof(OperationContractEmptyMembersService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			Assert.IsNotNull(root);
+		}
+
+		[TestMethod]
 		public void CheckStructsInList()
 		{
 			StartService(typeof(StructService));
