@@ -111,8 +111,10 @@ namespace SoapCore.Meta
 						.Where(x => x.MessageBodyMemberAttribute != null)
 						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
 						.ToList();
-
-				return messageBodyMembers[0].Member.GetPropertyOrFieldType();
+				if (messageBodyMembers.Count > 0)
+				{
+					return messageBodyMembers[0].Member.GetPropertyOrFieldType();
+				}
 			}
 
 			return type;
