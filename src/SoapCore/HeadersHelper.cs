@@ -86,7 +86,7 @@ namespace SoapCore
 					}
 				}
 
-				if (string.IsNullOrEmpty(soapAction))
+				if (string.IsNullOrEmpty(soapAction) && reader != null)
 				{
 					soapAction = reader.LocalName;
 				}
