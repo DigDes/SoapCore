@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<xs:schema elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:roa="http://datex2.eu/schema/3/roadTrafficData" version="3.1" targetNamespace="http://datex2.eu/schema/3/roadTrafficData" xmlns:com="http://datex2.eu/schema/3/common" xmlns:loc="http://datex2.eu/schema/3/locationReferencing" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://datex2.eu/schema/3/locationReferencing" schemaLocation="DATEXII_3_LocationReferencing.xsd" />
+  <xs:import namespace="http://datex2.eu/schema/3/common" schemaLocation="DATEXII_3_Common.xsd" />
+  <xs:complexType name="DateTimeValue">
+    <xs:annotation>
+      <xs:documentation>A measured or calculated value of an instant in time.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="com:DataValue">
+        <xs:sequence>
+          <xs:element name="dateTime" type="com:DateTime" minOccurs="1" maxOccurs="1">
+            <xs:annotation>
+              <xs:documentation>A time stamp defining an instant in time.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="_dateTimeValueExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>

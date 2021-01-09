@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<xs:schema elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:loc="http://datex2.eu/schema/3/locationReferencing" version="3.1" targetNamespace="http://datex2.eu/schema/3/locationReferencing" xmlns:com="http://datex2.eu/schema/3/common" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://datex2.eu/schema/3/common" schemaLocation="DATEXII_3_Common.xsd" />
+  <xs:complexType name="_HeightTypeEnum">
+    <xs:simpleContent>
+      <xs:extension base="loc:HeightTypeEnum">
+        <xs:attribute name="_extendedValue" type="xs:string" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="GmlLinearRing">
+    <xs:annotation>
+      <xs:documentation>Closed line string not self-intersecting (i.e. having as last point the first point)</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:GmlLineString">
+        <xs:sequence>
+          <xs:element name="_gmlLinearRingExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="GmlLineString">
+    <xs:annotation>
+      <xs:documentation>Line string based on GML (EN ISO 19136) definition: a curve defined by a series of two or more coordinate tuples. Unlike GML may be self-intersecting. If srsName attribute is not present, posList is assumed to use "ETRS89-LatLonh" reference system.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="posList" type="loc:GmlPosList" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>List of coordinate Tuples define the geometry of this GmlLineString. There must be at least 2 Tuples of coordinates.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="_gmlLineStringExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="srsDimension" type="com:NonNegativeInteger" use="optional">
+      <xs:annotation>
+        <xs:documentation>Provides the size of the tuple of coordinates of each point. This number is 2 or 3. By default when omitted the dimension shall be interpreted as 2.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="srsName" type="com:String" use="optional">
+      <xs:annotation>
+        <xs:documentation>Specifies the Coordinate Reference System (CRS) used to interpret the coordinates in this GmlLineString</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <xs:simpleType name="GmlPosList">
+    <xs:annotation>
+      <xs:documentation>List of coordinates, space-separated, within the same coordinate reference system, defining a geometric entity. Modelled on DirectPositionListType in GML (EN ISO 19136), but constrained to represent a 2D or 3D polyline.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="com:LongString">
+      <xs:pattern value="[-+]?[0-9]*\.?[0-9]+(\s[-+]?[0-9]*\.?[0-9]+){3,}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="HeightCoordinate">
+    <xs:annotation>
+      <xs:documentation>Third coordinate for points defined geodetically</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="heightValue" type="com:MetresAsFloat" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Value in metres for the height measured vertically at to the planar coordinates the point corresponding.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="heightType" type="loc:_HeightTypeEnum" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Type of measured height.When it is omitted it is supposed to be the ellipsoidal height.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="_heightCoordinateExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="HeightTypeEnum">
+    <xs:annotation>
+      <xs:documentation>Coded value for type of height</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ellipsoidalHeight">
+        <xs:annotation>
+          <xs:documentation>Value measured vertically above the reference ellipsoid</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="gravityRelatedHeight">
+        <xs:annotation>
+          <xs:documentation>Height type corresponding a value measured along direction of gravity above the reference geoid i.e. equipotential surface of the Earth's gravity field which globally approximates mean sea level.</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="relativeHeight">
+        <xs:annotation>
+          <xs:documentation>Height type corresponding to value masured vertically above the ground level at this point.</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="_extended" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="LinearLocation">
+    <xs:annotation>
+      <xs:documentation>Location representing a linear section with optional directionality defined between two points. </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:NetworkLocation">
+        <xs:sequence>
+          <xs:element name="gmlLineString" type="loc:GmlLineString" minOccurs="0" />
+          <xs:element name="_linearLocationExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="Location" abstract="true">
+    <xs:annotation>
+      <xs:documentation>The specification of a location either on a network (as a point or a linear location) or as an area. This may be provided in one or more referencing systems.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:LocationReference">
+        <xs:sequence>
+          <xs:element name="coordinatesForDisplay" type="loc:PointCoordinates" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Coordinates that may be used by clients for visual display on user interfaces.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="_locationExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="LocationGroup" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Multiple (i.e. more than one) physically separate locations which have no specific order.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:LocationReference">
+        <xs:sequence>
+          <xs:element name="_locationGroupExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="LocationGroupByList">
+    <xs:annotation>
+      <xs:documentation>A group of (i.e. more than one) physically separate locations which have no specific order and where each location is explicitly listed.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:LocationGroup">
+        <xs:sequence>
+          <xs:element name="locationContainedInGroup" type="loc:Location" minOccurs="2" maxOccurs="unbounded">
+            <xs:annotation>
+              <xs:documentation>A location contained in a non-ordered group of locations.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="_locationGroupByListExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="LocationReference" abstract="true">
+    <xs:annotation>
+      <xs:documentation>Represents one or more physically separate locations. Multiple locations may be related, as in an itinerary or route, or may be unrelated. One LocationReference should not use multiple Location objects to represent the same physical location.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="_locationReferenceExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="NetworkLocation" abstract="true">
+    <xs:annotation>
+      <xs:documentation>The specification of a location on a network (as a point or a linear location).</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:Location">
+        <xs:sequence>
+          <xs:element name="supplementaryPositionalDescription" type="loc:SupplementaryPositionalDescription" minOccurs="0" />
+          <xs:element name="_networkLocationExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="PointCoordinates">
+    <xs:annotation>
+      <xs:documentation>A pair of planar coordinates defining the geodetic position of a single point using the European Terrestrial Reference System 1989 (ETRS89).</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="latitude" type="com:Float" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Latitude in decimal degrees using the European Terrestrial Reference System 1989 (ETRS89).</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="longitude" type="com:Float" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Longitude in decimal degrees using the European Terrestrial Reference System 1989 (ETRS89).</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="heightCoordinate" type="loc:HeightCoordinate" minOccurs="0" maxOccurs="3" />
+      <xs:element name="_pointCoordinatesExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="PredefinedLocationGroup">
+    <xs:annotation>
+      <xs:documentation>An identifiable versioned instance of a predefined group of non-ordered locations (i.e. more than one).</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="loc:PredefinedLocationReference">
+        <xs:sequence>
+          <xs:element name="predefinedLocationGroupName" type="com:MultilingualString" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+              <xs:documentation>A name assigned to the predefined group of non-ordered locations.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="locationGroup" type="loc:LocationGroup" minOccurs="0" />
+          <xs:element name="_predefinedLocationGroupExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:string" use="required" />
+        <xs:attribute name="version" type="xs:string" use="required" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="PredefinedLocationReference" abstract="true">
+    <xs:annotation>
+      <xs:documentation>A location reference which is predefined and may be realised by a predefined itinerary, non-ordered group of locations or single location.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="_predefinedLocationReferenceExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="PredefinedLocationsPublication">
+    <xs:annotation>
+      <xs:documentation>A publication containing one or more groups of predefined locations organised either as itineraries, non-ordered groups or as individual locations.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="com:PayloadPublication">
+        <xs:sequence>
+          <xs:element name="headerInformation" type="com:HeaderInformation" />
+          <xs:element name="predefinedLocationReference" type="loc:PredefinedLocationReference" maxOccurs="unbounded" />
+          <xs:element name="_predefinedLocationsPublicationExtension" type="com:_ExtensionType" minOccurs="0" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="RoadInformation">
+    <xs:annotation>
+      <xs:documentation>Information on a road</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="roadName" type="com:String" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>The name of the road</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="roadNumber" type="com:String" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>The road number designated by the road authority</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="_roadInformationExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="SupplementaryPositionalDescription">
+    <xs:annotation>
+      <xs:documentation>A collection of supplementary positional information which improves the precision of the location.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="locationDescription" type="com:MultilingualString" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Supplementary human-readable description of the location</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="roadInformation" type="loc:RoadInformation" minOccurs="0" maxOccurs="unbounded">
+        <xs:annotation>
+          <xs:documentation>Information on a set of one or more roads. The location could correspond to a part of the road identified, the whole stretch of road identified, or a combination of multiple road sections.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="_supplementaryPositionalDescriptionExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
