@@ -85,6 +85,7 @@
 
 	<ItemGroup>
 		<Folder Include="Serialization\Models.Models.Xml\" />
+		<Folder Include="WsdlFromFile\WSDL\" />
 	</ItemGroup>
 
 	<ItemGroup>

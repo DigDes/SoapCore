@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<xs:schema xmlns:com="http://datex2.eu/schema/3/common" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://datex2.eu/schema/3/common" elementFormDefault="qualified" attributeFormDefault="unqualified" version="3.1">
+	<xs:complexType name="_ComputationMethodEnum">
+		<xs:simpleContent>
+			<xs:extension base="com:ComputationMethodEnum">
+				<xs:attribute name="_extendedValue" type="xs:string"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="_ExtensionType">
+		<xs:sequence>
+			<xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="_InformationStatusEnum">
+		<xs:simpleContent>
+			<xs:extension base="com:InformationStatusEnum">
+				<xs:attribute name="_extendedValue" type="xs:string"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="Boolean">
+		<xs:annotation>
+			<xs:documentation>Boolean has the value space required to support the mathematical concept of binary-valued logic: {true, false}. </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:boolean"/>
+	</xs:simpleType>
+	<xs:simpleType name="ComputationMethodEnum">
+		<xs:annotation>
+			<xs:documentation>Types of computational methods used in deriving data values for data sets.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="arithmeticAverageOfSamplesBasedOnAFixedNumberOfSamples">
+				<xs:annotation>
+					<xs:documentation>Arithmetic average of sample values based on a fixed number of samples.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="arithmeticAverageOfSamplesInATimePeriod">
+				<xs:annotation>
+					<xs:documentation>Arithmetic average of sample values in a time period.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="harmonicAverageOfSamplesInATimePeriod">
+				<xs:annotation>
+					<xs:documentation>Harmonic average of sample values in a time period.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="medianOfSamplesInATimePeriod">
+				<xs:annotation>
+					<xs:documentation>Median of sample values taken over a time period.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="movingAverageOfSamples">
+				<xs:annotation>
+					<xs:documentation>Moving average of sample values.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="_extended"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CountryCode">
+		<xs:annotation>
+			<xs:documentation>EN ISO 3166-1 alpha-2 two-letter country code</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="com:String">
+			<xs:maxLength value="2"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="DataValue" abstract="true">
+		<xs:annotation>
+			<xs:documentation>A data value of something that can be measured or calculated. Any provided meta-data values specified in the attributes override any specified generic characteristics such as defined for a specific measurement in the MeasurementSiteTable. </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="dataError" type="com:Boolean" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Indication of whether the value is deemed to be erroneous by the supplier (true = erroneous). If not present, the data value is assumed to be ok. This may be used when automatic fault detection information relating to sensors is available.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="reasonForDataError" type="com:MultilingualString" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The reason why the value is deemed to be erroneous by the supplier.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="_dataValueExtension" type="com:_ExtensionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="accuracy" type="com:Percentage" use="optional">
+			<xs:annotation>
+				<xs:documentation>The extent to which the value is expected to be free from error, measured as a percentage of the data value. 100% means fully accurate.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="computationalMethod" type="com:ComputationMethodEnum" use="optional">
+			<xs:annotation>
+				<xs:documentation>Method of computation which has been used to compute this data value.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="numberOfIncompleteInputs" type="com:NonNegativeInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>The number of inputs detected but not completed during the sampling or measurement period; e.g. vehicles detected entering but not exiting the detection zone.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="numberOfInputValuesUsed" type="com:NonNegativeInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>The number of input values used in the sampling or measurement period to determine the data value.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="smoothingFactor" type="com:Float" use="optional">
+			<xs:annotation>
+				<xs:documentation>Coefficient required when a moving average is computed to give specific weights to the former average and the new data. A typical formula is, F being the smoothing factor: New average = (old average) F + (new data) (1 - F).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="standardDeviation" type="com:Float" use="optional">
+			<xs:annotation>
+				<xs:documentation>The standard deviation of the sample of input values from which this value was derived, measured in the units of the data value. </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="supplierCalculatedDataQuality" type="com:Percentage" use="optional">
+			<xs:annotation>
+				<xs:documentation>A measure of data quality assigned to the value by the supplier. 100% equates to ideal/perfect quality. The method of calculation is supplier specific and needs to be agreed between supplier and client.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:simpleType name="DateTime">
+		<xs:annotation>
+			<xs:documentation>A combination of integer-valued year, month, day, hour, minute properties, a decimal-valued second property and a time zone property from which it is possible to determine the local time, the equivalent UTC time and the time zone offset from UTC.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:dateTime"/>
+	</xs:simpleType>
+	<xs:simpleType name="Float">
+		<xs:annotation>
+			<xs:documentation>A floating point number whose value space consists of the values m × 2^e, where m is an integer whose absolute value is less than 2^24, and e is an integer between -149 and 104, inclusive.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:float"/>
+	</xs:simpleType>
+	<xs:complexType name="HeaderInformation">
+		<xs:annotation>
+			<xs:documentation>Management information relating to the data contained within a publication.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="informationStatus" type="com:_InformationStatusEnum" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>The status of the related information (real, test, exercise ....).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="_headerInformationExtension" type="com:_ExtensionType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="InformationStatusEnum">
+		<xs:annotation>
+			<xs:documentation>Status of the related information (i.e. real, test or exercise).</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="real">
+				<xs:annotation>
+					<xs:documentation>The information is real. It is not a test or exercise.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="securityExercise">
+				<xs:annotation>
+					<xs:documentation>The information is part of an exercise which is for testing security.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="technicalExercise">
+				<xs:annotation>
+					<xs:documentation>The information is part of an exercise which includes tests of associated technical subsystems.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="test">
+				<xs:annotation>
+					<xs:documentation>The information is part of a test for checking the exchange of this type of information.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="_extended"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="InternationalIdentifier">
+		<xs:annotation>
+			<xs:documentation>An identifier/name whose range is specific to the particular country.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="country" type="com:CountryCode" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>EN ISO 3166-1 two-character country code.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="nationalIdentifier" type="com:String" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Identifier or name unique within the specified country.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="_internationalIdentifierExtension" type="com:_ExtensionType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="Language">
+		<xs:annotation>
+			<xs:documentation>A language datatype, identifies a specified language by an ISO 639-1 2-alpha code.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:language"/>
+	</xs:simpleType>
+	<xs:simpleType name="LongString">
+		<xs:annotation>
+			<xs:documentation>A character string with no specified length limit, whose value space is the set of finite-length sequences of characters. Every character has a corresponding Universal Character Set code point (as defined in ISO/IEC 10646), which is an integer.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="MetresAsFloat">
+		<xs:annotation>
+			<xs:documentation>A measure of distance defined in metres in a floating point format.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="com:Float"/>
+	</xs:simpleType>
+	<xs:complexType name="MultilingualString">
+		<xs:sequence>
+			<xs:element name="values">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="value" type="com:MultilingualStringValue" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MultilingualStringValue">
+		<xs:simpleContent>
+			<xs:extension base="com:MultilingualStringValueType">
+				<xs:attribute name="lang" type="xs:language"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="MultilingualStringValueType">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="1024"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="NonNegativeInteger">
+		<xs:annotation>
+			<xs:documentation>An integer number whose value space is the set {0, 1, 2, ..., 2147483645, 2147483646, 2147483647}.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:nonNegativeInteger"/>
+	</xs:simpleType>
+	<xs:complexType name="PayloadPublication" abstract="true">
+		<xs:annotation>
+			<xs:documentation>A payload publication of traffic related information or associated management information created at a specific point in time that can be exchanged via a DATEX II interface.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="feedType" type="com:String" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>A classification of the information which is to be found in the publications originating from the particular feed.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="publicationTime" type="com:DateTime" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Date/time at which the payload publication was created.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="publicationCreator" type="com:InternationalIdentifier"/>
+			<xs:element name="_payloadPublicationExtension" type="com:_ExtensionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="lang" type="com:Language" use="required">
+			<xs:annotation>
+				<xs:documentation>The default language used throughout the payload publication.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="modelBaseVersion" type="xs:string" use="required" fixed="3"/>
+		<xs:attribute name="extensionName" type="xs:string" use="optional"/>
+		<xs:attribute name="extensionVersion" type="xs:string" use="optional"/>
+		<xs:attribute name="profileName" type="xs:string" use="optional"/>
+		<xs:attribute name="profileVersion" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:simpleType name="Percentage">
+		<xs:annotation>
+			<xs:documentation>A measure of percentage.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="com:Float"/>
+	</xs:simpleType>
+	<xs:simpleType name="String">
+		<xs:annotation>
+			<xs:documentation>A character string whose value space is the set of finite-length sequences of characters. Every character has a corresponding Universal Character Set code point (as defined in ISO/IEC 10646), which is an integer.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="1024"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Reference">
+		<xs:attribute name="id" type="xs:string" use="required"/>
+	</xs:complexType>
+</xs:schema>

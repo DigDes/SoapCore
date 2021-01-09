@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<xs:schema elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:ex="http://datex2.eu/schema/3/exchangeInformation" version="1" targetNamespace="http://datex2.eu/schema/3/exchangeInformation" xmlns:com="http://datex2.eu/schema/3/common" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://datex2.eu/schema/3/common" schemaLocation="DATEXII_3_Common.xsd" />
+  <xs:complexType name="_ExchangeReturnEnum">
+    <xs:simpleContent>
+      <xs:extension base="ex:ExchangeReturnEnum">
+        <xs:attribute name="_extendedValue" type="xs:string" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="_ExchangeStatusEnum">
+    <xs:simpleContent>
+      <xs:extension base="ex:ExchangeStatusEnum">
+        <xs:attribute name="_extendedValue" type="xs:string" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="_MessageTypeEnum">
+    <xs:simpleContent>
+      <xs:extension base="ex:MessageTypeEnum">
+        <xs:attribute name="_extendedValue" type="xs:string" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="_ProtocolTypeEnum">
+    <xs:simpleContent>
+      <xs:extension base="ex:ProtocolTypeEnum">
+        <xs:attribute name="_extendedValue" type="xs:string" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="Agent">
+    <xs:annotation>
+      <xs:documentation>an actor in the exchange context</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="internationalIdentifier" type="com:InternationalIdentifier" minOccurs="0" />
+      <xs:element name="_agentExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="DynamicInformation">
+    <xs:annotation>
+      <xs:documentation>Dynamic Exchange Information</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="exchangeStatus" type="ex:_ExchangeStatusEnum" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Status of Exchange defined by protocol Specification</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="messageGenerationTimestamp" type="com:DateTime" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>the date time in which the message had been generated</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="returnInformation" type="ex:ReturnInformation" minOccurs="0" />
+      <xs:element name="_dynamicInformationExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ExchangeContext">
+    <xs:annotation>
+      <xs:documentation>Exchange Context e.g. which defines the specific Exchange Pattern and Functional Exchange Profile and other details about Supplier &amp; client</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="codedExchangeProtocol" type="ex:_ProtocolTypeEnum" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>the exchange protocol type as referenced by any standard or by agreement among client and supplier, e.g. Snapshot Pull, Simple Push, Collaborative ITS Services, etc</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="exchangeSpecificationVersion" type="com:String" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>the version of the protocol used for the exchange as by standard or as agreed among client and supplier</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="supplierOrCisRequester" type="ex:Agent">
+        <xs:annotation>
+          <xs:documentation>it defines the supplier or CIS requester information of the exchange context</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="_exchangeContextExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ExchangeInformation">
+    <xs:annotation>
+      <xs:documentation>Exchange Information </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="messageType" type="ex:_MessageTypeEnum" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>the message type which is used in specific exchange pattern to define the use of exchanged message, e,g, payload delivery, open session, keep alive, cis service request and feedback etc.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="exchangeContext" type="ex:ExchangeContext" />
+      <xs:element name="dynamicInformation" type="ex:DynamicInformation" />
+      <xs:element name="_exchangeInformationExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="modelBaseVersion" type="xs:string" use="required" fixed="3" />
+    <xs:attribute name="extensionName" type="xs:string" use="optional" default="Exchange 2018" />
+    <xs:attribute name="extensionVersion" type="xs:string" use="optional" default="1" />
+    <xs:attribute name="profileName" type="xs:string" use="optional" />
+    <xs:attribute name="profileVersion" type="xs:string" use="optional" />
+  </xs:complexType>
+  <xs:simpleType name="ExchangeReturnEnum">
+    <xs:annotation>
+      <xs:documentation>Enumeration that identifies the return status</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="fail">
+        <xs:annotation>
+          <xs:documentation>request failed</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="_extended" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ExchangeStatusEnum">
+    <xs:annotation>
+      <xs:documentation>Enumeration that identifies the status of exchange session</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="undefined">
+        <xs:annotation>
+          <xs:documentation>the exchange status is not defined in the exchange implementation</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="_extended" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="MessageTypeEnum">
+    <xs:annotation>
+      <xs:documentation>e list of message type which can be implemented to define specifice exchange pattern features</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="payloadDelivery">
+        <xs:annotation>
+          <xs:documentation>message conveying payload delivery</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="openSession">
+        <xs:annotation>
+          <xs:documentation>message conveying open session request</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="keepAlive">
+        <xs:annotation>
+          <xs:documentation>message conveying keep alive message</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="closeSession">
+        <xs:annotation>
+          <xs:documentation>message conveying close session request</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="return">
+        <xs:annotation>
+          <xs:documentation>message conveying return information</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="CISServiceRequest">
+        <xs:annotation>
+          <xs:documentation>message conveying CIS Service request</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="CISFeedback">
+        <xs:annotation>
+          <xs:documentation>message conveying CIS feedback message</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="_extended" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ProtocolTypeEnum">
+    <xs:annotation>
+      <xs:documentation>a list of protocol type as possible exchange specification available</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="snapshotPull">
+        <xs:annotation>
+          <xs:documentation>all activ information avaliable by the supplier is retrived by the client in a pull operation</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="_extended" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="ReturnInformation">
+    <xs:annotation>
+      <xs:documentation>the information provided as rerturn after a message had been delivered</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="returnStatus" type="ex:_ExchangeReturnEnum" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>the return status of a message previously delivered</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="returnStatusReason" type="com:MultilingualString" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>the reason for the setting of the return status</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="_returnInformationExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
