@@ -87,5 +87,8 @@ namespace SoapCore.Tests
 		[ServiceKnownType(typeof(ComplexModelInput))]
 		[OperationContract]
 		object ObjectFromServiceKnownType(ComplexModelInput value);
+
+		[OperationContract]
+		string EmpryBody(EmptyMembers members);
 	}
 }

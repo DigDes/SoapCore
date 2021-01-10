@@ -284,71 +284,75 @@ namespace SoapCore
 
 			// for getting soapaction and parameters in body
 			// GetReaderAtBodyContents must not be called twice in one request
-			using (var reader = requestMessage.GetReaderAtBodyContents())
+
+			XmlDictionaryReader reader = null;
+			if (!requestMessage.IsEmpty)
 			{
-				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
-				requestMessage.Headers.Action = soapAction;
-				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
-				if (operation == null)
+				reader = requestMessage.GetReaderAtBodyContents();
+			}
+
+			var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
+			requestMessage.Headers.Action = soapAction;
+			var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
+			if (operation == null)
+			{
+				var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				return;
+			}
+
+			_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
+
+			try
+			{
+				//Create an instance of the service class
+				var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
+
+				SetMessageHeadersToProperty(requestMessage, serviceInstance);
+
+				// Get operation arguments from message
+				var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
+
+				ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
+
+				var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
+				var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
+
+				if (operation.IsOneWay)
 				{
-					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
-					await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
 					return;
 				}
 
-				_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
-
-				try
+				var resultOutDictionary = new Dictionary<string, object>();
+				foreach (var parameterInfo in operation.OutParameters)
 				{
-					//Create an instance of the service class
-					var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
-
-					SetMessageHeadersToProperty(requestMessage, serviceInstance);
-
-					// Get operation arguments from message
-					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
-
-					ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
-
-					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
-					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
-
-					if (operation.IsOneWay)
-					{
-						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
-						return;
-					}
-
-					var resultOutDictionary = new Dictionary<string, object>();
-					foreach (var parameterInfo in operation.OutParameters)
-					{
-						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
-					}
-
-					responseMessage = CreateResponseMessage(
-						operation, responseObject, resultOutDictionary, soapAction, requestMessage, messageEncoder);
-
-					httpContext.Response.ContentType = httpContext.Request.ContentType;
-					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
-
-					correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
-
-					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
-
-					SetHttpResponse(httpContext, responseMessage);
-
-					await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
+					resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 				}
-				catch (Exception exception)
+
+				responseMessage = CreateResponseMessage(
+					operation, responseObject, resultOutDictionary, soapAction, requestMessage, messageEncoder);
+
+				httpContext.Response.ContentType = httpContext.Request.ContentType;
+				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+				correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
+
+				messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
+
+				SetHttpResponse(httpContext, responseMessage);
+
+				await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
+			}
+			catch (Exception exception)
+			{
+				if (exception is TargetInvocationException targetInvocationException)
 				{
-					if (exception is TargetInvocationException targetInvocationException)
-					{
-						exception = targetInvocationException.InnerException;
-					}
-
-					_logger.LogError(0, exception, exception?.Message);
-					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					exception = targetInvocationException.InnerException;
 				}
+
+				_logger.LogError(0, exception, exception?.Message);
+				responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			// Execute response message filters
