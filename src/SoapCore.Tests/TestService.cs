@@ -173,5 +173,10 @@ namespace SoapCore.Tests
 
 			return value;
 		}
+
+		public string EmpryBody(EmptyMembers members)
+		{
+			return "OK";
+		}
 	}
 }

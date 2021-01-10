@@ -282,9 +282,15 @@ namespace SoapCore
 				return;
 			}
 
-			// for getting soapaction and parameters in body
+			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
-			using (var reader = requestMessage.GetReaderAtBodyContents())
+			XmlDictionaryReader reader = null;
+			if (!requestMessage.IsEmpty)
+			{
+				reader = requestMessage.GetReaderAtBodyContents();
+			}
+
+			try
 			{
 				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
@@ -306,7 +312,7 @@ namespace SoapCore
 					SetMessageHeadersToProperty(requestMessage, serviceInstance);
 
 					// Get operation arguments from message
-					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
+					var arguments = requestMessage.IsEmpty ? Array.Empty<object>() : GetRequestArguments(requestMessage, reader, operation, httpContext);
 
 					ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
 
@@ -349,6 +355,10 @@ namespace SoapCore
 					_logger.LogError(0, exception, exception?.Message);
 					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
+			}
+			finally
+			{
+				reader?.Dispose();
 			}
 
 			// Execute response message filters
