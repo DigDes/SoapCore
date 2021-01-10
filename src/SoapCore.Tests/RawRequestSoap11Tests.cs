@@ -11,7 +11,7 @@ namespace SoapCore.Tests
 	public class RawRequestSoap11Tests
 	{
 		[TestMethod]
-		public async Task Soap11PingEmptyArgs()
+		public async Task Soap11EmptyArgs()
 		{
 			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
   <soapenv:Header/>
