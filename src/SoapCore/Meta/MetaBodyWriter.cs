@@ -96,6 +96,16 @@ namespace SoapCore.Meta
 
 		private static Type GetMessageContractBodyType(Type type)
 		{
+			if (!TryGetMessageContractBodyType(type, out var bodyType))
+			{
+				throw new InvalidOperationException(nameof(type));
+			}
+
+			return bodyType;
+		}
+
+		private static bool TryGetMessageContractBodyType(Type type, out Type bodyType)
+		{
 			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
 
 			if (messageContractAttribute != null && !messageContractAttribute.IsWrapped)
@@ -111,13 +121,21 @@ namespace SoapCore.Meta
 						.Where(x => x.MessageBodyMemberAttribute != null)
 						.OrderBy(x => x.MessageBodyMemberAttribute.Order)
 						.ToList();
+
 				if (messageBodyMembers.Count > 0)
 				{
-					return messageBodyMembers[0].Member.GetPropertyOrFieldType();
+					bodyType = messageBodyMembers[0].Member.GetPropertyOrFieldType();
+					return true;
+				}
+				else
+				{
+					bodyType = null;
+					return false;
 				}
 			}
 
-			return type;
+			bodyType = type;
+			return true;
 		}
 
 		private XmlQualifiedName ResolveType(Type type)
@@ -226,10 +244,11 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					var messageBodyType = GetMessageContractBodyType(parameterInfo.Parameter.ParameterType);
-
-					writer.WriteAttributeString("type", "tns:" + messageBodyType.Name);
-					_complexTypeToBuild.Enqueue(new TypeToBuild(parameterInfo.Parameter.ParameterType));
+					if (TryGetMessageContractBodyType(parameterInfo.Parameter.ParameterType, out var messageBodyType))
+					{
+						writer.WriteAttributeString("type", "tns:" + messageBodyType.Name);
+						_complexTypeToBuild.Enqueue(new TypeToBuild(parameterInfo.Parameter.ParameterType));
+					}
 				}
 			}
 
@@ -449,22 +468,32 @@ namespace SoapCore.Meta
 			foreach (var operation in _service.Operations)
 			{
 				// input
+				var hasRequestBody = false;
 				var requestTypeName = operation.Name;
 
 				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
 				{
 					if (!IsWrappedMessageContractType(operation.InParameters[0].Parameter.ParameterType))
 					{
-						requestTypeName = GetMessageContractBodyType(operation.InParameters[0].Parameter.ParameterType).Name;
+						hasRequestBody = TryGetMessageContractBodyType(operation.InParameters[0].Parameter.ParameterType, out var requestType);
+						if (hasRequestBody)
+						{
+							requestTypeName = requestType.Name;
+						}
 					}
 				}
 
 				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
-				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", "parameters");
-				writer.WriteAttributeString("element", "tns:" + requestTypeName);
-				writer.WriteEndElement(); // wsdl:part
+
+				if (hasRequestBody)
+				{
+					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", "parameters");
+					writer.WriteAttributeString("element", "tns:" + requestTypeName);
+					writer.WriteEndElement(); // wsdl:part
+				}
+
 				writer.WriteEndElement(); // wsdl:message
 
 				var responseTypeName = operation.Name + "Response";
