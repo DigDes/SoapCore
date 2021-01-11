@@ -88,6 +88,7 @@ There is an optional feature included where you can instead of generating servic
 
 To use it, add a setting like this to appsettings
 
+```csharp
  "FileWSDL": {
     "UrlOverride": "",
     "WebServiceWSDLMapping": {
@@ -98,6 +99,7 @@ To use it, add a setting like this to appsettings
       }
     },
     "VirtualPath": ""
+...
 
 * UrlOverride - can be used to override the URL in the service description. This can be usfull if you are behind a firewall.
 * Service.asmx - is the enpoint of the service you expose. You can have more than one.
@@ -119,7 +121,7 @@ var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
 app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, settings);
 
 If the WsdFileOptions parameter is supplied then this feature is enabled / used.
-
+```
 ### References
 
 * [stackify.com/soap-net-core](https://stackify.com/soap-net-core/)
