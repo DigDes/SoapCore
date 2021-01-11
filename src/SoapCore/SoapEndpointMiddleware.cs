@@ -282,9 +282,15 @@ namespace SoapCore
 				return;
 			}
 
-			// for getting soapaction and parameters in body
+			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
-			using (var reader = requestMessage.GetReaderAtBodyContents())
+			XmlDictionaryReader reader = null;
+			if (!requestMessage.IsEmpty)
+			{
+				reader = requestMessage.GetReaderAtBodyContents();
+			}
+
+			try
 			{
 				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
@@ -349,6 +355,10 @@ namespace SoapCore
 					_logger.LogError(0, exception, exception?.Message);
 					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
+			}
+			finally
+			{
+				reader?.Dispose();
 			}
 
 			// Execute response message filters
@@ -477,45 +487,52 @@ namespace SoapCore
 
 			if (!operation.IsMessageContractRequest)
 			{
-				xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
-				while (!xmlReader.EOF)
+				if (xmlReader != null)
 				{
-					var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName);
-					if (parameterInfo == null)
+					xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
+					while (!xmlReader.EOF)
 					{
-						xmlReader.Skip();
-						continue;
-					}
+						var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName);
+						if (parameterInfo == null)
+						{
+							xmlReader.Skip();
+							continue;
+						}
 
-					var parameterType = parameterInfo.Parameter.ParameterType;
+						var parameterType = parameterInfo.Parameter.ParameterType;
 
-					var argumentValue = _serializerHelper.DeserializeInputParameter(
-						xmlReader,
-						parameterType,
-						parameterInfo.Name,
-						operation.Contract.Namespace,
-						parameterInfo.Parameter.Member,
-						serviceKnownTypes);
-
-					//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
-					if (argumentValue == null)
-					{
-						argumentValue = _serializerHelper.DeserializeInputParameter(
+						var argumentValue = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
 							parameterType,
 							parameterInfo.Name,
-							parameterInfo.Namespace,
+							operation.Contract.Namespace,
 							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
+
+						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
+						if (argumentValue == null)
+						{
+							argumentValue = _serializerHelper.DeserializeInputParameter(
+								xmlReader,
+								parameterType,
+								parameterInfo.Name,
+								parameterInfo.Namespace,
+								parameterInfo.Parameter.Member,
+								serviceKnownTypes);
+						}
+
+						arguments[parameterInfo.Index] = argumentValue;
 					}
 
-					arguments[parameterInfo.Index] = argumentValue;
+					var httpContextParameter = operation.InParameters.FirstOrDefault(x => x.Parameter.ParameterType == typeof(HttpContext));
+					if (httpContextParameter != default)
+					{
+						arguments[httpContextParameter.Index] = httpContext;
+					}
 				}
-
-				var httpContextParameter = operation.InParameters.FirstOrDefault(x => x.Parameter.ParameterType == typeof(HttpContext));
-				if (httpContextParameter != default)
+				else
 				{
-					arguments[httpContextParameter.Index] = httpContext;
+					arguments = Array.Empty<object>();
 				}
 			}
 			else
