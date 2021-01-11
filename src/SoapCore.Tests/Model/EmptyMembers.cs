@@ -1,8 +1,8 @@
 using System.Runtime.Serialization;
+using System.ServiceModel;
 
 namespace SoapCore.Tests.Model
 {
-	//[System.ServiceModel.MessageContractAttribute(IsWrapped = false)]
 	public class EmptyMembers
 	{
 		public EmptyMembers()
