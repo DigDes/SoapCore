@@ -45,11 +45,9 @@ namespace SoapCore.Meta
 			}
 
 			// read file
-			using (var reader = new StreamReader(path))
-			{
-				var fileContents = reader.ReadToEnd();
-				return fileContents;
-			}
+			using var reader = new StreamReader(path);
+			var fileContents = reader.ReadToEnd();
+			return fileContents;
 		}
 
 		public string ModifyWSDLAddRightSchemaPath(string xmlString)

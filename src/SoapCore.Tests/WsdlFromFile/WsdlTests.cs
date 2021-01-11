@@ -40,6 +40,16 @@ namespace SoapCore.Tests.WsdlFromFile
 		}
 
 		[TestMethod]
+		public void CheckXSDExists()
+		{
+			StartService(typeof(MeasurementSiteTablePublicationService));
+			var xsd = GetXSDFromAsmx();
+			Trace.TraceInformation(xsd);
+			Assert.IsNotNull(xsd);
+			StopServer();
+		}
+
+		[TestMethod]
 		public void CheckAddressLocation()
 		{
 			StartService(typeof(MeasurementSiteTablePublicationService));
@@ -56,8 +66,10 @@ namespace SoapCore.Tests.WsdlFromFile
 
 			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:service/wsdl:port/soapbind:address", nsmgr);
 
-			var urls = _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses;
-			string url = urls.FirstOrDefault() + "/Service.asmx";
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			string url = address + "/Service.asmx";
 			Assert.IsNotNull(element);
 			Assert.AreEqual(element.Attributes["location"]?.Value, url);
 		}
@@ -79,8 +91,10 @@ namespace SoapCore.Tests.WsdlFromFile
 
 			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:import[1]", nsmgr);
 
-			var urls = _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses;
-			string url = urls.FirstOrDefault() + "/Service.asmx?xsd&name=DATEXII_3_MessageContainer.xsd";
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			string url = address + "/Service.asmx?xsd&name=DATEXII_3_MessageContainer.xsd";
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(element.Attributes["namespace"]?.Value, "http://datex2.eu/schema/3/messageContainer");
@@ -121,6 +135,19 @@ namespace SoapCore.Tests.WsdlFromFile
 			using (var httpClient = new HttpClient())
 			{
 				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
+			}
+		}
+
+		private string GetXSDFromAsmx()
+		{
+			var serviceName = "Service.asmx";
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			using (var httpClient = new HttpClient())
+			{
+				return httpClient.GetStringAsync(string.Format("{0}/{1}?xsd&name=DATEXII_3_MessageContainer.xsd", address, serviceName)).Result;
 			}
 		}
 

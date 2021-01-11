@@ -8,6 +8,5 @@ namespace SoapCore
 		public Dictionary<string, WebServiceWSDLMapping> WebServiceWSDLMapping { get; set; }
 		public string UrlOverride { get; set; }
 		public string VirtualPath { get; set; }
-
 	}
 }

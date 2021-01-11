@@ -140,12 +140,10 @@ namespace SoapCore
 						{
 							await ProcessMeta(httpContext);
 						}
-
 					}
 					else if (httpContext.Request.Query.ContainsKey("xsd") && httpContext.Request.Method?.ToLower() == "get")
 					{
 						await ProcessXSD(httpContext);
-
 					}
 					else
 					{
@@ -775,15 +773,15 @@ namespace SoapCore
 				httpContext.Response.Headers.Add(key, httpProperty.Headers.GetValues(key));
 			}
 		}
+
 		private async Task ProcessXSD(Microsoft.AspNetCore.Http.HttpContext httpContext)
 		{
-			//var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-
 			Meta.MetaFromFile meta = new Meta.MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
 				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
 			}
+
 			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
 			var mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[meta.CurrentWebService];
 
@@ -798,23 +796,32 @@ namespace SoapCore
 				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
 			}
 
-			string xsdlfile = httpContext.Request.Query["name"];
+			string xsdfile = httpContext.Request.Query["name"];
+
+			//Check to prevent path traversal
+			if (string.IsNullOrEmpty(xsdfile) || Path.GetFileName(xsdfile) != xsdfile)
+			{
+				throw new ArgumentNullException("xsd parameter contains illeagal values");
+			}
+
+			if (!xsdfile.Contains(".xsd"))
+			{
+				throw new Exception("xsd request must contain .xsd");
+			}
 
 			string path = System.IO.Directory.GetCurrentDirectory();
-			string xsdfiile = meta.ReadLocalFile(path + "\\" + meta.XsdFolder + "\\" + xsdlfile);
-			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsdfiile);
+			string safePath = path + "\\" + meta.XsdFolder + "\\" + xsdfile;
+			string xsd = meta.ReadLocalFile(safePath);
+			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsd);
 
 			//we should use text/xml in wsdl page for browser compability.
-			httpContext.Response.ContentType = "text/xml;charset=UTF-8";// _messageEncoders[0].ContentType;
+			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
 			byte[] data = System.Text.Encoding.UTF8.GetBytes(modifiedxsd);
 			await httpContext.Response.Body.WriteAsync(data, 0, data.Length);
 		}
 
 		private async Task ProcessMetaFromFile(Microsoft.AspNetCore.Http.HttpContext httpContext)
 		{
-			//var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-
-
 			Meta.MetaFromFile meta = new Meta.MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
