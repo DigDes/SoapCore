@@ -809,13 +809,12 @@ namespace SoapCore
 				throw new Exception("xsd request must contain .xsd");
 			}
 
-			byte[] data2 = System.Text.Encoding.UTF8.GetBytes("TEST");
-			await httpContext.Response.Body.WriteAsync(data2, 0, data2.Length);
-			return;
-
 			string path = System.IO.Directory.GetCurrentDirectory();
 			string safePath = path + Path.DirectorySeparatorChar + meta.XsdFolder + Path.DirectorySeparatorChar + xsdfile;
 			string xsd = meta.ReadLocalFile(safePath);
+			byte[] data2 = System.Text.Encoding.UTF8.GetBytes("TEST");
+			await httpContext.Response.Body.WriteAsync(data2, 0, data2.Length);
+			return;
 			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsd);
 
 			//we should use text/xml in wsdl page for browser compability.
