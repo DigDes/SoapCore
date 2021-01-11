@@ -810,7 +810,7 @@ namespace SoapCore
 			}
 
 			string path = System.IO.Directory.GetCurrentDirectory();
-			string safePath = path + "\\" + meta.XsdFolder + "\\" + xsdfile;
+			string safePath = path + Path.DirectorySeparatorChar + meta.XsdFolder + Path.DirectorySeparatorChar + xsdfile;
 			string xsd = meta.ReadLocalFile(safePath);
 			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsd);
 
@@ -846,7 +846,7 @@ namespace SoapCore
 			string wsdlfile = mapping.WsdlFile;
 
 			string path = System.IO.Directory.GetCurrentDirectory();
-			string wsdl = meta.ReadLocalFile(path + "\\" + meta.WSDLFolder + "\\" + wsdlfile);
+			string wsdl = meta.ReadLocalFile(path + Path.DirectorySeparatorChar + meta.WSDLFolder + Path.DirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
 
 			//we should use text/xml in wsdl page for browser compability.
