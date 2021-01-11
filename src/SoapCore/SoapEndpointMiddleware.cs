@@ -846,7 +846,7 @@ namespace SoapCore
 			string wsdlfile = mapping.WsdlFile;
 
 			string path = _options.WsdlFileOptions.AppPath;
-			string wsdl = meta.ReadLocalFile(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);		
+			string wsdl = meta.ReadLocalFile(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
 
 			//we should use text/xml in wsdl page for browser compability.
