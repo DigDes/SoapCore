@@ -86,7 +86,7 @@ Primary point here is to use XmlSerializer and properly markup messages and oper
 
 There is an optional feature included where you can instead of generating service description from code get the service description from files stored on the server.
 
-To use it, add use settings like
+To use it, add a setting like this to appsettings
 
  "FileWSDL": {
     "UrlOverride": "",
@@ -99,11 +99,12 @@ To use it, add use settings like
     },
     "VirtualPath": ""
 
-* UrlOverride - can be used to override the URL in the description. This can be usfull if you are behind a firewall.
+* UrlOverride - can be used to override the URL in the service description. This can be usfull if you are behind a firewall.
 * Service.asmx - is the enpoint of the service you expose. You can have more than one.
 * WsdlFile - is the name of the WSDL on disc.
 * SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
 * WsdlFolder - is the folder that the WSDL file is stored on disc.
+* VirualPath - can bu used if you like to att a path between the base URL and service.
 
 To read the setting you can do the following
 
