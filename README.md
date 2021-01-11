@@ -116,6 +116,7 @@ In Startup.cs:
 ```csharp
 
 var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
+settings.AppPath = env.ContentRootPath; // The hosting environment root path
 ...
 
 app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, settings);
