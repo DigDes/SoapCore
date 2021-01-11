@@ -39,6 +39,54 @@ namespace SoapCore.Tests.WsdlFromFile
 			StopServer();
 		}
 
+		[TestMethod]
+		public void CheckAddressLocation()
+		{
+			StartService(typeof(MeasurementSiteTablePublicationService));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:service/wsdl:port/soapbind:address", nsmgr);
+
+			var urls = _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses;
+			string url = urls.FirstOrDefault() + "/Service.asmx";
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["location"]?.Value, url);
+		}
+
+		[TestMethod]
+		public void CheckXSDImport()
+		{
+			StartService(typeof(MeasurementSiteTablePublicationService));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:import[1]", nsmgr);
+
+			var urls = _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses;
+			string url = urls.FirstOrDefault() + "/Service.asmx?xsd&name=DATEXII_3_MessageContainer.xsd";
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["namespace"]?.Value, "http://datex2.eu/schema/3/messageContainer");
+			Assert.AreEqual(element.Attributes["schemaLocation"]?.Value, url);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
