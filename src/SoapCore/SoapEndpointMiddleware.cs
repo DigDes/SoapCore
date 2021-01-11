@@ -776,10 +776,6 @@ namespace SoapCore
 
 		private async Task ProcessXSD(Microsoft.AspNetCore.Http.HttpContext httpContext)
 		{
-			byte[] data2 = System.Text.Encoding.UTF8.GetBytes("TEST");
-			await httpContext.Response.Body.WriteAsync(data2, 0, data2.Length);
-			return;
-
 			Meta.MetaFromFile meta = new Meta.MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
@@ -812,6 +808,10 @@ namespace SoapCore
 			{
 				throw new Exception("xsd request must contain .xsd");
 			}
+
+			byte[] data2 = System.Text.Encoding.UTF8.GetBytes("TEST");
+			await httpContext.Response.Body.WriteAsync(data2, 0, data2.Length);
+			return;
 
 			string path = System.IO.Directory.GetCurrentDirectory();
 			string safePath = path + Path.DirectorySeparatorChar + meta.XsdFolder + Path.DirectorySeparatorChar + xsdfile;
