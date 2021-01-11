@@ -40,7 +40,7 @@ namespace SoapCore.Tests.WsdlFromFile
 						"Service.asmx", new WebServiceWSDLMapping
 						{
 							SchemaFolder = "/WsdlFromFile/WSDL",
-							WsdlFile = "snapshotpull.wsdl",
+							WsdlFile = "SnapshotPull.wsdl",
 							WSDLFolder = "/WsdlFromFile/WSDL"
 						}
 					}
@@ -67,7 +67,7 @@ namespace SoapCore.Tests.WsdlFromFile
 						"Service.asmx", new WebServiceWSDLMapping
 						{
 							SchemaFolder = "/WsdlFromFile/WSDL",
-							WsdlFile = "snapshotpull.wsdl",
+							WsdlFile = "SnapshotPull.wsdl",
 							WSDLFolder = "/WsdlFromFile/WSDL"
 						}
 					}
