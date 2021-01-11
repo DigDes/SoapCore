@@ -141,7 +141,7 @@ namespace SoapCore
 							await ProcessMeta(httpContext);
 						}
 					}
-					else if (httpContext.Request.Query.ContainsKey("xsd") && httpContext.Request.Method?.ToLower() == "get")
+					else if (httpContext.Request.Query.ContainsKey("xsd") && httpContext.Request.Method?.ToLower() == "get" && _options.WsdlFileOptions != null)
 					{
 						await ProcessXSD(httpContext);
 					}
@@ -776,6 +776,10 @@ namespace SoapCore
 
 		private async Task ProcessXSD(Microsoft.AspNetCore.Http.HttpContext httpContext)
 		{
+			byte[] data2 = System.Text.Encoding.UTF8.GetBytes("TEST");
+			await httpContext.Response.Body.WriteAsync(data2, 0, data2.Length);
+			return;
+
 			Meta.MetaFromFile meta = new Meta.MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
