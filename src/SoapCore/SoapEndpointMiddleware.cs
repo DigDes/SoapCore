@@ -809,7 +809,7 @@ namespace SoapCore
 				throw new Exception("xsd request must contain .xsd");
 			}
 
-			string path = System.IO.Directory.GetCurrentDirectory();
+			string path = _options.WsdlFileOptions.AppPath;
 			string safePath = path + Path.DirectorySeparatorChar + meta.XsdFolder + Path.DirectorySeparatorChar + xsdfile;
 			string xsd = meta.ReadLocalFile(safePath);
 			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsd);
@@ -845,7 +845,7 @@ namespace SoapCore
 
 			string wsdlfile = mapping.WsdlFile;
 
-			string path = System.IO.Directory.GetCurrentDirectory();
+			string path = _options.WsdlFileOptions.AppPath;
 			string wsdl = meta.ReadLocalFile(path + Path.DirectorySeparatorChar + meta.WSDLFolder + Path.DirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
 
