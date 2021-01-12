@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
-		<VersionPrefix>1.1.0.6</VersionPrefix>
+		<VersionPrefix>1.1.0.7</VersionPrefix>
 		<Authors>Digital Design</Authors>
 		<TargetFrameworks>netcoreapp3.0;netstandard2.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
@@ -14,7 +14,7 @@
 		<GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-		<Version>1.1.0.6</Version>
+		<Version>1.1.0.7</Version>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<xs:schema elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:con="http://datex2.eu/schema/3/messageContainer" version="1" targetNamespace="http://datex2.eu/schema/3/messageContainer" xmlns:ex="http://datex2.eu/schema/3/exchangeInformation" xmlns:com="http://datex2.eu/schema/3/common" xmlns:d2="http://datex2.eu/schema/3/d2Payload" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://datex2.eu/schema/3/d2Payload" schemaLocation="DATEXII_3_D2Payload.xsd" />
+  <xs:import namespace="http://datex2.eu/schema/3/common" schemaLocation="DATEXII_3_Common.xsd" />
+  <xs:import namespace="http://datex2.eu/schema/3/exchangeInformation" schemaLocation="DATEXII_3_ExchangeInformation.xsd" />
+  <xs:element name="exchangeInformation" type="ex:ExchangeInformation" />
+  <xs:element name="messageContainer" type="con:MessageContainer" />
+  <xs:complexType name="MessageContainer">
+    <xs:annotation>
+      <xs:documentation>a Container class to manage further information classes as Payload, Information Management, CIS Information and Exchange Information </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="payload" type="com:PayloadPublication" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="exchangeInformation" type="ex:ExchangeInformation" />
+      <xs:element name="_messageContainerExtension" type="com:_ExtensionType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="modelBaseVersion" type="xs:string" use="required" fixed="3" />
+    <xs:attribute name="extensionName" type="xs:string" use="optional" default="Exchange 2018" />
+    <xs:attribute name="extensionVersion" type="xs:string" use="optional" default="1" />
+    <xs:attribute name="profileName" type="xs:string" use="optional" />
+    <xs:attribute name="profileVersion" type="xs:string" use="optional" />
+  </xs:complexType>
+</xs:schema>
