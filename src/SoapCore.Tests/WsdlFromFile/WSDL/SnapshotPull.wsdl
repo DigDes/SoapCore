@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapbind="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://datex2.eu/wsdl/snapshotPull/2020" xmlns:con="http://datex2.eu/schema/3/messageContainer" xmlns:ex="http://datex2.eu/schema/3/exchangeInformation" xmlns:com="http://datex2.eu/schema/3/common" targetNamespace="http://datex2.eu/wsdl/snapshotPull/2020" name="snapshotPull">
+	<documentation>
+		Exchange 2020 Version ( DATEX II 3.x related )
+		This document describes the Exchange 2020 (supporting DATEX II) Snapshot Pull service interface
+		This wsdl document is the reference with which each DATEX II Web Service has to be built
+		Refer http://datex2.eu
+	</documentation>
+	
+	<types>
+		<xs:schema targetNamespace="http://datex2.eu/wsdl/snapshotPull/2020">
+			<xs:import namespace="http://datex2.eu/schema/3/messageContainer" schemaLocation="./DATEXII_3_MessageContainer.xsd"/>
+			<xs:import namespace="http://datex2.eu/schema/3/exchangeInformation" schemaLocation="./DATEXII_3_ExchangeInformation.xsd"/>
+			<!-- Here, the "namespace" MUST be the same as the used DATEXII schema targetNamespace -->
+			<!-- Here, the "schemaLocation" depends on each implementation and MUST be filled  by each developer, for instance  "file:///C:/DATEXII/MessageContainer.xsd"-->
+<!--	for snapshot pull no elelement definition for input message is needed
+		<xs:element name="pullSnapshotDataInput" type="ex:ExchangeInformation" /> -->
+			<xs:element name="pullSnapshotDataOutput" type="con:MessageContainer" />	
+		</xs:schema>
+	</types>
+
+	<message name="pullSnapshotDataInputMessage"/>
+	<message name="pullSnapshotDataOutputMessage">
+		<part name="return" element="tns:pullSnapshotDataOutput"/>
+	</message>
+	
+	<portType name="snapshotPullInterface">
+		<operation name="pullSnapshotData">
+			<input message="tns:pullSnapshotDataInputMessage"/>
+			<!-- The SnapshotPull service doesn't use any input message but its declaration is here mandatory for a few Web Service frameworks-->
+			<output message="tns:pullSnapshotDataOutputMessage"/>
+		</operation>
+	</portType>
+	
+	<binding name="snapshotPullSoapBinding" type="tns:snapshotPullInterface">
+		<soapbind:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="pullSnapshotData">
+			<soapbind:operation soapAction="http://datex2.eu/wsdl/snapshotPull/2020/pullData" style="document"/>
+			<input>
+				<soapbind:body use="literal"/>
+			</input>
+			<output>
+				<soapbind:body parts="return" use="literal"/>
+			</output>
+		</operation>
+	</binding>
+	
+	<service name="snapshotPull">
+		<port name="snapshotPullSoapEndPoint" binding="tns:snapshotPullSoapBinding">
+			<soapbind:address location="http://localhost/snapshotPullService/2020"/>
+			<!-- Here, the "location" depends on each implementation and MUST be filled  by each developer, for instance "http://localhost:8080/snapshotPullService/2020"-->
+		</port>
+	</service>
+</definitions>

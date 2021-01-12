@@ -34,6 +34,7 @@ namespace SoapCore
 		public bool IndentXml { get; set; } = true;
 
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
+		public WsdlFileOptions WsdlFileOptions { get; set; }
 
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
