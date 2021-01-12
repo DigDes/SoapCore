@@ -1,5 +1,7 @@
 # SoapCore
 
+[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) 
+
 SOAP protocol middleware for ASP.NET Core
 
 Based on Microsoft article: [Custom ASP.NET Core Middleware Example](https://blogs.msdn.microsoft.com/dotnet/2016/09/19/custom-asp-net-core-middleware-example/).
@@ -81,6 +83,48 @@ public static void Main(string[] args)
 It is possible to use SoapCore with .net legacy WCF and Web Services, both as client and service.
 
 Primary point here is to use XmlSerializer and properly markup messages and operations with xml serialization attributes. You may use legacy pre-generated wrappers to obtain these contracts or implement them manualy. Extended example is available under serialization tests project.
+
+### Using with external WSDL / XSD schemas
+
+There is an optional feature included where you can instead of generating service description from code get the service description from files stored on the server.
+
+To use it, add a setting like this to appsettings
+
+```csharp
+ "FileWSDL": {
+    "UrlOverride": "",
+    "WebServiceWSDLMapping": {
+      "Service.asmx": {
+        "WsdlFile": "snapshotpull.wsdl",
+        "SchemaFolder": "Schemas",
+        "WsdlFolder": "Schemas"
+      }
+    },
+    "VirtualPath": ""
+```
+
+* UrlOverride - can be used to override the URL in the service description. This can be usfull if you are behind a firewall.
+* Service.asmx - is the enpoint of the service you expose. You can have more than one.
+* WsdlFile - is the name of the WSDL on disc.
+* SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
+* WsdlFolder - is the folder that the WSDL file is stored on disc.
+* VirualPath - can bu used if you like to att a path between the base URL and service.
+
+To read the setting you can do the following
+
+In Startup.cs:
+
+
+```csharp
+
+var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
+settings.AppPath = env.ContentRootPath; // The hosting environment root path
+...
+
+app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, settings);
+```
+
+If the WsdFileOptions parameter is supplied then this feature is enabled / used.
 
 ### References
 

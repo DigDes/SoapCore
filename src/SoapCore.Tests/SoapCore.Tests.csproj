@@ -85,6 +85,7 @@
 
 	<ItemGroup>
 		<Folder Include="Serialization\Models.Models.Xml\" />
+		<Folder Include="WsdlFromFile\WSDL\" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -96,5 +97,29 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>xunit.runner.json</TargetPath>
 		</ContentWithTargetPath>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="WsdlFromFile\WSDL\DATEXII_3_Common.xsd">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="WsdlFromFile\WSDL\DATEXII_3_D2Payload.xsd">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="WsdlFromFile\WSDL\DATEXII_3_ExchangeInformation.xsd">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="WsdlFromFile\WSDL\DATEXII_3_LocationReferencing.xsd">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="WsdlFromFile\WSDL\DATEXII_3_MessageContainer.xsd">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="WsdlFromFile\WSDL\DATEXII_3_RoadTrafficData.xsd">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="WsdlFromFile\WSDL\SnapshotPull.wsdl">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>
