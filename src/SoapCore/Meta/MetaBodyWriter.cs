@@ -335,7 +335,7 @@ namespace SoapCore.Meta
 						var type = GetMessageContractBodyType(returnType);
 
 						writer.WriteAttributeString("type", "tns:" + type.Name);
-						_complexTypeToBuild.Enqueue(new TypeToBuild(returnType));
+						_complexTypeToBuild.Enqueue(new TypeToBuild(type));
 					}
 				}
 				else
@@ -498,28 +498,28 @@ namespace SoapCore.Meta
 
 				var responseTypeName = operation.Name + "Response";
 
-				if (operation.DispatchMethod.ReturnType != typeof(void))
-				{
-					var returnType = operation.DispatchMethod.ReturnType;
+				//if (operation.DispatchMethod.ReturnType != typeof(void))
+				//{
+				//	var returnType = operation.DispatchMethod.ReturnType;
 
-					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
-					{
-						returnType = returnType.GetGenericArguments().First();
-					}
+				//	if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+				//	{
+				//		returnType = returnType.GetGenericArguments().First();
+				//	}
 
-					if (operation.IsMessageContractResponse && !IsWrappedMessageContractType(returnType))
-					{
-						responseTypeName = GetMessageContractBodyType(returnType).Name;
-					}
-				}
+				//	if (operation.IsMessageContractResponse && !IsWrappedMessageContractType(returnType))
+				//	{
+				//		responseTypeName = GetMessageContractBodyType(returnType).Name;
+				//	}
+				//}
 
-				if (operation.IsMessageContractResponse && operation.OutParameters.Length > 0)
-				{
-					if (!IsWrappedMessageContractType(operation.OutParameters[0].Parameter.ParameterType))
-					{
-						responseTypeName = GetMessageContractBodyType(operation.OutParameters[0].Parameter.ParameterType).Name;
-					}
-				}
+				//if (operation.IsMessageContractResponse && operation.OutParameters.Length > 0)
+				//{
+				//	if (!IsWrappedMessageContractType(operation.OutParameters[0].Parameter.ParameterType))
+				//	{
+				//		responseTypeName = GetMessageContractBodyType(operation.OutParameters[0].Parameter.ParameterType).Name;
+				//	}
+				//}
 
 				// output
 				if (!operation.IsOneWay)
