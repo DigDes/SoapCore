@@ -10,6 +10,20 @@ namespace SoapCore.Tests.MessageContract
 {
 	public class TestService : IServiceWithMessageContract
 	{
+		public MessageContractResponse DoRequest(MessageContractRequest req)
+		{
+			Model.MessageContractResponse response = new MessageContractResponse();
+			response.ReferenceNumber = req.ReferenceNumber;
+			return response;
+		}
+
+		public MessageContractResponseNotWrapped DoRequest2(MessageContractRequestNotWrapped req)
+		{
+			Model.MessageContractResponseNotWrapped response = new MessageContractResponseNotWrapped();
+			response.ReferenceNumber = req.ReferenceNumber;
+			return response;
+		}
+
 		public string EmptyRequest(MessageContractRequestEmpty req)
 		{
 			return "OK";
