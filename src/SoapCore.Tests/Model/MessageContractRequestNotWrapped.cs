@@ -3,7 +3,7 @@ using System.ServiceModel;
 
 namespace SoapCore.Tests.Model
 {
-	[MessageContract(IsWrapped = false)]
+	[MessageContract(IsWrapped=false)]
 	public class MessageContractRequestNotWrapped
 	{
 		private int _referenceNumber;

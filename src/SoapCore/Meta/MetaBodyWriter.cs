@@ -335,7 +335,7 @@ namespace SoapCore.Meta
 						var type = GetMessageContractBodyType(returnType);
 
 						writer.WriteAttributeString("type", "tns:" + type.Name);
-						_complexTypeToBuild.Enqueue(new TypeToBuild(type));
+						_complexTypeToBuild.Enqueue(new TypeToBuild(returnType));
 					}
 				}
 				else
@@ -471,47 +471,48 @@ namespace SoapCore.Meta
 				var hasRequestBody = false;
 				var requestTypeName = operation.Name;
 
-				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
-				{
-					if (!IsWrappedMessageContractType(operation.InParameters[0].Parameter.ParameterType))
-					{
-						hasRequestBody = TryGetMessageContractBodyType(operation.InParameters[0].Parameter.ParameterType, out var requestType);
-						if (hasRequestBody)
-						{
-							requestTypeName = requestType.Name;
-						}
-					}
-				}
+				//For document/litteral(WS-I we should point to the element 
+				//if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
+				//{
+				//	if (!IsWrappedMessageContractType(operation.InParameters[0].Parameter.ParameterType))
+				//	{
+				//		hasRequestBody = TryGetMessageContractBodyType(operation.InParameters[0].Parameter.ParameterType, out var requestType);
+				//		if (hasRequestBody)
+				//		{
+				//			requestTypeName = requestType.Name;
+				//		}
+				//	}
+				//}
 
 				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
 
-				if (hasRequestBody)
-				{
+			//	if (hasRequestBody)
+			//	{
 					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 					writer.WriteAttributeString("name", "parameters");
 					writer.WriteAttributeString("element", "tns:" + requestTypeName);
 					writer.WriteEndElement(); // wsdl:part
-				}
+			//	}
 
 				writer.WriteEndElement(); // wsdl:message
 
 				var responseTypeName = operation.Name + "Response";
 
-				//if (operation.DispatchMethod.ReturnType != typeof(void))
-				//{
-				//	var returnType = operation.DispatchMethod.ReturnType;
+				if (operation.DispatchMethod.ReturnType != typeof(void))
+				{
+					var returnType = operation.DispatchMethod.ReturnType;
 
-				//	if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
-				//	{
-				//		returnType = returnType.GetGenericArguments().First();
-				//	}
+					if (returnType.IsConstructedGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+					{
+						returnType = returnType.GetGenericArguments().First();
+					}
 
-				//	if (operation.IsMessageContractResponse && !IsWrappedMessageContractType(returnType))
-				//	{
-				//		responseTypeName = GetMessageContractBodyType(returnType).Name;
-				//	}
-				//}
+					//if (operation.IsMessageContractResponse && !IsWrappedMessageContractType(returnType))
+					//{
+					//	responseTypeName = GetMessageContractBodyType(returnType).Name;
+					//}
+				}
 
 				//if (operation.IsMessageContractResponse && operation.OutParameters.Length > 0)
 				//{
