@@ -125,11 +125,11 @@ namespace SoapCore.Tests.MessageContract
 				Assert.IsNotNull(element);
 
 				//Check correct return element name of operation PullData
-				element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='PullDataResponse']", nsmgr);
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='ReferenceNumber']", nsmgr);
 				Assert.IsNotNull(element);
 
 				//Check correct type of part
-				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:PullDataResponse']", nsmgr);
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:ReferenceNumber']", nsmgr);
 
 				Assert.IsNotNull(element);
 			}
