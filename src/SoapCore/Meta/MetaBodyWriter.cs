@@ -291,7 +291,7 @@ namespace SoapCore.Meta
 					if (TryGetMessageContractBodyType(parameterInfo.Parameter.ParameterType, out var messageBodyType))
 					{
 						writer.WriteAttributeString("type", "tns:" + messageBodyType.Name);
-						_complexTypeToBuild.Enqueue(new TypeToBuild(parameterInfo.Parameter.ParameterType));
+						_complexTypeToBuild.Enqueue(new TypeToBuild(messageBodyType));
 					}
 				}
 			}

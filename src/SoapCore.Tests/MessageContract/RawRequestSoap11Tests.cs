@@ -84,6 +84,33 @@ namespace SoapCore.Tests.MessageContract
 		}
 
 		[TestMethod]
+		public async Task Soap11MessageContractComplexNotWrapped()
+		{
+			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
+  <soapenv:Header/>
+  <soapenv:Body>	  
+    <tem:PostData>
+		<tem:StringProperty>Test</tem:StringProperty>
+		<tem:IntProperty>42</tem:IntProperty>
+		<tem:ListProperty />
+		<tem:DateTimeOffsetProperty />
+    </tem:PostData>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+			using (var host = CreateTestHost(typeof(TestServiceComplexNotWrapped)))
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = host.CreateRequest("/Service.asmx").AddHeader("SOAPAction", @"""PostData""").And(msg => msg.Content = content).PostAsync().Result)
+			{
+				res.EnsureSuccessStatusCode();
+
+				var response = await res.Content.ReadAsStringAsync();
+				Assert.IsTrue(response.Contains("<ReferenceNumber xmlns=\"http://tempuri.org\">42</ReferenceNumber>"));
+			}
+		}
+
+		[TestMethod]
 		public async Task Soap11MessageContractGetWSDL()
 		{
 			using (var host = CreateTestHost(typeof(TestService)))
@@ -167,6 +194,43 @@ namespace SoapCore.Tests.MessageContract
 
 				//Check correct type of part
 				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:PullDataResponse']", nsmgr);
+
+				Assert.IsNotNull(element);
+			}
+		}
+
+		[TestMethod]
+		public async Task Soap11MessageContractCheckWSDLElementsComplexNotWrapped()
+		{
+			using (var host = CreateTestHost(typeof(TestServiceComplexNotWrapped)))
+			using (var client = host.CreateClient())
+			using (var res = host.CreateRequest("/Service.asmx?wsdl").GetAsync().Result)
+			{
+				res.EnsureSuccessStatusCode();
+
+				var response = await res.Content.ReadAsStringAsync();
+
+				var root = new XmlDocument();
+				root.LoadXml(response);
+
+				var nsmgr = new XmlNamespaceManager(root.NameTable);
+				nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+				nsmgr.AddNamespace("xsd", "http://www.w3.org/2001/XMLSchema");
+
+				//Check correct element name of operation PullData
+				var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='PostData']", nsmgr);
+				Assert.IsNotNull(element);
+
+				//Check correct type of part
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:PostData']", nsmgr);
+				Assert.IsNotNull(element);
+
+				//Check correct return element name of operation PullData
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='ReferenceNumber']", nsmgr);
+				Assert.IsNotNull(element);
+
+				//Check correct type of part
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:ReferenceNumber']", nsmgr);
 
 				Assert.IsNotNull(element);
 			}
