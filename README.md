@@ -104,7 +104,7 @@ To use it, add a setting like this to appsettings
 ```
 
 * UrlOverride - can be used to override the URL in the service description. This can be usfull if you are behind a firewall.
-* Service.asmx - is the enpoint of the service you expose. You can have more than one.
+* Service.asmx - is the endpoint of the service you expose. You can have more than one.
 * WsdlFile - is the name of the WSDL on disc.
 * SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
 * WsdlFolder - is the folder that the WSDL file is stored on disc.
