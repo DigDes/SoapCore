@@ -111,17 +111,15 @@ namespace SoapCore
 			XmlArrayItemAttribute xmlArrayItemAttribute = memberInfo.GetCustomAttribute(typeof(XmlArrayItemAttribute)) as XmlArrayItemAttribute;
 
 			var isEmpty = xmlReader.IsEmptyElement;
-			xmlReader.ReadStartElement(parameterName, parameterNs);
+			if (xmlArrayItemAttribute != null)
+            {
+				xmlReader.ReadStartElement(parameterName, parameterNs);
+			}
 
 			var elementType = parameterType.GetElementType();
 
-			var arrayItemName = xmlArrayItemAttribute?.ElementName ?? elementType.Name;
-			if (xmlArrayItemAttribute?.ElementName == null && elementType.Namespace?.StartsWith("System") == true)
-			{
-				var compiler = new CSharpCodeProvider();
-				var type = new CodeTypeReference(elementType);
-				arrayItemName = compiler.GetTypeOutput(type);
-			}
+			var arrayItemName = xmlArrayItemAttribute?.ElementName
+				?? (parameterName == elementType.Name && elementType.Namespace?.StartsWith("System") == true ? GetCSharpTypeOutput(elementType) : parameterName);
 
 			var deserializeMethod = typeof(XmlSerializerExtensions).GetGenericMethod(nameof(XmlSerializerExtensions.DeserializeArray), elementType);
 			var arrayItemNamespace = xmlArrayItemAttribute?.Namespace ?? parameterNs;
@@ -135,12 +133,20 @@ namespace SoapCore
 				result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
 			}
 
-			if (!isEmpty)
+			if (xmlArrayItemAttribute != null && !isEmpty)
 			{
 				xmlReader.ReadEndElement();
 			}
 
 			return result;
+		}
+
+		private static string GetCSharpTypeOutput(Type elementType)
+        {
+			var compiler = new CSharpCodeProvider();
+			var type = new CodeTypeReference(elementType);
+			var name = compiler.GetTypeOutput(type);
+			return name;
 		}
 	}
 }
