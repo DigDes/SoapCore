@@ -113,7 +113,7 @@ namespace SoapCore
 
 				var xmlArrayAttr = _operation.DispatchMethod.GetCustomAttribute<XmlArrayAttribute>();
 
-				if (xmlArrayAttr != null && resultType.IsArray)
+				if (xmlArrayAttr != null || resultType.IsArray)
 				{
 					var serializer = CachedXmlSerializer.GetXmlSerializer(resultType.GetElementType(), xmlName, xmlNs);
 
