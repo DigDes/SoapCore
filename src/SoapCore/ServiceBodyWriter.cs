@@ -112,8 +112,9 @@ namespace SoapCore
 					: xmlRootAttr.Namespace);
 
 				var xmlArrayAttr = _operation.DispatchMethod.GetCustomAttribute<XmlArrayAttribute>();
+				var xmlElementAttr = _operation.DispatchMethod.GetCustomAttribute<XmlElementAttribute>();
 
-				if (xmlArrayAttr != null && resultType.IsArray)
+				if ((xmlArrayAttr != null || xmlElementAttr != null) && resultType.IsArray)
 				{
 					var serializer = CachedXmlSerializer.GetXmlSerializer(resultType.GetElementType(), xmlName, xmlNs);
 
