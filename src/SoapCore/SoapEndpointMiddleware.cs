@@ -592,12 +592,11 @@ namespace SoapCore
 					else
 					{
 						// It's wrapped so either the wrapper name or the name of the wrapper type
-						var @name = messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name;
 						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
-							name,
-							@namespace,
+							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
+							messageContractAttribute.WrapperNamespace ?? @namespace,
 							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 					}
