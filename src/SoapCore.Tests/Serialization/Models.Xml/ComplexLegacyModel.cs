@@ -8,11 +8,11 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 	public class ComplexLegacyModel
 	{
 		[MessageBodyMember(Namespace = "http://xmlelement-namespace/", Order = 0)]
-		[XmlElement("qualified", Form = XmlSchemaForm.Unqualified)]
-		public string[] QualifiedItems { get; set; }
-
-		[MessageBodyMember(Namespace = "http://xmlelement-namespace/", Order = 0)]
-		[XmlElement("unqualified")]
+		[XmlElement("unqualified", Form = XmlSchemaForm.Unqualified)]
 		public string[] UnqualifiedItems { get; set; }
+
+		[MessageBodyMember(Namespace = "http://xmlelement-namespace/", Order = 1)]
+		[XmlElement("qualified")]
+		public string[] QualifiedItems { get; set; }
 	}
 }
