@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Razor.TagHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Shouldly;
 using SoapCore.Tests.Serialization.Models.Xml;
@@ -687,6 +685,52 @@ namespace SoapCore.Tests.Serialization
 				Assert.Equal(message, arg);
 			});
 			sampleServiceClient.OneWayCall(message);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexLegacyModelRequest(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var expected = "1234";
+			var request = new ComplexLegacyModel
+			{
+				QualifiedItems = new[] { expected },
+				UnqualifiedItems = new[] { expected }
+			};
+			ComplexLegacyModel actual = null;
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexLegacyModel(It.IsAny<ComplexLegacyModel>()))
+				.Callback((ComplexLegacyModel o) => actual = o)
+				.Returns(request);
+
+			sampleServiceClient.PingComplexLegacyModel(request);
+
+			Assert.NotNull(actual);
+			Assert.Equal(new[] { expected }, actual.QualifiedItems);
+			Assert.Equal(new[] { expected }, actual.UnqualifiedItems);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexLegacyModelResponse(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var expected = "1234";
+			var request = new ComplexLegacyModel
+			{
+				QualifiedItems = new[] { expected },
+				UnqualifiedItems = new[] { expected }
+			};
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexLegacyModel(It.IsAny<ComplexLegacyModel>()))
+				.Returns(request);
+
+			var actual = sampleServiceClient.PingComplexLegacyModel(request);
+
+			Assert.NotNull(actual);
+			Assert.Equal(new[] { expected }, actual.QualifiedItems);
+			Assert.Equal(new[] { expected }, actual.UnqualifiedItems);
 		}
 
 		//https://github.com/DigDes/SoapCore/issues/379
