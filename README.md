@@ -151,7 +151,7 @@ Parameters in Tune method:
 ```csharp
 public class MyServiceOperationTuner : IServiceOperationTuner
 {
-    public void Tune(HttpContext httpContext, object serviceInstance, SoapCore.OperationDescription operation)
+    public void Tune(HttpContext httpContext, object serviceInstance, SoapCore.ServiceModel.OperationDescription operation)
     {
         if (operation.Name.Equals("SomeOperationName"))
         {
