@@ -57,15 +57,15 @@ namespace SoapCore.Meta
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{
-				if (node.Name == "types")
+				if (node.Name == (!string.IsNullOrWhiteSpace(xmlDoc.DocumentElement.Prefix) ? xmlDoc.DocumentElement.Prefix + ":" : xmlDoc.DocumentElement.Prefix) + "types")
 				{
 					foreach (XmlNode schemaNode in node.ChildNodes)
 					{
-						if (schemaNode.Name == "xs:schema")
+						if (schemaNode.Name == (!string.IsNullOrWhiteSpace(schemaNode.Prefix) ? schemaNode.Prefix + ":" : schemaNode.Prefix) + "schema")
 						{
 							foreach (XmlNode importNode in schemaNode.ChildNodes)
 							{
-								if (importNode.Name == "xs:import")
+								if (importNode.Name == (!string.IsNullOrWhiteSpace(importNode.Prefix) ? importNode.Prefix + ":" : importNode.Prefix) + "import")
 								{
 									string name = importNode.Attributes["schemaLocation"].InnerText;
 									importNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
@@ -75,11 +75,11 @@ namespace SoapCore.Meta
 					}
 				}
 
-				if (node.Name == "service")
+				if (node.Name == (!string.IsNullOrWhiteSpace(xmlDoc.DocumentElement.Prefix) ? xmlDoc.DocumentElement.Prefix + ":" : xmlDoc.DocumentElement.Prefix) + "service")
 				{
 					foreach (XmlNode schemaNode in node.ChildNodes)
 					{
-						if (schemaNode.Name == "port")
+						if (schemaNode.Name == (!string.IsNullOrWhiteSpace(schemaNode.Prefix) ? schemaNode.Prefix + ":" : schemaNode.Prefix) + "port")
 						{
 							foreach (XmlNode soapAdressNode in schemaNode.ChildNodes)
 							{
@@ -101,7 +101,7 @@ namespace SoapCore.Meta
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{
-				if (node.Name == "xs:import")
+				if (node.Name == (!string.IsNullOrWhiteSpace(node.Prefix) ? node.Prefix + ":" : node.Prefix) + "import")
 				{
 					string name = node.Attributes["schemaLocation"].InnerText;
 					node.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
