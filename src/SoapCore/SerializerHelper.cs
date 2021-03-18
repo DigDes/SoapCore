@@ -58,6 +58,11 @@ namespace SoapCore
 				}
 			}
 
+			if (parameterType.IsArray)
+			{
+				return Array.CreateInstance(parameterType.GetElementType(), 0);
+			}
+
 			return null;
 		}
 
