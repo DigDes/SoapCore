@@ -76,6 +76,10 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[XmlSerializerFormat(SupportFaults = true)]
 		UnwrappedStringMessageBodyMemberResponse TestUnwrappedStringMessageBodyMember(BasicMessageContractPayload x);
 
+		[OperationContract(Action = ServiceNamespace.Value + nameof(TestMessageContractWithArrays), ReplyAction = "*")]
+		[XmlSerializerFormat(SupportFaults = true)]
+		MessageContractResponseWithArrays TestMessageContractWithArrays(MessageContractRequestWithArrays request);
+
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool EnumMethod(out SampleEnum e);

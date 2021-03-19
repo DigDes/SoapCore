@@ -58,6 +58,11 @@ namespace SoapCore
 				}
 			}
 
+			if (parameterType.IsArray)
+			{
+				return Array.CreateInstance(parameterType.GetElementType(), 0);
+			}
+
 			return null;
 		}
 
@@ -109,13 +114,18 @@ namespace SoapCore
 		private object DeserializeArrayXmlSerializer(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, MemberInfo memberInfo)
 		{
 			XmlArrayItemAttribute xmlArrayItemAttribute = memberInfo.GetCustomAttribute(typeof(XmlArrayItemAttribute)) as XmlArrayItemAttribute;
+			XmlElementAttribute xmlElementAttribute = memberInfo.GetCustomAttribute(typeof(XmlElementAttribute)) as XmlElementAttribute;
 
 			var isEmpty = xmlReader.IsEmptyElement;
-			xmlReader.ReadStartElement(parameterName, parameterNs);
+			var hasContainerElement = xmlElementAttribute == null;
+			if (!isEmpty && hasContainerElement)
+			{
+				xmlReader.ReadStartElement(parameterName, parameterNs);
+			}
 
 			var elementType = parameterType.GetElementType();
 
-			var arrayItemName = xmlArrayItemAttribute?.ElementName ?? elementType.Name;
+			var arrayItemName = xmlArrayItemAttribute?.ElementName ?? xmlElementAttribute?.ElementName ?? elementType.Name;
 			if (xmlArrayItemAttribute?.ElementName == null && elementType.Namespace?.StartsWith("System") == true)
 			{
 				var compiler = new CSharpCodeProvider();
@@ -135,7 +145,7 @@ namespace SoapCore
 				result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
 			}
 
-			if (!isEmpty)
+			if (!isEmpty && hasContainerElement)
 			{
 				xmlReader.ReadEndElement();
 			}

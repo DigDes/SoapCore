@@ -205,6 +205,30 @@ namespace SoapCore.Tests.Serialization
 
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestMessageContractWithArrays(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.TestMessageContractWithArrays(It.IsAny<MessageContractRequestWithArrays>()))
+				.Callback(
+					(MessageContractRequestWithArrays inputModel_service) =>
+					{
+						// check input paremeters serialization
+						inputModel_service.ShouldDeepEqual(MessageContractRequestWithArrays.CreateSample());
+					})
+				.Returns(() => MessageContractResponseWithArrays.CreateSample());
+
+			var pingComplexModelResult_client =
+				sampleServiceClient
+					.TestMessageContractWithArrays(MessageContractRequestWithArrays.CreateSample());
+
+			// check output paremeters serialization
+			pingComplexModelResult_client.ShouldDeepEqual(MessageContractResponseWithArrays.CreateSample());
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingComplexArrayModel(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);

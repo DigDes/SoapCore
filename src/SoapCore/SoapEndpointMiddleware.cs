@@ -662,7 +662,7 @@ namespace SoapCore
 							innerParameterType,
 							innerParameterName,
 							innerParameterNs,
-							parameterInfo.Parameter.Member,
+							messageBodyMemberInfo,
 							serviceKnownTypes);
 
 						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
