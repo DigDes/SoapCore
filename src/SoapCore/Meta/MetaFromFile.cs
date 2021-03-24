@@ -67,6 +67,11 @@ namespace SoapCore.Meta
 							{
 								if (importNode.Name == (!string.IsNullOrWhiteSpace(importNode.Prefix) ? importNode.Prefix + ":" : importNode.Prefix) + "import")
 								{
+									if (importNode.Attributes["schemaLocation"] == null)
+									{
+										importNode.Attributes.Append(xmlDoc.CreateAttribute("schemaLocation"));
+									}
+
 									string name = importNode.Attributes["schemaLocation"].InnerText;
 									importNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
 								}
