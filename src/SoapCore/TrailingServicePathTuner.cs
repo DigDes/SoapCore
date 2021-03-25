@@ -13,7 +13,7 @@ namespace SoapCore
 	/// </summary>
 	public class TrailingServicePathTuner
 	{
-		public void ConvertPath(HttpContext httpContext)
+		public virtual void ConvertPath(HttpContext httpContext)
 		{
 			string trailingPath = httpContext.Request.Path.Value.Substring(httpContext.Request.Path.Value.LastIndexOf('/'));
 			httpContext.Request.Path = new PathString(trailingPath);
