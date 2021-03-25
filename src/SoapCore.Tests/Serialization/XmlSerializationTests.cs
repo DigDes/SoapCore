@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DeepEqual.Syntax;
-using Microsoft.AspNetCore.Razor.TagHelpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Shouldly;
 using SoapCore.Tests.Serialization.Models.Xml;
@@ -203,6 +201,30 @@ namespace SoapCore.Tests.Serialization
 
 			// check output paremeters serialization
 			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel2.CreateSample2());
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestMessageContractWithArrays(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			_fixture.ServiceMock
+				.Setup(x => x.TestMessageContractWithArrays(It.IsAny<MessageContractRequestWithArrays>()))
+				.Callback(
+					(MessageContractRequestWithArrays inputModel_service) =>
+					{
+						// check input paremeters serialization
+						inputModel_service.ShouldDeepEqual(MessageContractRequestWithArrays.CreateSample());
+					})
+				.Returns(() => MessageContractResponseWithArrays.CreateSample());
+
+			var pingComplexModelResult_client =
+				sampleServiceClient
+					.TestMessageContractWithArrays(MessageContractRequestWithArrays.CreateSample());
+
+			// check output paremeters serialization
+			pingComplexModelResult_client.ShouldDeepEqual(MessageContractResponseWithArrays.CreateSample());
 		}
 
 		[Theory]
@@ -687,6 +709,52 @@ namespace SoapCore.Tests.Serialization
 				Assert.Equal(message, arg);
 			});
 			sampleServiceClient.OneWayCall(message);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexLegacyModelRequest(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var expected = "1234";
+			var request = new ComplexLegacyModel
+			{
+				QualifiedItems = new[] { expected },
+				UnqualifiedItems = new[] { expected }
+			};
+			ComplexLegacyModel actual = null;
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexLegacyModel(It.IsAny<ComplexLegacyModel>()))
+				.Callback((ComplexLegacyModel o) => actual = o)
+				.Returns(request);
+
+			sampleServiceClient.PingComplexLegacyModel(request);
+
+			Assert.NotNull(actual);
+			Assert.Equal(new[] { expected }, actual.QualifiedItems);
+			Assert.Equal(new[] { expected }, actual.UnqualifiedItems);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingComplexLegacyModelResponse(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+			var expected = "1234";
+			var request = new ComplexLegacyModel
+			{
+				QualifiedItems = new[] { expected },
+				UnqualifiedItems = new[] { expected }
+			};
+			_fixture.ServiceMock
+				.Setup(x => x.PingComplexLegacyModel(It.IsAny<ComplexLegacyModel>()))
+				.Returns(request);
+
+			var actual = sampleServiceClient.PingComplexLegacyModel(request);
+
+			Assert.NotNull(actual);
+			Assert.Equal(new[] { expected }, actual.QualifiedItems);
+			Assert.Equal(new[] { expected }, actual.UnqualifiedItems);
 		}
 
 		//https://github.com/DigDes/SoapCore/issues/379

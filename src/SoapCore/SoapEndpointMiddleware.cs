@@ -313,7 +313,7 @@ namespace SoapCore
 			{
 				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
-				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(soapAction, StringComparison.Ordinal));
+				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(soapAction), StringComparison.Ordinal));
 				if (operation == null)
 				{
 					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
@@ -591,12 +591,12 @@ namespace SoapCore
 					}
 					else
 					{
-						// It's wrapped so we treat it like normal!
+						// It's wrapped so either the wrapper name or the name of the wrapper type
 						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
-							parameterInfo.Name,
-							@namespace,
+							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
+							messageContractAttribute.WrapperNamespace ?? @namespace,
 							parameterInfo.Parameter.Member,
 							serviceKnownTypes);
 					}
@@ -662,7 +662,7 @@ namespace SoapCore
 							innerParameterType,
 							innerParameterName,
 							innerParameterNs,
-							parameterInfo.Parameter.Member,
+							messageBodyMemberInfo,
 							serviceKnownTypes);
 
 						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);

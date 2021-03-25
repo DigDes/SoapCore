@@ -92,16 +92,22 @@ namespace SoapCore
 				}
 			}
 
-			if (soapAction.Contains('/'))
-			{
-				// soapAction may be a path. Therefore must take the action from the path provided.
-				soapAction = soapAction.Split('/').Last();
-			}
-
 			if (!string.IsNullOrEmpty(soapAction))
 			{
 				// soapAction may have '"' in some cases.
 				soapAction = soapAction.Trim('"');
+			}
+
+			return soapAction;
+		}
+
+		public static string GetTrimmedSoapAction(string inSoapAction)
+		{
+			string soapAction = inSoapAction;
+			if (soapAction.Contains('/'))
+			{
+				// soapAction may be a path. Therefore must take the action from the path provided.
+				soapAction = soapAction.Split('/').Last();
 			}
 
 			return soapAction;
