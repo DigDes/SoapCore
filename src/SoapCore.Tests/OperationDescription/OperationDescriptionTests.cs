@@ -39,6 +39,21 @@ namespace SoapCore.Tests
 		}
 
 		[Fact]
+		public void TestSupportXmlRootForParameterNameWithEmptyStringAsRootElementNameUsesParameterInfoToExtractAName()
+		{
+			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithMessageContractAndEmptyXmlRoot));
+			ContractDescription contractDescription = new ContractDescription(serviceDescription, typeof(IServiceWithMessageContractAndEmptyXmlRoot), new ServiceContractAttribute());
+
+			System.Reflection.MethodInfo method = typeof(IServiceWithMessageContractAndEmptyXmlRoot).GetMethod(nameof(IServiceWithMessageContractAndEmptyXmlRoot.GetClassWithEmptyXmlRoot));
+
+			OperationContractAttribute contractAttribute = new OperationContractAttribute();
+
+			ServiceModel.OperationDescription operationDescription = new ServiceModel.OperationDescription(contractDescription, method, contractAttribute);
+
+			Assert.Equal("classWithXmlRoot", operationDescription.AllParameters.FirstOrDefault()?.Name);
+		}
+
+		[Fact]
 		public void TestProperUnrappingOfNonGenericResponses()
 		{
 			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithMessageContract));
