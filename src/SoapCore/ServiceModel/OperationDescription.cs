@@ -105,12 +105,19 @@ namespace SoapCore.ServiceModel
 			var arrayAttribute = info.GetCustomAttribute<XmlArrayAttribute>();
 			var rootAttribute = (XmlRootAttribute)Attribute.GetCustomAttribute(info.ParameterType, typeof(XmlRootAttribute));
 			var arrayItemAttribute = info.GetCustomAttribute<XmlArrayItemAttribute>();
-			var parameterName = elementAttribute?.ElementName
-				?? arrayAttribute?.ElementName
-				?? rootAttribute?.ElementName
-				?? info.GetCustomAttribute<MessageParameterAttribute>()?.Name
-				?? info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName
-				?? info.Name;
+
+			var parameterName = string.IsNullOrEmpty(elementAttribute?.ElementName)
+				? string.IsNullOrEmpty(arrayAttribute?.ElementName)
+					? string.IsNullOrEmpty(rootAttribute?.ElementName)
+						? string.IsNullOrEmpty(info.GetCustomAttribute<MessageParameterAttribute>()?.Name)
+							? string.IsNullOrEmpty(info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName)
+								? info.Name
+								: info.ParameterType.GetCustomAttribute<MessageContractAttribute>().WrapperName
+							: info.GetCustomAttribute<MessageParameterAttribute>().Name
+						: rootAttribute.ElementName
+					: arrayAttribute.ElementName
+				: elementAttribute.ElementName;
+
 			var arrayName = arrayAttribute?.ElementName;
 			var arrayItemName = arrayItemAttribute?.ElementName;
 			var parameterNs = elementAttribute?.Form == XmlSchemaForm.Unqualified
