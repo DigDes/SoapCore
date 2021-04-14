@@ -10,7 +10,7 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 	[MessageContract(WrapperNamespace = "TestNamespace")]
 	public class MessageHeadersModel
 	{
-		[MessageHeader]
+		[MessageHeader(Namespace = "TestHeaderNamespace")] //added namespace for MessageHeader
 		public string Prop1 { get; set; }
 	}
 }

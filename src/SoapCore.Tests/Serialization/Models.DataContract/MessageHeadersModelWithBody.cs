@@ -5,10 +5,10 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 	[MessageContract]
 	public class MessageHeadersModelWithBody
 	{
-		[MessageHeader]
+		[MessageHeader(Namespace = "TestHeaderNamespace")]
 		public string Prop2 { get; set; }
 
-		[MessageHeader]
+		[MessageHeader(Namespace = "TestHeaderNamespace")]//added namespace for MessageHeader
 		public string Prop1 { get; set; }
 
 		[MessageBodyMember]
