@@ -442,7 +442,7 @@ namespace SoapCore
 				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
 					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
+					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, messageHeaderAttribute.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject))); //changed the namespace, its using the messageHeaderAttribute.Namespace instead of namespace of the operation contract
 				}
 			}
 
