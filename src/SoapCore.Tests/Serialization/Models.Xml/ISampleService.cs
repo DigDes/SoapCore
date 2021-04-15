@@ -128,6 +128,11 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[XmlSerializerFormat]
 		DataContractWithStream PingStream(DataContractWithStream model);
 
+		//it is the same as PingStream method, it modifyed to test DataContractWithStream2
+		[OperationContract]
+		[XmlSerializerFormat]
+		DataContractWithStream2 PingStream2(DataContractWithStream2 model);
+
 		[OperationContract]
 		[XmlSerializerFormat]
 		Stream GetStream();

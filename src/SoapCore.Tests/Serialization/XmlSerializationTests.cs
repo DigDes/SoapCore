@@ -652,6 +652,39 @@ namespace SoapCore.Tests.Serialization
 
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestStreamSerializationWtihModel2(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var model = new DataContractWithStream2
+			{
+				Data = new MemoryStream(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString())),
+				Header = Guid.NewGuid().ToString()
+			};
+			_fixture.ServiceMock.Setup(x => x.PingStream2(It.IsAny<DataContractWithStream2>())).Callback((DataContractWithStream2 inputModel) =>
+			{
+				Assert.Equal(model.Data.Length, inputModel.Data.Length);
+				Assert.Equal(model.Header, inputModel.Header);
+			}).Returns(() =>
+			{
+				return new DataContractWithStream2
+				{
+					Data = model.Data,
+					Header = model.Header
+				};
+			});
+
+			var result = sampleServiceClient.PingStream2(model);
+
+			model.Data.Position = 0;
+			var resultStream = new MemoryStream();
+			result.Data.CopyTo(resultStream);
+			Assert.Equal(Encoding.ASCII.GetString((model.Data as MemoryStream).ToArray()), Encoding.ASCII.GetString(((MemoryStream)resultStream).ToArray()));
+			Assert.Equal(model.Header, result.Header);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestStreamResultSerialization(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
