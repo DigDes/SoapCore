@@ -442,13 +442,18 @@ namespace SoapCore
 				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
 					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-					if (messageHeaderAttribute.Namespace != null)
-					{
-						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, messageHeaderAttribute.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject))); //changed the namespace, its using the messageHeaderAttribute.Namespace instead of namespace of the operation contract
-					}
-					else
+
+					//added support for using Namespace that comes with the messageHeaderAttribute when constructing an element in Header
+					//original SoapCore behavior is prioritized (using the namespace of the operation cotract).
+					if (messageHeaderAttribute.Namespace == null)
 					{
 						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
+					}
+
+					//then check if the user wishes to use the messageHeader namespace
+					else
+					{
+						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, messageHeaderAttribute.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject))); //changed the namespace, its using the messageHeaderAttribute.Namespace instead of namespace of the operation contract
 					}
 				}
 			}

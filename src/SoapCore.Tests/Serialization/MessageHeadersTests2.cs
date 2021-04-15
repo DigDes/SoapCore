@@ -10,6 +10,7 @@ using Xunit;
 
 namespace SoapCore.Tests.Serialization
 {
+	//same as MessageHeadersTests, this test class simply changed the types to target MessageHeadersModel2,MessageHeadersModelWithBody2 and MessageHeadersModelWithBodyAndNamespace2.
 	[Collection("serialization")]
 	public class MessageHeadersTests2 : IClassFixture<ServiceFixture<ISampleServiceWithMessageHeaders2>>
 	{

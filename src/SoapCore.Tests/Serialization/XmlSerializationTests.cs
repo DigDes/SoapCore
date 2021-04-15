@@ -650,6 +650,7 @@ namespace SoapCore.Tests.Serialization
 			Assert.Equal(model.Header, result.Header);
 		}
 
+		//This test method is the same as TestStreamSerializationWtihModel, simply changed used types to DataContractWithStream2.
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestStreamSerializationWtihModel2(SoapSerializer soapSerializer)
