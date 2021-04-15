@@ -24,6 +24,7 @@ namespace SoapCore.Tests.Serialization
 
 		private delegate void PingComplexModelOutAndRefCallback(
 			ComplexModel1 inputModel,
+			string[] inputArrayParam,
 			ref ComplexModel2 responseModelRef1,
 			ComplexObject data1,
 			ref ComplexModel1 responseModelRef2,
@@ -317,6 +318,7 @@ namespace SoapCore.Tests.Serialization
 			_fixture.ServiceMock
 				.Setup(x => x.PingComplexModelOutAndRef(
 					It.IsAny<ComplexModel1>(),
+					It.IsAny<string[]>(),
 					ref It.Ref<ComplexModel2>.IsAny,
 					It.IsAny<ComplexObject>(),
 					ref It.Ref<ComplexModel1>.IsAny,
@@ -326,6 +328,7 @@ namespace SoapCore.Tests.Serialization
 				.Callback(new PingComplexModelOutAndRefCallback(
 					(
 						ComplexModel1 inputModel_service,
+						string[] inputArrayParam,
 						ref ComplexModel2 responseModelRef1_service,
 						ComplexObject data1_service,
 						ref ComplexModel1 responseModelRef2_service,
@@ -354,6 +357,7 @@ namespace SoapCore.Tests.Serialization
 			var pingComplexModelOutAndRefResult_client =
 				sampleServiceClient.PingComplexModelOutAndRef(
 					ComplexModel1.CreateSample2(),
+					new string[0],
 					ref responseModelRef1_client,
 					ComplexObject.CreateSample1(),
 					ref responseModelRef2_client,
