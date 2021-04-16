@@ -118,7 +118,7 @@ namespace SoapCore
 
 			var isEmpty = xmlReader.IsEmptyElement;
 			var hasContainerElement = xmlElementAttribute == null;
-			if (!isEmpty && hasContainerElement)
+			if (hasContainerElement)
 			{
 				xmlReader.ReadStartElement(parameterName, parameterNs);
 			}
