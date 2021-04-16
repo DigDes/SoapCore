@@ -570,18 +570,17 @@ namespace SoapCore.Tests.Wsdl
 
 		private void StartService(Type serviceType)
 		{
-			Task.Run(() =>
-			{
-				_host = new WebHostBuilder()
-					.UseKestrel()
-					.UseUrls("http://127.0.0.1:0")
-					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
-					.UseStartup<Startup>()
-					.Build();
+			_host = new WebHostBuilder()
+				.UseKestrel()
+				.UseUrls("http://127.0.0.1:0")
+				.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
+				.UseStartup<Startup>()
+				.Build();
 
-				_host.Run();
-			});
+			_ = _host.RunAsync();
 
+			//Don't think this is true anymore and can't reproduce the behaviour locally if I remove the code below but not confident enough to remove it...
+			//
 			//There's a race condition without this check, the host may not have an address immediately and we need to wait for it but the collection
 			//may actually be totally empty, All() will be true if the collection is empty.
 			while (_host == null || _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.All(a => a.EndsWith(":0")))
