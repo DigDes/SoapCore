@@ -29,6 +29,7 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool PingComplexModelOutAndRef(
 			ComplexModel1 inputModel,
+			string[] inputArrayParam,
 			ref ComplexModel2 responseModelRef1,
 			ComplexObject data1,
 			ref ComplexModel1 responseModelRef2,
