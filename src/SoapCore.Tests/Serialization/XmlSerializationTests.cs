@@ -280,6 +280,22 @@ namespace SoapCore.Tests.Serialization
 			result.ShouldDeepEqual(data);
 		}
 
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestPingByteArray(SoapSerializer soapSerializer)
+		{
+			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var data = Encoding.ASCII.GetBytes("Test");
+
+			_fixture.ServiceMock
+				.Setup(x => x.PingByteArray(It.IsAny<byte[]>()))
+				.Callback((byte[] input) => { input.ShouldDeepEqual(data); })
+				.Returns(data);
+			var result = sampleServiceClient.PingByteArray(data);
+			result.ShouldDeepEqual(data);
+		}
+
 		[Theory(Skip = "test not correct")]
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingStringArrayWithXmlArray(SoapSerializer soapSerializer)
