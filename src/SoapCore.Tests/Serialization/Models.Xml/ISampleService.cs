@@ -107,6 +107,10 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 
 		[OperationContract]
 		[XmlSerializerFormat]
+		byte[] PingByteArray(byte[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
 		ComplexModel1[] PingComplexModelArray(ComplexModel1[] models, ComplexModel2[] models2);
 
 		[OperationContract]
