@@ -646,18 +646,27 @@ namespace SoapCore.Tests.Serialization
 			var model = new DataContractWithStream
 			{
 				Data = new MemoryStream(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString())),
-				Header = Guid.NewGuid().ToString()
+				Header1 = Guid.NewGuid().ToString(),
+				Header2 = Guid.NewGuid().ToString(),
+				Header3 = Guid.NewGuid().ToString(),
+				Header4 = Guid.NewGuid().ToString()
 			};
 			_fixture.ServiceMock.Setup(x => x.PingStream(It.IsAny<DataContractWithStream>())).Callback((DataContractWithStream inputModel) =>
 			{
 				Assert.Equal(model.Data.Length, inputModel.Data.Length);
-				Assert.Equal(model.Header, inputModel.Header);
+				Assert.Equal(model.Header1, inputModel.Header1);
+				Assert.Equal(model.Header2, inputModel.Header2);
+				Assert.Equal(model.Header3, inputModel.Header3);
+				Assert.Equal(model.Header4, inputModel.Header4);
 			}).Returns(() =>
 			{
 				return new DataContractWithStream
 				{
 					Data = model.Data,
-					Header = model.Header
+					Header1 = model.Header1,
+					Header2 = model.Header2,
+					Header3 = model.Header3,
+					Header4 = model.Header4
 				};
 			});
 
@@ -667,41 +676,10 @@ namespace SoapCore.Tests.Serialization
 			var resultStream = new MemoryStream();
 			result.Data.CopyTo(resultStream);
 			Assert.Equal(Encoding.ASCII.GetString((model.Data as MemoryStream).ToArray()), Encoding.ASCII.GetString(((MemoryStream)resultStream).ToArray()));
-			Assert.Equal(model.Header, result.Header);
-		}
-
-		//This test method is the same as TestStreamSerializationWtihModel, simply changed used types to DataContractWithStream2.
-		[Theory]
-		[InlineData(SoapSerializer.XmlSerializer)]
-		public void TestStreamSerializationWtihModel2(SoapSerializer soapSerializer)
-		{
-			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-
-			var model = new DataContractWithStream2
-			{
-				Data = new MemoryStream(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString())),
-				Header = Guid.NewGuid().ToString()
-			};
-			_fixture.ServiceMock.Setup(x => x.PingStream2(It.IsAny<DataContractWithStream2>())).Callback((DataContractWithStream2 inputModel) =>
-			{
-				Assert.Equal(model.Data.Length, inputModel.Data.Length);
-				Assert.Equal(model.Header, inputModel.Header);
-			}).Returns(() =>
-			{
-				return new DataContractWithStream2
-				{
-					Data = model.Data,
-					Header = model.Header
-				};
-			});
-
-			var result = sampleServiceClient.PingStream2(model);
-
-			model.Data.Position = 0;
-			var resultStream = new MemoryStream();
-			result.Data.CopyTo(resultStream);
-			Assert.Equal(Encoding.ASCII.GetString((model.Data as MemoryStream).ToArray()), Encoding.ASCII.GetString(((MemoryStream)resultStream).ToArray()));
-			Assert.Equal(model.Header, result.Header);
+			Assert.Equal(model.Header1, result.Header1);
+			Assert.Equal(model.Header2, result.Header2);
+			Assert.Equal(model.Header3, result.Header3);
+			Assert.Equal(model.Header4, result.Header4);
 		}
 
 		[Theory]
