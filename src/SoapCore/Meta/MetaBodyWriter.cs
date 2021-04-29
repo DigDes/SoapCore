@@ -379,7 +379,16 @@ namespace SoapCore.Meta
 
 						writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
 						writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-						AddSchemaType(writer, returnType, returnName);
+
+						if (operation.ReturnsChoice)
+						{
+							AddChoice(writer, operation.ReturnChoices);
+						}
+						else
+						{
+							AddSchemaType(writer, returnType, returnName);
+						}
+
 						writer.WriteEndElement();
 						writer.WriteEndElement();
 					}
@@ -850,6 +859,17 @@ namespace SoapCore.Meta
 			{
 				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
+		}
+
+		private void AddChoice(XmlDictionaryWriter writer, IEnumerable<ReturnChoice> returnChoices)
+		{
+			writer.WriteStartElement("choice", Namespaces.XMLNS_XSD);
+			foreach (var choice in returnChoices)
+			{
+				AddSchemaType(writer, choice.Type, choice.Name, choice.Type.IsArray, choice.Namespace);
+			}
+
+			writer.WriteEndElement();
 		}
 
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null, bool isAttribute = false)
