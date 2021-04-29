@@ -6,12 +6,12 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 	public interface ISampleServiceWithMessageHeaders
 	{
 		[OperationContract]
-		MessageHeadersModel Get(MessageHeadersModel model);
+		MessageHeadersModelWithBody GetWithBody(MessageHeadersModelWithBody model);
 
 		[OperationContract]
 		MessageHeadersModelWithBodyAndNamespace GetWithBodyAndNamespace(MessageHeadersModelWithBodyAndNamespace model);
 
 		[OperationContract]
-		MessageHeadersModelWithBody GetWithBody(MessageHeadersModelWithBody model);
+		MessageHeadersModelWithNamespace GetWithNamespace(MessageHeadersModelWithNamespace model);
 	}
 }

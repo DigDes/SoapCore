@@ -107,6 +107,10 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 
 		[OperationContract]
 		[XmlSerializerFormat]
+		byte[] PingByteArray(byte[] array);
+
+		[OperationContract]
+		[XmlSerializerFormat]
 		ComplexModel1[] PingComplexModelArray(ComplexModel1[] models, ComplexModel2[] models2);
 
 		[OperationContract]
@@ -128,11 +132,6 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[OperationContract]
 		[XmlSerializerFormat]
 		DataContractWithStream PingStream(DataContractWithStream model);
-
-		//it is the same as PingStream method, it modifyed to test DataContractWithStream2
-		[OperationContract]
-		[XmlSerializerFormat]
-		DataContractWithStream2 PingStream2(DataContractWithStream2 model);
 
 		[OperationContract]
 		[XmlSerializerFormat]

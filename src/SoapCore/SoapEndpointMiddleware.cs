@@ -442,19 +442,7 @@ namespace SoapCore
 				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
 					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-
-					//added support for using Namespace that comes with the messageHeaderAttribute when constructing an element in Header
-					//original SoapCore behavior is prioritized (using the namespace of the operation cotract).
-					if (messageHeaderAttribute.Namespace == null)
-					{
-						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
-					}
-
-					//then check if the user wishes to use the messageHeader namespace
-					else
-					{
-						responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, messageHeaderAttribute.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject))); //changed the namespace, its using the messageHeaderAttribute.Namespace instead of namespace of the operation contract
-					}
+					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, messageHeaderAttribute.Namespace ?? operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject), messageHeaderAttribute.MustUnderstand));
 				}
 			}
 
@@ -537,7 +525,7 @@ namespace SoapCore
 							parameterType,
 							parameterInfo.Name,
 							operation.Contract.Namespace,
-							parameterInfo.Parameter.Member,
+							parameterInfo.Parameter,
 							serviceKnownTypes);
 
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
@@ -548,7 +536,7 @@ namespace SoapCore
 								parameterType,
 								parameterInfo.Name,
 								parameterInfo.Namespace,
-								parameterInfo.Parameter.Member,
+								parameterInfo.Parameter,
 								serviceKnownTypes);
 						}
 
@@ -609,7 +597,7 @@ namespace SoapCore
 							parameterInfo.Parameter.ParameterType,
 							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
 							messageContractAttribute.WrapperNamespace ?? @namespace,
-							parameterInfo.Parameter.Member,
+							parameterInfo.Parameter,
 							serviceKnownTypes);
 					}
 				}
