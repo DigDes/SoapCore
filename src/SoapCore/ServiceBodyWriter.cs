@@ -118,7 +118,7 @@ namespace SoapCore
 						if (ch.Type == resultType)
 						{
 							xmlName = ch.Name ?? xmlName;
-							xmlNs = ch.Namespace;
+							xmlNs = ch.Namespace ?? xmlNs;
 							break;
 						}
 					}
