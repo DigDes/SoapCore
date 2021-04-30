@@ -493,6 +493,34 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckXmlAnnotatedChoiceReturnServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlAnnotatedChoiceReturnService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var requestTypeElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']", nm);
+			Assert.IsNotNull(requestTypeElement);
+
+			var choiceElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']/xsd:complexType/xsd:sequence/xsd:choice", nm);
+			Assert.IsNotNull(choiceElement);
+
+			var resultResponseElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']/xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='resultResp']", nm);
+			Assert.IsNotNull(resultResponseElement);
+
+			var integerElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']/xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='integerNumber']", nm);
+			Assert.IsNotNull(integerElement);
+
+			var choiceComplexTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ResultResponse']", nm);
+			Assert.IsNotNull(choiceComplexTypeElement);
+		}
+
+		[TestMethod]
 		public async Task CheckMessageHeadersServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<MessageHeadersService>();
