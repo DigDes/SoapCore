@@ -447,6 +447,45 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckFieldMembers()
+		{
+			StartService(typeof(OperationContractFieldMembersService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			var stringFieldMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "StringFieldMember");
+			Assert.IsNotNull(stringFieldMember);
+
+			var stringPropMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "StringPropMember");
+			Assert.IsNotNull(stringPropMember);
+
+			var stringListFieldMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "StringListFieldMember");
+			Assert.IsNotNull(stringListFieldMember);
+
+			var stringListPropMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "StringListPropMember");
+			Assert.IsNotNull(stringListPropMember);
+
+			var testDataTypeListFieldMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "TestDataTypeListFieldMember");
+			Assert.IsNotNull(testDataTypeListFieldMember);
+
+			var testDataTypeListPropMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "TestDataTypeListPropMember");
+			Assert.IsNotNull(testDataTypeListPropMember);
+
+			var testDataTypeStringFieldMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "TestDataTypeStringFieldMember");
+			Assert.IsNotNull(testDataTypeStringFieldMember);
+
+			var testDataTypeStringPropMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "TestDataTypeStringPropMember");
+			Assert.IsNotNull(testDataTypeStringPropMember);
+
+			var testDataTypeStringListFieldMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "TestDataTypeStringListFieldMember");
+			Assert.IsNotNull(testDataTypeStringListFieldMember);
+
+			var testDataTypeStringListPropMember = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "TestDataTypeStringListPropMember");
+			Assert.IsNotNull(testDataTypeStringListPropMember);
+		}
+
+		[TestMethod]
 		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();

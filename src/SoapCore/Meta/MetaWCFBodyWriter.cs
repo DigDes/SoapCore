@@ -708,42 +708,42 @@ namespace SoapCore.Meta
 				}
 			}
 
-			foreach (var property in type.GetProperties().Where(prop =>
-						prop.DeclaringType == type
-						&& prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
-						&& !prop.PropertyType.IsPrimitive
-						&& !SysTypeDic.ContainsKey(prop.PropertyType.FullName)
-						&& prop.PropertyType != typeof(ValueType)
-						&& prop.PropertyType != typeof(DateTimeOffset)))
+			foreach (var member in type.GetPropertyOrFieldMembers().Where(mi =>
+						mi.DeclaringType == type
+						&& mi.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
+						&& !mi.GetPropertyOrFieldType().IsPrimitive
+						&& !SysTypeDic.ContainsKey(mi.GetPropertyOrFieldType().FullName)
+						&& mi.GetPropertyOrFieldType() != typeof(ValueType)
+						&& mi.GetPropertyOrFieldType() != typeof(DateTimeOffset)))
 			{
-				Type propertyType;
-				var underlyingType = Nullable.GetUnderlyingType(property.PropertyType);
+				Type memberType;
+				var underlyingType = Nullable.GetUnderlyingType(member.GetPropertyOrFieldType());
 
-				if (Nullable.GetUnderlyingType(property.PropertyType) != null)
+				if (Nullable.GetUnderlyingType(member.GetPropertyOrFieldType()) != null)
 				{
-					propertyType = underlyingType;
+					memberType = underlyingType;
 				}
-				else if (property.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
+				else if (member.GetPropertyOrFieldType().IsArray || typeof(IEnumerable).IsAssignableFrom(member.GetPropertyOrFieldType()))
 				{
-					propertyType = property.PropertyType.IsArray
-						? property.PropertyType.GetElementType()
-						: GetGenericType(property.PropertyType);
-					_complexTypeToBuild[property.PropertyType] = GetDataContractNamespace(property.PropertyType);
+					memberType = member.GetPropertyOrFieldType().IsArray
+						? member.GetPropertyOrFieldType().GetElementType()
+						: GetGenericType(member.GetPropertyOrFieldType());
+					_complexTypeToBuild[member.GetPropertyOrFieldType()] = GetDataContractNamespace(member.GetPropertyOrFieldType());
 				}
 				else
 				{
-					propertyType = property.PropertyType;
+					memberType = member.GetPropertyOrFieldType();
 				}
 
-				if (propertyType != null && !propertyType.IsPrimitive && !SysTypeDic.ContainsKey(propertyType.FullName))
+				if (memberType != null && !memberType.IsPrimitive && !SysTypeDic.ContainsKey(memberType.FullName))
 				{
-					if (propertyType == type)
+					if (memberType == type)
 					{
 						continue;
 					}
 
-					_complexTypeToBuild[propertyType] = GetDataContractNamespace(propertyType);
-					DiscoverTypes(propertyType, false);
+					_complexTypeToBuild[memberType] = GetDataContractNamespace(memberType);
+					DiscoverTypes(memberType, false);
 				}
 			}
 		}
@@ -852,19 +852,19 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				var properties = type.GetProperties().Where(prop =>
-					prop.DeclaringType == type &&
-					prop.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
+				var propertyOrFieldMembers = type.GetPropertyOrFieldMembers().Where(mi =>
+					mi.DeclaringType == type &&
+					mi.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
 
 				var dataMembersToWrite = new List<DataMemberDescription>();
 
 				//TODO: base type properties
 				//TODO: enforce order attribute parameters
-				foreach (var property in properties)
+				foreach (var member in propertyOrFieldMembers)
 				{
-					var propertyName = property.Name;
+					var memberName = member.Name;
 
-					var attributes = property.GetCustomAttributes(true);
+					var attributes = member.GetCustomAttributes(true);
 					int order = 0;
 					bool isRequired = false;
 					foreach (var attr in attributes)
@@ -873,7 +873,7 @@ namespace SoapCore.Meta
 						{
 							if (dataContractAttribute.IsNameSetExplicitly)
 							{
-								propertyName = dataContractAttribute.Name;
+								memberName = dataContractAttribute.Name;
 							}
 
 							if (dataContractAttribute.Order > 0)
@@ -889,8 +889,8 @@ namespace SoapCore.Meta
 
 					dataMembersToWrite.Add(new DataMemberDescription
 					{
-						Name = propertyName,
-						Type = property.PropertyType,
+						Name = memberName,
+						Type = member.GetPropertyOrFieldType(),
 						Order = order,
 						IsRequired = isRequired
 					});
