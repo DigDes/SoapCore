@@ -133,21 +133,21 @@ namespace SoapCore.Meta
 			return false;
 		}
 
-		public static bool IsChoice(this PropertyInfo property)
+		public static bool IsChoice(this MemberInfo member)
 		{
-			var choiceItem = property.GetCustomAttribute<XmlChoiceIdentifierAttribute>();
+			var choiceItem = member.GetCustomAttribute<XmlChoiceIdentifierAttribute>();
 			return choiceItem != null;
 		}
 
-		public static bool IsAttribute(this PropertyInfo property)
+		public static bool IsAttribute(this MemberInfo member)
 		{
-			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
+			var attributeItem = member.GetCustomAttribute<XmlAttributeAttribute>();
 			return attributeItem != null;
 		}
 
-		public static bool IsIgnored(this PropertyInfo property)
+		public static bool IsIgnored(this MemberInfo member)
 		{
-			return property
+			return member
 				.CustomAttributes
 				.Any(attr =>
 					attr.AttributeType == typeof(IgnoreDataMemberAttribute) ||

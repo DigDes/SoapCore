@@ -466,6 +466,25 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckFieldMembersASMX()
+		{
+			StartService(typeof(OperationContractFieldMembersServiceWrapped));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			int fieldElementsCount = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("FieldMember") == true)
+				.Count();
+			Assert.AreEqual(5, fieldElementsCount);
+
+			int propElementsCount = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("PropMember") == true)
+				.Count();
+			Assert.AreEqual(5, propElementsCount);
+		}
+
+		[TestMethod]
 		public void CheckCustomSchemaProviderTypeService()
 		{
 			StartService(typeof(CustomSchemaProviderTypeService));
