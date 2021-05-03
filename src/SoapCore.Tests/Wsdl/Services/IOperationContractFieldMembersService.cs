@@ -6,14 +6,14 @@ namespace SoapCore.Tests.Wsdl.Services
 	public interface IOperationContractFieldMembersService
 	{
 		[OperationContract]
-		FieldMembers Method(FieldMembers members);
+		TypeWithFields Method(TypeWithFields argument);
 	}
 
 	public class OperationContractFieldMembersService : IOperationContractFieldMembersService
 	{
-		public FieldMembers Method(FieldMembers members)
+		public TypeWithFields Method(TypeWithFields argument)
 		{
-			return new FieldMembers();
+			return new TypeWithFields();
 		}
 	}
 }
