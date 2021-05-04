@@ -447,6 +447,25 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckFieldMembers()
+		{
+			StartService(typeof(OperationContractFieldMembersService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			int fieldElementsCount = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("FieldMember") == true)
+				.Count();
+			Assert.AreEqual(5, fieldElementsCount);
+
+			int propElementsCount = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("PropMember") == true)
+				.Count();
+			Assert.AreEqual(5, propElementsCount);
+		}
+
+		[TestMethod]
 		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
