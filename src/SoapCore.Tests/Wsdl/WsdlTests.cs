@@ -447,6 +447,25 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckFieldMembers()
+		{
+			StartService(typeof(OperationContractFieldMembersService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			int fieldElementsCount = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("FieldMember") == true)
+				.Count();
+			Assert.AreEqual(5, fieldElementsCount);
+
+			int propElementsCount = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("PropMember") == true)
+				.Count();
+			Assert.AreEqual(5, propElementsCount);
+		}
+
+		[TestMethod]
 		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
@@ -490,6 +509,34 @@ namespace SoapCore.Tests.Wsdl
 
 			var propAnonAttribute = root.XPathSelectElement("//xsd:attribute[@name='PropAnonymous']", nm);
 			Assert.IsNotNull(propAnonAttribute);
+		}
+
+		[TestMethod]
+		public async Task CheckXmlAnnotatedChoiceReturnServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlAnnotatedChoiceReturnService>();
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var requestTypeElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']", nm);
+			Assert.IsNotNull(requestTypeElement);
+
+			var choiceElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']/xsd:complexType/xsd:sequence/xsd:choice", nm);
+			Assert.IsNotNull(choiceElement);
+
+			var resultResponseElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']/xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='resultResp']", nm);
+			Assert.IsNotNull(resultResponseElement);
+
+			var integerElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']/xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='integerNumber']", nm);
+			Assert.IsNotNull(integerElement);
+
+			var choiceComplexTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ResultResponse']", nm);
+			Assert.IsNotNull(choiceComplexTypeElement);
 		}
 
 		[TestMethod]
