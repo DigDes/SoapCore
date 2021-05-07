@@ -436,6 +436,12 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>();
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var responseDateElem = root.XPathSelectElement("//xsd:element[@name='GetDateResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='GetDateResult' and contains(@type, ':date')]", nm);
+			Assert.IsNotNull(responseDateElem);
 		}
 
 		[TestMethod]
@@ -482,21 +488,6 @@ namespace SoapCore.Tests.Wsdl
 				.Where(a => a.Attribute("name")?.Value.Contains("PropMember") == true)
 				.Count();
 			Assert.AreEqual(5, propElementsCount);
-		}
-
-		[TestMethod]
-		public void CheckCustomSchemaProviderTypeService()
-		{
-			StartService(typeof(CustomSchemaProviderTypeService));
-			var wsdl = GetWsdl();
-			StopServer();
-			Assert.IsNotNull(wsdl);
-
-			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
-
-			var responseDateElem = root.XPathSelectElement("//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult' and contains(@type, ':date')]", nm);
-			Assert.IsNotNull(responseDateElem);
 		}
 
 		[TestMethod]
