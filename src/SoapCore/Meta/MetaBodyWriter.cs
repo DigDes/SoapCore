@@ -549,7 +549,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
 
-				if (hasRequestBody)
+				if ((operation.IsMessageContractRequest && hasRequestBody) || !operation.IsMessageContractRequest)
 				{
 					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 					writer.WriteAttributeString("name", "parameters");
