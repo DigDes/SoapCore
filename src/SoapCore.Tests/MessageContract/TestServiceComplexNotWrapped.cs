@@ -9,7 +9,7 @@ namespace SoapCore.Tests.MessageContract
 		public MessageContractResponseNotWrapped PostData(MessageContractRequestComplexNotWrapped req)
 		{
 			MessageContractResponseNotWrapped ret = new MessageContractResponseNotWrapped();
-			ret.ReferenceNumber = req.PostData.IntProperty;
+			ret.ReferenceNumber = req.PostDataBodyMember.IntProperty;
 			return ret;
 		}
 	}

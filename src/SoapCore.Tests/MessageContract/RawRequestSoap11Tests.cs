@@ -89,12 +89,12 @@ namespace SoapCore.Tests.MessageContract
 			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
   <soapenv:Header/>
   <soapenv:Body>	  
-    <tem:PostData>
+    <tem:PostDataBodyMember>
 		<tem:StringProperty>Test</tem:StringProperty>
 		<tem:IntProperty>42</tem:IntProperty>
 		<tem:ListProperty />
 		<tem:DateTimeOffsetProperty />
-    </tem:PostData>
+    </tem:PostDataBodyMember>
   </soapenv:Body>
 </soapenv:Envelope>
 ";
@@ -143,12 +143,12 @@ namespace SoapCore.Tests.MessageContract
 				nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 				nsmgr.AddNamespace("xsd", "http://www.w3.org/2001/XMLSchema");
 
-				//Check correct element name of operation PullData
-				var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='PullData']", nsmgr);
+				//Check correct input element name of operation PullData
+				var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='ReferenceNumber']", nsmgr);
 				Assert.IsNotNull(element);
 
 				//Check correct type of part
-				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:PullData']", nsmgr);
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message[contains(@name, '_InputMessage')]/wsdl:part[@element='tns:ReferenceNumber']", nsmgr);
 				Assert.IsNotNull(element);
 
 				//Check correct return element name of operation PullData
@@ -156,7 +156,7 @@ namespace SoapCore.Tests.MessageContract
 				Assert.IsNotNull(element);
 
 				//Check correct type of part
-				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:ReferenceNumber']", nsmgr);
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message[contains(@name, '_OutputMessage')]/wsdl:part[@element='tns:ReferenceNumber']", nsmgr);
 
 				Assert.IsNotNull(element);
 			}
@@ -180,7 +180,7 @@ namespace SoapCore.Tests.MessageContract
 				nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 				nsmgr.AddNamespace("xsd", "http://www.w3.org/2001/XMLSchema");
 
-				//Check correct element name of operation PullData
+				//Check correct input element name of operation PullData
 				var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='PullData']", nsmgr);
 				Assert.IsNotNull(element);
 
@@ -217,12 +217,12 @@ namespace SoapCore.Tests.MessageContract
 				nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 				nsmgr.AddNamespace("xsd", "http://www.w3.org/2001/XMLSchema");
 
-				//Check correct element name of operation PullData
-				var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='PostData']", nsmgr);
+				//Check correct input element name of operation PullData
+				var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xsd:schema/xsd:element[@name='PostDataBodyMember']", nsmgr);
 				Assert.IsNotNull(element);
 
 				//Check correct type of part
-				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:PostData']", nsmgr);
+				element = root.SelectSingleNode("/wsdl:definitions/wsdl:message/wsdl:part[@element='tns:PostDataBodyMember']", nsmgr);
 				Assert.IsNotNull(element);
 
 				//Check correct return element name of operation PullData

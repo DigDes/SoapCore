@@ -82,6 +82,25 @@ namespace SoapCore.Meta
 			AddService(writer);
 		}
 
+		private static string GetOuterInputElementName(OperationDescription operation)
+		{
+			var inParameters = operation.InParameters;
+			if (operation.IsMessageContractRequest
+				&& !IsWrappedMessageContractType(inParameters[0].Parameter.ParameterType))
+			{
+				var messageBodyMember = inParameters[0].Parameter.ParameterType
+					.GetPropertyOrFieldMembers().FirstOrDefault(x =>
+						x.GetCustomAttributes(typeof(MessageBodyMemberAttribute), false).Any());
+
+				if (messageBodyMember != null)
+				{
+					return messageBodyMember.Name;
+				}
+			}
+
+			return operation.Name;
+		}
+
 		private static bool IsWrappedMessageContractType(Type type)
 		{
 			var messageContractAttribute = type.GetCustomAttribute<MessageContractAttribute>();
@@ -322,7 +341,7 @@ namespace SoapCore.Meta
 			{
 				// input parameters of operation
 				writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("name", operation.Name);
+				writer.WriteAttributeString("name", GetOuterInputElementName(operation));
 
 				if (!operation.IsMessageContractRequest && operation.InParameters.Length == 0)
 				{
@@ -538,7 +557,7 @@ namespace SoapCore.Meta
 			{
 				// input
 				var hasRequestBody = false;
-				var requestTypeName = operation.Name;
+				var requestTypeName = GetOuterInputElementName(operation);
 
 				//For document/litteral(WS-I we should point to the element
 				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
