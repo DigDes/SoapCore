@@ -466,6 +466,21 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckCustomSchemaProviderTypeService()
+		{
+			StartService(typeof(CustomSchemaProviderTypeService));
+			var wsdl = GetWsdl();
+			StopServer();
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var responseDateElem = root.XPathSelectElement("//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult' and contains(@type, ':date')]", nm);
+			Assert.IsNotNull(responseDateElem);
+		}
+
+		[TestMethod]
 		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();

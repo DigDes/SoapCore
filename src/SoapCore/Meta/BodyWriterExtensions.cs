@@ -92,14 +92,27 @@ namespace SoapCore.Meta
 				else
 				{
 					var methodInfo = type.GetMethod(xmlSchemaProviderAttribute.MethodName, BindingFlags.Static | BindingFlags.Public);
-					var xmlSchemaType = (XmlSchemaType)methodInfo.Invoke(null, new object[] { xmlSchemaSet });
+					var xmlSchemaInfoObject = methodInfo.Invoke(null, new object[] { xmlSchemaSet });
 					var element = new XmlSchemaElement()
 					{
 						MinOccurs = 0,
 						MaxOccurs = 1,
 						Name = name,
-						SchemaType = xmlSchemaType
 					};
+
+					if (xmlSchemaInfoObject is XmlQualifiedName xmlQualifiedName)
+					{
+						element.SchemaTypeName = xmlQualifiedName;
+					}
+					else if (xmlSchemaInfoObject is XmlSchemaType xmlSchemaType)
+					{
+						element.SchemaType = xmlSchemaType;
+					}
+					else
+					{
+						throw new InvalidOperationException($"Invalid {nameof(xmlSchemaInfoObject)} type: {xmlSchemaInfoObject.GetType()}");
+					}
+
 					schema.Items.Add(element);
 				}
 
