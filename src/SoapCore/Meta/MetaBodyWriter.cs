@@ -718,29 +718,30 @@ namespace SoapCore.Meta
 				{
 					if (!isWrappedBodyType)
 					{
-						var properties = toBuildBodyType.GetProperties().Where(prop => !prop.IsIgnored())
-							.ToList();
+						var propertyOrFieldMembers = toBuildBodyType.GetPropertyOrFieldMembers()
+							.Where(mi => !mi.IsIgnored()).ToList();
 
-						var elements = properties.Where(t => !t.IsAttribute()).ToList();
+						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute()).ToList();
 						if (elements.Any())
 						{
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
 							foreach (var element in elements)
 							{
-								AddSchemaTypeProperty(writer, element, toBuild);
+								AddSchemaTypePropertyOrField(writer, element, toBuild);
 							}
 
 							writer.WriteEndElement(); // sequence
 						}
 
-						var attributes = properties.Where(t => t.IsAttribute());
+						var attributes = propertyOrFieldMembers.Where(t => t.IsAttribute());
 						foreach (var attribute in attributes)
 						{
-							AddSchemaTypeProperty(writer, attribute, toBuild);
+							AddSchemaTypePropertyOrField(writer, attribute, toBuild);
 						}
 					}
 					else
 					{
+						// TODO: should this also be changed to GetPropertyOrFieldMembers?
 						var properties = toBuildType.GetProperties().Where(prop => !prop.IsIgnored())
 							.ToList();
 
@@ -750,7 +751,7 @@ namespace SoapCore.Meta
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
 							foreach (var element in elements)
 							{
-								AddSchemaTypeProperty(writer, element, toBuild);
+								AddSchemaTypePropertyOrField(writer, element, toBuild);
 							}
 
 							writer.WriteEndElement(); // sequence
@@ -759,7 +760,7 @@ namespace SoapCore.Meta
 						var attributes = properties.Where(t => t.IsAttribute());
 						foreach (var attribute in attributes)
 						{
-							AddSchemaTypeProperty(writer, attribute, toBuild);
+							AddSchemaTypePropertyOrField(writer, attribute, toBuild);
 						}
 
 						var messageBodyMemberFields = toBuildType.GetFields()
@@ -792,24 +793,24 @@ namespace SoapCore.Meta
 			}
 		}
 
-		private void AddSchemaTypeProperty(XmlDictionaryWriter writer, PropertyInfo property, TypeToBuild parentTypeToBuild)
+		private void AddSchemaTypePropertyOrField(XmlDictionaryWriter writer, MemberInfo member, TypeToBuild parentTypeToBuild)
 		{
-			if (property.IsChoice())
+			if (member.IsChoice())
 			{
 				writer.WriteStartElement("choice", Namespaces.XMLNS_XSD);
 
-				if (property.PropertyType.IsEnumerableType())
+				if (member.GetPropertyOrFieldType().IsEnumerableType())
 				{
 					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
 				}
 
-				var choiceElements = property.GetCustomAttributes<XmlElementAttribute>();
+				var choiceElements = member.GetCustomAttributes<XmlElementAttribute>();
 				foreach (var choiceElement in choiceElements)
 				{
 					if (choiceElement != null)
 					{
-						AddSchemaType(writer, choiceElement.Type ?? property.PropertyType, choiceElement.ElementName ?? property.Name);
+						AddSchemaType(writer, choiceElement.Type ?? member.GetPropertyOrFieldType(), choiceElement.ElementName ?? member.Name);
 					}
 				}
 
@@ -818,29 +819,29 @@ namespace SoapCore.Meta
 			}
 
 			var createListWithoutProxyType = false;
-			var toBuild = new TypeToBuild(property.PropertyType);
+			var toBuild = new TypeToBuild(member.GetPropertyOrFieldType());
 
-			var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
+			var arrayItem = member.GetCustomAttribute<XmlArrayItemAttribute>();
 			if (arrayItem != null && !string.IsNullOrWhiteSpace(arrayItem.ElementName))
 			{
 				toBuild.ChildElementName = arrayItem.ElementName;
 			}
 
-			var elementItem = property.GetCustomAttribute<XmlElementAttribute>();
+			var elementItem = member.GetCustomAttribute<XmlElementAttribute>();
 			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
 			{
 				toBuild.ChildElementName = elementItem.ElementName;
 				createListWithoutProxyType = toBuild.Type.IsEnumerableType();
 			}
 
-			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
-			var messageBodyMemberAttribute = property.GetCustomAttribute<MessageBodyMemberAttribute>();
+			var attributeItem = member.GetCustomAttribute<XmlAttributeAttribute>();
+			var messageBodyMemberAttribute = member.GetCustomAttribute<MessageBodyMemberAttribute>();
 			if (attributeItem != null)
 			{
 				var name = attributeItem.AttributeName;
 				if (string.IsNullOrWhiteSpace(name))
 				{
-					name = property.Name;
+					name = member.Name;
 				}
 
 				AddSchemaType(writer, toBuild, name, isAttribute: true);
@@ -850,14 +851,14 @@ namespace SoapCore.Meta
 				var name = messageBodyMemberAttribute.Name;
 				if (string.IsNullOrWhiteSpace(name))
 				{
-					name = property.Name;
+					name = member.Name;
 				}
 
 				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
 			else
 			{
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
 		}
 
