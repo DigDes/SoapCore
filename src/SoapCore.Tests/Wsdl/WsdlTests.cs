@@ -170,6 +170,20 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckDataContractWithNonDataMembersService()
+		{
+			StartService(typeof(DataContractWithNonDataMembersService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			bool nonDataMembersPresent = GetElements(root, _xmlSchema + "element")
+				.Where(a => a.Attribute("name")?.Value.Contains("NonSerializable") == true)
+				.Any();
+			Assert.IsFalse(nonDataMembersPresent);
+		}
+
+		[TestMethod]
 		public void CheckStructsInList()
 		{
 			StartService(typeof(StructService));

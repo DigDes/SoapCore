@@ -711,6 +711,8 @@ namespace SoapCore.Meta
 			foreach (var member in type.GetPropertyOrFieldMembers().Where(mi =>
 						mi.DeclaringType == type
 						&& mi.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
+						&& (!mi.DeclaringType.CustomAttributes.Any(x => x.AttributeType == typeof(DataContractAttribute))
+							|| mi.CustomAttributes.Any(x => x.AttributeType == typeof(DataMemberAttribute)))
 						&& !mi.GetPropertyOrFieldType().IsPrimitive
 						&& !SysTypeDic.ContainsKey(mi.GetPropertyOrFieldType().FullName)
 						&& mi.GetPropertyOrFieldType() != typeof(ValueType)
@@ -853,8 +855,10 @@ namespace SoapCore.Meta
 			else
 			{
 				var propertyOrFieldMembers = type.GetPropertyOrFieldMembers().Where(mi =>
-					mi.DeclaringType == type &&
-					mi.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute"));
+					mi.DeclaringType == type
+					&& mi.CustomAttributes.All(attr => attr.AttributeType.Name != "IgnoreDataMemberAttribute")
+					&& (!mi.DeclaringType.CustomAttributes.Any(x => x.AttributeType == typeof(DataContractAttribute))
+						|| mi.CustomAttributes.Any(x => x.AttributeType == typeof(DataMemberAttribute))));
 
 				var dataMembersToWrite = new List<DataMemberDescription>();
 
