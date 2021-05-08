@@ -431,11 +431,11 @@ namespace SoapCore.Tests.Wsdl
 			var root = XElement.Parse(wsdl);
 			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
 
-			bool allNeededAreUnqualified = root.XPathSelectElements("//xsd:complexType[@name='UnqualifiedMembers']/xsd:sequence/xsd:element[contains(@name, 'Unqualified')]", nm)
+			bool allNeededAreUnqualified = root.XPathSelectElements($"//xsd:complexType[@name='{nameof(TypeWithUnqualifiedMembers)}' or @name='{nameof(UnqType2)}']/xsd:sequence/xsd:element[contains(@name, 'Unqualified')]", nm)
 				.All(x => x.Attribute("form")?.Value.Equals("unqualified") == true);
 			Assert.IsTrue(allNeededAreUnqualified);
 
-			bool allNeededAreQualified = root.XPathSelectElements("//xsd:complexType[@name='UnqualifiedMembers']/xsd:sequence/xsd:element[contains(@name, 'Qualified')]", nm)
+			bool allNeededAreQualified = root.XPathSelectElements($"//xsd:complexType[@name='{nameof(TypeWithUnqualifiedMembers)}' or @name='{nameof(UnqType2)}']/xsd:sequence/xsd:element[contains(@name, 'Qualified')]", nm)
 				.All(x => x.Attribute("form")?.Value.Equals("unqualified") != true);
 			Assert.IsTrue(allNeededAreQualified);
 		}
