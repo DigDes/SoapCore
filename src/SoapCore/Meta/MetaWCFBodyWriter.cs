@@ -15,7 +15,7 @@ using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
 {
-	internal class MetaWCFBodyWriter : BodyWriter
+	public class MetaWCFBodyWriter : BodyWriter
 	{
 #pragma warning disable SA1009 // Closing parenthesis must be spaced correctly
 #pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
@@ -1391,6 +1391,11 @@ namespace SoapCore.Meta
 
 				resultType = type.IsArray ? type.GetElementType() : GetGenericType(type);
 				type = resultType;
+			}
+
+			if (type == typeof(DateTimeOffset))
+			{
+				return false;
 			}
 
 			if (typeInfo.IsEnum)

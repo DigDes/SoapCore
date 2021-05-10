@@ -406,7 +406,7 @@ namespace SoapCore.Tests.Wsdl
 			//StartService(typeof(StringListService));
 			//var wsdl = GetWsdl();
 			//StopServer();
-			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -439,7 +439,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public async Task CheckUnqualifiedMembersService()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<UnqualifiedMembersService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<UnqualifiedMembersService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 
 			var root = XElement.Parse(wsdl);
@@ -457,15 +457,26 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public async Task CheckDateTimeOffsetServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
-			Trace.TraceInformation(wsdl);
-			Assert.IsNotNull(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			string systemNs = "http://schemas.datacontract.org/2004/07/System";
+
+			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(SoapSerializer.XmlSerializer);
+			var root = XElement.Parse(wsdl);
+			var responseDateElem = root.XPathSelectElement($"//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult']", nm);
+			Assert.IsTrue(responseDateElem.ToString().Contains(systemNs));
+
+			var wsdlWCF = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(SoapSerializer.DataContractSerializer);
+			var rootWCF = XElement.Parse(wsdlWCF);
+			var responseDateElemWCF = rootWCF.XPathSelectElement($"//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult']", nm);
+			Assert.IsTrue(responseDateElemWCF.ToString().Contains(systemNs));
+			var dayOfYearElem = GetElements(rootWCF, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("DayOfYear") == true);
+			Assert.IsNull(dayOfYearElem);
 		}
 
 		[TestMethod]
 		public async Task CheckXmlSchemaProviderTypeServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -479,7 +490,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public async Task CheckTestMultipleTypesServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 		}
@@ -525,7 +536,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -571,7 +582,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public async Task CheckXmlAnnotatedChoiceReturnServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<XmlAnnotatedChoiceReturnService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlAnnotatedChoiceReturnService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -599,7 +610,7 @@ namespace SoapCore.Tests.Wsdl
 		[TestMethod]
 		public async Task CheckMessageHeadersServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<MessageHeadersService>();
+			var wsdl = await GetWsdlFromMetaBodyWriter<MessageHeadersService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -649,12 +660,14 @@ namespace SoapCore.Tests.Wsdl
 			}
 		}
 
-		private async Task<string> GetWsdlFromMetaBodyWriter<T>()
+		private async Task<string> GetWsdlFromMetaBodyWriter<T>(SoapSerializer serializer)
 		{
 			var service = new ServiceDescription(typeof(T));
 			var baseUrl = "http://tempuri.org/";
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
-			var bodyWriter = new MetaBodyWriter(service, baseUrl, null, xmlNamespaceManager);
+			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
+				? new MetaWCFBodyWriter(service, baseUrl, null) as BodyWriter
+				: new MetaBodyWriter(service, baseUrl, null, xmlNamespaceManager) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
