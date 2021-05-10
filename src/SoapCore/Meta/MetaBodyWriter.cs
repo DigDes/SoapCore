@@ -940,6 +940,7 @@ namespace SoapCore.Meta
 				|| (type.Name == "Byte[]"))
 			{
 				XmlQualifiedName xsTypename;
+				string ns = null;
 				if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
 					if (string.IsNullOrEmpty(name))
@@ -947,7 +948,8 @@ namespace SoapCore.Meta
 						name = typeName;
 					}
 
-					Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(_xmlNamespaceManager, "nsdto", Namespaces.SYSTEM_NS);
+					ns = $"q{_namespaceCounter++}";
+					writer.WriteXmlnsAttribute(ns, Namespaces.SYSTEM_NS);
 					xsTypename = new XmlQualifiedName(typeName, Namespaces.SYSTEM_NS);
 
 					_buildDateTimeOffset = true;
@@ -998,7 +1000,14 @@ namespace SoapCore.Meta
 
 				writer.WriteAttributeString("name", name);
 				WriteQualification(writer, isUnqualified);
-				writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
+				if (ns != null)
+				{
+					writer.WriteAttributeString("type", $"{ns}:{xsTypename.Name}");
+				}
+				else
+				{
+					writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
+				}
 			}
 			else
 			{
