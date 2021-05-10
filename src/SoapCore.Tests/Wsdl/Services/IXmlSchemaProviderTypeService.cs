@@ -12,7 +12,10 @@ namespace SoapCore.Tests.Wsdl.Services
 		DataTable GetDataTable(DataTable input);
 
 		[OperationContract]
-		System.Xml.Linq.XElement GetXElement(System.Xml.Linq.XElement input);
+		XElement GetXElement(XElement input);
+
+		[OperationContract]
+		Date GetDate(Date input);
 	}
 
 	public class XmlSchemaProviderTypeService : IXmlSchemaProviderTypeService
@@ -23,6 +26,11 @@ namespace SoapCore.Tests.Wsdl.Services
 		}
 
 		public XElement GetXElement(XElement input)
+		{
+			throw new NotImplementedException();
+		}
+
+		public Date GetDate(Date input)
 		{
 			throw new NotImplementedException();
 		}
