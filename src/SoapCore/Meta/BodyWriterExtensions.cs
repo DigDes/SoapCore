@@ -15,7 +15,7 @@ namespace SoapCore.Meta
 		//switches to easily revert to previous behaviour if there is a problem
 		private static readonly bool UseXmlSchemaProvider = true;
 		private static readonly bool UseXmlReflectionImporter = false;
-		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, XmlNamespaceManager xmlNamespaceManager = null)
+		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, XmlNamespaceManager xmlNamespaceManager = null, bool isUnqualified = false)
 		{
 			if (!UseXmlSchemaProvider && !UseXmlReflectionImporter)
 			{
@@ -87,6 +87,11 @@ namespace SoapCore.Meta
 						IsNillable = serializer == SoapSerializer.DataContractSerializer,
 						SchemaType = complex
 					};
+					if (isUnqualified)
+					{
+						element.Form = XmlSchemaForm.Unqualified;
+					}
+
 					schema.Items.Add(element);
 				}
 				else
@@ -111,6 +116,11 @@ namespace SoapCore.Meta
 					else
 					{
 						throw new InvalidOperationException($"Invalid {nameof(xmlSchemaInfoObject)} type: {xmlSchemaInfoObject.GetType()}");
+					}
+
+					if (isUnqualified)
+					{
+						element.Form = XmlSchemaForm.Unqualified;
 					}
 
 					schema.Items.Add(element);

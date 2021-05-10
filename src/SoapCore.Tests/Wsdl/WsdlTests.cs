@@ -437,6 +437,24 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckUnqualifiedMembersService()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<UnqualifiedMembersService>();
+			Trace.TraceInformation(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			bool allNeededAreUnqualified = root.XPathSelectElements($"//xsd:complexType[@name='{nameof(TypeWithUnqualifiedMembers)}' or @name='{nameof(UnqType2)}']/xsd:sequence/xsd:element[contains(@name, 'Unqualified')]", nm)
+				.All(x => x.Attribute("form")?.Value.Equals("unqualified") == true);
+			Assert.IsTrue(allNeededAreUnqualified);
+
+			bool allNeededAreQualified = root.XPathSelectElements($"//xsd:complexType[@name='{nameof(TypeWithUnqualifiedMembers)}' or @name='{nameof(UnqType2)}']/xsd:sequence/xsd:element[contains(@name, 'Qualified')]", nm)
+				.All(x => x.Attribute("form")?.Value.Equals("unqualified") != true);
+			Assert.IsTrue(allNeededAreQualified);
+		}
+
+		[TestMethod]
 		public async Task CheckDateTimeOffsetServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>();
