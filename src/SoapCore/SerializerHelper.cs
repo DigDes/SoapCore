@@ -27,6 +27,11 @@ namespace SoapCore
 			ICustomAttributeProvider customAttributeProvider,
 			IEnumerable<Type> knownTypes = null)
 		{
+			// Advance past any whitespace.
+			while (xmlReader.NodeType == System.Xml.XmlNodeType.Whitespace && xmlReader.Read())
+			{
+			}
+
 			if (xmlReader.IsStartElement(parameterName, parameterNs))
 			{
 				xmlReader.MoveToStartElement(parameterName, parameterNs);
