@@ -46,10 +46,19 @@ namespace SoapCore.ServiceModel
 					.FirstOrDefault(ca =>
 						ca.AttributeType == typeof(MessageContractAttribute)) != null;
 
-			var elementAttribute = operationMethod.ReturnParameter.GetCustomAttribute<XmlElementAttribute>();
+			var elementAttributes = operationMethod.ReturnParameter.GetCustomAttributes<XmlElementAttribute>().ToList();
+			if (elementAttributes.Count > 1)
+			{
+				ReturnChoices = elementAttributes.Select(e => new ReturnChoice(e.Type, e.ElementName, e.Namespace));
+			}
+			else if (elementAttributes.Count == 1)
+			{
+				var elementAttribute = elementAttributes.First();
+				ReturnElementName = elementAttribute.ElementName;
+				ReturnNamespace = elementAttribute.Form == XmlSchemaForm.Unqualified ? string.Empty : elementAttribute.Namespace;
+			}
+
 			ReturnName = operationMethod.ReturnParameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? Name + "Result";
-			ReturnElementName = elementAttribute?.ElementName;
-			ReturnNamespace = elementAttribute?.Form == XmlSchemaForm.Unqualified ? string.Empty : elementAttribute?.Namespace;
 
 			ReplyAction = contractAttribute.ReplyAction ?? $"{Contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name + "Response"}";
 
@@ -79,6 +88,8 @@ namespace SoapCore.ServiceModel
 		public string ReturnNamespace { get; private set; }
 		public Type ReturnType { get; private set; }
 		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; private set; }
+		public IEnumerable<ReturnChoice> ReturnChoices { get; private set; }
+		public bool ReturnsChoice => ReturnChoices != null;
 
 		public IEnumerable<ServiceKnownTypeAttribute> GetServiceKnownTypesHierarchy()
 		{
@@ -105,12 +116,19 @@ namespace SoapCore.ServiceModel
 			var arrayAttribute = info.GetCustomAttribute<XmlArrayAttribute>();
 			var rootAttribute = (XmlRootAttribute)Attribute.GetCustomAttribute(info.ParameterType, typeof(XmlRootAttribute));
 			var arrayItemAttribute = info.GetCustomAttribute<XmlArrayItemAttribute>();
-			var parameterName = elementAttribute?.ElementName
-				?? arrayAttribute?.ElementName
-				?? rootAttribute?.ElementName
-				?? info.GetCustomAttribute<MessageParameterAttribute>()?.Name
-				?? info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName
-				?? info.Name;
+
+			var parameterName = string.IsNullOrEmpty(elementAttribute?.ElementName)
+				? string.IsNullOrEmpty(arrayAttribute?.ElementName)
+					? string.IsNullOrEmpty(rootAttribute?.ElementName)
+						? string.IsNullOrEmpty(info.GetCustomAttribute<MessageParameterAttribute>()?.Name)
+							? string.IsNullOrEmpty(info.ParameterType.GetCustomAttribute<MessageContractAttribute>()?.WrapperName)
+								? info.Name
+								: info.ParameterType.GetCustomAttribute<MessageContractAttribute>().WrapperName
+							: info.GetCustomAttribute<MessageParameterAttribute>().Name
+						: rootAttribute.ElementName
+					: arrayAttribute.ElementName
+				: elementAttribute.ElementName;
+
 			var arrayName = arrayAttribute?.ElementName;
 			var arrayItemName = arrayItemAttribute?.ElementName;
 			var parameterNs = elementAttribute?.Form == XmlSchemaForm.Unqualified

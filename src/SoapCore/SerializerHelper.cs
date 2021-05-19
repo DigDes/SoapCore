@@ -2,6 +2,7 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
@@ -23,9 +24,14 @@ namespace SoapCore
 			Type parameterType,
 			string parameterName,
 			string parameterNs,
-			MemberInfo memberInfo,
+			ICustomAttributeProvider customAttributeProvider,
 			IEnumerable<Type> knownTypes = null)
 		{
+			// Advance past any whitespace.
+			while (xmlReader.NodeType == System.Xml.XmlNodeType.Whitespace && xmlReader.Read())
+			{
+			}
+
 			if (xmlReader.IsStartElement(parameterName, parameterNs))
 			{
 				xmlReader.MoveToStartElement(parameterName, parameterNs);
@@ -46,7 +52,7 @@ namespace SoapCore
 								// case int[] parameter
 								// case [XmlElement("parameter")] int[] parameter
 								// case [XmlArray("parameter"), XmlArrayItem(ElementName = "item")] int[] parameter
-								return DeserializeArrayXmlSerializer(xmlReader, parameterType, parameterName, parameterNs, memberInfo);
+								return DeserializeArrayXmlSerializer(xmlReader, parameterType, parameterName, parameterNs, customAttributeProvider);
 							}
 
 						case SoapSerializer.DataContractSerializer:
@@ -111,14 +117,16 @@ namespace SoapCore
 			return serializer.ReadObject(xmlReader, verifyObjectName: true);
 		}
 
-		private object DeserializeArrayXmlSerializer(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, MemberInfo memberInfo)
+		private object DeserializeArrayXmlSerializer(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, ICustomAttributeProvider customAttributeProvider)
 		{
-			XmlArrayItemAttribute xmlArrayItemAttribute = memberInfo.GetCustomAttribute(typeof(XmlArrayItemAttribute)) as XmlArrayItemAttribute;
-			XmlElementAttribute xmlElementAttribute = memberInfo.GetCustomAttribute(typeof(XmlElementAttribute)) as XmlElementAttribute;
+			var xmlArrayAttributes = customAttributeProvider.GetCustomAttributes(typeof(XmlArrayItemAttribute), true);
+			XmlArrayItemAttribute xmlArrayItemAttribute = xmlArrayAttributes.FirstOrDefault() as XmlArrayItemAttribute;
+			var xmlElementAttributes = customAttributeProvider.GetCustomAttributes(typeof(XmlElementAttribute), true);
+			XmlElementAttribute xmlElementAttribute = xmlElementAttributes.FirstOrDefault() as XmlElementAttribute;
 
 			var isEmpty = xmlReader.IsEmptyElement;
 			var hasContainerElement = xmlElementAttribute == null;
-			if (!isEmpty && hasContainerElement)
+			if (hasContainerElement)
 			{
 				xmlReader.ReadStartElement(parameterName, parameterNs);
 			}
@@ -142,7 +150,14 @@ namespace SoapCore
 
 			lock (serializer)
 			{
-				result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
+				if (xmlReader.HasValue && elementType?.FullName == "System.Byte")
+				{
+					result = xmlReader.ReadContentAsBase64();
+				}
+				else
+				{
+					result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
+				}
 			}
 
 			if (!isEmpty && hasContainerElement)

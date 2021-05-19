@@ -8,6 +8,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 using SoapCore.ServiceModel;
 
@@ -80,6 +81,25 @@ namespace SoapCore.Meta
 			AddBinding(writer);
 
 			AddService(writer);
+		}
+
+		private static string GetOuterInputElementName(OperationDescription operation)
+		{
+			var inParameters = operation.InParameters;
+			if (operation.IsMessageContractRequest
+				&& !IsWrappedMessageContractType(inParameters[0].Parameter.ParameterType))
+			{
+				var messageBodyMember = inParameters[0].Parameter.ParameterType
+					.GetPropertyOrFieldMembers().FirstOrDefault(x =>
+						x.GetCustomAttributes(typeof(MessageBodyMemberAttribute), false).Any());
+
+				if (messageBodyMember != null)
+				{
+					return messageBodyMember.Name;
+				}
+			}
+
+			return operation.Name;
 		}
 
 		private static bool IsWrappedMessageContractType(Type type)
@@ -274,6 +294,7 @@ namespace SoapCore.Meta
 					}
 
 					var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
+					bool isUnqualified = elementAttribute?.Form == XmlSchemaForm.Unqualified;
 					var elementName = string.IsNullOrWhiteSpace(elementAttribute?.ElementName) ? null : elementAttribute.ElementName;
 
 					var xmlRootAttr = parameterInfo.Parameter.ParameterType.GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
@@ -284,7 +305,7 @@ namespace SoapCore.Meta
 										?? typeRootName
 										?? parameterInfo.Parameter.Name;
 
-					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace);
+					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace, isUnqualified: isUnqualified);
 				}
 				else
 				{
@@ -322,7 +343,7 @@ namespace SoapCore.Meta
 			{
 				// input parameters of operation
 				writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("name", operation.Name);
+				writer.WriteAttributeString("name", GetOuterInputElementName(operation));
 
 				if (!operation.IsMessageContractRequest && operation.InParameters.Length == 0)
 				{
@@ -367,6 +388,7 @@ namespace SoapCore.Meta
 					if (doWriteInlineType)
 					{
 						var elementAttribute = operation.DispatchMethod.ReturnType.GetCustomAttribute<XmlElementAttribute>();
+						bool isUnqualified = elementAttribute?.Form == XmlSchemaForm.Unqualified;
 						var elementName = string.IsNullOrWhiteSpace(elementAttribute?.ElementName) ? null : elementAttribute.ElementName;
 
 						var xmlRootAttr = returnType.GetTypeInfo().GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
@@ -379,7 +401,16 @@ namespace SoapCore.Meta
 
 						writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
 						writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-						AddSchemaType(writer, returnType, returnName);
+
+						if (operation.ReturnsChoice)
+						{
+							AddChoice(writer, operation.ReturnChoices);
+						}
+						else
+						{
+							AddSchemaType(writer, returnType, returnName, isUnqualified: isUnqualified);
+						}
+
 						writer.WriteEndElement();
 						writer.WriteEndElement();
 					}
@@ -529,7 +560,7 @@ namespace SoapCore.Meta
 			{
 				// input
 				var hasRequestBody = false;
-				var requestTypeName = operation.Name;
+				var requestTypeName = GetOuterInputElementName(operation);
 
 				//For document/litteral(WS-I we should point to the element
 				if (operation.IsMessageContractRequest && operation.InParameters.Length > 0)
@@ -540,7 +571,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
 
-				if (hasRequestBody)
+				if ((operation.IsMessageContractRequest && hasRequestBody) || !operation.IsMessageContractRequest)
 				{
 					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 					writer.WriteAttributeString("name", "parameters");
@@ -709,29 +740,30 @@ namespace SoapCore.Meta
 				{
 					if (!isWrappedBodyType)
 					{
-						var properties = toBuildBodyType.GetProperties().Where(prop => !prop.IsIgnored())
-							.ToList();
+						var propertyOrFieldMembers = toBuildBodyType.GetPropertyOrFieldMembers()
+							.Where(mi => !mi.IsIgnored()).ToList();
 
-						var elements = properties.Where(t => !t.IsAttribute()).ToList();
+						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute()).ToList();
 						if (elements.Any())
 						{
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
 							foreach (var element in elements)
 							{
-								AddSchemaTypeProperty(writer, element, toBuild);
+								AddSchemaTypePropertyOrField(writer, element, toBuild);
 							}
 
 							writer.WriteEndElement(); // sequence
 						}
 
-						var attributes = properties.Where(t => t.IsAttribute());
+						var attributes = propertyOrFieldMembers.Where(t => t.IsAttribute());
 						foreach (var attribute in attributes)
 						{
-							AddSchemaTypeProperty(writer, attribute, toBuild);
+							AddSchemaTypePropertyOrField(writer, attribute, toBuild);
 						}
 					}
 					else
 					{
+						// TODO: should this also be changed to GetPropertyOrFieldMembers?
 						var properties = toBuildType.GetProperties().Where(prop => !prop.IsIgnored())
 							.ToList();
 
@@ -741,7 +773,7 @@ namespace SoapCore.Meta
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
 							foreach (var element in elements)
 							{
-								AddSchemaTypeProperty(writer, element, toBuild);
+								AddSchemaTypePropertyOrField(writer, element, toBuild);
 							}
 
 							writer.WriteEndElement(); // sequence
@@ -750,7 +782,7 @@ namespace SoapCore.Meta
 						var attributes = properties.Where(t => t.IsAttribute());
 						foreach (var attribute in attributes)
 						{
-							AddSchemaTypeProperty(writer, attribute, toBuild);
+							AddSchemaTypePropertyOrField(writer, attribute, toBuild);
 						}
 
 						var messageBodyMemberFields = toBuildType.GetFields()
@@ -783,24 +815,25 @@ namespace SoapCore.Meta
 			}
 		}
 
-		private void AddSchemaTypeProperty(XmlDictionaryWriter writer, PropertyInfo property, TypeToBuild parentTypeToBuild)
+		private void AddSchemaTypePropertyOrField(XmlDictionaryWriter writer, MemberInfo member, TypeToBuild parentTypeToBuild)
 		{
-			if (property.IsChoice())
+			if (member.IsChoice())
 			{
 				writer.WriteStartElement("choice", Namespaces.XMLNS_XSD);
 
-				if (property.PropertyType.IsEnumerableType())
+				if (member.GetPropertyOrFieldType().IsEnumerableType())
 				{
 					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
 				}
 
-				var choiceElements = property.GetCustomAttributes<XmlElementAttribute>();
+				var choiceElements = member.GetCustomAttributes<XmlElementAttribute>();
 				foreach (var choiceElement in choiceElements)
 				{
 					if (choiceElement != null)
 					{
-						AddSchemaType(writer, choiceElement.Type ?? property.PropertyType, choiceElement.ElementName ?? property.Name);
+						bool isUnqualifiedChoice = choiceElement?.Form == XmlSchemaForm.Unqualified;
+						AddSchemaType(writer, choiceElement.Type ?? member.GetPropertyOrFieldType(), choiceElement.ElementName ?? member.Name, isUnqualified: isUnqualifiedChoice);
 					}
 				}
 
@@ -809,55 +842,67 @@ namespace SoapCore.Meta
 			}
 
 			var createListWithoutProxyType = false;
-			var toBuild = new TypeToBuild(property.PropertyType);
+			var toBuild = new TypeToBuild(member.GetPropertyOrFieldType());
 
-			var arrayItem = property.GetCustomAttribute<XmlArrayItemAttribute>();
+			var arrayItem = member.GetCustomAttribute<XmlArrayItemAttribute>();
 			if (arrayItem != null && !string.IsNullOrWhiteSpace(arrayItem.ElementName))
 			{
 				toBuild.ChildElementName = arrayItem.ElementName;
 			}
 
-			var elementItem = property.GetCustomAttribute<XmlElementAttribute>();
+			var elementItem = member.GetCustomAttribute<XmlElementAttribute>();
+			bool isUnqualified = elementItem?.Form == XmlSchemaForm.Unqualified;
 			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
 			{
 				toBuild.ChildElementName = elementItem.ElementName;
 				createListWithoutProxyType = toBuild.Type.IsEnumerableType();
 			}
 
-			var attributeItem = property.GetCustomAttribute<XmlAttributeAttribute>();
-			var messageBodyMemberAttribute = property.GetCustomAttribute<MessageBodyMemberAttribute>();
+			var attributeItem = member.GetCustomAttribute<XmlAttributeAttribute>();
+			var messageBodyMemberAttribute = member.GetCustomAttribute<MessageBodyMemberAttribute>();
 			if (attributeItem != null)
 			{
 				var name = attributeItem.AttributeName;
 				if (string.IsNullOrWhiteSpace(name))
 				{
-					name = property.Name;
+					name = member.Name;
 				}
 
-				AddSchemaType(writer, toBuild, name, isAttribute: true);
+				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified);
 			}
 			else if (messageBodyMemberAttribute != null)
 			{
 				var name = messageBodyMemberAttribute.Name;
 				if (string.IsNullOrWhiteSpace(name))
 				{
-					name = property.Name;
+					name = member.Name;
 				}
 
 				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
 			else
 			{
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? property.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified);
 			}
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null, bool isAttribute = false)
+		private void AddChoice(XmlDictionaryWriter writer, IEnumerable<ReturnChoice> returnChoices)
 		{
-			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute);
+			writer.WriteStartElement("choice", Namespaces.XMLNS_XSD);
+			foreach (var choice in returnChoices)
+			{
+				AddSchemaType(writer, choice.Type, choice.Name, choice.Type.IsArray, choice.Namespace);
+			}
+
+			writer.WriteEndElement();
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false)
+		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isUnqualified = false)
+		{
+			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
+		}
+
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false)
 		{
 			var type = toBuild.Type;
 			var typeInfo = type.GetTypeInfo();
@@ -868,7 +913,7 @@ namespace SoapCore.Meta
 
 			var typeName = type.GetSerializedTypeName();
 
-			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer, _xmlNamespaceManager))
+			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer, _xmlNamespaceManager, isUnqualified))
 			{
 				return;
 			}
@@ -878,7 +923,7 @@ namespace SoapCore.Meta
 			//if type is a nullable non-system struct
 			if (underlyingType?.IsValueType == true && !underlyingType.IsEnum && underlyingType.Namespace != null && underlyingType.Namespace != "System" && !underlyingType.Namespace.StartsWith("System."))
 			{
-				AddSchemaType(writer, new TypeToBuild(underlyingType) { ChildElementName = toBuild.TypeName }, name, isArray, @namespace, isAttribute);
+				AddSchemaType(writer, new TypeToBuild(underlyingType) { ChildElementName = toBuild.TypeName }, name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
 				return;
 			}
 
@@ -895,6 +940,7 @@ namespace SoapCore.Meta
 				|| (type.Name == "Byte[]"))
 			{
 				XmlQualifiedName xsTypename;
+				string ns = null;
 				if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
 					if (string.IsNullOrEmpty(name))
@@ -902,7 +948,8 @@ namespace SoapCore.Meta
 						name = typeName;
 					}
 
-					Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(_xmlNamespaceManager, "nsdto", Namespaces.SYSTEM_NS);
+					ns = $"q{_namespaceCounter++}";
+					writer.WriteXmlnsAttribute(ns, Namespaces.SYSTEM_NS);
 					xsTypename = new XmlQualifiedName(typeName, Namespaces.SYSTEM_NS);
 
 					_buildDateTimeOffset = true;
@@ -952,7 +999,15 @@ namespace SoapCore.Meta
 				}
 
 				writer.WriteAttributeString("name", name);
-				writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
+				WriteQualification(writer, isUnqualified);
+				if (ns != null)
+				{
+					writer.WriteAttributeString("type", $"{ns}:{xsTypename.Name}");
+				}
+				else
+				{
+					writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
+				}
 			}
 			else
 			{
@@ -980,6 +1035,7 @@ namespace SoapCore.Meta
 					name = "StreamBody";
 
 					writer.WriteAttributeString("name", name);
+					WriteQualification(writer, isUnqualified);
 					writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:base64Binary");
 				}
 				else if (type.IsArray)
@@ -990,6 +1046,7 @@ namespace SoapCore.Meta
 					}
 
 					writer.WriteAttributeString("name", name);
+					WriteQualification(writer, isUnqualified);
 					writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
 					_complexTypeToBuild.Enqueue(newTypeToBuild);
@@ -1007,6 +1064,7 @@ namespace SoapCore.Meta
 
 						writer.WriteXmlnsAttribute(ns, Namespaces.ARRAYS_NS);
 						writer.WriteAttributeString("name", name);
+						WriteQualification(writer, isUnqualified);
 						writer.WriteAttributeString("nillable", "true");
 
 						writer.WriteAttributeString("type", $"{ns}:{newTypeToBuild.TypeName}");
@@ -1021,6 +1079,7 @@ namespace SoapCore.Meta
 						}
 
 						writer.WriteAttributeString("name", name);
+						WriteQualification(writer, isUnqualified);
 
 						if (!isArray)
 						{
@@ -1047,6 +1106,7 @@ namespace SoapCore.Meta
 				else if (toBuild.IsAnonumous)
 				{
 					writer.WriteAttributeString("name", name);
+					WriteQualification(writer, isUnqualified);
 					AddSchemaComplexType(writer, newTypeToBuild);
 				}
 				else
@@ -1057,6 +1117,7 @@ namespace SoapCore.Meta
 					}
 
 					writer.WriteAttributeString("name", name);
+					WriteQualification(writer, isUnqualified);
 					writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
 					_complexTypeToBuild.Enqueue(newTypeToBuild);
@@ -1064,6 +1125,14 @@ namespace SoapCore.Meta
 			}
 
 			writer.WriteEndElement(); // element
+		}
+
+		private void WriteQualification(XmlDictionaryWriter writer, bool isUnqualified)
+		{
+			if (isUnqualified)
+			{
+				writer.WriteAttributeString("form", "unqualified");
+			}
 		}
 
 		private void SetUniqueNameForDynamicType(TypeToBuild dynamicType)

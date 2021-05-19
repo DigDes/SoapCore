@@ -7,6 +7,6 @@ namespace SoapCore.Tests.Model
 	public class MessageContractRequestComplexNotWrapped
 	{
 		[MessageBodyMember]
-		public ComplexModelInput PostData { get; set; }
+		public ComplexModelInput PostDataBodyMember { get; set; }
 	}
 }

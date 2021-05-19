@@ -442,7 +442,7 @@ namespace SoapCore
 				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
 					var messageHeaderAttribute = messageHeaderMember.GetCustomAttribute<MessageHeaderAttribute>();
-					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject)));
+					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Name, messageHeaderAttribute.Namespace ?? operation.Contract.Namespace, messageHeaderMember.GetPropertyOrFieldValue(responseObject), messageHeaderAttribute.MustUnderstand));
 				}
 			}
 
@@ -525,7 +525,7 @@ namespace SoapCore
 							parameterType,
 							parameterInfo.Name,
 							operation.Contract.Namespace,
-							parameterInfo.Parameter.Member,
+							parameterInfo.Parameter,
 							serviceKnownTypes);
 
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
@@ -536,7 +536,7 @@ namespace SoapCore
 								parameterType,
 								parameterInfo.Name,
 								parameterInfo.Namespace,
-								parameterInfo.Parameter.Member,
+								parameterInfo.Parameter,
 								serviceKnownTypes);
 						}
 
@@ -597,7 +597,7 @@ namespace SoapCore
 							parameterInfo.Parameter.ParameterType,
 							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
 							messageContractAttribute.WrapperNamespace ?? @namespace,
-							parameterInfo.Parameter.Member,
+							parameterInfo.Parameter,
 							serviceKnownTypes);
 					}
 				}

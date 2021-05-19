@@ -111,6 +111,19 @@ namespace SoapCore
 					? _serviceNamespace
 					: xmlRootAttr.Namespace);
 
+				if (_operation.ReturnsChoice)
+				{
+					foreach (var ch in _operation.ReturnChoices)
+					{
+						if (ch.Type == resultType)
+						{
+							xmlName = ch.Name ?? xmlName;
+							xmlNs = ch.Namespace ?? xmlNs;
+							break;
+						}
+					}
+				}
+
 				var xmlArrayAttr = _operation.DispatchMethod.GetCustomAttribute<XmlArrayAttribute>();
 
 				if (xmlArrayAttr != null && resultType.IsArray)

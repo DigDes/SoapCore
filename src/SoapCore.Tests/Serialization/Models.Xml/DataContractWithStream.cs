@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization;
 using System.ServiceModel;
-using System.Text;
 
 namespace SoapCore.Tests.Serialization.Models.Xml
 {
@@ -11,7 +7,16 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 	public class DataContractWithStream
 	{
 		[MessageHeader]
-		public string Header { get; set; }
+		public string Header1 { get; set; }
+
+		[MessageHeader(Namespace = "TestHeaderNamespace")]
+		public string Header2 { get; set; }
+
+		[MessageHeader(MustUnderstand = true)]
+		public string Header3 { get; set; }
+
+		[MessageHeader(MustUnderstand = true, Namespace = "TestHeaderNamespace")]
+		public string Header4 { get; set; }
 
 		[MessageBodyMember]
 		public Stream Data { get; set; }
