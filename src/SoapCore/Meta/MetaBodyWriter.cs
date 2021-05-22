@@ -985,7 +985,10 @@ namespace SoapCore.Meta
 				{
 					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
-					writer.WriteAttributeString("nillable", "true");
+					if (underlyingType == null)
+					{
+						writer.WriteAttributeString("nillable", "true");
+					}
 				}
 				else
 				{
