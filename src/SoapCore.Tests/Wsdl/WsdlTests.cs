@@ -496,6 +496,14 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckNullableArrayServiceServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<NullableArrayService>(SoapSerializer.XmlSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+		}
+
+		[TestMethod]
 		public void CheckFieldMembers()
 		{
 			StartService(typeof(OperationContractFieldMembersService));
