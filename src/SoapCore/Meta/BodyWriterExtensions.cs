@@ -191,13 +191,26 @@ namespace SoapCore.Meta
 		public static string GetSerializedTypeName(this Type type)
 		{
 			var namedType = type;
+			bool isNullableArray = false;
 			if (type.IsArray)
 			{
 				namedType = type.GetElementType();
+				var underlyingType = Nullable.GetUnderlyingType(namedType);
+				if (underlyingType != null)
+				{
+					namedType = underlyingType;
+					isNullableArray = true;
+				}
 			}
 			else if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
 			{
 				namedType = GetGenericType(type);
+				var underlyingType = Nullable.GetUnderlyingType(namedType);
+				if (underlyingType != null)
+				{
+					namedType = underlyingType;
+					isNullableArray = true;
+				}
 			}
 
 			string typeName = namedType.Name;
@@ -209,15 +222,20 @@ namespace SoapCore.Meta
 
 			if (type.IsArray)
 			{
-				typeName = "ArrayOf" + typeName.Replace("[]", string.Empty);
+				typeName = GetArrayTypeName(typeName.Replace("[]", string.Empty), isNullableArray);
 			}
 
 			if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
 			{
-				typeName = "ArrayOf" + typeName;
+				typeName = GetArrayTypeName(typeName, isNullableArray);
 			}
 
 			return typeName;
+		}
+
+		private static string GetArrayTypeName(string typeName, bool isNullable)
+		{
+			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName).FirstCharToUpperOrDefault() ?? typeName);
 		}
 
 		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)
@@ -229,6 +247,16 @@ namespace SoapCore.Meta
 			}
 
 			return xmlSerializerNamespaces;
+		}
+
+		private static string FirstCharToUpperOrDefault(this string input)
+		{
+			if (string.IsNullOrEmpty(input))
+			{
+				return input;
+			}
+
+			return input.First().ToString().ToUpper() + input.Substring(1);
 		}
 	}
 }

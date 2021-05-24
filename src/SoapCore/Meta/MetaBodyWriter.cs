@@ -205,65 +205,7 @@ namespace SoapCore.Meta
 		private XmlQualifiedName ResolveType(Type type)
 		{
 			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
-			string resolvedType = null;
-
-			switch (typeName)
-			{
-				case "Boolean":
-					resolvedType = "boolean";
-					break;
-				case "Byte":
-					resolvedType = "unsignedByte";
-					break;
-				case "Int16":
-					resolvedType = "short";
-					break;
-				case "Int32":
-					resolvedType = "int";
-					break;
-				case "Int64":
-					resolvedType = "long";
-					break;
-				case "SByte":
-					resolvedType = "byte";
-					break;
-				case "UInt16":
-					resolvedType = "unsignedShort";
-					break;
-				case "UInt32":
-					resolvedType = "unsignedInt";
-					break;
-				case "UInt64":
-					resolvedType = "unsignedLong";
-					break;
-				case "Decimal":
-					resolvedType = "decimal";
-					break;
-				case "Double":
-					resolvedType = "double";
-					break;
-				case "Single":
-					resolvedType = "float";
-					break;
-				case "DateTime":
-					resolvedType = "dateTime";
-					break;
-				case "Guid":
-					resolvedType = "string";
-					break;
-				case "Char":
-					resolvedType = "string";
-					break;
-				case "TimeSpan":
-					resolvedType = "duration";
-					break;
-				case "String":
-					resolvedType = "string";
-					break;
-				case "Byte[]":
-					resolvedType = "base64Binary";
-					break;
-			}
+			string resolvedType = ClrTypeResolver.ResolveOrDefault(typeName);
 
 			if (string.IsNullOrEmpty(resolvedType))
 			{
@@ -985,10 +927,6 @@ namespace SoapCore.Meta
 				{
 					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
-					if (underlyingType == null)
-					{
-						writer.WriteAttributeString("nillable", "true");
-					}
 				}
 				else
 				{
@@ -1050,6 +988,7 @@ namespace SoapCore.Meta
 
 					writer.WriteAttributeString("name", name);
 					WriteQualification(writer, isUnqualified);
+					writer.WriteAttributeString("nillable", "true");
 					writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
 					_complexTypeToBuild.Enqueue(newTypeToBuild);
