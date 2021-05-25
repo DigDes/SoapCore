@@ -496,11 +496,26 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
-		public async Task CheckNullableArrayServiceServiceWsdl()
+		public async Task CheckArrayServiceWsdl()
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<NullableArrayService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<ArrayService>(SoapSerializer.XmlSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var nullableArray = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='LongNullableArray' and @type='tns:ArrayOfNullableLong' and @nillable='true']", nm);
+			Assert.IsNotNull(nullableArray);
+
+			var array = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='LongArray' and @type='tns:ArrayOfLong' and @nillable='true']", nm);
+			Assert.IsNotNull(array);
+
+			var nullableEnumerable = root.XPathSelectElement("//xsd:complexType[@name='EnumerableResponse']/xsd:sequence/xsd:element[@name='LongNullableEnumerable' and @type='tns:ArrayOfNullableLong' and @nillable='true']", nm);
+			Assert.IsNotNull(nullableEnumerable);
+
+			var enumerable = root.XPathSelectElement("//xsd:complexType[@name='EnumerableResponse']/xsd:sequence/xsd:element[@name='LongEnumerable' and @type='tns:ArrayOfLong' and @nillable='true']", nm);
+			Assert.IsNotNull(enumerable);
 		}
 
 		[TestMethod]
