@@ -13,3 +13,4 @@ jobs:
         run: |
           dotnet test -f netcoreapp3.1 src/SoapCore.Tests
           dotnet test -f netcoreapp3.0 src/SoapCore.Tests
+          dotnet test -f net5.0 src/SoapCore.Tests
