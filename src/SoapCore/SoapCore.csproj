@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<VersionPrefix>1.1.0.9</VersionPrefix>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>netcoreapp3.0;netstandard2.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+		<TargetFrameworks>net5.0;netcoreapp3.0;netstandard2.0;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
 		<AssemblyName>SoapCore</AssemblyName>
-		<PackageId>SoapCore</PackageId>
+		<PackageId>SoapCore-net5.0</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
 		<PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
@@ -35,6 +35,9 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
+		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="$(TargetFramework) == 'net5.0'">
 		<DefineConstants>ASPNET_30;SPAN_BUILTIN</DefineConstants>
 	</PropertyGroup>
 
@@ -72,7 +75,15 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.2" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.2" />
 	</ItemGroup>
-
+	<ItemGroup Condition="$(TargetFramework) == 'net5.0'">
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="4.8.1" />
+		<PackageReference Include="System.ServiceModel.Http" Version="4.8.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.VisualStudio.Validation" Version="15.5.31" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
