@@ -36,6 +36,8 @@ namespace SoapCore
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 
+		public SoapSerializer? MetaSerializer { get; set; }
+
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
 			return FromSoapCoreOptions(opt, typeof(T));
@@ -58,7 +60,8 @@ namespace SoapCore
 				HttpGetEnabled = opt.HttpGetEnabled,
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
 				IndentXml = opt.IndentXml,
-				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides
+				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
+				MetaSerializer = opt.MetaSerializer
 			};
 
 			return soapOptions;
