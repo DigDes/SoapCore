@@ -7,7 +7,6 @@ using System.IO;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft;
 
 namespace SoapCore.MessageEncoder
 {
@@ -15,7 +14,7 @@ namespace SoapCore.MessageEncoder
 	/// Wraps a <see cref="PipeReader"/> and/or <see cref="PipeWriter"/> as a <see cref="Stream"/> for
 	/// easier interop with existing APIs.
 	/// </summary>
-	internal partial class PipeStream : Stream, IDisposableObservable
+	internal partial class PipeStream : Stream
 	{
 #nullable enable
 		/// <summary>

@@ -6,6 +6,7 @@
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<NoWin32Manifest>true</NoWin32Manifest>
 		<LangVersion>8</LangVersion>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
@@ -27,7 +28,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.0" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'net5.0'">
@@ -35,13 +36,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="../SoapCore/SoapCore.csproj" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<Compile Include="../SoapCore.Benchmark.Shared/*.cs" />
-	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
 	</ItemGroup>
 
 </Project>
