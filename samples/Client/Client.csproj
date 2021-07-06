@@ -1,17 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-    <AssemblyName>Client</AssemblyName>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>Client</PackageId>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="**\AssemblyInfo.cs" />
-  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ServiceModel.Http" Version="4.7.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.8.1" />
   </ItemGroup>
 
   <ItemGroup>
