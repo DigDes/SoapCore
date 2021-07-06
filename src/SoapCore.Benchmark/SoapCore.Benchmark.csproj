@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>net461;netstandard2.0;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+		<TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<NoWin32Manifest>true</NoWin32Manifest>
 		<LangVersion>8</LangVersion>
@@ -12,38 +12,26 @@
 		<DefineConstants>ASPNET_21</DefineConstants>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="$(TargetFramework) == 'net461'">
-		<DefineConstants>ASPNET_21</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">
-		<DefineConstants>ASPNET_21</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
 		<DefineConstants>ASPNET_30</DefineConstants>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="$(TargetFramework) == 'net5.0'">
+		<DefineConstants>ASPNET_30</DefineConstants>
+	</PropertyGroup>
+	
 	<ItemGroup Condition="$(TargetFramework) =='netcoreapp2.1'">
 		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
 	</ItemGroup>
 
-	<ItemGroup Condition="$(TargetFramework) =='net461'">
-		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-	</ItemGroup>
-
-	<ItemGroup Condition="$(TargetFramework) =='netstandard2.0'">
-		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-	</ItemGroup>
-
-	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.0'">
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetFramework) == 'net5.0'">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -53,7 +41,7 @@
 		<Compile Include="../SoapCore.Benchmark.Shared/*.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
 	</ItemGroup>
 
 </Project>
