@@ -6,7 +6,7 @@ jobs:
   build_and_test:
     runs-on: ubuntu-16.04
     container:
-      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.1-alpine
+      image: docker://mcr.microsoft.com/dotnet/sdk:5.0-alpine
     steps:
       - uses: actions/checkout@v1
       - name: build and test
