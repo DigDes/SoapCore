@@ -14,7 +14,7 @@ using Moq;
 
 namespace SoapCore.Tests.Serialization
 {
-	public class ServiceFixture<TService> : IDisposable
+	public sealed class ServiceFixture<TService> : IDisposable
 		where TService : class
 	{
 		private readonly IWebHost _host;
@@ -118,6 +118,7 @@ namespace SoapCore.Tests.Serialization
 		public void Dispose()
 		{
 			_host.StopAsync();
+			_host.Dispose();
 		}
 	}
 }

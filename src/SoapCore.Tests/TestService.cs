@@ -8,9 +8,14 @@ using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
 {
-	public class TestService : ITestService
+	public sealed class TestService : ITestService, IDisposable
 	{
-		private ThreadLocal<string> _pingResultValue = new ThreadLocal<string>() { Value = string.Empty };
+		private readonly ThreadLocal<string> _pingResultValue = new ThreadLocal<string>() { Value = string.Empty };
+
+		public void Dispose()
+		{
+			_pingResultValue.Dispose();
+		}
 
 		public string Ping(string s)
 		{

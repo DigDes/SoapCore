@@ -13,7 +13,7 @@ using Moq;
 
 namespace SoapCore.Tests.RequestArgumentsOrder
 {
-	public class ServiceFixture<TOriginalParametersOrderService, TReversedParametersOrderService> : IDisposable
+	public sealed class ServiceFixture<TOriginalParametersOrderService, TReversedParametersOrderService> : IDisposable
 		where TOriginalParametersOrderService : class
 		where TReversedParametersOrderService : class
 	{
@@ -116,6 +116,7 @@ namespace SoapCore.Tests.RequestArgumentsOrder
 		public void Dispose()
 		{
 			_host.StopAsync();
+			_host.Dispose();
 		}
 
 		private Dictionary<SoapSerializer, TService> InitClients<TService>(BasicHttpBinding binding, string address)

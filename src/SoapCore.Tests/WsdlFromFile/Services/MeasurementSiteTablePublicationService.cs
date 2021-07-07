@@ -19,9 +19,9 @@ namespace SoapCore.Tests.WsdlFromFile.Services
             {
                //todo
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-				throw ex;
+				throw;
 			}
 
             return response;
