@@ -4,7 +4,7 @@ on: [push, pull_request, pull_request_review]
 
 jobs:
   test_31:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     container:
       image: docker://mcr.microsoft.com/dotnet/core/sdk:3.1-alpine
     steps:
@@ -12,7 +12,7 @@ jobs:
       - name: build and test
         run: dotnet test -f netcoreapp3.1 src/SoapCore.Tests
   test_50:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     container:
       image: docker://mcr.microsoft.com/dotnet/sdk:5.0-alpine
     steps:
