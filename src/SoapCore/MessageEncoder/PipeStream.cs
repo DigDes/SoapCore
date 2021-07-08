@@ -76,7 +76,9 @@ namespace SoapCore.MessageEncoder
 			_ownsPipe = ownsPipe;
 		}
 
-		/// <inheritdoc />
+		/// <summary>
+		/// Gets a value indicating whether this instance has been disposed.
+		/// </summary>
 		public bool IsDisposed { get; private set; }
 
 		/// <inheritdoc />

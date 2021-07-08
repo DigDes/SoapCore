@@ -170,7 +170,7 @@ namespace SoapCore
 		/// The exception that caused the failure.
 		/// </param>
 		/// <returns>
-		/// Returns instance of T if the exception (or its InnerExceptions) is of type FaultException<T>.
+		/// Returns instance of T if the exception (or its InnerExceptions) is of type FaultException{T}.
 		/// otherwise returns null
 		/// </returns>
 		private object ExtractFaultDetail(Exception exception)
