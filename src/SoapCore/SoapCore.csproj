@@ -1,22 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<Version>1.1.0.9</Version>
 		<Authors>Digital Design</Authors>
 		<TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
-		<AssemblyName>SoapCore</AssemblyName>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
 		<PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
 		<RepositoryUrl>https://github.com/DigDes/SoapCore</RepositoryUrl>
-		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>SoapCore.snk</AssemblyOriginatorKeyFile>
 		<SignAssembly>true</SignAssembly>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<LangVersion>8.0</LangVersion>
-		<OutputType>Library</OutputType>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">

@@ -65,7 +65,7 @@ namespace SoapCore
 		public long BufferLimit { get; set; }
 
 		/// <summary>
-		/// Gets or sets a value indicating whether to omit the Xml declaration (<?xml version="1.0" encoding="utf-8"?>) in responses
+		/// Gets or sets a value indicating whether to omit the Xml declaration (&lt;?xml version="1.0" encoding="utf-8"?&gt;) in responses
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool OmitXmlDeclaration { get; set; } = true;
