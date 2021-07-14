@@ -740,6 +740,8 @@ namespace SoapCore
 			SoapMessageEncoder messageEncoder,
 			HttpContext httpContext)
 		{
+			_logger.LogError(exception, "An error occurred processing the message");
+
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
 			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, _xmlNamespaceManager);
 
