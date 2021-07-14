@@ -313,7 +313,16 @@ namespace SoapCore
 			{
 				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
-				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(soapAction), StringComparison.Ordinal));
+
+				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal)
+				|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(soapAction), StringComparison.Ordinal)
+				|| soapAction.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));
+
+				if (operation == null)
+				{
+					operation = _service.Operations.FirstOrDefault(o => soapAction.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal));
+				}
+
 				if (operation == null)
 				{
 					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
