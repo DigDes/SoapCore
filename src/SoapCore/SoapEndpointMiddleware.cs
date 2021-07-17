@@ -517,6 +517,16 @@ namespace SoapCore
 			{
 				if (xmlReader != null)
 				{
+					//build lists to contain array arguments
+					for (var i = 0; i < operation.AllParameters.Length; ++i)
+					{
+						if (operation.AllParameters[i].Parameter.ParameterType.IsArray)
+						{
+							var listType = typeof(List<>).MakeGenericType(new Type[] { operation.AllParameters[i].Parameter.ParameterType.GetElementType() });
+							arguments[i] = Activator.CreateInstance(listType);
+						}
+					}
+
 					xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
 					while (!xmlReader.EOF)
 					{
@@ -527,7 +537,8 @@ namespace SoapCore
 							continue;
 						}
 
-						var parameterType = parameterInfo.Parameter.ParameterType;
+						var isArray = parameterInfo.Parameter.ParameterType.IsArray;
+						var parameterType = isArray ? parameterInfo.Parameter.ParameterType.GetElementType() : parameterInfo.Parameter.ParameterType;
 
 						var argumentValue = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
@@ -547,9 +558,32 @@ namespace SoapCore
 								parameterInfo.Namespace,
 								parameterInfo.Parameter,
 								serviceKnownTypes);
+							if (argumentValue == null)
+							{
+								//protect against having optional parameter which is missing and also the same local name as a SOAP element (e.g. "Body")
+								//which would match above but otherwise neither deserialize nor move the XML reader ahead
+								xmlReader.Skip();
+								continue;
+							}
 						}
 
-						arguments[parameterInfo.Index] = argumentValue;
+						if (isArray)
+						{
+							arguments[parameterInfo.Index].GetType().GetMethod("Add")!.Invoke(arguments[parameterInfo.Index], new object[] { argumentValue });
+						}
+						else
+						{
+							arguments[parameterInfo.Index] = argumentValue;
+						}
+					}
+
+					//flatten lists to arrays
+					for (var i = 0; i < operation.AllParameters.Length; ++i)
+					{
+						if (operation.AllParameters[i].Parameter.ParameterType.IsArray)
+						{
+							arguments[i] = arguments[i].GetType().GetMethod("ToArray", new Type[] { })!.Invoke(arguments[i], new object[] { });
+						}
 					}
 
 					var httpContextParameter = operation.InParameters.FirstOrDefault(x => x.Parameter.ParameterType == typeof(HttpContext));
