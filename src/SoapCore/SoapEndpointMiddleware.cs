@@ -822,13 +822,12 @@ namespace SoapCore
 
 			string path = _options.WsdlFileOptions.AppPath;
 			string safePath = path + Path.AltDirectorySeparatorChar + meta.XsdFolder + Path.AltDirectorySeparatorChar + xsdfile;
-			string xsd = meta.ReadLocalFile(safePath);
+			string xsd = await meta.ReadLocalFileAsync(safePath);
 			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsd);
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
-			byte[] data = System.Text.Encoding.UTF8.GetBytes(modifiedxsd);
-			await httpContext.Response.Body.WriteAsync(data, 0, data.Length);
+			await httpContext.Response.WriteAsync(modifiedxsd);
 		}
 
 		private async Task ProcessMetaFromFile(Microsoft.AspNetCore.Http.HttpContext httpContext)
@@ -857,13 +856,12 @@ namespace SoapCore
 			string wsdlfile = mapping.WsdlFile;
 
 			string path = _options.WsdlFileOptions.AppPath;
-			string wsdl = meta.ReadLocalFile(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);
+			string wsdl = await meta.ReadLocalFileAsync(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
-			byte[] data = System.Text.Encoding.UTF8.GetBytes(modifiedWsdl);
-			await httpContext.Response.Body.WriteAsync(data, 0, data.Length);
+			await httpContext.Response.WriteAsync(modifiedWsdl);
 		}
 	}
 }

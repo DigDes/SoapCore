@@ -32,7 +32,7 @@ namespace SoapCore.Meta
 				exporter.ExportTypeMapping(xmlTypeMapping);
 				schemas.Compile(null, true);
 
-				var memoryStream = new MemoryStream();
+				using var memoryStream = new MemoryStream();
 				foreach (XmlSchema schema in schemas)
 				{
 					schema.Write(memoryStream);
@@ -126,7 +126,7 @@ namespace SoapCore.Meta
 					schema.Items.Add(element);
 				}
 
-				var memoryStream = new MemoryStream();
+				using var memoryStream = new MemoryStream();
 				schema.Write(memoryStream);
 				memoryStream.Position = 0;
 
