@@ -31,8 +31,4 @@
 		<ProjectReference Include="../SoapCore/SoapCore.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Compile Include="../SoapCore.Benchmark.Shared/*.cs" />
-	</ItemGroup>
-
 </Project>
