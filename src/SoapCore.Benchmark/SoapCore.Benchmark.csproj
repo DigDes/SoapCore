@@ -8,18 +8,6 @@
 		<LangVersion>8</LangVersion>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
-		<DefineConstants>ASPNET_21</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
-		<DefineConstants>ASPNET_30</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'net5.0'">
-		<DefineConstants>ASPNET_30</DefineConstants>
-	</PropertyGroup>
 	
 	<ItemGroup Condition="$(TargetFramework) =='netcoreapp2.1'">
 		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />

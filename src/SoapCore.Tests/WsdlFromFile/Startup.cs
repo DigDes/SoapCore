@@ -27,7 +27,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			services.AddMvc();
 		}
 
-#if ASPNET_21
+#if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			WsdlFileOptions options = new WsdlFileOptions
@@ -53,8 +53,7 @@ namespace SoapCore.Tests.WsdlFromFile
 
 			app.UseMvc();
 		}
-#endif
-#if ASPNET_30
+#else
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			WsdlFileOptions options = new WsdlFileOptions

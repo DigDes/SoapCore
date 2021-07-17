@@ -167,7 +167,7 @@ namespace SoapCore.MessageEncoder
 		/// <inheritdoc />
 		public override void Write(char[] buffer, int index, int count) => Write(Requires.NotNull(buffer, nameof(buffer)).AsSpan(index, count));
 
-#if SPAN_BUILTIN
+#if NETCOREAPP2_1_OR_GREATER
 		/// <inheritdoc />
 		public override void Write(ReadOnlySpan<char> buffer)
 #else
@@ -201,7 +201,7 @@ namespace SoapCore.MessageEncoder
 			}
 		}
 
-#if SPAN_BUILTIN
+#if NETCOREAPP2_1_OR_GREATER
 		/// <inheritdoc />
 		public override void WriteLine(ReadOnlySpan<char> buffer)
 #else

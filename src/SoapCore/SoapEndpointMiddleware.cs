@@ -165,7 +165,7 @@ namespace SoapCore
 			}
 		}
 
-#if ASPNET_21
+#if !NETCOREAPP3_0_OR_GREATER
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body);
@@ -175,8 +175,7 @@ namespace SoapCore
 		{
 			return messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 		}
-#endif
-#if ASPNET_30
+#else
 
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{

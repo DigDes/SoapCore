@@ -8,18 +8,6 @@
 		<WarningsAsErrors />
 	</PropertyGroup>
 
-	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
-		<DefineConstants>ASPNET_21</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
-		<DefineConstants>ASPNET_30</DefineConstants>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="$(TargetFramework) == 'net5.0'">
-		<DefineConstants>ASPNET_30</DefineConstants>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<None Remove="stylecop.json" />
 	</ItemGroup>

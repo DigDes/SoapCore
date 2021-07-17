@@ -40,13 +40,11 @@ namespace SoapCore.Tests.Serialization
 				})
 				.Configure(appBuilder =>
 				{
-#if ASPNET_21
+#if !NETCOREAPP3_0_OR_GREATER
 					appBuilder.UseSoapEndpoint<TService>("/Service.svc", binding, SoapSerializer.DataContractSerializer);
 					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", binding, SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
-#endif
-
-#if ASPNET_30
+#else
 					appBuilder.UseRouting();
 
 					appBuilder.UseEndpoints(x =>

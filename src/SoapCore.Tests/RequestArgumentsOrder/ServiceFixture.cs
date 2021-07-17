@@ -41,13 +41,11 @@ namespace SoapCore.Tests.RequestArgumentsOrder
 				})
 				.Configure(appBuilder =>
 				{
-#if ASPNET_21
+#if !NETCOREAPP3_0_OR_GREATER
 					appBuilder.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.svc", binding, SoapSerializer.DataContractSerializer);
 					appBuilder.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.asmx", binding, SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
-#endif
-
-#if ASPNET_30
+#else
 					appBuilder.UseRouting();
 
 					appBuilder.UseEndpoints(x =>

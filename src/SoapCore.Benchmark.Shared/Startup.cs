@@ -14,14 +14,8 @@ namespace SoapCore.Benchmark
 			services.AddSingleton<PingService>();
 		}
 
-#if ASPNET_21
 		public void Configure(IApplicationBuilder app)
-#endif
-#if ASPNET_30
-		public void Configure(IApplicationBuilder app)
-#endif
 		{
-
 			// var elm = new TextMessageEncodingBindingElement(MessageVersion.Soap12WSAddressing10, Encoding.UTF8);
 			// var customBinding = new CustomBinding("MarWebSvcSoap", "http://intercom/malion/MarWebSvc", new BindingElement[] { elm });
 			// var customBinding = new BasicHttpBinding();

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SoapCore.Extensibility;
 
-#if ASPNET_30
+#if NETCOREAPP3_0_OR_GREATER
 using Microsoft.AspNetCore.Routing;
 #endif
 
@@ -158,7 +158,7 @@ namespace SoapCore
 			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
 		}
 
-#if ASPNET_30
+#if NETCOREAPP3_0_OR_GREATER
 		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions encoder, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, WsdlFileOptions wsdlFileOptions = null, bool indentXml = true, bool omitXmlDeclaration = true)
 		{
 			return routes.UseSoapEndpoint(typeof(T), path, new[] { encoder }, serializer, caseInsensitivePath, soapModelBounder, null, wsdlFileOptions, indentXml, omitXmlDeclaration);
