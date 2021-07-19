@@ -130,7 +130,7 @@ namespace SoapCore
 				{
 					_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
 
-					if (httpContext.Request.Query.ContainsKey("wsdl") && httpContext.Request.Method?.ToLower() == "get")
+					if ((string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl")) && httpContext.Request.Method?.ToLower() == "get")
 					{
 						if (_options.WsdlFileOptions != null)
 						{
@@ -171,9 +171,15 @@ namespace SoapCore
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body);
 		}
 
-		private static Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
+		private static async Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
 		{
-			return messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+			//Read the body to ensure we have the full message
+			var memoryStream = new MemoryStream((int)httpContext.Request.ContentLength.GetValueOrDefault(1024));
+			await httpContext.Request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			httpContext.Request.Body = memoryStream;
+
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 		}
 #else
 
@@ -205,27 +211,6 @@ namespace SoapCore
 		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
 			Message responseMessage;
-
-			//Reload the body to ensure we have the full message
-			var memoryStream = new MemoryStream((int)httpContext.Request.ContentLength.GetValueOrDefault(1024));
-			await httpContext.Request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
-			memoryStream.Seek(0, SeekOrigin.Begin);
-			httpContext.Request.Body = memoryStream;
-
-			//Return metadata if no request, provided this is a GET request
-			if (httpContext.Request.Body.Length == 0 && httpContext.Request.Method?.ToLower() == "get")
-			{
-				if (_options.WsdlFileOptions != null)
-				{
-					await ProcessMetaFromFile(httpContext);
-				}
-				else
-				{
-					await ProcessMeta(httpContext);
-				}
-
-				return;
-			}
 
 			// Get the encoder based on Content Type
 			var messageEncoder = _messageEncoders[0];
