@@ -23,7 +23,7 @@ namespace SoapCore.Tests
 			services.AddMvc();
 		}
 
-#if ASPNET_21
+#if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
@@ -70,9 +70,7 @@ namespace SoapCore.Tests
 
 			app.UseMvc();
 		}
-#endif
-
-#if ASPNET_30
+#else
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseRouting();

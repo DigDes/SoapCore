@@ -39,14 +39,13 @@ namespace SoapCore.Tests.MessageInspectors
 			services.AddMvc();
 		}
 
-#if ASPNET_21
+#if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			app.UseMvc();
 		}
-#endif
-#if ASPNET_30
+#else
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseRouting();

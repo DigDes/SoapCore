@@ -159,7 +159,7 @@ namespace SoapCore.MessageEncoder
 			return ReadHelper(buffer.AsSpan(offset, count), readResult);
 		}
 
-#if SPAN_BUILTIN
+#if NETCOREAPP2_1_OR_GREATER
 		/// <inheritdoc />
 		public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
 		{

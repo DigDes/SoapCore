@@ -1,0 +1,9 @@
+<Project>
+
+	<!-- define constants for compatibility with old SDKs -->
+	<PropertyGroup Condition=" '$(MSBuildVersion)' == '' Or $([MSBuild]::VersionLessThan($(MSBuildVersion), '16.8'))">
+		<DefineConstants Condition="$(TargetFramework) == 'netcoreapp2.1'">$(DefineConstants);NETCOREAPP2_1_OR_GREATER;</DefineConstants>
+		<DefineConstants Condition="$(TargetFramework) == 'netcoreapp3.1'">$(DefineConstants);NETCOREAPP2_1_OR_GREATER;NETCOREAPP3_0_OR_GREATER</DefineConstants>
+	</PropertyGroup>
+
+</Project>
