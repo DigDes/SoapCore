@@ -17,16 +17,19 @@ namespace Server
 	{
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.TryAddSingleton<ISampleService, SampleService>();
-			services.AddMvc(x => x.EnableEndpointRouting = false);
 			services.AddSoapCore();
+			services.TryAddSingleton<ISampleService, SampleService>();
+			services.AddMvc();
 		}
 
 		public void Configure(IApplicationBuilder app)
 		{
-			app.UseSoapEndpoint<ISampleService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
-			app.UseSoapEndpoint<ISampleService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
-			app.UseMvc();
+			app.UseRouting();
+
+			app.UseEndpoints(endpoints => {
+				endpoints.UseSoapEndpoint<ISampleService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+				endpoints.UseSoapEndpoint<ISampleService>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer);
+			});
 		}
 	}
 }
