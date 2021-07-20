@@ -1,11 +1,10 @@
 using System;
-using System.Collections.Generic;
 
 namespace SoapCore.Tests
 {
 	internal class MockServiceProvider : IServiceProvider
 	{
-		private bool _isTrailingService = false;
+		private readonly bool _isTrailingService;
 
 		public MockServiceProvider(bool isTrailingService)
 		{
@@ -14,7 +13,7 @@ namespace SoapCore.Tests
 
 		public object GetService(Type serviceType)
 		{
-			return _isTrailingService ? new List<TrailingServicePathTuner> { new TrailingServicePathTuner() } : new List<TrailingServicePathTuner>();
+			return (serviceType == typeof(TrailingServicePathTuner) && _isTrailingService) ? new TrailingServicePathTuner() : null;
 		}
 	}
 }
