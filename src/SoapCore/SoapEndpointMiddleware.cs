@@ -151,18 +151,11 @@ namespace SoapCore
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body);
 		}
 
-		private static async Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
+		private static Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
 		{
-			//Read the body to ensure we have the full message
-			var memoryStream = new MemoryStream((int)httpContext.Request.ContentLength.GetValueOrDefault(1024));
-			await httpContext.Request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
-			memoryStream.Seek(0, SeekOrigin.Begin);
-			httpContext.Request.Body = memoryStream;
-
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+			return messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
 		}
 #else
-
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
@@ -172,7 +165,6 @@ namespace SoapCore
 		{
 			return messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
 		}
-
 #endif
 
 		private async Task ProcessMeta(HttpContext httpContext)
