@@ -1,6 +1,6 @@
 # SoapCore
 
-[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) 
+[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) [![Stack Overflow](https://img.shields.io/badge/stackoverflow-questions-blue?logo=stackoverflow)](https://stackoverflow.com/questions/tagged/soapcore)
 
 SOAP protocol middleware for ASP.NET Core
 
@@ -38,11 +38,11 @@ public void ConfigureServices(IServiceCollection services)
 
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
-	app.UseRouting();
-	
-	app.UseEndpoints(endpoints => {
-		endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
-	});
+    app.UseRouting();
+
+    app.UseEndpoints(endpoints => {
+        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
+    });
     
 }
 ```
@@ -59,19 +59,6 @@ public void ConfigureServices(IServiceCollection services)
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
     app.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
-}
-```
-
-Program.cs
-```csharp
-public static void Main(string[] args)
-{
-    var host = new WebHostBuilder()
-        .UseKestrel()
-        .UseUrls("http://*:5050")
-        .UseStartup<Startup>()
-        .Build();
-    host.Run();
 }
 ```
 
@@ -191,7 +178,7 @@ public class MyService : IMyServiceService
     private ThreadLocal<string> _paramValue = new ThreadLocal<string>() { Value = string.Empty };
 
     // ...
-    
+
     public void SetParameterForSomeOperation(string paramValue)
     {
         _paramValue.Value = paramValue;
