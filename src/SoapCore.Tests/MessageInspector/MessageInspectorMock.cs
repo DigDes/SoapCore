@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.ServiceModel.Channels;
 using System.Xml;
@@ -5,6 +6,7 @@ using SoapCore.Extensibility;
 
 namespace SoapCore.Tests.MessageInspector
 {
+	[Obsolete]
 	public class MessageInspectorMock : IMessageInspector
 	{
 		public static bool AfterReceivedRequestCalled { get; private set; }

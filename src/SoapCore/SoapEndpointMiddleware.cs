@@ -259,19 +259,6 @@ namespace SoapCore
 				return;
 			}
 
-			var messageInspector = serviceProvider.GetService<IMessageInspector>();
-			object correlationObject;
-
-			try
-			{
-				correlationObject = messageInspector?.AfterReceiveRequest(ref requestMessage);
-			}
-			catch (Exception ex)
-			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-				return;
-			}
-
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
 
@@ -350,8 +337,6 @@ namespace SoapCore
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 
 					correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
-
-					messageInspector?.BeforeSendReply(ref responseMessage, correlationObject);
 
 					SetHttpResponse(httpContext, responseMessage);
 

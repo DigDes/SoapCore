@@ -6,6 +6,7 @@ using System.ServiceModel.Dispatcher;
 
 namespace SoapCore.Tests.MessageInspector
 {
+	[Obsolete]
 	public class ClientMessageInspector : IClientMessageInspector
 	{
 		private readonly Dictionary<string, object> _customHeaders;
