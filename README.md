@@ -1,6 +1,6 @@
 # SoapCore
 
-[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) [![Stack Overflow](https://img.shields.io/badge/stackoverflow-questions-blue?logo=stackoverflow)](https://stackoverflow.com/questions/tagged/soapcore)
+[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) ![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg) [![Stack Overflow](https://img.shields.io/badge/stackoverflow-questions-blue?logo=stackoverflow)](https://stackoverflow.com/questions/tagged/soapcore)
 
 SOAP protocol middleware for ASP.NET Core
 
@@ -200,5 +200,3 @@ See [Contributing guide](CONTRIBUTING.md)
 </a>
 
 Made with [contributors-img](https://contributors-img.web.app).
-
-![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg)
