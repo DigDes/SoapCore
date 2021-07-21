@@ -1,3 +1,4 @@
+using System;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.Extensibility;
@@ -56,12 +57,14 @@ namespace SoapCore
 		/// The maximum size in bytes of the in-memory <see cref="System.Buffers.ArrayPool{Byte}"/> used to buffer the
 		/// stream. Larger request bodies are written to disk.
 		/// </summary>
+		[Obsolete]
 		public int BufferThreshold { get; set; } = 1024 * 30;
 
 		/// <summary>
 		/// The maximum size in bytes of the request body. An attempt to read beyond this limit will cause an
 		/// <see cref="System.IO.IOException"/>.
 		/// </summary>
+		[Obsolete]
 		public long BufferLimit { get; set; }
 
 		/// <summary>

@@ -90,26 +90,6 @@ namespace SoapCore
 
 		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
-			if (_options != null)
-			{
-				if (_options.BufferThreshold > 0 && _options.BufferLimit > 0)
-				{
-					httpContext.Request.EnableBuffering(_options.BufferThreshold, _options.BufferLimit);
-				}
-				else if (_options.BufferThreshold > 0)
-				{
-					httpContext.Request.EnableBuffering(_options.BufferThreshold);
-				}
-				else
-				{
-					httpContext.Request.EnableBuffering();
-				}
-			}
-			else
-			{
-				httpContext.Request.EnableBuffering();
-			}
-
 			var trailPathTuner = serviceProvider.GetService<TrailingServicePathTuner>();
 
 			trailPathTuner?.ConvertPath(httpContext);
