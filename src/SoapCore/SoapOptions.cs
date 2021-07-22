@@ -14,7 +14,10 @@ namespace SoapCore
 		public bool CaseInsensitivePath { get; set; }
 		public ISoapModelBounder SoapModelBounder { get; set; }
 		public Binding Binding { get; set; }
+
+		[Obsolete]
 		public int BufferThreshold { get; set; } = 1024 * 30;
+		[Obsolete]
 		public long BufferLimit { get; set; }
 
 		/// <summary>
@@ -52,8 +55,10 @@ namespace SoapCore
 				CaseInsensitivePath = opt.CaseInsensitivePath,
 				SoapModelBounder = opt.SoapModelBounder,
 				Binding = opt.Binding,
+#pragma warning disable CS0612 // Type or member is obsolete
 				BufferThreshold = opt.BufferThreshold,
 				BufferLimit = opt.BufferLimit,
+#pragma warning restore CS0612 // Type or member is obsolete
 				HttpsGetEnabled = opt.HttpsGetEnabled,
 				HttpGetEnabled = opt.HttpGetEnabled,
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
