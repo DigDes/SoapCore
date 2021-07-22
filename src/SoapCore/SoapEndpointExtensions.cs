@@ -356,9 +356,10 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
+		[Obsolete]
 		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector)
 		{
-			serviceCollection.TryAddSingleton(messageInspector);
+			serviceCollection.AddSoapMessageInspector(new ObsoleteMessageInspector(messageInspector));
 			return serviceCollection;
 		}
 

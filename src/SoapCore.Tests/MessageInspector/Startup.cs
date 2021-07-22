@@ -1,3 +1,4 @@
+using System;
 using System.ServiceModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SoapCore.Tests.MessageInspector
 {
+	[Obsolete]
 	public class Startup
 	{
 		public void ConfigureServices(IServiceCollection services)

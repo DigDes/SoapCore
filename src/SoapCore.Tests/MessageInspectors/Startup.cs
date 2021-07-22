@@ -29,7 +29,9 @@ namespace SoapCore.Tests.MessageInspectors
 			switch (InspectorStyle)
 			{
 				case InspectorStyle.MessageInspector:
+#pragma warning disable CS0612 // Type or member is obsolete
 					services.AddSoapMessageInspector(new MessageInspectorMock());
+#pragma warning restore CS0612 // Type or member is obsolete
 					break;
 				case InspectorStyle.MessageInspector2:
 					services.AddSoapMessageInspector(new MessageInspector2Mock());

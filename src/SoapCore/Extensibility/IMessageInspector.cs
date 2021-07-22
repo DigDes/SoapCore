@@ -1,7 +1,9 @@
+using System;
 using System.ServiceModel.Channels;
 
 namespace SoapCore.Extensibility
 {
+	[Obsolete]
 	public interface IMessageInspector
 	{
 		object AfterReceiveRequest(ref Message message);
