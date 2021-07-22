@@ -13,7 +13,7 @@ namespace Server
 		public static void Main(string[] args)
 		{
 			var host = new WebHostBuilder()
-				.UseKestrel(x => x.AllowSynchronousIO = true)
+				.UseKestrel()
 				.UseUrls("http://*:5050")
 				.UseContentRoot(Directory.GetCurrentDirectory())
 				.UseStartup<Startup>()
