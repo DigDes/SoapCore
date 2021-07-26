@@ -130,10 +130,7 @@ namespace SoapCore
 				{
 					var serializer = CachedXmlSerializer.GetXmlSerializer(resultType.GetElementType(), xmlName, xmlNs);
 
-					lock (serializer)
-					{
-						serializer.SerializeArray(writer, (object[])_result);
-					}
+					serializer.SerializeArray(writer, (object[])_result);
 				}
 				else
 				{
@@ -164,20 +161,17 @@ namespace SoapCore
 
 							var serializer = CachedXmlSerializer.GetXmlSerializer(memberType, memberName, memberNamespace);
 
-							lock (serializer)
+							if (memberValue is Stream)
 							{
-								if (memberValue is Stream)
-								{
-									writer.WriteStartElement(memberName, _serviceNamespace);
+								writer.WriteStartElement(memberName, _serviceNamespace);
 
-									WriteStream(writer, memberValue);
+								WriteStream(writer, memberValue);
 
-									writer.WriteEndElement();
-								}
-								else
-								{
-									serializer.Serialize(writer, memberValue);
-								}
+								writer.WriteEndElement();
+							}
+							else
+							{
+								serializer.Serialize(writer, memberValue);
 							}
 						}
 
@@ -190,28 +184,25 @@ namespace SoapCore
 					{
 						var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, xmlName, xmlNs);
 
-						lock (serializer)
+						if (_result is Stream)
 						{
-							if (_result is Stream)
+							writer.WriteStartElement(_resultName, _serviceNamespace);
+							WriteStream(writer, _result);
+							writer.WriteEndElement();
+						}
+						else
+						{
+							//https://github.com/DigDes/SoapCore/issues/385
+							if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 							{
-								writer.WriteStartElement(_resultName, _serviceNamespace);
-								WriteStream(writer, _result);
-								writer.WriteEndElement();
+								var importer = new SoapReflectionImporter(_serviceNamespace);
+								var typeMapping = importer.ImportTypeMapping(resultType);
+								var accessor = typeMapping.GetType().GetProperty("Accessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(typeMapping);
+								accessor?.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(accessor, xmlName);
+								new XmlSerializer(typeMapping).Serialize(writer, _result);
 							}
-							else
-							{
-								//https://github.com/DigDes/SoapCore/issues/385
-								if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
-								{
-									var importer = new SoapReflectionImporter(_serviceNamespace);
-									var typeMapping = importer.ImportTypeMapping(resultType);
-									var accessor = typeMapping.GetType().GetProperty("Accessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(typeMapping);
-									accessor?.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(accessor, xmlName);
-									new XmlSerializer(typeMapping).Serialize(writer, _result);
-								}
 
-								serializer.Serialize(writer, _result);
-							}
+							serializer.Serialize(writer, _result);
 						}
 					}
 				}
@@ -243,17 +234,13 @@ namespace SoapCore
 				else
 				{
 					//for complex types
-					using (var ms = new MemoryStream())
-					using (var stream = new BufferedStream(ms))
+					using (var stream = new MemoryStream())
 					{
 						// write element with name as outResult.Key and type information as outResultType
 						// i.e. <outResult.Key xsi:type="outResultType" ... />
 						var outResultType = outResult.Value.GetType();
 						var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
-						lock (serializer)
-						{
-							serializer.Serialize(stream, outResult.Value);
-						}
+						serializer.Serialize(stream, outResult.Value);
 
 						//add outResultType. ugly, but working
 						stream.Position = 0;
@@ -336,8 +323,7 @@ namespace SoapCore
 				else
 				{
 					//for complex types
-					using (var ms = new MemoryStream())
-					using (var stream = new BufferedStream(ms))
+					using (var stream = new MemoryStream())
 					{
 						Type outResultType = outResult.Value.GetType();
 						IEnumerable<Type> serviceKnownTypes = _operation
@@ -345,7 +331,7 @@ namespace SoapCore
 							.Select(x => x.Type);
 
 						var serializer = new DataContractSerializer(outResultType, serviceKnownTypes);
-						serializer.WriteObject(ms, outResult.Value);
+						serializer.WriteObject(stream, outResult.Value);
 
 						stream.Position = 0;
 						using (var reader = XmlReader.Create(stream))

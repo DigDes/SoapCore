@@ -84,16 +84,13 @@ namespace SoapCore
 
 			var serializer = CachedXmlSerializer.GetXmlSerializer(elementType, parameterName, parameterNs);
 
-			lock (serializer)
+			if (elementType == typeof(Stream) || typeof(Stream).IsAssignableFrom(elementType))
 			{
-				if (elementType == typeof(Stream) || typeof(Stream).IsAssignableFrom(elementType))
-				{
-					xmlReader.Read();
-					return new MemoryStream(xmlReader.ReadContentAsBase64());
-				}
-
-				return serializer.Deserialize(xmlReader);
+				xmlReader.Read();
+				return new MemoryStream(xmlReader.ReadContentAsBase64(), false);
 			}
+
+			return serializer.Deserialize(xmlReader);
 		}
 
 		private static object DeserializeDataContract(
@@ -148,16 +145,13 @@ namespace SoapCore
 
 			object result = null;
 
-			lock (serializer)
+			if (xmlReader.HasValue && elementType?.FullName == "System.Byte")
 			{
-				if (xmlReader.HasValue && elementType?.FullName == "System.Byte")
-				{
-					result = xmlReader.ReadContentAsBase64();
-				}
-				else
-				{
-					result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
-				}
+				result = xmlReader.ReadContentAsBase64();
+			}
+			else
+			{
+				result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
 			}
 
 			if (!isEmpty && hasContainerElement)
