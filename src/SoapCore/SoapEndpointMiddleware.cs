@@ -108,7 +108,7 @@ namespace SoapCore
 
 				try
 				{
-					_logger.LogDebug($"Received SOAP Request for {httpContext.Request.Path} ({httpContext.Request.ContentLength ?? 0} bytes)");
+					_logger.LogDebug("Received SOAP Request for {0} ({1} bytes)", httpContext.Request.Path, httpContext.Request.ContentLength ?? 0);
 
 					if ((string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl")) && httpContext.Request.Method?.ToLower() == "get")
 					{
@@ -132,7 +132,7 @@ namespace SoapCore
 				}
 				catch (Exception ex)
 				{
-					_logger.LogCritical(ex, $"An error occurred when trying to service a request on SOAP endpoint: {httpContext.Request.Path}");
+					_logger.LogCritical(ex, "An error occurred when trying to service a request on SOAP endpoint: {0}", httpContext.Request.Path);
 
 					// Let's pass this up the middleware chain after we have logged this issue
 					// and signaled the critical of it
@@ -273,7 +273,7 @@ namespace SoapCore
 					return;
 				}
 
-				_logger.LogInformation($"Request for operation {operation.Contract.Name}.{operation.Name} received");
+				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
 
 				try
 				{
@@ -321,7 +321,6 @@ namespace SoapCore
 						exception = targetInvocationException.InnerException;
 					}
 
-					_logger.LogError(0, exception, exception?.Message);
 					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 			}
