@@ -459,6 +459,8 @@ namespace SoapCore
 				if (xmlReader != null)
 				{
 					xmlReader.ReadStartElement(operation.Name, operation.Contract.Namespace);
+
+					var lastParameterIndex = -1;
 					while (!xmlReader.EOF)
 					{
 						var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName);
@@ -468,11 +470,17 @@ namespace SoapCore
 							continue;
 						}
 
-						var parameterType = parameterInfo.Parameter.ParameterType;
+						// prevent infinite loop (see https://github.com/DigDes/SoapCore/issues/610)
+						if (parameterInfo.Index == lastParameterIndex)
+						{
+							break;
+						}
+
+						lastParameterIndex = parameterInfo.Index;
 
 						var argumentValue = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
-							parameterType,
+							parameterInfo.Parameter.ParameterType,
 							parameterInfo.Name,
 							operation.Contract.Namespace,
 							parameterInfo.Parameter,
@@ -483,7 +491,7 @@ namespace SoapCore
 						{
 							argumentValue = _serializerHelper.DeserializeInputParameter(
 								xmlReader,
-								parameterType,
+								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
 								parameterInfo.Namespace,
 								parameterInfo.Parameter,
