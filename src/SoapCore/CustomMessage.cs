@@ -18,20 +18,15 @@ namespace SoapCore
 
 		public XmlNamespaceManager NamespaceManager { get; internal set; }
 
-		public override MessageHeaders Headers
-		{
-			get { return Message.Headers; }
-		}
+		public override MessageHeaders Headers => Message.Headers;
 
-		public override MessageProperties Properties
-		{
-			get { return Message.Properties; }
-		}
+		public override MessageProperties Properties => Message.Properties;
 
-		public override MessageVersion Version
-		{
-			get { return Message.Version; }
-		}
+		public override MessageVersion Version => Message.Version;
+
+		public override bool IsEmpty => Message.IsEmpty;
+
+		public override bool IsFault => Message.IsFault;
 
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
@@ -55,6 +50,12 @@ namespace SoapCore
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
 			Message.WriteBodyContents(writer);
+		}
+
+		protected override void OnClose()
+		{
+			Message.Close();
+			base.OnClose();
 		}
 	}
 }

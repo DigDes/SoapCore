@@ -153,8 +153,7 @@ namespace SoapCore
 			var xmlNamespaceManager = GetXmlNamespaceManager();
 			var binding = _options.Binding;
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, binding, xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, binding);
-			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, _service, binding, xmlNamespaceManager);
+			using var responseMessage = new MetaMessage(Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter), _service, binding, xmlNamespaceManager);
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
@@ -338,7 +337,7 @@ namespace SoapCore
 			Message requestMessage,
 			SoapMessageEncoder soapMessageEncoder)
 		{
-			Message responseMessage;
+			T_MESSAGE responseMessage;
 
 			// Create response message
 			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
@@ -713,9 +712,9 @@ namespace SoapCore
 			}
 		}
 
-		private async Task ProcessXSD(Microsoft.AspNetCore.Http.HttpContext httpContext)
+		private async Task ProcessXSD(HttpContext httpContext)
 		{
-			Meta.MetaFromFile meta = new Meta.MetaFromFile();
+			var meta = new MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
 				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
@@ -758,9 +757,9 @@ namespace SoapCore
 			await httpContext.Response.WriteAsync(modifiedxsd);
 		}
 
-		private async Task ProcessMetaFromFile(Microsoft.AspNetCore.Http.HttpContext httpContext)
+		private async Task ProcessMetaFromFile(HttpContext httpContext)
 		{
-			Meta.MetaFromFile meta = new Meta.MetaFromFile();
+			var meta = new MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
 				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
