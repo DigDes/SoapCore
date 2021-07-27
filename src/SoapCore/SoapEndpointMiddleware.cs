@@ -29,38 +29,25 @@ namespace SoapCore
 		private readonly RequestDelegate _next;
 		private readonly SoapOptions _options;
 		private readonly ServiceDescription _service;
-		private readonly string _endpointPath;
-		private readonly SoapSerializer _serializer;
-		private readonly Binding _binding;
 		private readonly StringComparison _pathComparisonStrategy;
-		private readonly ISoapModelBounder _soapModelBounder;
-		private readonly bool _httpGetEnabled;
-		private readonly bool _httpsGetEnabled;
 		private readonly SoapMessageEncoder[] _messageEncoders;
 		private readonly SerializerHelper _serializerHelper;
-		private readonly XmlNamespaceManager _xmlNamespaceManager;
 
 		[Obsolete]
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
-		{
-			_logger = logger;
-			_next = next;
-			_endpointPath = path;
-			_serializer = serializer;
-			_serializerHelper = new SerializerHelper(_serializer);
-			_pathComparisonStrategy = caseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-			_service = new ServiceDescription(serviceType);
-			_soapModelBounder = soapModelBounder;
-			_binding = binding;
-			_httpGetEnabled = httpGetEnabled;
-			_httpsGetEnabled = httpsGetEnabled;
-
-			_messageEncoders = new SoapMessageEncoder[encoderOptions.Length];
-
-			for (var i = 0; i < encoderOptions.Length; i++)
+			: this(logger, next, new SoapOptions()
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions[i].MessageVersion, encoderOptions[i].WriteEncoding, encoderOptions[i].ReaderQuotas, true, true);
-			}
+				ServiceType = serviceType,
+				Path = path,
+				EncoderOptions = encoderOptions,
+				SoapSerializer = serializer,
+				CaseInsensitivePath = caseInsensitivePath,
+				SoapModelBounder = soapModelBounder,
+				Binding = binding,
+				HttpGetEnabled = httpGetEnabled,
+				HttpsGetEnabled = httpsGetEnabled
+			})
+		{
 		}
 
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, SoapOptions options)
@@ -68,17 +55,10 @@ namespace SoapCore
 			_logger = logger;
 			_next = next;
 			_options = options;
-			_endpointPath = options.Path;
-			_serializer = options.SoapSerializer;
-			_serializerHelper = new SerializerHelper(_serializer);
+
+			_serializerHelper = new SerializerHelper(options.SoapSerializer);
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType);
-			_soapModelBounder = options.SoapModelBounder;
-			_binding = options.Binding;
-			_httpGetEnabled = options.HttpGetEnabled;
-			_httpsGetEnabled = options.HttpsGetEnabled;
-			_xmlNamespaceManager = options.XmlNamespacePrefixOverrides ?? Namespaces.CreateDefaultXmlNamespaceManager();
-			Namespaces.AddDefaultNamespaces(_xmlNamespaceManager);
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
@@ -94,12 +74,12 @@ namespace SoapCore
 
 			trailPathTuner?.ConvertPath(httpContext);
 
-			if (httpContext.Request.Path.Equals(_endpointPath, _pathComparisonStrategy))
+			if (httpContext.Request.Path.Equals(_options.Path, _pathComparisonStrategy))
 			{
 				if (httpContext.Request.Method?.ToLower() == "get")
 				{
 					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
-					if ((httpContext.Request.IsHttps && !_httpsGetEnabled) || (!httpContext.Request.IsHttps && !_httpGetEnabled))
+					if ((httpContext.Request.IsHttps && !_options.HttpsGetEnabled) || (!httpContext.Request.IsHttps && !_options.HttpGetEnabled))
 					{
 						httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
 						return;
@@ -170,9 +150,11 @@ namespace SoapCore
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-			var bodyWriter = _serializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, _binding, _xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, _binding);
+			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var binding = _options.Binding;
+			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, binding, xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, binding);
 			var responseMessage = Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, _service, _binding, _xmlNamespaceManager);
+			responseMessage = new MetaMessage(responseMessage, _service, binding, xmlNamespaceManager);
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
@@ -359,30 +341,27 @@ namespace SoapCore
 			Message responseMessage;
 
 			// Create response message
-			var bodyWriter = new ServiceBodyWriter(_serializer, operation, responseObject, resultOutDictionary);
+			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
+			var xmlNamespaceManager = GetXmlNamespaceManager();
 
 			if (soapMessageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
-				responseMessage = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter);
-				T_MESSAGE customMessage = new T_MESSAGE
+				responseMessage = new T_MESSAGE
 				{
-					Message = responseMessage,
-					NamespaceManager = _xmlNamespaceManager
+					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter),
+					NamespaceManager = xmlNamespaceManager
 				};
-				responseMessage = customMessage;
 				responseMessage.Headers.Action = operation.ReplyAction;
 				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
 				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 			}
 			else
 			{
-				responseMessage = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter);
-				T_MESSAGE customMessage = new T_MESSAGE
+				responseMessage = new T_MESSAGE
 				{
-					Message = responseMessage,
-					NamespaceManager = _xmlNamespaceManager
+					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter),
+					NamespaceManager = xmlNamespaceManager
 				};
-				responseMessage = customMessage;
 			}
 
 			if (responseObject != null)
@@ -425,7 +404,7 @@ namespace SoapCore
 			}
 
 			// Invoke OnModelBound
-			_soapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
+			_options.SoapModelBounder?.OnModelBound(operation.DispatchMethod, arguments);
 
 			// Tune service instance for operation call
 			var serviceOperationTuners = serviceProvider.GetServices<IServiceOperationTuner>();
@@ -690,8 +669,9 @@ namespace SoapCore
 		{
 			_logger.LogError(exception, "An error occurred processing the message");
 
+			var xmlNamespaceManager = GetXmlNamespaceManager();
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, _xmlNamespaceManager);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, xmlNamespaceManager);
 
 			httpContext.Response.ContentType = httpContext.Request.ContentType;
 			httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
@@ -810,6 +790,13 @@ namespace SoapCore
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
 			await httpContext.Response.WriteAsync(modifiedWsdl);
+		}
+
+		private XmlNamespaceManager GetXmlNamespaceManager()
+		{
+			var xmlNamespaceManager = _options.XmlNamespacePrefixOverrides ?? new XmlNamespaceManager(new NameTable());
+			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
+			return xmlNamespaceManager;
 		}
 	}
 }
