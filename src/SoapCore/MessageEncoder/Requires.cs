@@ -3,6 +3,7 @@ using System.Diagnostics;
 
 namespace SoapCore.MessageEncoder
 {
+	[Obsolete]
 	internal static class Requires
 	{
 		[DebuggerStepThrough]
@@ -15,15 +16,6 @@ namespace SoapCore.MessageEncoder
 			}
 
 			return value;
-		}
-
-		[DebuggerStepThrough]
-		public static void Range(bool condition, string parameterName)
-		{
-			if (!condition)
-			{
-				throw new ArgumentOutOfRangeException(parameterName);
-			}
 		}
 	}
 }

@@ -7,7 +7,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft;
 
 namespace SoapCore.MessageEncoder
 {
@@ -18,6 +17,7 @@ namespace SoapCore.MessageEncoder
 	/// Using this is much more memory efficient than a <see cref="StreamWriter"/> when writing to many different
 	/// <see cref="IBufferWriter{T}"/> because the same writer, with all its buffers, can be reused.
 	/// </remarks>
+	[Obsolete]
 	public class BufferTextWriter : TextWriter
 	{
 		/// <summary>
