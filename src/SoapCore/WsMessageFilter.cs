@@ -2,6 +2,7 @@ using System;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using SoapCore.Extensibility;
 using static System.Convert;
@@ -9,7 +10,7 @@ using static System.Text.Encoding;
 
 namespace SoapCore
 {
-	public class WsMessageFilter : IMessageFilter
+	public class WsMessageFilter : IAsyncMessageFilter
 	{
 		private const string _passwordTextType = @"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText";
 		private readonly string _username;
@@ -31,7 +32,7 @@ namespace SoapCore
 			_authInvalidErrorMessage = authInvalidErrorMessage;
 		}
 
-		public void OnRequestExecuting(Message message)
+		public Task OnRequestExecuting(Message message)
 		{
 			WsUsernameToken wsUsernameToken;
 			try
@@ -47,11 +48,13 @@ namespace SoapCore
 			{
 				throw new InvalidCredentialException(_authInvalidErrorMessage);
 			}
+
+			return Task.CompletedTask;
 		}
 
-		public void OnResponseExecuting(Message message)
+		public Task OnResponseExecuting(Message message)
 		{
-			//empty
+			return Task.CompletedTask;
 		}
 
 		private WsUsernameToken GetWsUsernameToken(Message message)
@@ -98,9 +101,9 @@ namespace SoapCore
 			var createdArray = wsUsernameToken.Created != null ? UTF8.GetBytes(wsUsernameToken.Created) : Array.Empty<byte>();
 			var passwordArray = _password != null ? UTF8.GetBytes(_password) : Array.Empty<byte>();
 			var hashArray = new byte[nonceArray.Length + createdArray.Length + passwordArray.Length];
-			Array.Copy(nonceArray, 0, hashArray, 0, nonceArray.Length);
-			Array.Copy(createdArray, 0, hashArray, nonceArray.Length, createdArray.Length);
-			Array.Copy(passwordArray, 0, hashArray, nonceArray.Length + createdArray.Length, passwordArray.Length);
+			Buffer.BlockCopy(nonceArray, 0, hashArray, 0, nonceArray.Length);
+			Buffer.BlockCopy(createdArray, 0, hashArray, nonceArray.Length, createdArray.Length);
+			Buffer.BlockCopy(passwordArray, 0, hashArray, nonceArray.Length + createdArray.Length, passwordArray.Length);
 
 			var hash = SHA1.Create().ComputeHash(hashArray);
 			var serverPasswordDigest = ToBase64String(hash);
