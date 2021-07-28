@@ -20,20 +20,15 @@ namespace SoapCore.Meta
 			_binding = binding;
 		}
 
-		public override MessageHeaders Headers
-		{
-			get { return _message.Headers; }
-		}
+		public override MessageHeaders Headers => _message.Headers;
 
-		public override MessageProperties Properties
-		{
-			get { return _message.Properties; }
-		}
+		public override MessageProperties Properties => _message.Properties;
 
-		public override MessageVersion Version
-		{
-			get { return _message.Version; }
-		}
+		public override MessageVersion Version => _message.Version;
+
+		public override bool IsEmpty => _message.IsEmpty;
+
+		public override bool IsFault => _message.IsFault;
 
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
@@ -90,9 +85,15 @@ namespace SoapCore.Meta
 			_message.WriteBodyContents(writer);
 		}
 
+		protected override void OnClose()
+		{
+			_message.Close();
+			base.OnClose();
+		}
+
 		private void WriteXmlnsAttribute(XmlDictionaryWriter writer, string namespaceUri)
 		{
-			string prefix = _xmlNamespaceManager.LookupPrefix(namespaceUri);
+			var prefix = _xmlNamespaceManager.LookupPrefix(namespaceUri);
 			writer.WriteXmlnsAttribute(prefix, namespaceUri);
 		}
 	}

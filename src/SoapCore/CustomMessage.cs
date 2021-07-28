@@ -1,4 +1,3 @@
-using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
 
@@ -17,35 +16,29 @@ namespace SoapCore
 
 		public Message Message { get; internal set; }
 
-		public XmlNamespaceManager NamespaceManager { get; internal set; } = Namespaces.CreateDefaultXmlNamespaceManager();
+		public XmlNamespaceManager NamespaceManager { get; internal set; }
 
-		public override MessageHeaders Headers
-		{
-			get { return Message.Headers; }
-		}
+		public override MessageHeaders Headers => Message.Headers;
 
-		public override MessageProperties Properties
-		{
-			get { return Message.Properties; }
-		}
+		public override MessageProperties Properties => Message.Properties;
 
-		public override MessageVersion Version
-		{
-			get { return Message.Version; }
-		}
+		public override MessageVersion Version => Message.Version;
+
+		public override bool IsEmpty => Message.IsEmpty;
+
+		public override bool IsFault => Message.IsFault;
 
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
-			var namespaces = NamespaceManager ?? Namespaces.CreateDefaultXmlNamespaceManager();
 			writer.WriteStartDocument();
-			var prefix = Version.Envelope.NamespacePrefix(namespaces);
+			var prefix = Version.Envelope.NamespacePrefix(NamespaceManager);
 			writer.WriteStartElement(prefix, "Envelope", Version.Envelope.Namespace());
 			writer.WriteXmlnsAttribute(prefix, Version.Envelope.Namespace());
 
-			var xsdPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(namespaces, "xsd", Namespaces.XMLNS_XSD);
+			var xsdPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(NamespaceManager, "xsd", Namespaces.XMLNS_XSD);
 			writer.WriteXmlnsAttribute(xsdPrefix, Namespaces.XMLNS_XSD);
 
-			var xsiPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(namespaces, "xsi", Namespaces.XMLNS_XSI);
+			var xsiPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(NamespaceManager, "xsi", Namespaces.XMLNS_XSI);
 			writer.WriteXmlnsAttribute(xsiPrefix, Namespaces.XMLNS_XSI);
 		}
 
@@ -57,6 +50,12 @@ namespace SoapCore
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
 			Message.WriteBodyContents(writer);
+		}
+
+		protected override void OnClose()
+		{
+			Message.Close();
+			base.OnClose();
 		}
 	}
 }
