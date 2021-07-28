@@ -190,17 +190,11 @@ namespace SoapCore
 				return;
 			}
 
-			var messageFilters = serviceProvider.GetServices<IMessageFilter>().ToArray();
 			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
 			//Execute request message filters
 			try
 			{
-				foreach (var messageFilter in messageFilters)
-				{
-					messageFilter.OnRequestExecuting(requestMessage);
-				}
-
 				foreach (var messageFilter in asyncMessageFilters)
 				{
 					await messageFilter.OnRequestExecuting(requestMessage);
@@ -313,11 +307,6 @@ namespace SoapCore
 			// Execute response message filters
 			try
 			{
-				foreach (var messageFilter in messageFilters)
-				{
-					messageFilter.OnResponseExecuting(responseMessage);
-				}
-
 				foreach (var messageFilter in asyncMessageFilters.Reverse())
 				{
 					await messageFilter.OnResponseExecuting(responseMessage);

@@ -2,6 +2,7 @@ using System;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static System.Convert;
@@ -21,7 +22,7 @@ namespace SoapCore.Tests.MessageFilter
 
 		[TestMethod]
 		[ExpectedException(typeof(InvalidCredentialException))]
-		public void IncorrectCredentialsNotAuthrorized()
+		public async Task IncorrectCredentialsNotAuthrorized()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
@@ -29,22 +30,22 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsse + "Password", "INAVLID_PASSWORD"));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
-		public void PasswordIsOptional()
+		public async Task PasswordIsOptional()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
 				new XElement(_wsse + "Username", "yourusername"));
 
 			var filter = new WsMessageFilter("yourusername", null);
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
-		public void PasswordTypeTextIsComparedAsIs()
+		public async Task PasswordTypeTextIsComparedAsIs()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
@@ -52,11 +53,11 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsse + "Password", new XAttribute("Type", _passwordText), "yourpassword"));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
-		public void PasswordInDigestIsDecoded()
+		public async Task PasswordInDigestIsDecoded()
 		{
 			var clearTextPassword = "yourpassword";
 			var passwordDigest = ToBase64String(SHA1.Create().ComputeHash(UTF8.GetBytes(clearTextPassword)));
@@ -69,12 +70,12 @@ namespace SoapCore.Tests.MessageFilter
 					new XText(passwordDigest)));
 
 			var filter = new WsMessageFilter("yourusername", clearTextPassword);
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
 		[ExpectedException(typeof(AuthenticationException))]
-		public void NonceCantBePresentWithoutCreated()
+		public async Task NonceCantBePresentWithoutCreated()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
@@ -83,12 +84,12 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsse + "Nonce", ToBase64String(Guid.NewGuid().ToByteArray())));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
 		[ExpectedException(typeof(AuthenticationException))]
-		public void CreatedCantBePresentWithoutNonce()
+		public async Task CreatedCantBePresentWithoutNonce()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
@@ -97,11 +98,11 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsu + "Created", "2003-07-16T01:24:32Z"));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
-		public void UseNonceAndCreatedInDigestAgainstReplayAttack()
+		public async Task UseNonceAndCreatedInDigestAgainstReplayAttack()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
@@ -111,12 +112,12 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsu + "Created", "2020-03-06T19:58:28.134Z"));
 
 			var filter = new WsMessageFilter("yourusername", "Password");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
 		[ExpectedException(typeof(InvalidCredentialException))]
-		public void IncorrectPasswordNotAuthorizedAgainstDigest()
+		public async Task IncorrectPasswordNotAuthorizedAgainstDigest()
 		{
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
@@ -126,12 +127,12 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsu + "Created", "2020-03-06T19:58:28.134Z"));
 
 			var filter = new WsMessageFilter("yourusername", "IncorrectPassword");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		[TestMethod]
 		[ExpectedException(typeof(AuthenticationException))]
-		public void InvalidNonceIsNotAuthorizedEvenInCleartext()
+		public async Task InvalidNonceIsNotAuthorizedEvenInCleartext()
 		{
 			var notBase64Encoded = "!@#$%^&*()_+";
 			var usernameToken = new XElement(
@@ -142,7 +143,7 @@ namespace SoapCore.Tests.MessageFilter
 				new XElement(_wsu + "Created", "2020-03-06T19:58:28.134Z"));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
-			filter.OnRequestExecuting(CreateMessage(usernameToken));
+			await filter.OnRequestExecuting(CreateMessage(usernameToken));
 		}
 
 		private static Message CreateMessage(XNode usernameToken)

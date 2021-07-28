@@ -359,8 +359,7 @@ namespace SoapCore
 		[Obsolete]
 		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector)
 		{
-			serviceCollection.AddSoapMessageInspector(new ObsoleteMessageInspector(messageInspector));
-			return serviceCollection;
+			return serviceCollection.AddSoapMessageInspector(new ObsoleteMessageInspector(messageInspector));
 		}
 
 		public static IServiceCollection AddSoapMessageInspector<TService>(this IServiceCollection serviceCollection)
@@ -376,21 +375,26 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
+		[Obsolete]
 		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IMessageFilter messageFilter)
 		{
-			serviceCollection.TryAddSingleton(messageFilter);
+			return serviceCollection.AddSoapMessageFilter(new ObsoleteMessageFilter(messageFilter));
+		}
+
+		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IAsyncMessageFilter messageFilter)
+		{
+			serviceCollection.AddSingleton(messageFilter);
 			return serviceCollection;
 		}
 
 		public static IServiceCollection AddSoapWsSecurityFilter(this IServiceCollection serviceCollection, string username, string password)
 		{
-			serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
-			return serviceCollection;
+			return serviceCollection.AddSoapMessageFilter(new WsMessageFilter(username, password));
 		}
 
 		public static IServiceCollection AddSoapModelBindingFilter(this IServiceCollection serviceCollection, IModelBindingFilter modelBindingFilter)
 		{
-			serviceCollection.TryAddSingleton(modelBindingFilter);
+			serviceCollection.AddSingleton(modelBindingFilter);
 			return serviceCollection;
 		}
 
