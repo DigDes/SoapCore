@@ -291,16 +291,6 @@ namespace SoapCore
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
 
-			try
-			{
-				correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
-			}
-			catch (Exception ex)
-			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-				return;
-			}
-
 			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
 			XmlDictionaryReader reader = null;
@@ -313,6 +303,17 @@ namespace SoapCore
 			{
 				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
 				requestMessage.Headers.Action = soapAction;
+
+				try
+				{
+					correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
+				}
+				catch (Exception ex)
+				{
+					await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					return;
+				}
+
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal) || o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(soapAction), StringComparison.Ordinal));
 				if (operation == null)
 				{
