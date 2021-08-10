@@ -11,6 +11,7 @@ namespace SoapCore.Tests.MessageInspector
 	{
 		public static bool AfterReceivedRequestCalled { get; private set; }
 		public static bool BeforeSendReplyCalled { get; private set; }
+		public static string Action { get; private set; }
 		public static Message LastReceivedMessage { get; private set; }
 
 		public static void Reset()
@@ -18,6 +19,7 @@ namespace SoapCore.Tests.MessageInspector
 			LastReceivedMessage = null;
 			AfterReceivedRequestCalled = false;
 			BeforeSendReplyCalled = false;
+			Action = null;
 		}
 
 		public object AfterReceiveRequest(ref Message message)
@@ -29,6 +31,7 @@ namespace SoapCore.Tests.MessageInspector
 
 			LastReceivedMessage = message;
 			AfterReceivedRequestCalled = true;
+			Action = message.Headers.Action;
 
 			using (var buffer = message.CreateBufferedCopy(int.MaxValue))
 			{

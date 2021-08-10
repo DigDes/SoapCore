@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.ServiceModel.Channels;
+using System.Xml;
 using Microsoft.AspNetCore.Http;
 
 namespace SoapCore
@@ -10,9 +12,20 @@ namespace SoapCore
 	{
 		private static readonly char[] ContentTypeSeparators = new[] { ';' };
 
+		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static string GetSoapAction(HttpContext httpContext, System.Xml.XmlDictionaryReader reader)
+		public static string GetSoapAction(HttpContext httpContext, ref Message message)
 		{
+			XmlDictionaryReader reader = null;
+			if (!message.IsEmpty)
+			{
+				MessageBuffer mb = message.CreateBufferedCopy(int.MaxValue);
+				Message responseMsg = mb.CreateMessage();
+				message = mb.CreateMessage();
+
+				reader = responseMsg.GetReaderAtBodyContents();
+			}
+
 			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
 			if (soapAction == "\"\"")
 			{
