@@ -101,6 +101,34 @@ namespace SoapCore.Tests.WsdlFromFile
 			Assert.AreEqual(element.Attributes["schemaLocation"]?.Value, url);
 		}
 
+		[TestMethod]
+		public void CheckCaseInsensitiveXSDImport()
+		{
+			StartService(typeof(MeasurementSiteTablePublicationService));
+			var serviceName = "CaseInsensitiveService.asmx".ToUpper();
+			var wsdl = GetWsdlFromCaseInsensitiveAsmx(serviceName);
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:import[1]", nsmgr);
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			string url = $"{address}/{serviceName}?xsd&name=DATEXII_3_MessageContainer.xsd";
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(element.Attributes["namespace"]?.Value, "http://datex2.eu/schema/3/messageContainer");
+			Assert.AreEqual(element.Attributes["schemaLocation"]?.Value, url);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
@@ -135,6 +163,17 @@ namespace SoapCore.Tests.WsdlFromFile
 			using (var httpClient = new HttpClient())
 			{
 				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
+			}
+		}
+
+		private string GetWsdlFromCaseInsensitiveAsmx(string serviceName)
+		{
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			using (var httpClient = new HttpClient())
+			{
+				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address.ToUpper(), serviceName)).Result;
 			}
 		}
 

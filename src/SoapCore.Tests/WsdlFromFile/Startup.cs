@@ -43,6 +43,14 @@ namespace SoapCore.Tests.WsdlFromFile
 							WsdlFile = "SnapshotPull.wsdl",
 							WSDLFolder = "/WsdlFromFile/WSDL"
 						}
+					},
+					{
+						"CaseInsensitiveService.asmx", new WebServiceWSDLMapping
+						{
+							SchemaFolder = "/WsdlFromFile/WSDL",
+							WsdlFile = "SnapshotPull.wsdl",
+							WSDLFolder = "/WsdlFromFile/WSDL"
+						}
 					}
 				},
 				AppPath = env.ContentRootPath
@@ -50,6 +58,7 @@ namespace SoapCore.Tests.WsdlFromFile
 
 			app.UseSoapEndpoint(_serviceType, "/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 			app.UseSoapEndpoint(_serviceType, "/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, options);
+			app.UseSoapEndpoint(_serviceType, "/CaseInsensitiveService.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, true, null, options);
 
 			app.UseMvc();
 		}
@@ -69,6 +78,14 @@ namespace SoapCore.Tests.WsdlFromFile
 							WsdlFile = "SnapshotPull.wsdl",
 							WSDLFolder = "/WsdlFromFile/WSDL"
 						}
+					},
+					{
+						"CaseInsensitiveService.asmx", new WebServiceWSDLMapping
+						{
+							SchemaFolder = "/WsdlFromFile/WSDL",
+							WsdlFile = "SnapshotPull.wsdl",
+							WSDLFolder = "/WsdlFromFile/WSDL"
+						}
 					}
 				},
 				AppPath = env.ContentRootPath
@@ -80,6 +97,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			{
 				x.UseSoapEndpoint(_serviceType, "/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
 				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, options);
+				x.UseSoapEndpoint(_serviceType, "/CaseInsensitiveService.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, true, null, options);
 			});
 		}
 #endif

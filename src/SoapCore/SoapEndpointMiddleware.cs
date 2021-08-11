@@ -146,6 +146,17 @@ namespace SoapCore
 			return messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
 		}
 #endif
+		private static bool TryGetMapping(IReadOnlyDictionary<string, WebServiceWSDLMapping> mappings, string webService, out WebServiceWSDLMapping mapping)
+		{
+			var key = mappings.Keys.FirstOrDefault(k => k.Equals(webService, StringComparison.OrdinalIgnoreCase));
+			if (!string.IsNullOrWhiteSpace(key))
+			{
+				return mappings.TryGetValue(key, out mapping);
+			}
+
+			mapping = null;
+			return false;
+		}
 
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
@@ -710,7 +721,10 @@ namespace SoapCore
 			}
 
 			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
-			var mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[meta.CurrentWebService];
+			if (!TryGetMapping(_options.WsdlFileOptions.WebServiceWSDLMapping, meta.CurrentWebService, out WebServiceWSDLMapping mapping))
+			{
+				throw new Exception($"Unable to find service named `{meta.CurrentWebService}` in WebServiceWSDLMapping");
+			}
 
 			meta.XsdFolder = mapping.SchemaFolder;
 
@@ -755,8 +769,10 @@ namespace SoapCore
 			}
 
 			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
-
-			WebServiceWSDLMapping mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[meta.CurrentWebService];
+			if (!TryGetMapping(_options.WsdlFileOptions.WebServiceWSDLMapping, meta.CurrentWebService, out WebServiceWSDLMapping mapping))
+			{
+				throw new Exception($"Unable to find service named `{meta.CurrentWebService}` in WebServiceWSDLMapping");
+			}
 
 			meta.XsdFolder = mapping.SchemaFolder;
 			meta.WSDLFolder = mapping.WSDLFolder;
