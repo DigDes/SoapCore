@@ -29,7 +29,6 @@ namespace SoapCore.Tests
 			var options = new SoapOptions()
 			{
 				Path = "/Service.svc",
-				Binding = new CustomBinding(),
 				EncoderOptions = new[]
 				{
 					new SoapEncoderOptions

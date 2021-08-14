@@ -27,7 +27,6 @@ namespace SoapCore.Tests
 			SoapOptions options = new SoapOptions()
 			{
 				Path = "/Service.svc", // this is the path registered in app startup
-				Binding = new CustomBinding(),
 				EncoderOptions = new[]
 				{
 					new SoapEncoderOptions
@@ -71,7 +70,6 @@ namespace SoapCore.Tests
 			SoapOptions options = new SoapOptions()
 			{
 				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
-				Binding = new CustomBinding(),
 				EncoderOptions = new[]
 				{
 					new SoapEncoderOptions
@@ -114,7 +112,6 @@ namespace SoapCore.Tests
 			SoapOptions options = new SoapOptions()
 			{
 				Path = "/v1/Service.svc", // this is the multi-part path registered in app startup
-				Binding = new CustomBinding(),
 				EncoderOptions = new[]
 				{
 					new SoapEncoderOptions

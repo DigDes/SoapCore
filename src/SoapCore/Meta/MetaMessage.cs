@@ -9,15 +9,23 @@ namespace SoapCore.Meta
 	{
 		private readonly Message _message;
 		private readonly ServiceDescription _service;
-		private readonly Binding _binding;
 		private readonly XmlNamespaceManager _xmlNamespaceManager;
+		private readonly string _bindingName;
+		private readonly bool _hasBasicAuthentication;
 
+		[Obsolete]
 		public MetaMessage(Message message, ServiceDescription service, Binding binding, XmlNamespaceManager xmlNamespaceManager)
+			: this(message, service, xmlNamespaceManager, binding?.Name, binding.HasBasicAuth())
+		{
+		}
+
+		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication)
 		{
 			_xmlNamespaceManager = xmlNamespaceManager;
 			_message = message;
 			_service = service;
-			_binding = binding;
+			_bindingName = bindingName;
+			_hasBasicAuthentication = hasBasicAuthentication;
 		}
 
 		public override MessageHeaders Headers => _message.Headers;
@@ -62,10 +70,10 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", _service.ServiceType.Name);
 			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
-			if (_binding != null && _binding.HasBasicAuth())
+			if (_hasBasicAuthentication)
 			{
 				writer.WriteStartElement("Policy", Namespaces.WSP_NS);
-				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_binding.Name}_{_service.GeneralContract.Name}_policy");
+				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_bindingName}_{_service.GeneralContract.Name}_policy");
 				writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
 				writer.WriteStartElement("All", Namespaces.WSP_NS);
 				writer.WriteStartElement("BasicAuthentication", Namespaces.HTTP_NS);
