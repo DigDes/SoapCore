@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.ServiceModel.Channels;
 using System.Text;
@@ -5,6 +6,7 @@ using System.Xml;
 
 namespace SoapCore.Meta
 {
+	[Obsolete]
 	internal static class BindingExtensions
 	{
 		public static bool HasBasicAuth(this Binding binding)

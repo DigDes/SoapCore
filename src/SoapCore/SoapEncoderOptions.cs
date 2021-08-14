@@ -6,21 +6,13 @@ namespace SoapCore
 {
 	public class SoapEncoderOptions
 	{
-		public MessageVersion MessageVersion { get; set; }
-		public Encoding WriteEncoding { get; set; }
-		public XmlDictionaryReaderQuotas ReaderQuotas { get; set; }
+		public MessageVersion MessageVersion { get; set; } = MessageVersion.Soap11;
+		public Encoding WriteEncoding { get; set; } = Encoding.UTF8;
+		public XmlDictionaryReaderQuotas ReaderQuotas { get; set; } = XmlDictionaryReaderQuotas.Max;
 
-		internal static SoapEncoderOptions[] Default()
+		public static SoapEncoderOptions Default()
 		{
-			return new SoapEncoderOptions[]
-			{
-				new SoapEncoderOptions
-				{
-					MessageVersion = MessageVersion.Soap11,
-					WriteEncoding = Encoding.UTF8,
-					ReaderQuotas = XmlDictionaryReaderQuotas.Max
-				}
-			};
+			return new SoapEncoderOptions();
 		}
 
 		internal static SoapEncoderOptions[] ToArray(SoapEncoderOptions options)

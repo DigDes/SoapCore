@@ -22,7 +22,7 @@ namespace SoapCore.Tests.MessageInspector
 #if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
-			app.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+			app.UseSoapEndpoint<TestService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
 			app.UseMvc();
 		}
 #else
@@ -32,7 +32,7 @@ namespace SoapCore.Tests.MessageInspector
 
 			app.UseEndpoints(x =>
 			{
-				x.UseSoapEndpoint<TestService>("/Service.svc", new BasicHttpBinding(), SoapSerializer.DataContractSerializer);
+				x.UseSoapEndpoint<TestService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
 			});
 		}
 #endif

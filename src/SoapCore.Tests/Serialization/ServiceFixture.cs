@@ -41,16 +41,16 @@ namespace SoapCore.Tests.Serialization
 				.Configure(appBuilder =>
 				{
 #if !NETCOREAPP3_0_OR_GREATER
-					appBuilder.UseSoapEndpoint<TService>("/Service.svc", binding, SoapSerializer.DataContractSerializer);
-					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", binding, SoapSerializer.XmlSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
+					appBuilder.UseSoapEndpoint<TService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
 #else
 					appBuilder.UseRouting();
 
 					appBuilder.UseEndpoints(x =>
 					{
-						x.UseSoapEndpoint<TService>("/Service.svc", binding, SoapSerializer.DataContractSerializer);
-						x.UseSoapEndpoint<TService>("/Service.asmx", binding, SoapSerializer.XmlSerializer);
+						x.UseSoapEndpoint<TService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
+						x.UseSoapEndpoint<TService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
 					});
 #endif
 				})

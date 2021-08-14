@@ -62,7 +62,7 @@ namespace SoapCore
 
 			if (options.EncoderOptions is null)
 			{
-				options.EncoderOptions = SoapEncoderOptions.Default();
+				options.EncoderOptions = new[] { SoapEncoderOptions.Default() };
 			}
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
