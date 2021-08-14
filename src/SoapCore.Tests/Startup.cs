@@ -28,13 +28,13 @@ namespace SoapCore.Tests
 		{
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
-				app2.UseSoapEndpoint<TestService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
+				app2.UseSoapEndpoint<TestService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
 			});
 
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
 				// For case insensitive path test
-				app2.UseSoapEndpoint<TestService>("/ServiceCI.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
+				app2.UseSoapEndpoint<TestService>("/ServiceCI.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
 			});
 
 			app.UseWhen(ctx => !ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
@@ -44,7 +44,7 @@ namespace SoapCore.Tests
 
 			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("asmx"), app2 =>
 			{
-				app2.UseSoapEndpoint<TestService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+				app2.UseSoapEndpoint<TestService>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 			});
 
 			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA10Service.svc"), app2 =>
@@ -79,7 +79,7 @@ namespace SoapCore.Tests
 
 				app2.UseEndpoints(x =>
 				{
-					x.UseSoapEndpoint<TestService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
+					x.UseSoapEndpoint<TestService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
 				});
 			});
 
@@ -89,7 +89,7 @@ namespace SoapCore.Tests
 
 				app2.UseEndpoints(x =>
 				{
-					x.UseSoapEndpoint<TestService>("/ServiceCI.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
+					x.UseSoapEndpoint<TestService>("/ServiceCI.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer, caseInsensitivePath: true);
 				});
 			});
 
@@ -107,7 +107,7 @@ namespace SoapCore.Tests
 			{
 				app2.UseRouting();
 
-				app2.UseSoapEndpoint<TestService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+				app2.UseSoapEndpoint<TestService>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 			});
 
 			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/WSA10Service.svc"), app2 =>

@@ -13,7 +13,7 @@ namespace SoapCore.Benchmark
 
 		public void Configure(IApplicationBuilder app)
 		{
-			app.UseSoapEndpoint<PingService>("/TestService.asmx", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
+			app.UseSoapEndpoint<PingService>("/TestService.asmx", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
 			app.Use(async (ctx, next) =>
 			{
 				await ctx.Response.WriteAsync("").ConfigureAwait(false);

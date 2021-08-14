@@ -27,8 +27,8 @@ namespace Server
 			app.UseRouting();
 
 			app.UseEndpoints(endpoints => {
-				endpoints.UseSoapEndpoint<ISampleService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
-				endpoints.UseSoapEndpoint<ISampleService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+				endpoints.UseSoapEndpoint<ISampleService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+				endpoints.UseSoapEndpoint<ISampleService>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 			});
 		}
 	}

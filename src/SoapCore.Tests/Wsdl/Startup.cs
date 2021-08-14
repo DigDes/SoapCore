@@ -30,8 +30,8 @@ namespace SoapCore.Tests.Wsdl
 #if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
-			app.UseSoapEndpoint(_serviceType, "/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
-			app.UseSoapEndpoint(_serviceType, "/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+			app.UseSoapEndpoint(_serviceType, "/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+			app.UseSoapEndpoint(_serviceType, "/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 
 			app.UseMvc();
 		}
@@ -42,8 +42,8 @@ namespace SoapCore.Tests.Wsdl
 
 			app.UseEndpoints(x =>
 			{
-				x.UseSoapEndpoint(_serviceType, "/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
-				x.UseSoapEndpoint(_serviceType, "/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+				x.UseSoapEndpoint(_serviceType, "/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 			});
 		}
 #endif

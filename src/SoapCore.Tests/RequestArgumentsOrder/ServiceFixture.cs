@@ -42,16 +42,16 @@ namespace SoapCore.Tests.RequestArgumentsOrder
 				.Configure(appBuilder =>
 				{
 #if !NETCOREAPP3_0_OR_GREATER
-					appBuilder.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
-					appBuilder.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+					appBuilder.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+					appBuilder.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 					appBuilder.UseMvc();
 #else
 					appBuilder.UseRouting();
 
 					appBuilder.UseEndpoints(x =>
 					{
-						x.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.svc", SoapEncoderOptions.Default(), SoapSerializer.DataContractSerializer);
-						x.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.asmx", SoapEncoderOptions.Default(), SoapSerializer.XmlSerializer);
+						x.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+						x.UseSoapEndpoint<TOriginalParametersOrderService>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 					});
 #endif
 				})
