@@ -689,11 +689,11 @@ namespace SoapCore.Tests.Wsdl
 			var baseUrl = "http://tempuri.org/";
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
-				? new MetaWCFBodyWriter(service, baseUrl, null) as BodyWriter
-				: new MetaBodyWriter(service, baseUrl, null, xmlNamespaceManager) as BodyWriter;
+				? new MetaWCFBodyWriter(service, baseUrl, "BasicHttpBinding", false) as BodyWriter
+				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, "BasicHttpBinding", MessageVersion.None) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, service, null, xmlNamespaceManager);
+			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, "BasicHttpBinding", false);
 
 			using (var memoryStream = new MemoryStream())
 			{

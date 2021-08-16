@@ -39,11 +39,11 @@ namespace SoapCore
 			{
 				ServiceType = serviceType,
 				Path = path,
-				EncoderOptions = encoderOptions,
+				EncoderOptions = encoderOptions ?? binding?.ToEncoderOptions(),
 				SoapSerializer = serializer,
 				CaseInsensitivePath = caseInsensitivePath,
 				SoapModelBounder = soapModelBounder,
-				Binding = binding,
+				UseBasicAuthentication = binding.HasBasicAuth(),
 				HttpGetEnabled = httpGetEnabled,
 				HttpsGetEnabled = httpsGetEnabled
 			})
@@ -59,6 +59,11 @@ namespace SoapCore
 			_serializerHelper = new SerializerHelper(options.SoapSerializer);
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType);
+
+			if (options.EncoderOptions is null)
+			{
+				options.EncoderOptions = new[] { new SoapEncoderOptions() };
+			}
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
@@ -151,9 +156,18 @@ namespace SoapCore
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 			var xmlNamespaceManager = GetXmlNamespaceManager();
-			var binding = _options.Binding;
-			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer ? new MetaBodyWriter(_service, baseUrl, binding, xmlNamespaceManager) : (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, binding);
-			using var responseMessage = new MetaMessage(Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter), _service, binding, xmlNamespaceManager);
+			var bindingName = "BasicHttpBinding";
+
+			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
+				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders[0].MessageVersion)
+				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication);
+
+			using var responseMessage = new MetaMessage(
+				Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter),
+				_service,
+				xmlNamespaceManager,
+				bindingName,
+				_options.UseBasicAuthentication);
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;

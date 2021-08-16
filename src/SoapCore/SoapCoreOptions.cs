@@ -39,7 +39,14 @@ namespace SoapCore
 		/// Gets or sets a value indicating the binding to use
 		/// <para>Defaults to null</para>
 		/// </summary>
+		[Obsolete]
 		public Binding Binding { get; set; }
+
+		/// <summary>
+		/// Gets or sets a value whether to use basic authentication
+		/// <para>Defaults to false</para>
+		/// </summary>
+		public bool UseBasicAuthentication { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether publication of service metadata on HTTP GET request is activated
@@ -83,5 +90,7 @@ namespace SoapCore
 		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
 		/// </summary>
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
+
+		public WsdlFileOptions WsdlFileOptions { get; set; }
 	}
 }

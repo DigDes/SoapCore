@@ -41,7 +41,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
     app.UseRouting();
 
     app.UseEndpoints(endpoints => {
-        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
+        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions());
     });
     
 }
@@ -58,7 +58,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
-    app.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
+    app.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions());
 }
 ```
 
@@ -105,7 +105,7 @@ var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
 settings.AppPath = env.ContentRootPath; // The hosting environment root path
 ...
 
-app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, settings);
+app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer, false, null, settings);
 ```
 
 If the WsdFileOptions parameter is supplied then this feature is enabled / used.

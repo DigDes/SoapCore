@@ -31,16 +31,26 @@ namespace SoapCore.Meta
 		private readonly HashSet<string> _buildArrayTypes;
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
-		private readonly MessageVersion _version;
 		private readonly bool _isSoap12 = true;
 
 		private bool _buildDateTimeOffset;
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null) : base(isBuffered: true)
+		[Obsolete]
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null)
+			: this(
+				service,
+				baseUrl,
+				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
+				binding?.Name ?? "BasicHttpBinding_" + service.Contracts.First().Name,
+				binding.MessageVersion ?? MessageVersion.None)
+		{
+		}
+
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, MessageVersion messageVersion) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
-			_xmlNamespaceManager = xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable());
+			_xmlNamespaceManager = xmlNamespaceManager;
 
 			_enumToBuild = new Queue<Type>();
 			_complexTypeToBuild = new Queue<TypeToBuild>();
@@ -50,18 +60,9 @@ namespace SoapCore.Meta
 			_buildArrayTypes = new HashSet<string>();
 			_requestedDynamicTypes = new Dictionary<string, Dictionary<string, string>>();
 
-			if (binding != null)
-			{
-				BindingName = binding.Name;
-				PortName = binding.Name;
-				_version = binding.MessageVersion;
-				_isSoap12 = _version == MessageVersion.Soap12WSAddressing10 || _version == MessageVersion.Soap12WSAddressingAugust2004;
-			}
-			else
-			{
-				BindingName = "BasicHttpBinding_" + _service.Contracts.First().Name;
-				PortName = "BasicHttpBinding_" + _service.Contracts.First().Name;
-			}
+			BindingName = bindingName;
+			PortName = bindingName;
+			_isSoap12 = messageVersion == MessageVersion.Soap12WSAddressing10 || messageVersion == MessageVersion.Soap12WSAddressingAugust2004;
 		}
 
 		private string BindingName { get; }
