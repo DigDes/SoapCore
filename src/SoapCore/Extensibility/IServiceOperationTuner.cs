@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Http;
 using SoapCore.ServiceModel;
 
@@ -17,5 +18,12 @@ namespace SoapCore.Extensibility
 		/// <param name="serviceInstance">Service instance</param>
 		/// <param name="operation">Operation description</param>
 		void Tune(HttpContext httpContext, object serviceInstance, OperationDescription operation);
+
+#if !ASPNET_21
+		void TuneResult(HttpContext httpContext, object serviceInstance, OperationDescription operation, ref object result)
+		{
+			throw new NotImplementedException();
+		}
+#endif
 	}
 }

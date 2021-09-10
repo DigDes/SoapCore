@@ -27,7 +27,7 @@ namespace SoapCore.ServiceModel
 			Operations = operations;
 		}
 
-		public ServiceDescription Service { get; }
+    public ServiceDescription Service { get; }
 		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; }
 		public string Name { get; }
 		public string Namespace { get; }
