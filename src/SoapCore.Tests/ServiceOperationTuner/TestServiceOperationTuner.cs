@@ -7,7 +7,7 @@ namespace SoapCore.Tests.ServiceOperationTuner
 {
 	public class TestServiceOperationTuner : IServiceOperationTuner
 	{
-    public static bool IsCalled { get; private set; }
+		public static bool IsCalled { get; private set; }
 		public static bool IsSetPingValue { get; private set; }
 		public static bool IsBodyAvailable { get; private set; }
 
@@ -40,15 +40,6 @@ namespace SoapCore.Tests.ServiceOperationTuner
 
 				service.SetPingResult(result);
 				IsSetPingValue = true;
-			}
-		}
-
-		public void TuneResult(HttpContext httpContext, object serviceInstance, ServiceModel.OperationDescription operation, ref object result)
-		{
-			if (TuneResultEnabled)
-			{
-				IsTuneResultCalled = true;
-				result = "tuner";
 			}
 		}
 	}
