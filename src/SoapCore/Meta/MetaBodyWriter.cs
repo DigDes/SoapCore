@@ -367,8 +367,8 @@ namespace SoapCore.Meta
 						}
 						else
 						{
-							 writer.WriteAttributeString("type", "tns:" + type.Name);
-							 _complexTypeToBuild.Enqueue(new TypeToBuild(type));
+							writer.WriteAttributeString("type", "tns:" + type.Name);
+							_complexTypeToBuild.Enqueue(new TypeToBuild(type));
 						}
 					}
 				}
@@ -989,7 +989,10 @@ namespace SoapCore.Meta
 
 					writer.WriteAttributeString("name", name);
 					WriteQualification(writer, isUnqualified);
-					writer.WriteAttributeString("nillable", "true");
+
+					if (!isArray)
+						writer.WriteAttributeString("nillable", "true");
+
 					writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
 					_complexTypeToBuild.Enqueue(newTypeToBuild);
