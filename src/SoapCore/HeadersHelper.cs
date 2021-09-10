@@ -101,6 +101,20 @@ namespace SoapCore
 			return soapAction;
 		}
 
+		public static string GetTrimmedClearedSoapAction(string inSoapAction)
+		{
+			string trimmedAction = GetTrimmedSoapAction(inSoapAction);
+
+			if (trimmedAction.EndsWith("Request"))
+			{
+				int endIndex = trimmedAction.LastIndexOf('R');
+				string clearedAction = trimmedAction.Substring(0, endIndex);
+				return clearedAction;
+			}
+
+			return trimmedAction;
+		}
+
 		public static string GetTrimmedSoapAction(string inSoapAction)
 		{
 			string soapAction = inSoapAction;

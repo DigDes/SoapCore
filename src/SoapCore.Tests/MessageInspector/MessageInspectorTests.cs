@@ -11,6 +11,7 @@ using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests.MessageInspector
 {
+	[Obsolete]
 	[TestClass]
 	public class MessageInspectorTests
 	{

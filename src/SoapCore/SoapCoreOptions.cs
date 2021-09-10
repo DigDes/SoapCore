@@ -1,3 +1,4 @@
+using System;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.Extensibility;
@@ -38,7 +39,14 @@ namespace SoapCore
 		/// Gets or sets a value indicating the binding to use
 		/// <para>Defaults to null</para>
 		/// </summary>
+		[Obsolete]
 		public Binding Binding { get; set; }
+
+		/// <summary>
+		/// Gets or sets a value whether to use basic authentication
+		/// <para>Defaults to false</para>
+		/// </summary>
+		public bool UseBasicAuthentication { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether publication of service metadata on HTTP GET request is activated
@@ -56,12 +64,14 @@ namespace SoapCore
 		/// The maximum size in bytes of the in-memory <see cref="System.Buffers.ArrayPool{Byte}"/> used to buffer the
 		/// stream. Larger request bodies are written to disk.
 		/// </summary>
+		[Obsolete]
 		public int BufferThreshold { get; set; } = 1024 * 30;
 
 		/// <summary>
 		/// The maximum size in bytes of the request body. An attempt to read beyond this limit will cause an
 		/// <see cref="System.IO.IOException"/>.
 		/// </summary>
+		[Obsolete]
 		public long BufferLimit { get; set; }
 
 		/// <summary>
@@ -79,6 +89,8 @@ namespace SoapCore
 		/// <summary>
 		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
 		/// </summary>
-		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; } = new XmlNamespaceManager(new NameTable());
+		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
+
+		public WsdlFileOptions WsdlFileOptions { get; set; }
 	}
 }

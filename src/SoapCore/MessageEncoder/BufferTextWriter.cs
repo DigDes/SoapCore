@@ -7,7 +7,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft;
 
 namespace SoapCore.MessageEncoder
 {
@@ -18,6 +17,7 @@ namespace SoapCore.MessageEncoder
 	/// Using this is much more memory efficient than a <see cref="StreamWriter"/> when writing to many different
 	/// <see cref="IBufferWriter{T}"/> because the same writer, with all its buffers, can be reused.
 	/// </remarks>
+	[Obsolete]
 	public class BufferTextWriter : TextWriter
 	{
 		/// <summary>
@@ -167,7 +167,7 @@ namespace SoapCore.MessageEncoder
 		/// <inheritdoc />
 		public override void Write(char[] buffer, int index, int count) => Write(Requires.NotNull(buffer, nameof(buffer)).AsSpan(index, count));
 
-#if SPAN_BUILTIN
+#if NETCOREAPP2_1_OR_GREATER
 		/// <inheritdoc />
 		public override void Write(ReadOnlySpan<char> buffer)
 #else
@@ -201,7 +201,7 @@ namespace SoapCore.MessageEncoder
 			}
 		}
 
-#if SPAN_BUILTIN
+#if NETCOREAPP2_1_OR_GREATER
 		/// <inheritdoc />
 		public override void WriteLine(ReadOnlySpan<char> buffer)
 #else

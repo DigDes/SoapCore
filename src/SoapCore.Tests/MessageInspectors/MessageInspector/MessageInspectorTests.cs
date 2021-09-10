@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.ServiceModel;
-using System.ServiceModel.Channels;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SoapCore.Tests.MessageInspectors.MessageInspector
 {
+	[Obsolete]
 	[TestClass]
 	public class MessageInspectorTests
 	{

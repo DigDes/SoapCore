@@ -1,6 +1,6 @@
 # SoapCore
 
-[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) 
+[![NuGet Version](https://img.shields.io/nuget/v/SoapCore.svg)](https://www.nuget.org/packages/SoapCore/) ![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg) [![Stack Overflow](https://img.shields.io/badge/stackoverflow-questions-blue?logo=stackoverflow)](https://stackoverflow.com/questions/tagged/soapcore)
 
 SOAP protocol middleware for ASP.NET Core
 
@@ -38,11 +38,11 @@ public void ConfigureServices(IServiceCollection services)
 
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
-	app.UseRouting();
-	
-	app.UseEndpoints(endpoints => {
-		endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
-	});
+    app.UseRouting();
+
+    app.UseEndpoints(endpoints => {
+        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions());
+    });
     
 }
 ```
@@ -58,20 +58,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
-    app.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new BasicHttpBinding());
-}
-```
-
-Program.cs
-```csharp
-public static void Main(string[] args)
-{
-    var host = new WebHostBuilder()
-        .UseKestrel()
-        .UseUrls("http://*:5050")
-        .UseStartup<Startup>()
-        .Build();
-    host.Run();
+    app.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions());
 }
 ```
 
@@ -118,7 +105,7 @@ var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
 settings.AppPath = env.ContentRootPath; // The hosting environment root path
 ...
 
-app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new BasicHttpBinding(), SoapSerializer.XmlSerializer, false, null, settings);
+app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer, false, null, settings);
 ```
 
 If the WsdFileOptions parameter is supplied then this feature is enabled / used.
@@ -191,7 +178,7 @@ public class MyService : IMyServiceService
     private ThreadLocal<string> _paramValue = new ThreadLocal<string>() { Value = string.Empty };
 
     // ...
-    
+
     public void SetParameterForSomeOperation(string paramValue)
     {
         _paramValue.Value = paramValue;
@@ -213,5 +200,3 @@ See [Contributing guide](CONTRIBUTING.md)
 </a>
 
 Made with [contributors-img](https://contributors-img.web.app).
-
-![](https://github.com/DigDes/SoapCore/workflows/CI/badge.svg)

@@ -114,7 +114,7 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(pipeReader));
 			}
 
-			var stream = new PipeStream(pipeReader, false);
+			using var stream = pipeReader.AsStream(true);
 			return await ReadMessageAsync(stream, maxSizeOfHeaders, contentType);
 		}
 
@@ -148,15 +148,18 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			using var bufferTextWriter = new BufferTextWriter(pipeWriter, _writeEncoding);
-			using var xmlTextWriter = XmlWriter.Create(bufferTextWriter, new XmlWriterSettings
+			using var xmlTextWriter = XmlWriter.Create(pipeWriter.AsStream(true), new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
 				Indent = _indentXml,
-				Encoding = _writeEncoding
+				Encoding = _writeEncoding,
+				CloseOutput = true
 			});
-			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-			WriteXmlCore(message, xmlWriter);
+
+			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+			message.WriteMessage(xmlWriter);
+			xmlWriter.WriteEndDocument();
+			xmlWriter.Flush();
 
 			await pipeWriter.FlushAsync();
 		}
@@ -182,9 +185,11 @@ namespace SoapCore.MessageEncoder
 				Encoding = _writeEncoding,
 				CloseOutput = false
 			});
-			var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
 
-			WriteXmlCore(message, xmlWriter);
+			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+			message.WriteMessage(xmlWriter);
+			xmlWriter.WriteEndDocument();
+			xmlWriter.Flush();
 
 			return Task.CompletedTask;
 		}
@@ -323,14 +328,6 @@ namespace SoapCore.MessageEncoder
 			{
 				throw new InvalidOperationException($"Message version {message.Version.Envelope} doesn't match encoder version {message.Version.Envelope}");
 			}
-		}
-
-		private void WriteXmlCore(Message message, XmlWriter xmlWriter)
-		{
-			message.WriteMessage(xmlWriter);
-			xmlWriter.WriteEndDocument();
-			xmlWriter.Flush();
-			xmlWriter.Dispose();
 		}
 	}
 }

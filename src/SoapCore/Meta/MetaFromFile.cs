@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace SoapCore.Meta
@@ -37,6 +38,7 @@ namespace SoapCore.Meta
 		/// </summary>
 		public string ServerUrl { get; set; }
 
+		[Obsolete]
 		public string ReadLocalFile(string path)
 		{
 			if (!File.Exists(path))
@@ -44,11 +46,31 @@ namespace SoapCore.Meta
 				return string.Empty;
 			}
 
-			// read file
-			using var reader = new StreamReader(path);
-			var fileContents = reader.ReadToEnd();
-			return fileContents;
+			return File.ReadAllText(path);
 		}
+
+#if NETSTANDARD
+		public async Task<string> ReadLocalFileAsync(string path)
+		{
+			if (!File.Exists(path))
+			{
+				return string.Empty;
+			}
+
+			using var reader = File.OpenText(path);
+			return await reader.ReadToEndAsync();
+		}
+#else
+		public Task<string> ReadLocalFileAsync(string path)
+		{
+			if (!File.Exists(path))
+			{
+				return Task.FromResult(string.Empty);
+			}
+
+			return File.ReadAllTextAsync(path);
+		}
+#endif
 
 		public string ModifyWSDLAddRightSchemaPath(string xmlString)
 		{

@@ -2,6 +2,7 @@ using System;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.Extensibility;
+using SoapCore.Meta;
 
 namespace SoapCore
 {
@@ -13,8 +14,15 @@ namespace SoapCore
 		public SoapSerializer SoapSerializer { get; set; }
 		public bool CaseInsensitivePath { get; set; }
 		public ISoapModelBounder SoapModelBounder { get; set; }
+
+		[Obsolete]
 		public Binding Binding { get; set; }
-		public int BufferThreshold { get; set; } = 1024 * 30;
+
+		public bool UseBasicAuthentication { get; set; }
+
+		[Obsolete]
+		public int BufferThreshold { get; set; }
+		[Obsolete]
 		public long BufferLimit { get; set; }
 
 		/// <summary>
@@ -36,6 +44,7 @@ namespace SoapCore
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 
+		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
 			return FromSoapCoreOptions(opt, typeof(T));
@@ -43,7 +52,7 @@ namespace SoapCore
 
 		public static SoapOptions FromSoapCoreOptions(SoapCoreOptions opt, Type serviceType)
 		{
-			var soapOptions = new SoapOptions
+			var options = new SoapOptions
 			{
 				ServiceType = serviceType,
 				Path = opt.Path,
@@ -51,17 +60,31 @@ namespace SoapCore
 				SoapSerializer = opt.SoapSerializer,
 				CaseInsensitivePath = opt.CaseInsensitivePath,
 				SoapModelBounder = opt.SoapModelBounder,
-				Binding = opt.Binding,
-				BufferThreshold = opt.BufferThreshold,
-				BufferLimit = opt.BufferLimit,
+				UseBasicAuthentication = opt.UseBasicAuthentication,
 				HttpsGetEnabled = opt.HttpsGetEnabled,
 				HttpGetEnabled = opt.HttpGetEnabled,
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
 				IndentXml = opt.IndentXml,
-				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides
+				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
+				WsdlFileOptions = opt.WsdlFileOptions
 			};
 
-			return soapOptions;
+#pragma warning disable CS0612 // Type or member is obsolete
+			if (opt.Binding is object)
+			{
+				if (opt.Binding.HasBasicAuth())
+				{
+					options.UseBasicAuthentication = true;
+				}
+
+				if (options.EncoderOptions is null)
+				{
+					opt.EncoderOptions = opt.Binding.ToEncoderOptions();
+				}
+			}
+#pragma warning restore CS0612 // Type or member is obsolete
+
+			return options;
 		}
 	}
 }
