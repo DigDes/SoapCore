@@ -18,6 +18,10 @@ namespace SoapCore.Tests.Wsdl.Services
 	{
 		public bool Result { get; set; }
 		public string StringResult { get; set; }
+
+		[XmlElement("first", typeof(int))]
+		[XmlElement("second", typeof(string))]
+		public object[] MultipleResponse { get; set; }
 	}
 
 	public class XmlAnnotatedChoiceReturnService : IXmlAnnotatedChoiceReturnService

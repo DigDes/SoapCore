@@ -628,6 +628,9 @@ namespace SoapCore.Tests.Wsdl
 
 			var choiceComplexTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ResultResponse']", nm);
 			Assert.IsNotNull(choiceComplexTypeElement);
+
+			Assert.IsNotNull(choiceComplexTypeElement.XPathSelectElement("//xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='first' and @type='xsd:int']", nm));
+			Assert.IsNotNull(choiceComplexTypeElement.XPathSelectElement("//xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='second' and @type='xsd:string']", nm));
 		}
 
 		[TestMethod]
