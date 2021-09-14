@@ -146,7 +146,7 @@ namespace SoapCore.Meta
 		public static bool IsChoice(this MemberInfo member)
 		{
 			var choiceItem = member.GetCustomAttribute<XmlChoiceIdentifierAttribute>();
-			return choiceItem != null;
+			return choiceItem != null || member.GetCustomAttributes<XmlElementAttribute>().Count() > 1;
 		}
 
 		public static bool IsAttribute(this MemberInfo member)
