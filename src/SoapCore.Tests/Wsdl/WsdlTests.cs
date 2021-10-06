@@ -205,6 +205,17 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckEmptyNamesapce()
+		{
+			StartService(typeof(EmptyNamespaceService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			Assert.IsNotNull(root);
+		}
+
+		[TestMethod]
 		public void CheckValueTypes()
 		{
 			StartService(typeof(ValueTypeService));
