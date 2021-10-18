@@ -101,7 +101,7 @@ namespace SoapCore.Meta
 
 		private void WriteXmlnsAttribute(XmlDictionaryWriter writer, string namespaceUri)
 		{
-			var prefix = _xmlNamespaceManager.LookupPrefix(namespaceUri);
+			var prefix = string.IsNullOrEmpty(namespaceUri) ? null : _xmlNamespaceManager.LookupPrefix(namespaceUri);
 			writer.WriteXmlnsAttribute(prefix, namespaceUri);
 		}
 	}

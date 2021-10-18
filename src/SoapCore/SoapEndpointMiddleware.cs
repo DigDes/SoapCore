@@ -159,11 +159,14 @@ namespace SoapCore
 			var bindingName = "BasicHttpBinding";
 
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
-				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders[0].MessageVersion)
+				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => me.MessageVersion).ToArray())
 				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication);
 
+			//assumption that you want soap12 if your service supports that
+			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.MessageVersion == MessageVersion.Soap12WSAddressing10 || me.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004) ?? _messageEncoders[0];
+
 			using var responseMessage = new MetaMessage(
-				Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter),
+				Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter),
 				_service,
 				xmlNamespaceManager,
 				bindingName,
@@ -172,7 +175,7 @@ namespace SoapCore
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
 
-			await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
+			await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
 		}
 
 		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -180,16 +183,9 @@ namespace SoapCore
 			Message responseMessage;
 
 			// Get the encoder based on Content Type
-			var messageEncoder = _messageEncoders[0];
-
-			foreach (var encoder in _messageEncoders)
-			{
-				if (encoder.IsContentTypeSupported(httpContext.Request.ContentType))
-				{
-					messageEncoder = encoder;
-					break;
-				}
-			}
+			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, true))
+				?? _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, false))
+				?? _messageEncoders[0];
 
 			Message requestMessage;
 
@@ -220,6 +216,9 @@ namespace SoapCore
 				return;
 			}
 
+			var soapAction = HeadersHelper.GetSoapAction(httpContext, ref requestMessage);
+			requestMessage.Headers.Action = soapAction;
+
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
 
@@ -243,9 +242,6 @@ namespace SoapCore
 
 			try
 			{
-				var soapAction = HeadersHelper.GetSoapAction(httpContext, reader);
-				requestMessage.Headers.Action = soapAction;
-
 				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal)
 				|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(soapAction), StringComparison.Ordinal)
 				|| soapAction.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));

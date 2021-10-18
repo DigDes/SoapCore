@@ -85,6 +85,15 @@ namespace SoapCore.Tests.MessageInspector
 		}
 
 		[TestMethod]
+		public void AfterReceivedRequestHasAction()
+		{
+			Assert.IsNull(MessageInspectorMock.Action);
+			var client = CreateClient(new Dictionary<string, object>() { { "header1-key", "header1-value" } });
+			var result = client.Ping("hello, world");
+			Assert.IsNotNull(MessageInspectorMock.Action);
+		}
+
+		[TestMethod]
 		public void BeforeSendReplyCalled()
 		{
 			Assert.IsFalse(MessageInspectorMock.BeforeSendReplyCalled);

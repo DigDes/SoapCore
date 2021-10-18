@@ -205,6 +205,17 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckEmptyNamesapce()
+		{
+			StartService(typeof(EmptyNamespaceService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+			Assert.IsNotNull(root);
+		}
+
+		[TestMethod]
 		public void CheckValueTypes()
 		{
 			StartService(typeof(ValueTypeService));
@@ -693,7 +704,7 @@ namespace SoapCore.Tests.Wsdl
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
 				? new MetaWCFBodyWriter(service, baseUrl, "BasicHttpBinding", false) as BodyWriter
-				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, "BasicHttpBinding", MessageVersion.None) as BodyWriter;
+				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, "BasicHttpBinding", new[] { MessageVersion.None }) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, "BasicHttpBinding", false);
