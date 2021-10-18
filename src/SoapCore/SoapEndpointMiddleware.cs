@@ -180,16 +180,9 @@ namespace SoapCore
 			Message responseMessage;
 
 			// Get the encoder based on Content Type
-			var messageEncoder = _messageEncoders[0];
-
-			foreach (var encoder in _messageEncoders)
-			{
-				if (encoder.IsContentTypeSupported(httpContext.Request.ContentType))
-				{
-					messageEncoder = encoder;
-					break;
-				}
-			}
+			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, true))
+				?? _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, false))
+				?? _messageEncoders[0];
 
 			Message requestMessage;
 

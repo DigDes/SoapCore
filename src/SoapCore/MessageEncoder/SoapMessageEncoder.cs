@@ -63,14 +63,14 @@ namespace SoapCore.MessageEncoder
 
 		public XmlDictionaryReaderQuotas ReaderQuotas { get; }
 
-		public bool IsContentTypeSupported(string contentType)
+		public bool IsContentTypeSupported(string contentType, bool checkCharset)
 		{
 			if (contentType == null)
 			{
 				throw new ArgumentNullException(nameof(contentType));
 			}
 
-			if (IsContentTypeSupported(contentType, ContentType, MediaType))
+			if (IsContentTypeSupported(contentType, ContentType, MediaType, checkCharset))
 			{
 				return true;
 			}
@@ -83,22 +83,22 @@ namespace SoapCore.MessageEncoder
 				const string atomMediaType = "application/atom+xml";
 				const string htmlMediaType = "text/html";
 
-				if (IsContentTypeSupported(contentType, rss1MediaType, rss1MediaType))
+				if (IsContentTypeSupported(contentType, rss1MediaType, rss1MediaType, checkCharset))
 				{
 					return true;
 				}
 
-				if (IsContentTypeSupported(contentType, rss2MediaType, rss2MediaType))
+				if (IsContentTypeSupported(contentType, rss2MediaType, rss2MediaType, checkCharset))
 				{
 					return true;
 				}
 
-				if (IsContentTypeSupported(contentType, htmlMediaType, atomMediaType))
+				if (IsContentTypeSupported(contentType, htmlMediaType, atomMediaType, checkCharset))
 				{
 					return true;
 				}
 
-				if (IsContentTypeSupported(contentType, atomMediaType, atomMediaType))
+				if (IsContentTypeSupported(contentType, atomMediaType, atomMediaType, checkCharset))
 				{
 					return true;
 				}
@@ -223,88 +223,42 @@ namespace SoapCore.MessageEncoder
 			return string.Format(CultureInfo.InvariantCulture, "{0}; charset={1}", mediaType, charSet);
 		}
 
-		internal bool IsContentTypeSupported(string contentType, string supportedContentType, string supportedMediaType)
+		internal bool IsContentTypeSupported(string contentType, string supportedContentType, string supportedMediaType, bool checkCharset)
 		{
 			if (supportedContentType == contentType)
 			{
 				return true;
 			}
 
-			if (contentType.Length > supportedContentType.Length &&
-				contentType.StartsWith(supportedContentType, StringComparison.Ordinal) &&
-				contentType[supportedContentType.Length] == ';')
+			MediaTypeHeaderValue parsedContentType = null;
+
+			try
 			{
-				return true;
+				parsedContentType = MediaTypeHeaderValue.Parse(contentType);
+			}
+			catch (FormatException)
+			{
+				//bad format
+				return false;
 			}
 
-			// now check case-insensitively
-			if (contentType.StartsWith(supportedContentType, StringComparison.OrdinalIgnoreCase))
+			if (parsedContentType.MediaType.Equals(MediaType, StringComparison.OrdinalIgnoreCase))
 			{
-				if (contentType.Length == supportedContentType.Length)
+				if (!checkCharset || string.IsNullOrWhiteSpace(parsedContentType.CharSet) || parsedContentType.CharSet.Equals(CharSet, StringComparison.OrdinalIgnoreCase))
 				{
 					return true;
-				}
-				else if (contentType.Length > supportedContentType.Length)
-				{
-					char ch = contentType[supportedContentType.Length];
-
-					// Linear Whitespace is allowed to appear between the end of one property and the semicolon.
-					// LWS = [CRLF]? (SP | HT)+
-					if (ch == ';')
-					{
-						return true;
-					}
-
-					// Consume the [CRLF]?
-					int i = supportedContentType.Length;
-					if (ch == '\r' && contentType.Length > supportedContentType.Length + 1 && contentType[i + 1] == '\n')
-					{
-						i += 2;
-						ch = contentType[i];
-					}
-
-					// Look for a ';' or nothing after (SP | HT)+
-					if (ch == ' ' || ch == '\t')
-					{
-						i++;
-						while (i < contentType.Length)
-						{
-							ch = contentType[i];
-							if (ch != ' ' && ch != '\t')
-							{
-								break;
-							}
-
-							++i;
-						}
-					}
-
-					if (ch == ';' || i == contentType.Length)
-					{
-						return true;
-					}
 				}
 			}
 
 			// sometimes we get a contentType that has parameters, but our encoders
 			// merely expose the base content-type, so we will check a stripped version
-			try
+			if (supportedMediaType.Length > 0 && !supportedMediaType.Equals(parsedContentType.MediaType, StringComparison.OrdinalIgnoreCase))
 			{
-				MediaTypeHeaderValue parsedContentType = MediaTypeHeaderValue.Parse(contentType);
-
-				if (supportedMediaType.Length > 0 && !supportedMediaType.Equals(parsedContentType.MediaType, StringComparison.OrdinalIgnoreCase))
-				{
-					return false;
-				}
-
-				if (!IsCharSetSupported(parsedContentType.CharSet))
-				{
-					return false;
-				}
+				return false;
 			}
-			catch (FormatException)
+
+			if (!IsCharSetSupported(parsedContentType.CharSet))
 			{
-				// bad content type, so we definitely don't support it!
 				return false;
 			}
 
