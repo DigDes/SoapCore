@@ -159,11 +159,14 @@ namespace SoapCore
 			var bindingName = "BasicHttpBinding";
 
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
-				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders[0].MessageVersion)
+				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => me.MessageVersion).ToArray())
 				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication);
 
+			//assumption that you want soap12 if your service supports that
+			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.MessageVersion == MessageVersion.Soap12WSAddressing10 || me.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004) ?? _messageEncoders[0];
+
 			using var responseMessage = new MetaMessage(
-				Message.CreateMessage(_messageEncoders[0].MessageVersion, null, bodyWriter),
+				Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter),
 				_service,
 				xmlNamespaceManager,
 				bindingName,
@@ -172,7 +175,7 @@ namespace SoapCore
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
 
-			await WriteMessageAsync(_messageEncoders[0], responseMessage, httpContext);
+			await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
 		}
 
 		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
