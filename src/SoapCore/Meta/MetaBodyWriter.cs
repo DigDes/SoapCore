@@ -32,7 +32,6 @@ namespace SoapCore.Meta
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
 		private readonly HashSet<int> _soapVersions;
-		//private readonly bool _isSoap12 = true;
 
 		private bool _buildDateTimeOffset;
 
