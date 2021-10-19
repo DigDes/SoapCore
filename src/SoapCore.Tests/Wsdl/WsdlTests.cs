@@ -448,6 +448,37 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckComplexTypeAndOutParameterWsdl()
+		{
+			//StartService(typeof(StringListService));
+			//var wsdl = GetWsdl();
+			//StopServer();
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(SoapSerializer.XmlSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// Check that method response element exists for xmlserializer meta
+			var testReponseElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "MethodResponse");
+			Assert.IsNotNull(testReponseElement);
+
+			var testComplexType = GetElements(testReponseElement, _xmlSchema + "complexType").SingleOrDefault();
+			Assert.IsNotNull(testComplexType);
+
+			var testSequence = GetElements(testComplexType, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(testSequence);
+
+			var testElements = GetElements(testSequence, _xmlSchema + "element").ToArray();
+			Assert.AreEqual(2, testElements.Length);
+
+			var testElementMethodResult = testElements.SingleOrDefault(a => a.Attribute("name").Value == "MethodResult");
+			var testElementMessage = testElements.SingleOrDefault(a => a.Attribute("name").Value == "message");
+			Assert.IsNotNull(testElementMethodResult);
+			Assert.IsNotNull(testElementMessage);
+		}
+
+		[TestMethod]
 		public async Task CheckUnqualifiedMembersService()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<UnqualifiedMembersService>(SoapSerializer.XmlSerializer);

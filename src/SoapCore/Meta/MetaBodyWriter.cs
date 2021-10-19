@@ -296,6 +296,8 @@ namespace SoapCore.Meta
 
 			foreach (var operation in _service.Operations)
 			{
+				bool hasWrittenOutParameters = false;
+
 				// input parameters of operation
 				writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("name", GetOuterInputElementName(operation));
@@ -366,6 +368,26 @@ namespace SoapCore.Meta
 							AddSchemaType(writer, returnType, returnName, isUnqualified: isUnqualified);
 						}
 
+						//Add all outParameters to the complexType
+						foreach (var outParameter in operation.OutParameters)
+						{
+							var outElementAttribute = outParameter.Parameter.GetCustomAttribute<XmlElementAttribute>();
+							bool outIsUnqualified = outElementAttribute?.Form == XmlSchemaForm.Unqualified;
+							var outElementName = string.IsNullOrWhiteSpace(outElementAttribute?.ElementName) ? null : outElementAttribute.ElementName;
+
+							var outXmlRootAttr = outParameter.Parameter.ParameterType.GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
+							var outTypeRootName = string.IsNullOrWhiteSpace(outXmlRootAttr?.ElementName) ? null : outXmlRootAttr.ElementName;
+
+							var parameterName = outElementName
+												?? outParameter.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
+												?? outTypeRootName
+												?? outParameter.Parameter.Name;
+
+							AddSchemaType(writer, outParameter.Parameter.ParameterType, parameterName, @namespace: outElementAttribute?.Namespace, isUnqualified: outIsUnqualified);
+						}
+
+						hasWrittenOutParameters = true;
+
 						writer.WriteEndElement();
 						writer.WriteEndElement();
 					}
@@ -393,7 +415,10 @@ namespace SoapCore.Meta
 					}
 				}
 
-				WriteParameters(writer, operation.OutParameters, operation.IsMessageContractResponse);
+				if (!hasWrittenOutParameters)
+				{
+					WriteParameters(writer, operation.OutParameters, operation.IsMessageContractResponse);
+				}
 
 				writer.WriteEndElement(); // element
 			}
