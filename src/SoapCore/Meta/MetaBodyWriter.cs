@@ -248,19 +248,7 @@ namespace SoapCore.Meta
 						hasWrittenSchema = true;
 					}
 
-					var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
-					bool isUnqualified = elementAttribute?.Form == XmlSchemaForm.Unqualified;
-					var elementName = string.IsNullOrWhiteSpace(elementAttribute?.ElementName) ? null : elementAttribute.ElementName;
-
-					var xmlRootAttr = parameterInfo.Parameter.ParameterType.GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
-					var typeRootName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? null : xmlRootAttr.ElementName;
-
-					var parameterName = elementName
-										?? parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
-										?? typeRootName
-										?? parameterInfo.Parameter.Name;
-
-					AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace, isUnqualified: isUnqualified);
+					WriteParameterElement(writer, parameterInfo);
 				}
 				else
 				{
@@ -277,6 +265,23 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // sequence
 				writer.WriteEndElement(); // complexType
 			}
+		}
+
+		private void WriteParameterElement(XmlDictionaryWriter writer, SoapMethodParameterInfo parameterInfo)
+		{
+			var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
+			bool isUnqualified = elementAttribute?.Form == XmlSchemaForm.Unqualified;
+			var elementName = string.IsNullOrWhiteSpace(elementAttribute?.ElementName) ? null : elementAttribute.ElementName;
+
+			var xmlRootAttr = parameterInfo.Parameter.ParameterType.GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
+			var typeRootName = string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName) ? null : xmlRootAttr.ElementName;
+
+			var parameterName = elementName
+								?? parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
+								?? typeRootName
+								?? parameterInfo.Parameter.Name;
+
+			AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, @namespace: elementAttribute?.Namespace, isUnqualified: isUnqualified);
 		}
 
 		private void AddTypes(XmlDictionaryWriter writer)
@@ -371,19 +376,7 @@ namespace SoapCore.Meta
 						//Add all outParameters to the complexType
 						foreach (var outParameter in operation.OutParameters)
 						{
-							var outElementAttribute = outParameter.Parameter.GetCustomAttribute<XmlElementAttribute>();
-							bool outIsUnqualified = outElementAttribute?.Form == XmlSchemaForm.Unqualified;
-							var outElementName = string.IsNullOrWhiteSpace(outElementAttribute?.ElementName) ? null : outElementAttribute.ElementName;
-
-							var outXmlRootAttr = outParameter.Parameter.ParameterType.GetCustomAttributes<XmlRootAttribute>().FirstOrDefault();
-							var outTypeRootName = string.IsNullOrWhiteSpace(outXmlRootAttr?.ElementName) ? null : outXmlRootAttr.ElementName;
-
-							var parameterName = outElementName
-												?? outParameter.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name
-												?? outTypeRootName
-												?? outParameter.Parameter.Name;
-
-							AddSchemaType(writer, outParameter.Parameter.ParameterType, parameterName, @namespace: outElementAttribute?.Namespace, isUnqualified: outIsUnqualified);
+							WriteParameterElement(writer, outParameter);
 						}
 
 						hasWrittenOutParameters = true;
