@@ -79,7 +79,7 @@ namespace SoapCore
 
 			trailPathTuner?.ConvertPath(httpContext);
 
-			if (httpContext.Request.Path.Equals(_options.Path, _pathComparisonStrategy))
+			if (httpContext.Request.Path.StartsWithSegments(_options.Path, _pathComparisonStrategy, out var remainingPath))
 			{
 				if (httpContext.Request.Method?.ToLower() == "get")
 				{
@@ -95,20 +95,28 @@ namespace SoapCore
 				{
 					_logger.LogDebug("Received SOAP Request for {0} ({1} bytes)", httpContext.Request.Path, httpContext.Request.ContentLength ?? 0);
 
-					if ((string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl")) && httpContext.Request.Method?.ToLower() == "get")
+					if (httpContext.Request.Method?.ToLower() == "get")
 					{
-						if (_options.WsdlFileOptions != null)
+						if(!string.IsNullOrWhiteSpace(remainingPath))
 						{
-							await ProcessMetaFromFile(httpContext);
+							httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+							await httpContext.Response.WriteAsync($"Service does not support \"{remainingPath}\"");
 						}
-						else
+						else if (string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl"))
 						{
-							await ProcessMeta(httpContext);
+							if (_options.WsdlFileOptions != null)
+							{
+								await ProcessMetaFromFile(httpContext);
+							}
+							else
+							{
+								await ProcessMeta(httpContext);
+							}
 						}
-					}
-					else if (httpContext.Request.Query.ContainsKey("xsd") && httpContext.Request.Method?.ToLower() == "get" && _options.WsdlFileOptions != null)
-					{
-						await ProcessXSD(httpContext);
+						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
+						{
+							await ProcessXSD(httpContext);
+						}
 					}
 					else
 					{
@@ -218,6 +226,14 @@ namespace SoapCore
 
 			var soapAction = HeadersHelper.GetSoapAction(httpContext, ref requestMessage);
 			requestMessage.Headers.Action = soapAction;
+
+			if (string.IsNullOrEmpty(soapAction))
+			{
+				var ex = new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				return;
+			}
+
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
@@ -680,8 +696,8 @@ namespace SoapCore
 			{
 				// TODO: Some additional work needs to be done in order to support setting the action. Simply setting it to
 				// "http://www.w3.org/2005/08/addressing/fault" will cause the WCF Client to not be able to figure out the type
-				faultMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
-				faultMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
+				faultMessage.Headers.RelatesTo = requestMessage?.Headers.MessageId;
+				faultMessage.Headers.To = requestMessage?.Headers.ReplyTo?.Uri;
 			}
 
 			await WriteMessageAsync(messageEncoder, faultMessage, httpContext);
