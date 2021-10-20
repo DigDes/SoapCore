@@ -46,7 +46,6 @@ namespace SoapCore.ServiceModel
 
 		public Type ServiceType { get; }
 		public string ServiceName { get; }
-		public string BindingName { get; }
 		public ContractDescription GeneralContract { get; }
 		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; }
 		public IEnumerable<ContractDescription> Contracts { get; }
