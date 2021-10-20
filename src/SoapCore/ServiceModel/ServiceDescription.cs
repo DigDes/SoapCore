@@ -41,7 +41,7 @@ namespace SoapCore.ServiceModel
 
 			Contracts = contracts;
 
-			ServiceName = GeneralContract.Name ?? serviceType.Name;
+			ServiceName = GeneralContract?.Name ?? serviceType.Name;
 		}
 
 		public Type ServiceType { get; }
