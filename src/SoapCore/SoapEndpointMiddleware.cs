@@ -97,7 +97,7 @@ namespace SoapCore
 
 					if (httpContext.Request.Method?.ToLower() == "get")
 					{
-						if(!string.IsNullOrWhiteSpace(remainingPath))
+						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
 							httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 							await httpContext.Response.WriteAsync($"Service does not support \"{remainingPath}\"");
@@ -233,7 +233,6 @@ namespace SoapCore
 				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				return;
 			}
-
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
