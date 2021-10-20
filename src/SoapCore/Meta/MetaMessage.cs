@@ -67,7 +67,7 @@ namespace SoapCore.Meta
 			WriteXmlnsAttribute(writer, Namespaces.WSU_NS);
 			WriteXmlnsAttribute(writer, Namespaces.WSAM_NS);
 			writer.WriteAttributeString("targetNamespace", _service.GeneralContract.Namespace);
-			writer.WriteAttributeString("name", _service.ServiceType.Name);
+			writer.WriteAttributeString("name", _service.ServiceName);
 			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
 			if (_hasBasicAuthentication)

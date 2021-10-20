@@ -164,7 +164,7 @@ namespace SoapCore
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 			var xmlNamespaceManager = GetXmlNamespaceManager();
-			var bindingName = "BasicHttpBinding";
+			var bindingName = "BasicHttpBinding_" + _service.GeneralContract.Name;
 
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
 				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => me.MessageVersion).ToArray())
