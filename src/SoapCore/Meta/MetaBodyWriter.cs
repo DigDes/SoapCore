@@ -41,7 +41,7 @@ namespace SoapCore.Meta
 				service,
 				baseUrl,
 				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
-				binding?.Name ?? "BasicHttpBinding_" + service.Contracts.First().Name,
+				binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
 				new[] { binding.MessageVersion ?? MessageVersion.None })
 		{
 		}
@@ -78,10 +78,10 @@ namespace SoapCore.Meta
 		}
 
 		private string BindingName { get; }
-		private string BindingType => _service.Contracts.First().Name;
+		private string BindingType => _service.GeneralContract.Name;
 		private string PortName { get; }
 
-		private string TargetNameSpace => _service.Contracts.First().Namespace;
+		private string TargetNameSpace => _service.GeneralContract.Namespace;
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
 		{
@@ -213,6 +213,11 @@ namespace SoapCore.Meta
 
 			bodyType = type;
 			return true;
+		}
+
+		private static (string name, string ns) GetSoapNameAndNamespace(int soapVersion)
+		{
+			return soapVersion == 12 ? ("soap12", Namespaces.SOAP12_NS) : ("soap", Namespaces.SOAP11_NS);
 		}
 
 		private XmlQualifiedName ResolveType(Type type)
@@ -621,8 +626,7 @@ namespace SoapCore.Meta
 		{
 			foreach (var soapVersion in _soapVersions)
 			{
-				var soap = soapVersion == 12 ? "soap12" : "soap";
-				var soapNamespace = soapVersion == 12 ? Namespaces.SOAP12_NS : Namespaces.SOAP11_NS;
+				(var soap, var soapNamespace) = GetSoapNameAndNamespace(soapVersion);
 
 				writer.WriteStartElement("wsdl", "binding", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", BindingName + $"_{soap}");
@@ -667,18 +671,17 @@ namespace SoapCore.Meta
 		private void AddService(XmlDictionaryWriter writer)
 		{
 			writer.WriteStartElement("wsdl", "service", Namespaces.WSDL_NS);
-			writer.WriteAttributeString("name", _service.ServiceType.Name);
+			writer.WriteAttributeString("name", _service.ServiceName);
 
 			foreach (var soapVersion in _soapVersions)
 			{
-				var soap = soapVersion == 12 ? "soap12" : "soap";
-				var soapNamespace = soapVersion == 12 ? Namespaces.SOAP12_NS : Namespaces.SOAP11_NS;
+				(string soapName, string soapNamespace) = GetSoapNameAndNamespace(soapVersion);
 
 				writer.WriteStartElement("wsdl", "port", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", PortName + $"_{soap}");
-				writer.WriteAttributeString("binding", "tns:" + BindingName + $"_{soap}");
+				writer.WriteAttributeString("name", PortName + $"_{soapName}");
+				writer.WriteAttributeString("binding", "tns:" + BindingName + $"_{soapName}");
 
-				writer.WriteStartElement(soap, "address", soapNamespace);
+				writer.WriteStartElement(soapName, "address", soapNamespace);
 
 				writer.WriteAttributeString("location", _baseUrl);
 				writer.WriteEndElement(); // soap:address

@@ -40,9 +40,12 @@ namespace SoapCore.ServiceModel
 			}
 
 			Contracts = contracts;
+
+			ServiceName = GeneralContract?.Name ?? serviceType.Name;
 		}
 
 		public Type ServiceType { get; }
+		public string ServiceName { get; }
 		public ContractDescription GeneralContract { get; }
 		public IEnumerable<ServiceKnownTypeAttribute> ServiceKnownTypes { get; }
 		public IEnumerable<ContractDescription> Contracts { get; }
