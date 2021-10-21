@@ -1096,7 +1096,7 @@ namespace SoapCore.Meta
 		private void AddService(XmlDictionaryWriter writer)
 		{
 			writer.WriteStartElement("wsdl", "service", Namespaces.WSDL_NS);
-			writer.WriteAttributeString("name", _service.ServiceType.Name);
+			writer.WriteAttributeString("name", _service.ServiceName);
 
 			writer.WriteStartElement("wsdl", "port", Namespaces.WSDL_NS);
 			writer.WriteAttributeString("name", PortName);
