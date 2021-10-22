@@ -409,6 +409,19 @@ namespace SoapCore.Meta
 					if (!operation.IsMessageContractResponse)
 					{
 						writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
+
+						if (operation.OutParameters.Length > 0)
+						{
+							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
+							foreach (var outParameter in operation.OutParameters)
+							{
+								WriteParameterElement(writer, outParameter);
+							}
+
+							hasWrittenOutParameters = true;
+							writer.WriteEndElement();
+						}
+
 						writer.WriteEndElement();
 					}
 				}
