@@ -409,6 +409,19 @@ namespace SoapCore.Meta
 					if (!operation.IsMessageContractResponse)
 					{
 						writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
+
+						if (operation.OutParameters.Length > 0)
+						{
+							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
+							foreach (var outParameter in operation.OutParameters)
+							{
+								WriteParameterElement(writer, outParameter);
+							}
+
+							hasWrittenOutParameters = true;
+							writer.WriteEndElement();
+						}
+
 						writer.WriteEndElement();
 					}
 				}
@@ -887,12 +900,13 @@ namespace SoapCore.Meta
 		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false)
 		{
 			var type = toBuild.Type;
-			var typeInfo = type.GetTypeInfo();
-			if (typeInfo.IsByRef)
+
+			if (type.IsByRef)
 			{
-				type = typeInfo.GetElementType();
+				type = type.GetElementType();
 			}
 
+			var typeInfo = type.GetTypeInfo();
 			var typeName = type.GetSerializedTypeName();
 
 			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer, _xmlNamespaceManager, isUnqualified))
@@ -1030,7 +1044,9 @@ namespace SoapCore.Meta
 					WriteQualification(writer, isUnqualified);
 
 					if (!isArray)
+					{
 						writer.WriteAttributeString("nillable", "true");
+					}
 
 					writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
