@@ -9,17 +9,17 @@ namespace SoapCore.Meta
 	{
 		private readonly Message _message;
 		private readonly ServiceDescription _service;
-		private readonly XmlNamespaceManager _xmlNamespaceManager;
+		private readonly LockingXmlNamespaceManager _xmlNamespaceManager;
 		private readonly string _bindingName;
 		private readonly bool _hasBasicAuthentication;
 
 		[Obsolete]
-		public MetaMessage(Message message, ServiceDescription service, Binding binding, XmlNamespaceManager xmlNamespaceManager)
+		public MetaMessage(Message message, ServiceDescription service, Binding binding, LockingXmlNamespaceManager xmlNamespaceManager)
 			: this(message, service, xmlNamespaceManager, binding?.Name, binding.HasBasicAuth())
 		{
 		}
 
-		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication)
+		public MetaMessage(Message message, ServiceDescription service, LockingXmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication)
 		{
 			_xmlNamespaceManager = xmlNamespaceManager;
 			_message = message;

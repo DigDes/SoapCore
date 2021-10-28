@@ -15,7 +15,7 @@ namespace SoapCore
 			return Namespaces.SOAP12_ENVELOPE_NS;
 		}
 
-		public static string NamespacePrefix(this EnvelopeVersion envelopeVersion, XmlNamespaceManager namespaces)
+		public static string NamespacePrefix(this EnvelopeVersion envelopeVersion, LockingXmlNamespaceManager namespaces)
 		{
 			string prefix;
 			if (envelopeVersion == EnvelopeVersion.Soap11)
