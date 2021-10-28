@@ -15,7 +15,7 @@ namespace SoapCore.Meta
 		//switches to easily revert to previous behaviour if there is a problem
 		private static readonly bool UseXmlSchemaProvider = true;
 		private static readonly bool UseXmlReflectionImporter = false;
-		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, XmlNamespaceManager xmlNamespaceManager = null, bool isUnqualified = false)
+		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, LockingXmlNamespaceManager xmlNamespaceManager = null, bool isUnqualified = false)
 		{
 			if (!UseXmlSchemaProvider && !UseXmlReflectionImporter)
 			{
@@ -238,7 +238,7 @@ namespace SoapCore.Meta
 			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName).FirstCharToUpperOrDefault() ?? typeName);
 		}
 
-		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)
+		private static XmlSerializerNamespaces Convert(this LockingXmlNamespaceManager xmlNamespaceManager)
 		{
 			XmlSerializerNamespaces xmlSerializerNamespaces = new XmlSerializerNamespaces();
 			foreach (var ns in xmlNamespaceManager.GetNamespacesInScope(XmlNamespaceScope.Local))

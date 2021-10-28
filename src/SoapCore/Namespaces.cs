@@ -27,7 +27,7 @@ namespace SoapCore
 		public const string SOAP12_ENVELOPE_NS = "http://www.w3.org/2003/05/soap-envelope";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
-		public static void AddDefaultNamespaces(XmlNamespaceManager xmlNamespaceManager)
+		public static void AddDefaultNamespaces(LockingXmlNamespaceManager xmlNamespaceManager)
 		{
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "xsd", Namespaces.XMLNS_XSD);
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsdl", Namespaces.WSDL_NS);
@@ -42,7 +42,7 @@ namespace SoapCore
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsam", Namespaces.WSAM_NS);
 		}
 
-		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceManager xmlNamespaceManager, string preferredPrefix, string uri)
+		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(LockingXmlNamespaceManager xmlNamespaceManager, string preferredPrefix, string uri)
 		{
 			var existingPrefix = xmlNamespaceManager.LookupPrefix(uri);
 			if (existingPrefix == null)
@@ -66,9 +66,9 @@ namespace SoapCore
 			return existingPrefix;
 		}
 
-		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager()
+		public static LockingXmlNamespaceManager CreateDefaultXmlNamespaceManager()
 		{
-			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
+			var xmlNamespaceManager = new LockingXmlNamespaceManager(new NameTable());
 			AddDefaultNamespaces(xmlNamespaceManager);
 			return xmlNamespaceManager;
 		}
