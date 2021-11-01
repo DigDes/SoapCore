@@ -805,9 +805,9 @@ namespace SoapCore
 			await httpContext.Response.WriteAsync(modifiedWsdl);
 		}
 
-		private LockingXmlNamespaceManager GetXmlNamespaceManager()
+		private XmlNamespaceManager GetXmlNamespaceManager()
 		{
-			var xmlNamespaceManager = _options.XmlNamespacePrefixOverrides ?? new LockingXmlNamespaceManager(new NameTable());
+			var xmlNamespaceManager = _options.XmlNamespacePrefixOverrides ?? new XmlNamespaceManager(new NameTable());
 			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
 			return xmlNamespaceManager;
 		}

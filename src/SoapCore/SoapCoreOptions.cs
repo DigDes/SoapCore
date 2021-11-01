@@ -89,7 +89,7 @@ namespace SoapCore
 		/// <summary>
 		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
 		/// </summary>
-		public LockingXmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
+		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 	}
