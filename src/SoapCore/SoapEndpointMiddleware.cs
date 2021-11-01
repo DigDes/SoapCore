@@ -807,7 +807,16 @@ namespace SoapCore
 
 		private XmlNamespaceManager GetXmlNamespaceManager()
 		{
-			var xmlNamespaceManager = _options.XmlNamespacePrefixOverrides ?? new XmlNamespaceManager(new NameTable());
+			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
+
+			if (_options.XmlNamespacePrefixOverrides != null)
+			{
+				foreach (var ns in _options.XmlNamespacePrefixOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
+				{
+					xmlNamespaceManager.AddNamespace(ns.Key, ns.Value);
+				}
+			}
+
 			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
 			return xmlNamespaceManager;
 		}
