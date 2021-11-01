@@ -25,7 +25,7 @@ namespace SoapCore
 			_exceptionTransformer = exceptionTransformer;
 		}
 
-		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, XmlNamespaceManager xmlNamespaceManager)
+		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, LockingXmlNamespaceManager xmlNamespaceManager)
 		{
 			var bodyWriter = _exceptionTransformer == null ?
 				new FaultBodyWriter(exception, messageVersion) :

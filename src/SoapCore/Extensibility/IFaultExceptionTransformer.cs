@@ -22,6 +22,6 @@ namespace SoapCore.Extensibility
 		/// <param name="xmlNamespaceManager">Namespace manager</param>
 		/// <returns>Fully formatted SOAP Message</returns>
 		/// <seealso cref="MessageFaultBodyWriter"/>
-		Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, XmlNamespaceManager xmlNamespaceManager);
+		Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, LockingXmlNamespaceManager xmlNamespaceManager);
 	}
 }

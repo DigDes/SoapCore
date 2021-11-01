@@ -20,7 +20,7 @@ namespace SoapCore.Meta
 
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
-		private readonly XmlNamespaceManager _xmlNamespaceManager;
+		private readonly LockingXmlNamespaceManager _xmlNamespaceManager;
 
 		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<TypeToBuild> _complexTypeToBuild;
@@ -36,17 +36,17 @@ namespace SoapCore.Meta
 		private bool _buildDateTimeOffset;
 
 		[Obsolete]
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, LockingXmlNamespaceManager xmlNamespaceManager = null)
 			: this(
 				service,
 				baseUrl,
-				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
+				xmlNamespaceManager ?? new LockingXmlNamespaceManager(new NameTable()),
 				binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
 				new[] { binding.MessageVersion ?? MessageVersion.None })
 		{
 		}
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, MessageVersion[] messageVersions) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, LockingXmlNamespaceManager xmlNamespaceManager, string bindingName, MessageVersion[] messageVersions) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
