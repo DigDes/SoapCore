@@ -16,7 +16,7 @@ namespace SoapCore
 
 		public Message Message { get; internal set; }
 
-		public LockingXmlNamespaceManager NamespaceManager { get; internal set; }
+		public XmlNamespaceManager NamespaceManager { get; internal set; }
 
 		public override MessageHeaders Headers => Message.Headers;
 
