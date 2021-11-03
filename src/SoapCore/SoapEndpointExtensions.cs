@@ -251,7 +251,17 @@ namespace SoapCore
 		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, WsdlFileOptions wsdlFileOptions = null, bool indentXml = true, bool omitXmlDeclaration = true)
 		where T_MESSAGE : CustomMessage, new()
 		{
-			return routes.UseSoapEndpoint<T, T_MESSAGE>(path, encoders, serializer, caseInsensitivePath, soapModelBounder, wsdlFileOptions, indentXml, omitXmlDeclaration);
+			return routes.UseSoapEndpoint<T, T_MESSAGE>(opt =>
+			{
+				opt.Path = path;
+				opt.EncoderOptions = encoders;
+				opt.SoapSerializer = serializer;
+				opt.CaseInsensitivePath = caseInsensitivePath;
+				opt.SoapModelBounder = soapModelBounder;
+				opt.WsdlFileOptions = wsdlFileOptions;
+				opt.IndentXml = indentXml;
+				opt.OmitXmlDeclaration = omitXmlDeclaration;
+			});
 		}
 
 		[Obsolete]
