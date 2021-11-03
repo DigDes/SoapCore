@@ -59,7 +59,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			var root = new XmlDocument();
 			root.LoadXml(wsdl);
 
-			var nsmgr = new LockingXmlNamespaceManager(root.NameTable);
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
 			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
 			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
@@ -84,7 +84,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			var root = new XmlDocument();
 			root.LoadXml(wsdl);
 
-			var nsmgr = new LockingXmlNamespaceManager(root.NameTable);
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
 			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
 			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
