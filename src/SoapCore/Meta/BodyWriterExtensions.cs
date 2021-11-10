@@ -220,14 +220,14 @@ namespace SoapCore.Meta
 				typeName = xmlTypeAttribute.TypeName;
 			}
 
-			if (type.IsArray)
+			if (type.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType))
 			{
-				typeName = GetArrayTypeName(typeName.Replace("[]", string.Empty), isNullableArray);
-			}
+				if (namedType.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType))
+				{
+					typeName = GetSerializedTypeName(namedType);
+				}
 
-			if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
-			{
-				typeName = GetArrayTypeName(typeName, isNullableArray);
+				typeName = GetArrayTypeName(typeName.Replace("[]", string.Empty), isNullableArray);
 			}
 
 			return typeName;
