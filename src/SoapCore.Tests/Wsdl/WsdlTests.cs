@@ -553,11 +553,17 @@ namespace SoapCore.Tests.Wsdl
 			var array = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='LongArray' and @type='tns:ArrayOfLong' and @nillable='true']", nm);
 			Assert.IsNotNull(array);
 
+			var arrayArray = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='LongArrayArray' and @type='tns:ArrayOfArrayOfLong' and @nillable='true']", nm);
+			Assert.IsNotNull(arrayArray);
+
 			var nullableEnumerable = root.XPathSelectElement("//xsd:complexType[@name='EnumerableResponse']/xsd:sequence/xsd:element[@name='LongNullableEnumerable' and @type='tns:ArrayOfNullableLong' and @nillable='true']", nm);
 			Assert.IsNotNull(nullableEnumerable);
 
 			var enumerable = root.XPathSelectElement("//xsd:complexType[@name='EnumerableResponse']/xsd:sequence/xsd:element[@name='LongEnumerable' and @type='tns:ArrayOfLong' and @nillable='true']", nm);
 			Assert.IsNotNull(enumerable);
+
+			var enumerableEnumberable = root.XPathSelectElement("//xsd:complexType[@name='EnumerableResponse']/xsd:sequence/xsd:element[@name='LongEnumerableEnumerable' and @type='tns:ArrayOfArrayOfLong' and @nillable='true']", nm);
+			Assert.IsNotNull(enumerableEnumberable);
 		}
 
 		[TestMethod]
