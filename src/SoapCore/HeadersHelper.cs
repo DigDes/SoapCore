@@ -12,7 +12,6 @@ namespace SoapCore
 	{
 		private static readonly char[] ContentTypeSeparators = new[] { ';' };
 
-		
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static string GetSoapAction(HttpContext httpContext, ref Message message)
 		{
