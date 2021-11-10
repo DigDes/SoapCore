@@ -14,6 +14,7 @@ Support ref\out params, exceptions. Works with legacy SOAP\WCF-clients.
 
 The following frameworks are supported:
 
+- .NET 6.0 (using ASP.NET Core 6.0)
 - .NET 5.0 (using ASP.NET Core 5.0)
 - .NET Core 3.1 (using ASP.NET Core 3.1)
 - .NET Standard 2.0 (using ASP.NET Core 2.1)
