@@ -93,7 +93,7 @@ namespace SoapCore.Tests.MessageContract
 		<tem:StringProperty>Test</tem:StringProperty>
 		<tem:IntProperty>42</tem:IntProperty>
 		<tem:ListProperty />
-		<tem:DateTimeOffsetProperty />
+		<tem:DateTimeOffsetProperty>2021-11-10T13:35:17.6062448+03:00</tem:DateTimeOffsetProperty>
     </tem:PostDataBodyMember>
   </soapenv:Body>
 </soapenv:Envelope>

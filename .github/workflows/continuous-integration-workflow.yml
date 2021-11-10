@@ -3,19 +3,15 @@ name: CI
 on: [push, pull_request, pull_request_review]
 
 jobs:
-  test_31:
+  test:
     runs-on: ubuntu-latest
     container:
-      image: docker://mcr.microsoft.com/dotnet/core/sdk:3.1-alpine
+      image: docker://alpine
     steps:
       - uses: actions/checkout@v1
-      - name: build and test
-        run: dotnet test -f netcoreapp3.1 src/SoapCore.Tests
-  test_50:
-    runs-on: ubuntu-latest
-    container:
-      image: docker://mcr.microsoft.com/dotnet/sdk:5.0-alpine
-    steps:
-      - uses: actions/checkout@v1
-      - name: build and test
-        run: dotnet test -f net5.0 src/SoapCore.Tests
+      - name: prepare deps
+        run: apk add bash icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib curl
+      - name: install sdks
+        run: cd /tmp && curl -L https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && chmod +x dotnet-install.sh && ./dotnet-install.sh -c 5.0 && ./dotnet-install.sh -c 3.1 && ./dotnet-install.sh -c 6.0 && ln -s /github/home/.dotnet/dotnet /usr/bin/dotnet 
+      - name: build && test
+        run: dotnet test src/SoapCore.Tests
