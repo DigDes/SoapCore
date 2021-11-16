@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 
 namespace SoapCore.Benchmark
 {
@@ -14,7 +16,7 @@ namespace SoapCore.Benchmark
 		public void Configure(IApplicationBuilder app)
 		{
 			app.UseSoapEndpoint<PingService>("/TestService.asmx", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
-			app.Use(async (ctx, next) =>
+			app.Use(async (HttpContext ctx, Func<Task> next) =>
 			{
 				await ctx.Response.WriteAsync("").ConfigureAwait(false);
 			});

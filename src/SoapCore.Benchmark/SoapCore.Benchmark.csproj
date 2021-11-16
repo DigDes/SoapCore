@@ -2,18 +2,12 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+		<TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<NoWin32Manifest>true</NoWin32Manifest>
 		<LangVersion>8</LangVersion>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
-	
-	<ItemGroup Condition="$(TargetFramework) =='netcoreapp2.1'">
-		<PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.0" />
@@ -23,8 +17,12 @@
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="5.0.0" />
 	</ItemGroup>
 
+	<ItemGroup Condition="$(TargetFramework) == 'net6.0'">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.0" />
+	</ItemGroup>
+
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
 	</ItemGroup>
 
 	<ItemGroup>
