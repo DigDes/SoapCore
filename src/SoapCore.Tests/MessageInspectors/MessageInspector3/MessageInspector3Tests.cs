@@ -50,14 +50,5 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector3
 			Assert.AreEqual("Failed", result);
 			Assert.IsTrue(MessageInspector3Mock.AfterReceivedRequestCalled);
 		}
-
-		[TestMethod]
-		public void BeforeSendReplyShouldNotBeCalled()
-		{
-			Assert.IsFalse(MessageInspector3Mock.BeforeSendReplyCalled);
-			var client = CreateClient();
-			var result = client.Ping("Hello World");
-			Assert.IsFalse(MessageInspector3Mock.BeforeSendReplyCalled);
-		}
 	}
 }
