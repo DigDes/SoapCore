@@ -42,30 +42,22 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector3
 		}
 
 		[TestMethod]
-		[ExpectedException(typeof(FaultException))]
 		public void AfterReceivedRequestCalled()
 		{
 			Assert.IsFalse(MessageInspector3Mock.AfterReceivedRequestCalled);
 			var client = CreateClient();
-			var result = client.Ping("Hello World");
+			var result = client.Ping("Fail");
+			Assert.AreEqual("Failed", result);
 			Assert.IsTrue(MessageInspector3Mock.AfterReceivedRequestCalled);
 		}
 
 		[TestMethod]
-		[ExpectedException(typeof(FaultException))]
 		public void BeforeSendReplyShouldNotBeCalled()
 		{
 			Assert.IsFalse(MessageInspector3Mock.BeforeSendReplyCalled);
 			var client = CreateClient();
 			var result = client.Ping("Hello World");
 			Assert.IsFalse(MessageInspector3Mock.BeforeSendReplyCalled);
-		}
-
-		[TestMethod]
-		public void AfterReceivedThrowsException()
-		{
-			var client = CreateClient();
-			Assert.ThrowsException<FaultException>(() => client.Ping("Hello World"));
 		}
 	}
 }

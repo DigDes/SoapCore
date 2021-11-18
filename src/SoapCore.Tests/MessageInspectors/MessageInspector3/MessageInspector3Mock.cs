@@ -24,10 +24,7 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector3
 			LastReceivedMessage = message;
 			AfterReceivedRequestCalled = true;
 
-			// validate message
-			ValidateMessage(ref message);
-
-			return null;
+			return ValidateMessage(ref message);
 		}
 
 		public void BeforeSendReply(ref Message reply, ServiceDescription serviceDescription, object correlationState)
@@ -35,9 +32,9 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector3
 			BeforeSendReplyCalled = true;
 		}
 
-		private void ValidateMessage(ref Message message)
+		private string ValidateMessage(ref Message message)
 		{
-			throw new FaultException(new FaultReason("Message is invalid."), new FaultCode("Sender"), null);
+			return "Failed";
 		}
 	}
 }
