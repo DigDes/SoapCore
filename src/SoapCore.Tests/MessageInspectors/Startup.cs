@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using SoapCore.Tests.MessageInspectors.MessageInspector;
 using SoapCore.Tests.MessageInspectors.MessageInspector2;
+using SoapCore.Tests.MessageInspectors.MessageInspector3;
 
 namespace SoapCore.Tests.MessageInspectors
 {
@@ -35,6 +36,9 @@ namespace SoapCore.Tests.MessageInspectors
 					break;
 				case InspectorStyle.MessageInspector2:
 					services.AddSoapMessageInspector(new MessageInspector2Mock());
+					break;
+				case InspectorStyle.MessageInspector3:
+					services.AddSoapMessageInspector(new MessageInspector3Mock());
 					break;
 			}
 

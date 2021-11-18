@@ -390,6 +390,11 @@ namespace SoapCore
 			serviceCollection.AddSingleton(messageInspector);
 			return serviceCollection;
 		}
+		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector3 messageInspector)
+		{
+			serviceCollection.AddSingleton(messageInspector);
+			return serviceCollection;
+		}
 
 		[Obsolete]
 		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IMessageFilter messageFilter)

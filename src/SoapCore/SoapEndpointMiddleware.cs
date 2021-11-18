@@ -247,6 +247,19 @@ namespace SoapCore
 				return;
 			}
 
+			var messageInspector3s = serviceProvider.GetServices<IMessageInspector3>();
+			var correlationObjects3 = default(List<(IMessageInspector3 inspector, object correlationObject)>);
+
+			try
+			{
+				correlationObjects3 = messageInspector3s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service, httpContext))).ToList();
+			}
+			catch (Exception ex)
+			{
+				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				return;
+			}
+
 			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
 			XmlDictionaryReader reader = null;
@@ -277,29 +290,38 @@ namespace SoapCore
 
 				try
 				{
-					//Create an instance of the service class
-					var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
-
-					SetMessageHeadersToProperty(requestMessage, serviceInstance);
-
-					// Get operation arguments from message
-					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
-
-					ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
-
-					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
-					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
-
-					if (operation.IsOneWay)
-					{
-						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
-						return;
-					}
-
+					object responseObject;
 					var resultOutDictionary = new Dictionary<string, object>();
-					foreach (var parameterInfo in operation.OutParameters)
+
+					if(correlationObjects3.All( co => co.correlationObject is null))
 					{
-						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
+						//Create an instance of the service class
+						var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
+
+						SetMessageHeadersToProperty(requestMessage, serviceInstance);
+
+						// Get operation arguments from message
+						var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
+
+						ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
+
+						var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
+						responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
+
+						if (operation.IsOneWay)
+						{
+							httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
+							return;
+						}
+
+						foreach (var parameterInfo in operation.OutParameters)
+						{
+							resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
+						}
+					}
+					else
+					{
+						responseObject = correlationObjects3.Select( co => co.correlationObject ).First();
 					}
 
 					responseMessage = CreateResponseMessage(
