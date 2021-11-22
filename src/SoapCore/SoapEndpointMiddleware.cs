@@ -248,11 +248,14 @@ namespace SoapCore
 			}
 
 			var messageInspector3s = serviceProvider.GetServices<IMessageInspector3>();
-			var correlationObjects3 = default(List<(IMessageInspector3 inspector, object correlationObject)>);
+			var correlationObject3 = default(object);
 
 			try
 			{
-				correlationObjects3 = messageInspector3s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service, httpContext))).ToList();
+				correlationObject3 = messageInspector3s
+									.Select(mi => mi.AfterReceiveRequest(ref requestMessage, _service, httpContext))
+									.Where(result => ! (result is null) )
+									.FirstOrDefault();
 			}
 			catch (Exception ex)
 			{
@@ -293,7 +296,7 @@ namespace SoapCore
 					object responseObject;
 					var resultOutDictionary = new Dictionary<string, object>();
 
-					if(correlationObjects3.All( co => co.correlationObject is null))
+					if(correlationObject3 is null)
 					{
 						//Create an instance of the service class
 						var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
@@ -321,7 +324,7 @@ namespace SoapCore
 					}
 					else
 					{
-						responseObject = correlationObjects3.Select( co => co.correlationObject ).First();
+						responseObject = correlationObject3;
 					}
 
 					responseMessage = CreateResponseMessage(
