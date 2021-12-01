@@ -153,7 +153,8 @@ namespace SoapCore.MessageEncoder
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
 				Indent = _indentXml,
 				Encoding = _writeEncoding,
-				CloseOutput = true
+				CloseOutput = true,
+				CheckCharacters = false
 			});
 
 			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
@@ -183,7 +184,8 @@ namespace SoapCore.MessageEncoder
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
 				Indent = _indentXml,
 				Encoding = _writeEncoding,
-				CloseOutput = false
+				CloseOutput = false,
+				CheckCharacters = false
 			});
 
 			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
