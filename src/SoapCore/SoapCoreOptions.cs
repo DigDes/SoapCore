@@ -87,6 +87,12 @@ namespace SoapCore
 		public bool IndentXml { get; set; } = true;
 
 		/// <summary>
+		/// Gets or sets a value indicating whether to check to make sure that the XmlOutput doesn't contain invalid characters
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool CheckXmlCharacters { get; set; } = true;
+
+		/// <summary>
 		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
 		/// </summary>
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
