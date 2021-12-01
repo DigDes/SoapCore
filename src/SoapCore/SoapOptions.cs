@@ -41,6 +41,12 @@ namespace SoapCore
 
 		public bool IndentXml { get; set; } = true;
 
+		/// <summary>
+		/// Gets or sets a value indicating whether to check to make sure that the XmlOutput doesn't contain invalid characters
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool CheckXmlCharacters { get; set; } = true;
+
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 
@@ -66,7 +72,8 @@ namespace SoapCore
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
 				IndentXml = opt.IndentXml,
 				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
-				WsdlFileOptions = opt.WsdlFileOptions
+				WsdlFileOptions = opt.WsdlFileOptions,
+				CheckXmlCharacters = opt.CheckXmlCharacters
 			};
 
 #pragma warning disable CS0612 // Type or member is obsolete

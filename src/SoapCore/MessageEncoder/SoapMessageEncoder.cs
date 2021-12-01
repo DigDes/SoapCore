@@ -28,11 +28,13 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _omitXmlDeclaration;
 		private readonly bool _indentXml;
 		private readonly bool _supportXmlDictionaryReader;
+		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
+			_checkXmlCharacters = checkXmlCharacters;
 			if (writeEncoding == null)
 			{
 				throw new ArgumentNullException(nameof(writeEncoding));
@@ -153,7 +155,8 @@ namespace SoapCore.MessageEncoder
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
 				Indent = _indentXml,
 				Encoding = _writeEncoding,
-				CloseOutput = true
+				CloseOutput = true,
+				CheckCharacters = _checkXmlCharacters
 			});
 
 			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
@@ -183,7 +186,8 @@ namespace SoapCore.MessageEncoder
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
 				Indent = _indentXml,
 				Encoding = _writeEncoding,
-				CloseOutput = false
+				CloseOutput = false,
+				CheckCharacters = _checkXmlCharacters
 			});
 
 			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
