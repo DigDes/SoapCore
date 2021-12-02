@@ -35,6 +35,7 @@ namespace SoapCore.MessageEncoder
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
 			_checkXmlCharacters = checkXmlCharacters;
+
 			if (writeEncoding == null)
 			{
 				throw new ArgumentNullException(nameof(writeEncoding));
@@ -129,7 +130,7 @@ namespace SoapCore.MessageEncoder
 
 			XmlReader reader = _supportXmlDictionaryReader ?
 			 	XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { }) :
-				XmlReader.Create(stream, new XmlReaderSettings());
+				XmlReader.Create(stream, new XmlReaderSettings() { IgnoreWhitespace = true });
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 
