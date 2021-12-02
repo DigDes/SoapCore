@@ -84,6 +84,28 @@ namespace SoapCore.Tests.MessageContract
 		}
 
 		[TestMethod]
+		public async Task Soap11MessageContractArrayOfIntParam()
+		{
+			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
+  <soapenv:Header/>
+  <soapenv:Body>
+	<tem:ArrayOfIntMethod>
+    <tem:arrayOfIntParam>1/tem:arrayOfIntParam>
+	</tem:ArrayOfIntMethod>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost(typeof(ArrayOfIntService)))
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = await host.CreateRequest("/Service.asmx").AddHeader("SOAPAction", @"""ArrayOfIntMethod""").And(msg => msg.Content = content).PostAsync())
+			{
+				res.EnsureSuccessStatusCode();
+			}
+		}
+
+		[TestMethod]
 		public async Task Soap11MessageContractComplexNotWrapped()
 		{
 			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
