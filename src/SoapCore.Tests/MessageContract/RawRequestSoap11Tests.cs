@@ -90,7 +90,7 @@ namespace SoapCore.Tests.MessageContract
   <soapenv:Header/>
   <soapenv:Body>
 	<tem:ArrayOfIntMethod>
-    <tem:arrayOfIntParam>1/tem:arrayOfIntParam>
+    <tem:arrayOfIntParam>1</tem:arrayOfIntParam>
 	</tem:ArrayOfIntMethod>
   </soapenv:Body>
 </soapenv:Envelope>
@@ -102,6 +102,7 @@ namespace SoapCore.Tests.MessageContract
 			using (var res = await host.CreateRequest("/Service.asmx").AddHeader("SOAPAction", @"""ArrayOfIntMethod""").And(msg => msg.Content = content).PostAsync())
 			{
 				res.EnsureSuccessStatusCode();
+				var resultMessage = await res.Content.ReadAsStringAsync();
 			}
 		}
 
