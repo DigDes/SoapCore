@@ -13,6 +13,7 @@ namespace SoapCore
 	internal class SerializerHelper
 	{
 		private readonly SoapSerializer _serializer;
+		private readonly Type[] _excludedPrimitiveTypesForArrayWithoutWrapping = new Type[] { typeof(float), typeof(double), typeof(IntPtr), typeof(UIntPtr) };
 
 		public SerializerHelper(SoapSerializer serializer)
 		{
@@ -149,10 +150,10 @@ namespace SoapCore
 			{
 				result = xmlReader.ReadContentAsBase64();
 			}
-			else if (xmlReader.HasValue && elementType == typeof(int))
+			else if (xmlReader.HasValue && elementType.IsPrimitive && !_excludedPrimitiveTypesForArrayWithoutWrapping.Contains(elementType))
 			{
 				var values = xmlReader.Value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-				result = values.Select(x => int.Parse(x)).ToArray();
+				result = CastPrimitiveArray(values, elementType);
 				xmlReader.Skip();
 			}
 			else
@@ -166,6 +167,59 @@ namespace SoapCore
 			}
 
 			return result;
+		}
+
+		//Cast any primitive type, except double, float, IntPtr and UIntPtr
+		private object CastPrimitiveArray(IEnumerable<string> values, Type elementType)
+		{
+			if (elementType == typeof(bool))
+			{
+				return CastArray<bool>(values);
+			}
+			else if (elementType == typeof(byte))
+			{
+				return CastArray<byte>(values);
+			}
+			else if (elementType == typeof(sbyte))
+			{
+				return CastArray<sbyte>(values);
+			}
+			else if (elementType == typeof(short))
+			{
+				return CastArray<short>(values);
+			}
+			else if (elementType == typeof(ushort))
+			{
+				return CastArray<ushort>(values);
+			}
+			else if (elementType == typeof(int))
+			{
+				return CastArray<int>(values);
+			}
+			else if (elementType == typeof(uint))
+			{
+				return CastArray<uint>(values);
+			}
+			else if (elementType == typeof(long))
+			{
+				return CastArray<long>(values);
+			}
+			else if (elementType == typeof(ulong))
+			{
+				return CastArray<ulong>(values);
+			}
+
+			return null;
+		}
+
+		private T[] CastArray<T>(IEnumerable<string> input)
+		{
+			return input.Select(x => Cast<T>(x)).ToArray();
+		}
+
+		private T Cast<T>(string input)
+		{
+			return (T)Convert.ChangeType(input, typeof(T));
 		}
 	}
 }
