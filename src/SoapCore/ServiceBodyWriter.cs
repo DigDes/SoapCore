@@ -201,8 +201,11 @@ namespace SoapCore
 								accessor?.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(accessor, xmlName);
 								new XmlSerializer(typeMapping).Serialize(writer, _result);
 							}
-
-							serializer.Serialize(writer, _result);
+							else
+							{
+								//https://github.com/DigDes/SoapCore/issues/719
+								serializer.Serialize(writer, _result);
+							}
 						}
 					}
 				}
