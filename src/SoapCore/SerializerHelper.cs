@@ -149,6 +149,12 @@ namespace SoapCore
 			{
 				result = xmlReader.ReadContentAsBase64();
 			}
+			else if (xmlReader.HasValue && elementType == typeof(int))
+			{
+				var values = xmlReader.Value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+				result = values.Select(x => int.Parse(x)).ToArray();
+				xmlReader.Skip();
+			}
 			else
 			{
 				result = deserializeMethod.Invoke(null, new object[] { serializer, arrayItemName, arrayItemNamespace, xmlReader });
