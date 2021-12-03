@@ -29,6 +29,12 @@ namespace SoapCore
 				argument.Add((T)serializer.Deserialize(xmlReader));
 			}
 
+			if (argument.Count == 0 && xmlReader.HasValue)
+			{
+				//If there was no valid array items we can assume that any value is trash and skip it
+				xmlReader.Skip();
+			}
+
 			return argument.ToArray();
 		}
 

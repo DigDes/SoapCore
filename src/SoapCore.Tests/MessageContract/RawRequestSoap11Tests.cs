@@ -84,6 +84,57 @@ namespace SoapCore.Tests.MessageContract
 		}
 
 		[TestMethod]
+		public async Task Soap11MessageContractArrayOfIntParam()
+		{
+			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
+  <soapenv:Header/>
+  <soapenv:Body>
+	<tem:ArrayOfIntMethod>
+    <tem:arrayOfIntParam>1,2</tem:arrayOfIntParam>
+	</tem:ArrayOfIntMethod>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost(typeof(ArrayOfIntService)))
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = await host.CreateRequest("/Service.asmx").AddHeader("SOAPAction", @"""ArrayOfIntMethod""").And(msg => msg.Content = content).PostAsync())
+			{
+				res.EnsureSuccessStatusCode();
+				var resultMessage = await res.Content.ReadAsStringAsync();
+
+				//the result should be an empty array
+				Assert.IsTrue(resultMessage.Contains("<ArrayOfIntMethodResult />"));
+			}
+		}
+
+		[TestMethod]
+		public async Task Soap11MessageContractArrayOfIntParamWrapped()
+		{
+			const string body2 = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
+  <soapenv:Header/>
+  <soapenv:Body>
+	<tem:ArrayOfIntMethod>
+    <tem:arrayOfIntParam><tem:int>1</tem:int><tem:int>2</tem:int></tem:arrayOfIntParam>
+	</tem:ArrayOfIntMethod>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost(typeof(ArrayOfIntService)))
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body2, Encoding.UTF8, "text/xml"))
+			using (var res = await host.CreateRequest("/Service.asmx").AddHeader("SOAPAction", @"""ArrayOfIntMethod""").And(msg => msg.Content = content).PostAsync())
+			{
+				res.EnsureSuccessStatusCode();
+				var resultMessage = await res.Content.ReadAsStringAsync();
+				Assert.IsTrue(resultMessage.Contains("<int>1</int>"));
+				Assert.IsTrue(resultMessage.Contains("<int>2</int>"));
+			}
+		}
+
+		[TestMethod]
 		public async Task Soap11MessageContractComplexNotWrapped()
 		{
 			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
