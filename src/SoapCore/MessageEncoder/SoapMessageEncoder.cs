@@ -130,7 +130,7 @@ namespace SoapCore.MessageEncoder
 
 			XmlReader reader = _supportXmlDictionaryReader ?
 			 	XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { }) :
-				XmlReader.Create(stream, new XmlReaderSettings() { IgnoreWhitespace = true });
+				XmlReader.Create(stream, new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit });
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 
