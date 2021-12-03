@@ -103,8 +103,9 @@ namespace SoapCore.Tests.MessageContract
 			{
 				res.EnsureSuccessStatusCode();
 				var resultMessage = await res.Content.ReadAsStringAsync();
-				Assert.IsTrue(resultMessage.Contains("<int>1</int>"));
-				Assert.IsTrue(resultMessage.Contains("<int>2</int>"));
+
+				//the result should be an empty array
+				Assert.IsTrue(resultMessage.Contains("<ArrayOfIntMethodResult />"));
 			}
 
 			const string body2 = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
