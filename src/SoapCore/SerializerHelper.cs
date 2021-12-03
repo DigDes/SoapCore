@@ -13,7 +13,6 @@ namespace SoapCore
 	internal class SerializerHelper
 	{
 		private readonly SoapSerializer _serializer;
-		private readonly Type[] _excludedPrimitiveTypesForArrayWithoutWrapping = new Type[] { typeof(float), typeof(double), typeof(IntPtr), typeof(UIntPtr) };
 
 		public SerializerHelper(SoapSerializer serializer)
 		{
