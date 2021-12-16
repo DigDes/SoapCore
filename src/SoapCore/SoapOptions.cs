@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.Extensibility;
@@ -48,6 +49,7 @@ namespace SoapCore
 		public bool CheckXmlCharacters { get; set; } = true;
 
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
+		public Dictionary<MessageVersion, XmlNamespaceManager> XmlNamespacePrefixOverridesPerMessageVersion { get; set; }
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 
 		[Obsolete]
@@ -73,7 +75,8 @@ namespace SoapCore
 				IndentXml = opt.IndentXml,
 				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
 				WsdlFileOptions = opt.WsdlFileOptions,
-				CheckXmlCharacters = opt.CheckXmlCharacters
+				CheckXmlCharacters = opt.CheckXmlCharacters,
+				XmlNamespacePrefixOverridesPerMessageVersion = opt.XmlNamespacePrefixOverridesPerMessageVersion
 			};
 
 #pragma warning disable CS0612 // Type or member is obsolete

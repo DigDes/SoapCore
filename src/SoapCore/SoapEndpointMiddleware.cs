@@ -163,7 +163,7 @@ namespace SoapCore
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var xmlNamespaceManager = GetXmlNamespaceManager(null);
 			var bindingName = "BasicHttpBinding_" + _service.GeneralContract.Name;
 
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
@@ -176,7 +176,7 @@ namespace SoapCore
 			using var responseMessage = new MetaMessage(
 				Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter),
 				_service,
-				xmlNamespaceManager,
+				GetXmlNamespaceManager(messageEncoder.MessageVersion),
 				bindingName,
 				_options.UseBasicAuthentication);
 
@@ -355,7 +355,7 @@ namespace SoapCore
 
 			// Create response message
 			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
-			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var xmlNamespaceManager = GetXmlNamespaceManager(soapMessageEncoder.MessageVersion);
 
 			if (soapMessageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
@@ -682,7 +682,7 @@ namespace SoapCore
 		{
 			_logger.LogError(exception, "An error occurred processing the message");
 
-			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var xmlNamespaceManager = GetXmlNamespaceManager(messageEncoder.MessageVersion);
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
 			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, xmlNamespaceManager);
 
@@ -808,13 +808,21 @@ namespace SoapCore
 			await httpContext.Response.WriteAsync(modifiedWsdl);
 		}
 
-		private XmlNamespaceManager GetXmlNamespaceManager()
+		private XmlNamespaceManager GetXmlNamespaceManager(MessageVersion version)
 		{
 			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
 
 			if (_options.XmlNamespacePrefixOverrides != null)
 			{
 				foreach (var ns in _options.XmlNamespacePrefixOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
+				{
+					xmlNamespaceManager.AddNamespace(ns.Key, ns.Value);
+				}
+			}
+
+			if (version != null && _options.XmlNamespacePrefixOverridesPerMessageVersion != null && _options.XmlNamespacePrefixOverridesPerMessageVersion.TryGetValue(version, out var messageVersionSpecificNamespaceOverrides))
+			{
+				foreach (var ns in messageVersionSpecificNamespaceOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
 				{
 					xmlNamespaceManager.AddNamespace(ns.Key, ns.Value);
 				}
