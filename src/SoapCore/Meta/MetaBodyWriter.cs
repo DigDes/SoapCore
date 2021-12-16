@@ -644,7 +644,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("wsdl", "binding", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", BindingName + $"_{soap}");
 				writer.WriteAttributeString("type", "tns:" + BindingType);
-				writer.WriteAttributeString("style", "document");
+
 				writer.WriteStartElement(soap, "binding", soapNamespace);
 				writer.WriteAttributeString("transport", Namespaces.TRANSPORT_SCHEMA);
 				writer.WriteEndElement(); // soap:binding
