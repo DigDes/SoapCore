@@ -30,11 +30,13 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, string bindingName, string portName)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
 			_checkXmlCharacters = checkXmlCharacters;
+			BindingName = bindingName;
+			PortName = portName;
 
 			if (writeEncoding == null)
 			{
@@ -55,6 +57,9 @@ namespace SoapCore.MessageEncoder
 			CharSet = SoapMessageEncoderDefaults.EncodingToCharSet(writeEncoding);
 			ContentType = GetContentType(MediaType, CharSet);
 		}
+
+		public string BindingName { get; }
+		public string PortName { get; }
 
 		public string ContentType { get; }
 
