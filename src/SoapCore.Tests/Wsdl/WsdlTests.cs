@@ -742,7 +742,7 @@ namespace SoapCore.Tests.Wsdl
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
 				? new MetaWCFBodyWriter(service, baseUrl, "BasicHttpBinding", false) as BodyWriter
 				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, "BasicHttpBinding", new[] { MessageVersion.None }) as BodyWriter;
-			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true, false);
+			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true, false, null);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, "BasicHttpBinding", false);
 

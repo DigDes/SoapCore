@@ -10,6 +10,8 @@ namespace SoapCore
 		public Encoding WriteEncoding { get; set; } = Encoding.UTF8;
 		public XmlDictionaryReaderQuotas ReaderQuotas { get; set; } = XmlDictionaryReaderQuotas.Max;
 
+		public XmlNamespaceManager XmlNamespaceOverrides { get; set; } = null;
+
 		internal static SoapEncoderOptions[] ToArray(SoapEncoderOptions options)
 		{
 			return options is null ? null : new[] { options };

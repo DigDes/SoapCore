@@ -30,7 +30,7 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
@@ -54,6 +54,8 @@ namespace SoapCore.MessageEncoder
 			MediaType = GetMediaType(version);
 			CharSet = SoapMessageEncoderDefaults.EncodingToCharSet(writeEncoding);
 			ContentType = GetContentType(MediaType, CharSet);
+
+			XmlNamespaceOverrides = xmlNamespaceOverrides;
 		}
 
 		public string ContentType { get; }
@@ -65,6 +67,8 @@ namespace SoapCore.MessageEncoder
 		public MessageVersion MessageVersion { get; }
 
 		public XmlDictionaryReaderQuotas ReaderQuotas { get; }
+
+		public XmlNamespaceManager XmlNamespaceOverrides { get; }
 
 		public bool IsContentTypeSupported(string contentType, bool checkCharset)
 		{
