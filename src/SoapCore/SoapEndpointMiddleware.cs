@@ -569,9 +569,16 @@ namespace SoapCore
 			return arguments;
 		}
 
-		private void DeserializeParameters(Message requestMessage, XmlDictionaryReader xmlReader, Type parameterType,
-			SoapMethodParameterInfo parameterInfo, string @namespace, IEnumerable<Type> serviceKnownTypes,
-			MessageContractAttribute messageContractAttribute, object[] arguments)
+		// https://github.com/DigDes/SoapCore/issues/575
+		private void DeserializeParameters(
+			Message requestMessage,
+			XmlDictionaryReader xmlReader,
+			Type parameterType,
+			SoapMethodParameterInfo parameterInfo,
+			string @namespace,
+			IEnumerable<Type> serviceKnownTypes,
+			MessageContractAttribute messageContractAttribute,
+			object[] arguments)
 		{
 			var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers()
 				.Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null)
