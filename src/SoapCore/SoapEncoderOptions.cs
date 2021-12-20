@@ -12,6 +12,8 @@ namespace SoapCore
 		public string BindingName { get; set; } = null;
 		public string PortName { get; set; } = null;
 
+		public XmlNamespaceManager XmlNamespaceOverrides { get; set; } = null;
+
 		internal static SoapEncoderOptions[] ToArray(SoapEncoderOptions options)
 		{
 			return options is null ? null : new[] { options };
