@@ -81,6 +81,10 @@ namespace SoapCore.Tests.Serialization.Models.Xml
 		[XmlSerializerFormat(SupportFaults = true)]
 		MessageContractResponseWithArrays TestMessageContractWithArrays(MessageContractRequestWithArrays request);
 
+		[OperationContract(Action = ServiceNamespace.Value + nameof(TestMessageContractWithWithRpcStyle), ReplyAction = "*")]
+		[XmlSerializerFormat(Style = OperationFormatStyle.Rpc, Use = OperationFormatUse.Encoded, SupportFaults = false)]
+		MessageContractResponseRpcStyle TestMessageContractWithWithRpcStyle(MessageContractRequestRpcStyle request);
+
 		[OperationContract(Action = ServiceNamespace.Value + nameof(EnumMethod), ReplyAction = "*")]
 		[XmlSerializerFormat(SupportFaults = true)]
 		bool EnumMethod(out SampleEnum e);
