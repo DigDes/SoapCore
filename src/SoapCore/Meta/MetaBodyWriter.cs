@@ -31,8 +31,6 @@ namespace SoapCore.Meta
 		private readonly HashSet<string> _buildArrayTypes;
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
-		private readonly HashSet<int> _soapVersions;
-
 		private bool _buildDateTimeOffset;
 
 		[Obsolete]
@@ -42,11 +40,11 @@ namespace SoapCore.Meta
 				baseUrl,
 				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
 				binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
-				new[] { binding.MessageVersion ?? MessageVersion.None })
+				new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) })
 		{
 		}
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, MessageVersion[] messageVersions) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, SoapBindingInfo[] soapBindings) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -59,24 +57,14 @@ namespace SoapCore.Meta
 			_builtComplexTypes = new HashSet<string>();
 			_buildArrayTypes = new HashSet<string>();
 			_requestedDynamicTypes = new Dictionary<string, Dictionary<string, string>>();
-			_soapVersions = new HashSet<int>();
 
 			BindingName = bindingName;
 			PortName = bindingName;
+			SoapBindings = soapBindings;
 
-			foreach (var messageVersion in messageVersions)
-			{
-				if (messageVersion == MessageVersion.Soap12WSAddressing10 || messageVersion == MessageVersion.Soap12WSAddressingAugust2004)
-				{
-					_soapVersions.Add(12);
-				}
-				else
-				{
-					_soapVersions.Add(11);
-				}
-			}
 		}
 
+		private SoapBindingInfo[] SoapBindings { get; }
 		private string BindingName { get; }
 		private string BindingType => _service.GeneralContract.Name;
 		private string PortName { get; }
@@ -215,9 +203,20 @@ namespace SoapCore.Meta
 			return true;
 		}
 
-		private static (string name, string ns) GetSoapNameAndNamespace(int soapVersion)
+		private (string soapPrefix, string ns, string qualifiedBindingName, string qualifiedPortName) GetSoapMetaParameters(SoapBindingInfo bindingInfo)
 		{
-			return soapVersion == 12 ? ("soap12", Namespaces.SOAP12_NS) : ("soap", Namespaces.SOAP11_NS);
+			int soapVersion = 11;
+			if (bindingInfo.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004 || bindingInfo.MessageVersion == MessageVersion.Soap12WSAddressing10)
+			{
+				soapVersion = 12;
+			}
+
+			(var soapPrefix, var ns) = soapVersion == 12 ? ("soap12", Namespaces.SOAP12_NS) : ("soap", Namespaces.SOAP11_NS);
+
+			var qualifiedBindingName = !string.IsNullOrWhiteSpace(bindingInfo.BindingName) ? bindingInfo.BindingName : (BindingName + $"_{soapPrefix}");
+			var qualifiedPortName = !string.IsNullOrWhiteSpace(bindingInfo.PortName) ? bindingInfo.PortName : (PortName + $"_{soapPrefix}");
+
+			return (soapPrefix, ns, qualifiedBindingName, qualifiedPortName);
 		}
 
 		private XmlQualifiedName ResolveType(Type type)
@@ -637,14 +636,14 @@ namespace SoapCore.Meta
 
 		private void AddBinding(XmlDictionaryWriter writer)
 		{
-			foreach (var soapVersion in _soapVersions)
+			foreach (var bindingInfo in SoapBindings)
 			{
-				(var soap, var soapNamespace) = GetSoapNameAndNamespace(soapVersion);
+				(var soap, var soapNamespace, var qualifiedBindingName, _) = GetSoapMetaParameters(bindingInfo);
 
 				writer.WriteStartElement("wsdl", "binding", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", BindingName + $"_{soap}");
+				writer.WriteAttributeString("name", qualifiedBindingName);
 				writer.WriteAttributeString("type", "tns:" + BindingType);
-				writer.WriteAttributeString("style", "document");
+
 				writer.WriteStartElement(soap, "binding", soapNamespace);
 				writer.WriteAttributeString("transport", Namespaces.TRANSPORT_SCHEMA);
 				writer.WriteEndElement(); // soap:binding
@@ -686,15 +685,16 @@ namespace SoapCore.Meta
 			writer.WriteStartElement("wsdl", "service", Namespaces.WSDL_NS);
 			writer.WriteAttributeString("name", _service.ServiceName);
 
-			foreach (var soapVersion in _soapVersions)
+			foreach (var bindingInfo in SoapBindings)
 			{
-				(string soapName, string soapNamespace) = GetSoapNameAndNamespace(soapVersion);
+				(var soap, var soapNamespace, var qualifiedBindingName, var qualifiedPortName) = GetSoapMetaParameters(bindingInfo);
+
 
 				writer.WriteStartElement("wsdl", "port", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", PortName + $"_{soapName}");
-				writer.WriteAttributeString("binding", "tns:" + BindingName + $"_{soapName}");
+				writer.WriteAttributeString("name", qualifiedPortName);
+				writer.WriteAttributeString("binding", "tns:" + qualifiedBindingName);
 
-				writer.WriteStartElement(soapName, "address", soapNamespace);
+				writer.WriteStartElement(soap, "address", soapNamespace);
 
 				writer.WriteAttributeString("location", _baseUrl);
 				writer.WriteEndElement(); // soap:address
