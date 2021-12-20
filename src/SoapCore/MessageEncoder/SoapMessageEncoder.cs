@@ -30,11 +30,14 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
 			_checkXmlCharacters = checkXmlCharacters;
+			BindingName = bindingName;
+			PortName = portName;
+
 			if (writeEncoding == null)
 			{
 				throw new ArgumentNullException(nameof(writeEncoding));
@@ -53,7 +56,12 @@ namespace SoapCore.MessageEncoder
 			MediaType = GetMediaType(version);
 			CharSet = SoapMessageEncoderDefaults.EncodingToCharSet(writeEncoding);
 			ContentType = GetContentType(MediaType, CharSet);
+
+			XmlNamespaceOverrides = xmlNamespaceOverrides;
 		}
+
+		public string BindingName { get; }
+		public string PortName { get; }
 
 		public string ContentType { get; }
 
@@ -64,6 +72,8 @@ namespace SoapCore.MessageEncoder
 		public MessageVersion MessageVersion { get; }
 
 		public XmlDictionaryReaderQuotas ReaderQuotas { get; }
+
+		public XmlNamespaceManager XmlNamespaceOverrides { get; }
 
 		public bool IsContentTypeSupported(string contentType, bool checkCharset)
 		{
@@ -129,7 +139,7 @@ namespace SoapCore.MessageEncoder
 
 			XmlReader reader = _supportXmlDictionaryReader ?
 			 	XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { }) :
-				XmlReader.Create(stream, new XmlReaderSettings());
+				XmlReader.Create(stream, new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit });
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 

@@ -69,7 +69,7 @@ namespace SoapCore
 
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters);
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, options.EncoderOptions[i].XmlNamespaceOverrides, options.EncoderOptions[i].BindingName, options.EncoderOptions[i].PortName);
 			}
 		}
 
@@ -163,11 +163,11 @@ namespace SoapCore
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var xmlNamespaceManager = GetXmlNamespaceManager(null);
 			var bindingName = "BasicHttpBinding_" + _service.GeneralContract.Name;
 
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
-				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => me.MessageVersion).ToArray())
+				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray())
 				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication);
 
 			//assumption that you want soap12 if your service supports that
@@ -176,7 +176,7 @@ namespace SoapCore
 			using var responseMessage = new MetaMessage(
 				Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter),
 				_service,
-				xmlNamespaceManager,
+				GetXmlNamespaceManager(messageEncoder),
 				bindingName,
 				_options.UseBasicAuthentication);
 
@@ -355,7 +355,7 @@ namespace SoapCore
 
 			// Create response message
 			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
-			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var xmlNamespaceManager = GetXmlNamespaceManager(soapMessageEncoder);
 
 			if (soapMessageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
@@ -523,20 +523,7 @@ namespace SoapCore
 					//https://github.com/DigDes/SoapCore/issues/385
 					if (operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 					{
-						var importer = new SoapReflectionImporter(@namespace);
-						var map = new XmlReflectionMember
-						{
-							IsReturnValue = false,
-							MemberName = parameterInfo.Name,
-							MemberType = parameterType
-						};
-						var mapping = importer.ImportMembersMapping(parameterInfo.Name, @namespace, new[] { map }, false, true);
-						var serializer = XmlSerializer.FromMappings(new[] { mapping })[0];
-						var value = serializer.Deserialize(xmlReader);
-						if (value is object[] o && o.Length > 0)
-						{
-							arguments[parameterInfo.Index] = o[0];
-						}
+						DeserializeParameters(requestMessage, xmlReader, parameterType, parameterInfo, @namespace, serviceKnownTypes, messageContractAttribute, arguments);
 					}
 					else
 					{
@@ -552,72 +539,7 @@ namespace SoapCore
 				}
 				else
 				{
-					var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers()
-						.Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null)
-						.Select(mi => new
-						{
-							MemberInfo = mi,
-							MessageHeaderMemberAttribute = mi.GetCustomAttribute<MessageHeaderAttribute>()
-						}).ToArray();
-
-					var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
-
-					for (var i = 0; i < requestMessage.Headers.Count; i++)
-					{
-						var header = requestMessage.Headers[i];
-						var member = messageHeadersMembers.FirstOrDefault(x => x.MessageHeaderMemberAttribute.Name == header.Name || x.MemberInfo.Name == header.Name);
-
-						if (member != null)
-						{
-							var reader = requestMessage.Headers.GetReaderAtHeader(i);
-
-							var value = _serializerHelper.DeserializeInputParameter(
-								reader,
-								member.MemberInfo.GetPropertyOrFieldType(),
-								member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
-								member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
-								member.MemberInfo,
-								serviceKnownTypes);
-
-							member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
-						}
-					}
-
-					// This object isn't a wrapper element, so we will hunt for the nested message body
-					// member inside of it
-					var messageBodyMembers = parameterType.GetPropertyOrFieldMembers().Where(x => x.GetCustomAttribute<MessageBodyMemberAttribute>() != null).Select(mi => new
-					{
-						Member = mi,
-						MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
-					}).OrderBy(x => x.MessageBodyMemberAttribute.Order);
-
-					if (messageContractAttribute.IsWrapped)
-					{
-						xmlReader.Read();
-					}
-
-					foreach (var messageBodyMember in messageBodyMembers)
-					{
-						var messageBodyMemberAttribute = messageBodyMember.MessageBodyMemberAttribute;
-						var messageBodyMemberInfo = messageBodyMember.Member;
-
-						var innerParameterName = messageBodyMemberAttribute.Name ?? messageBodyMemberInfo.Name;
-						var innerParameterNs = messageBodyMemberAttribute.Namespace ?? @namespace;
-						var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
-
-						//xmlReader.MoveToStartElement(innerParameterName, innerParameterNs);
-						var innerParameter = _serializerHelper.DeserializeInputParameter(
-							xmlReader,
-							innerParameterType,
-							innerParameterName,
-							innerParameterNs,
-							messageBodyMemberInfo,
-							serviceKnownTypes);
-
-						messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
-					}
-
-					arguments[parameterInfo.Index] = wrapperObject;
+					DeserializeParameters(requestMessage, xmlReader, parameterType, parameterInfo, @namespace, serviceKnownTypes, messageContractAttribute, arguments);
 				}
 			}
 
@@ -645,6 +567,84 @@ namespace SoapCore
 			}
 
 			return arguments;
+		}
+
+		// https://github.com/DigDes/SoapCore/issues/575
+		private void DeserializeParameters(
+			Message requestMessage,
+			XmlDictionaryReader xmlReader,
+			Type parameterType,
+			SoapMethodParameterInfo parameterInfo,
+			string @namespace,
+			IEnumerable<Type> serviceKnownTypes,
+			MessageContractAttribute messageContractAttribute,
+			object[] arguments)
+		{
+			var messageHeadersMembers = parameterType.GetPropertyOrFieldMembers()
+				.Where(x => x.GetCustomAttribute<MessageHeaderAttribute>() != null)
+				.Select(mi => new
+				{
+					MemberInfo = mi,
+					MessageHeaderMemberAttribute = mi.GetCustomAttribute<MessageHeaderAttribute>()
+				}).ToArray();
+
+			var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
+
+			for (var i = 0; i < requestMessage.Headers.Count; i++)
+			{
+				var header = requestMessage.Headers[i];
+				var member = messageHeadersMembers.FirstOrDefault(x =>
+					x.MessageHeaderMemberAttribute.Name == header.Name || x.MemberInfo.Name == header.Name);
+
+				if (member != null)
+				{
+					var reader = requestMessage.Headers.GetReaderAtHeader(i);
+
+					var value = _serializerHelper.DeserializeInputParameter(
+						reader,
+						member.MemberInfo.GetPropertyOrFieldType(),
+						member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
+						member.MessageHeaderMemberAttribute.Namespace ?? @namespace,
+						member.MemberInfo,
+						serviceKnownTypes);
+
+					member.MemberInfo.SetValueToPropertyOrField(wrapperObject, value);
+				}
+			}
+
+			var messageBodyMembers = parameterType.GetPropertyOrFieldMembers()
+				.Where(x => x.GetCustomAttribute<MessageBodyMemberAttribute>() != null).Select(mi => new
+				{
+					Member = mi,
+					MessageBodyMemberAttribute = mi.GetCustomAttribute<MessageBodyMemberAttribute>()
+				}).OrderBy(x => x.MessageBodyMemberAttribute.Order);
+
+			if (messageContractAttribute.IsWrapped)
+			{
+				xmlReader.Read();
+			}
+
+			foreach (var messageBodyMember in messageBodyMembers)
+			{
+				var messageBodyMemberAttribute = messageBodyMember.MessageBodyMemberAttribute;
+				var messageBodyMemberInfo = messageBodyMember.Member;
+
+				var innerParameterName = messageBodyMemberAttribute.Name ?? messageBodyMemberInfo.Name;
+				var innerParameterNs = messageBodyMemberAttribute.Namespace ?? @namespace;
+				var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
+
+				var innerParameter = _serializerHelper.DeserializeInputParameter(
+					xmlReader,
+					innerParameterType,
+					innerParameterName,
+					innerParameterNs,
+					messageBodyMemberInfo,
+					serviceKnownTypes);
+
+				messageBodyMemberInfo.SetValueToPropertyOrField(wrapperObject, innerParameter);
+			}
+
+			arguments[parameterInfo.Index] = wrapperObject;
 		}
 
 		/// <summary>
@@ -682,11 +682,11 @@ namespace SoapCore
 		{
 			_logger.LogError(exception, "An error occurred processing the message");
 
-			var xmlNamespaceManager = GetXmlNamespaceManager();
+			var xmlNamespaceManager = GetXmlNamespaceManager(messageEncoder);
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
 			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, xmlNamespaceManager);
 
-			if(!httpContext.Response.HasStarted)
+			if (!httpContext.Response.HasStarted)
 			{
 				httpContext.Response.ContentType = httpContext.Request.ContentType;
 				httpContext.Response.Headers["SOAPAction"] = faultMessage.Headers.Action;
@@ -808,9 +808,10 @@ namespace SoapCore
 			await httpContext.Response.WriteAsync(modifiedWsdl);
 		}
 
-		private XmlNamespaceManager GetXmlNamespaceManager()
+		private XmlNamespaceManager GetXmlNamespaceManager(SoapMessageEncoder messageEncoder)
 		{
 			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
+			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
 
 			if (_options.XmlNamespacePrefixOverrides != null)
 			{
@@ -820,7 +821,14 @@ namespace SoapCore
 				}
 			}
 
-			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
+			if (messageEncoder?.XmlNamespaceOverrides != null)
+			{
+				foreach (var ns in messageEncoder.XmlNamespaceOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
+				{
+					xmlNamespaceManager.AddNamespace(ns.Key, ns.Value);
+				}
+			}
+
 			return xmlNamespaceManager;
 		}
 	}
