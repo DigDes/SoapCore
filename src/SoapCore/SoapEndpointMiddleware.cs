@@ -69,7 +69,7 @@ namespace SoapCore
 
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters);
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, options.EncoderOptions[i].BindingName, options.EncoderOptions[i].PortName);
 			}
 		}
 
@@ -167,7 +167,7 @@ namespace SoapCore
 			var bindingName = "BasicHttpBinding_" + _service.GeneralContract.Name;
 
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
-				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => me.MessageVersion).ToArray())
+				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray())
 				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication);
 
 			//assumption that you want soap12 if your service supports that
