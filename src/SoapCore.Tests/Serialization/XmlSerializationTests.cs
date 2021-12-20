@@ -230,6 +230,35 @@ namespace SoapCore.Tests.Serialization
 
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestMessageContractWithRpcStyle_RequestParametersAreNotNull(SoapSerializer soapSerializer)
+		{
+			var serviceClient = _fixture.GetSampleServiceClient(soapSerializer);
+
+			var request = new MessageContractRequestRpcStyle { StringParameter = "abc", IntParameter = 14, EnumParameter = SampleEnum.C };
+			var expectedResponse = new MessageContractResponseRpcStyle { Result = 17, Message = "Ok" };
+
+			_fixture.ServiceMock
+				.Setup(x => x.TestMessageContractWithWithRpcStyle(It.IsAny<MessageContractRequestRpcStyle>()))
+				.Callback(
+					(MessageContractRequestRpcStyle actualRequest) =>
+					{
+						// check that incoming request is not null, and all properties are filled
+						Assert.NotNull(actualRequest);
+						Assert.Equal("abc", actualRequest.StringParameter);
+						Assert.Equal(14, actualRequest.IntParameter);
+						Assert.Equal(SampleEnum.C, actualRequest.EnumParameter);
+					})
+				.Returns(expectedResponse);
+
+			var response = serviceClient.TestMessageContractWithWithRpcStyle(request);
+
+			Assert.NotNull(response);
+			Assert.Equal(17, response.Result);
+			Assert.Equal("Ok", response.Message);
+		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingComplexArrayModel(SoapSerializer soapSerializer)
 		{
 			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
