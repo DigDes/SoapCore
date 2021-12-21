@@ -188,50 +188,65 @@ namespace SoapCore
 
 		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
 		{
-			Message responseMessage;
-
 			// Get the encoder based on Content Type
 			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, true))
 				?? _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, false))
 				?? _messageEncoders[0];
 
 			Message requestMessage;
+			Message responseMessage;
 
 			//Get the message
 			try
 			{
 				requestMessage = await ReadMessageAsync(httpContext, messageEncoder);
-			}
-			catch (Exception ex)
-			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
-				return;
-			}
 
-			var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
+				var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
-			//Execute request message filters
-			try
-			{
 				foreach (var messageFilter in asyncMessageFilters)
 				{
 					await messageFilter.OnRequestExecuting(requestMessage);
 				}
+
+				var soapMessageProcessors = serviceProvider.GetServices<ISoapMessageProcessor>().ToList();
+
+				Func<Message, Task<Message>> MakeProcessorPipe(int i = 0)
+				{
+					if (i < soapMessageProcessors.Count)
+					{
+						return (requestMessage) => soapMessageProcessors[i].ProcessMessage(requestMessage, httpContext, MakeProcessorPipe(i+1));
+					}
+					else
+					{
+						return (requestMessage) => ProcessMessage(requestMessage, messageEncoder, asyncMessageFilters, httpContext, serviceProvider);
+					}
+				}
+
+				var processorPipe = MakeProcessorPipe();
+
+				responseMessage = await processorPipe(requestMessage);
 			}
 			catch (Exception ex)
 			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-				return;
+				responseMessage = await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
 			}
 
+			if (responseMessage != null)
+			{
+				await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
+			}
+		}
+
+		private async Task<Message> ProcessMessage(Message requestMessage, SoapMessageEncoder messageEncoder, IAsyncMessageFilter[] asyncMessageFilters, HttpContext httpContext, IServiceProvider serviceProvider)
+		{
+			Message responseMessage;
 			var soapAction = HeadersHelper.GetSoapAction(httpContext, ref requestMessage);
 			requestMessage.Headers.Action = soapAction;
 
 			if (string.IsNullOrEmpty(soapAction))
 			{
 				var ex = new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-				return;
+				return await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
@@ -243,8 +258,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-				return;
+				return await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			// for getting soapaction and parameters in (optional) body
@@ -269,8 +283,7 @@ namespace SoapCore
 				if (operation == null)
 				{
 					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
-					await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-					return;
+					return await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 
 				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
@@ -293,7 +306,7 @@ namespace SoapCore
 					if (operation.IsOneWay)
 					{
 						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
-						return;
+						return null;
 					}
 
 					var resultOutDictionary = new Dictionary<string, object>();
@@ -312,7 +325,7 @@ namespace SoapCore
 
 					SetHttpResponse(httpContext, responseMessage);
 
-					await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
+					return responseMessage;
 				}
 				catch (Exception exception)
 				{
@@ -321,7 +334,7 @@ namespace SoapCore
 						exception = targetInvocationException.InnerException;
 					}
 
-					responseMessage = await WriteErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					responseMessage = await CreateErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 			}
 			finally
@@ -339,8 +352,10 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await WriteErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				responseMessage = await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
+
+			return responseMessage;
 		}
 
 		private Message CreateResponseMessage(
@@ -672,7 +687,7 @@ namespace SoapCore
 		/// Returns the constructed message (which is implicitly written to the response
 		/// and therefore must not be handled by the caller).
 		/// </returns>
-		private async Task<Message> WriteErrorResponseMessage(
+		private async Task<Message> CreateErrorResponseMessage(
 			Exception exception,
 			int statusCode,
 			IServiceProvider serviceProvider,
@@ -701,8 +716,6 @@ namespace SoapCore
 				faultMessage.Headers.RelatesTo = requestMessage?.Headers.MessageId;
 				faultMessage.Headers.To = requestMessage?.Headers.ReplyTo?.Uri;
 			}
-
-			await WriteMessageAsync(messageEncoder, faultMessage, httpContext);
 
 			return faultMessage;
 		}
