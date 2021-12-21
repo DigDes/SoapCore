@@ -228,7 +228,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
+				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
 			}
 
 			if (responseMessage != null)
@@ -246,7 +246,7 @@ namespace SoapCore
 			if (string.IsNullOrEmpty(soapAction))
 			{
 				var ex = new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
-				return await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				return CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
@@ -258,7 +258,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				return await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				return CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			// for getting soapaction and parameters in (optional) body
@@ -283,7 +283,7 @@ namespace SoapCore
 				if (operation == null)
 				{
 					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
-					return await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					return CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 
 				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
@@ -334,7 +334,7 @@ namespace SoapCore
 						exception = targetInvocationException.InnerException;
 					}
 
-					responseMessage = await CreateErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					responseMessage = CreateErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 				}
 			}
 			finally
@@ -352,7 +352,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = await CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			return responseMessage;
@@ -687,7 +687,7 @@ namespace SoapCore
 		/// Returns the constructed message (which is implicitly written to the response
 		/// and therefore must not be handled by the caller).
 		/// </returns>
-		private async Task<Message> CreateErrorResponseMessage(
+		private Message CreateErrorResponseMessage(
 			Exception exception,
 			int statusCode,
 			IServiceProvider serviceProvider,
