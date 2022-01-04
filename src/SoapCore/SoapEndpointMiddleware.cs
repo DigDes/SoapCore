@@ -214,7 +214,7 @@ namespace SoapCore
 				{
 					if (i < soapMessageProcessors.Count)
 					{
-						return (requestMessage) => soapMessageProcessors[i].ProcessMessage(requestMessage, httpContext, MakeProcessorPipe(i+1));
+						return (requestMessage) => soapMessageProcessors[i].ProcessMessage(requestMessage, httpContext, MakeProcessorPipe(i + 1));
 					}
 					else
 					{

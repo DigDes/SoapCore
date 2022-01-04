@@ -21,7 +21,7 @@ namespace SoapCore.Extensibility
 			_processMessage = processMessage;
 		}
 
-		public async Task<Message> ProcessMessage(Message message,HttpContext context, Func<Message, Task<Message>> next)
+		public async Task<Message> ProcessMessage(Message message, HttpContext context, Func<Message, Task<Message>> next)
 		{
 			return await _processMessage(message, context, next);
 		}
