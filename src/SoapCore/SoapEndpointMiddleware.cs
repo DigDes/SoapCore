@@ -208,21 +208,9 @@ namespace SoapCore
 					await messageFilter.OnRequestExecuting(requestMessage);
 				}
 
-				var soapMessageProcessors = serviceProvider.GetServices<ISoapMessageProcessor>().ToList();
+				var soapMessageProcessors = serviceProvider.GetServices<ISoapMessageProcessor>().ToArray();
 
-				Func<Message, Task<Message>> MakeProcessorPipe(int i = 0)
-				{
-					if (i < soapMessageProcessors.Count)
-					{
-						return (requestMessage) => soapMessageProcessors[i].ProcessMessage(requestMessage, httpContext, MakeProcessorPipe(i + 1));
-					}
-					else
-					{
-						return (requestMessage) => ProcessMessage(requestMessage, messageEncoder, asyncMessageFilters, httpContext, serviceProvider);
-					}
-				}
-
-				var processorPipe = MakeProcessorPipe();
+				var processorPipe = MakeProcessorPipe(soapMessageProcessors, httpContext, (requestMessage) => ProcessMessage(requestMessage, messageEncoder, asyncMessageFilters, httpContext, serviceProvider));
 
 				responseMessage = await processorPipe(requestMessage);
 			}
@@ -235,6 +223,23 @@ namespace SoapCore
 			{
 				await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
 			}
+		}
+
+		private Func<Message, Task<Message>> MakeProcessorPipe(ISoapMessageProcessor[] soapMessageProcessors, HttpContext httpContext, Func<Message, Task<Message>> processMessageFunc)
+		{
+			Func<Message, Task<Message>> MakeProcessorPipe(int i = 0)
+			{
+				if (i < soapMessageProcessors.Length)
+				{
+					return (requestMessage) => soapMessageProcessors[i].ProcessMessage(requestMessage, httpContext, MakeProcessorPipe(i + 1));
+				}
+				else
+				{
+					return processMessageFunc;
+				}
+			}
+
+			return MakeProcessorPipe();
 		}
 
 		private async Task<Message> ProcessMessage(Message requestMessage, SoapMessageEncoder messageEncoder, IAsyncMessageFilter[] asyncMessageFilters, HttpContext httpContext, IServiceProvider serviceProvider)
