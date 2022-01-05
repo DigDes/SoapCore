@@ -61,7 +61,6 @@ namespace SoapCore.Meta
 			BindingName = bindingName;
 			PortName = bindingName;
 			SoapBindings = soapBindings;
-
 		}
 
 		private SoapBindingInfo[] SoapBindings { get; }
@@ -688,7 +687,6 @@ namespace SoapCore.Meta
 			foreach (var bindingInfo in SoapBindings)
 			{
 				(var soap, var soapNamespace, var qualifiedBindingName, var qualifiedPortName) = GetSoapMetaParameters(bindingInfo);
-
 
 				writer.WriteStartElement("wsdl", "port", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", qualifiedPortName);

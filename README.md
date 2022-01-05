@@ -122,6 +122,7 @@ If the WsdFileOptions parameter is supplied then this feature is enabled / used.
 In your ConfigureServices method, you can register some additional items to extend the pipeline:
 * services.AddSoapMessageInspector() - add a custom MessageInspector. This function is similar to the `IDispatchMessageInspector` in WCF. The newer `IMessageInspector2` interface allows you to register multiple inspectors, and to know which service was being called.
 * services.AddSingleton<MyOperatorInvoker>() - add a custom OperationInvoker. Similar to WCF's `IOperationInvoker` this allows you to override the invoking of a service operation, commonly to add custom logging or exception handling logic around it.
+* services.AddSoapMessageProcessor() - add a custom SoapMessageProcessor. Similar to ASP.NET Cores middlewares, this allows you to inspect the message on the way in and out. You can also short-circuit the message processing and return your own custom message instead.
 
 #### How to get custom HTTP header in SoapCore service
 
