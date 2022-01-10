@@ -1064,7 +1064,11 @@ namespace SoapCore.Meta
 						writer.WriteXmlnsAttribute(ns, Namespaces.ARRAYS_NS);
 						writer.WriteAttributeString("name", name);
 						WriteQualification(writer, isUnqualified);
-						writer.WriteAttributeString("nillable", "true");
+
+						if (!isArray)
+						{
+							writer.WriteAttributeString("nillable", "true");
+						}
 
 						writer.WriteAttributeString("type", $"{ns}:{newTypeToBuild.TypeName}");
 
