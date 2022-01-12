@@ -382,6 +382,7 @@ namespace SoapCore
 				responseMessage = new T_MESSAGE
 				{
 					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter),
+					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager
 				};
 				responseMessage.Headers.Action = operation.ReplyAction;
@@ -393,6 +394,7 @@ namespace SoapCore
 				responseMessage = new T_MESSAGE
 				{
 					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter),
+					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager
 				};
 			}

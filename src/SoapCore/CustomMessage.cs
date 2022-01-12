@@ -18,6 +18,8 @@ namespace SoapCore
 
 		public XmlNamespaceManager NamespaceManager { get; internal set; }
 
+		public System.Collections.Generic.Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; internal set; }
+
 		public override MessageHeaders Headers => Message.Headers;
 
 		public override MessageProperties Properties => Message.Properties;
@@ -40,6 +42,14 @@ namespace SoapCore
 
 			var xsiPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(NamespaceManager, "xsi", Namespaces.XMLNS_XSI);
 			writer.WriteXmlnsAttribute(xsiPrefix, Namespaces.XMLNS_XSI);
+
+			if (AdditionalEnvelopeXmlnsAttributes != null)
+			{
+				foreach (var rec in AdditionalEnvelopeXmlnsAttributes)
+				{
+					writer.WriteXmlnsAttribute(rec.Key, rec.Value);
+				}
+			}
 		}
 
 		protected override void OnWriteStartBody(XmlDictionaryWriter writer)
