@@ -44,6 +44,14 @@ namespace SoapCore.Tests.MessageContract
 			{
 				x.UseSoapEndpoint(_serviceType, "/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
 				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
+				x.UseSoapEndpoint(_serviceType, opt =>
+				{
+					opt.Path = "/ServiceWithAdditionalEnvelopeXmlnsAttributes.asmx";
+					opt.AdditionalEnvelopeXmlnsAttributes = new Dictionary<string, string>()
+					{
+						{ "arr", "http://schemas.microsoft.com/2003/10/Serialization/Arrays" }
+					};
+				});
 			});
 		}
 #endif
