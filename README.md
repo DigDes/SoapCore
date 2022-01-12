@@ -192,6 +192,42 @@ public class MyService : IMyServiceService
     }
 }
 ```
+#### Additional namespace declaration attributes in envelope
+Adding additional namespaces to the **SOAP Envelope** can be done by populating `SoapEncoderOptions.AdditionalEnvelopeXmlnsAttributes` parameter.
+```csharp
+....
+endpoints.UseSoapEndpoint<IService>(opt =>
+{
+	opt.Path = "/ServiceWithAdditionalEnvelopeXmlnsAttributes.asmx";
+	opt.AdditionalEnvelopeXmlnsAttributes = new Dictionary<string, string>()
+	{
+		{ "myNS", "http://schemas.someting.org" },
+		{ "arr", "http://schemas.microsoft.com/2003/10/Serialization/Arrays" }
+	};
+});
+...
+```
+This code will put `xmlns:myNS="...` and `xmlns:arr="...` attributes in `Envelope` and message will look like:
+```xml
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ... xmlns:myNS="http://schemas.someting.org" xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+...
+    <myNS:StringList>
+        <arr:string>Error: one</arr:string>
+        <arr:string>Error: two</arr:string>
+    </fin:StringList>
+...
+```
+instead of:
+```xml
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ... >
+...
+    <d3p1:StringList xmlns:d4p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+        <d4p1:string>Error: one</arr:string>
+        <d4p1:string>Error: two</arr:string>
+    </d3p1:StringList>
+...
+```
+
 ### Contributing
 
 See [Contributing guide](CONTRIBUTING.md)
