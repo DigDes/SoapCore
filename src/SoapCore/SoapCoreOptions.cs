@@ -99,5 +99,10 @@ namespace SoapCore
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 
 		public WsdlFileOptions WsdlFileOptions { get; set; }
+
+		/// <summary>
+		/// Sets additional namespace declaration attributes in envelope
+		/// </summary>
+		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
 	}
 }

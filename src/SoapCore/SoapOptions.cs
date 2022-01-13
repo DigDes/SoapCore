@@ -50,6 +50,7 @@ namespace SoapCore
 
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 		public WsdlFileOptions WsdlFileOptions { get; set; }
+		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
 
 		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
@@ -74,6 +75,7 @@ namespace SoapCore
 				IndentXml = opt.IndentXml,
 				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
 				WsdlFileOptions = opt.WsdlFileOptions,
+				AdditionalEnvelopeXmlnsAttributes = opt.AdditionalEnvelopeXmlnsAttributes,
 				CheckXmlCharacters = opt.CheckXmlCharacters
 			};
 
