@@ -193,12 +193,12 @@ namespace SoapCore
 				?? _messageEncoders.FirstOrDefault(me => me.IsContentTypeSupported(httpContext.Request.ContentType, false))
 				?? _messageEncoders[0];
 
-			Message requestMessage;
-			Message responseMessage;
+			Message requestMessage = null;
+			Message responseMessage = null;
 
-			//Get the message
 			try
 			{
+				//Get the message
 				requestMessage = await ReadMessageAsync(httpContext, messageEncoder);
 
 				var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
@@ -216,7 +216,7 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
-				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, null, messageEncoder, httpContext);
+				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			if (responseMessage != null)
@@ -250,21 +250,13 @@ namespace SoapCore
 
 			if (string.IsNullOrEmpty(soapAction))
 			{
-				var ex = new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
-				return CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				throw new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
 
-			try
-			{
-				correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
-			}
-			catch (Exception ex)
-			{
-				return CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
-			}
+			correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
 
 			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
@@ -287,8 +279,7 @@ namespace SoapCore
 
 				if (operation == null)
 				{
-					var ex = new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
-					return CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
 				}
 
 				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
@@ -327,19 +318,15 @@ namespace SoapCore
 					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 
 					correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
-
-					SetHttpResponse(httpContext, responseMessage);
-
-					return responseMessage;
 				}
 				catch (Exception exception)
 				{
 					if (exception is TargetInvocationException targetInvocationException)
 					{
-						exception = targetInvocationException.InnerException;
+						throw targetInvocationException.InnerException;
 					}
 
-					responseMessage = CreateErrorResponseMessage(exception, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+					throw;
 				}
 			}
 			finally
@@ -348,18 +335,12 @@ namespace SoapCore
 			}
 
 			// Execute response message filters
-			try
+			foreach (var messageFilter in asyncMessageFilters.Reverse())
 			{
-				foreach (var messageFilter in asyncMessageFilters.Reverse())
-				{
-					await messageFilter.OnResponseExecuting(responseMessage);
-				}
-			}
-			catch (Exception ex)
-			{
-				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				await messageFilter.OnResponseExecuting(responseMessage);
 			}
 
+			SetHttpResponse(httpContext, responseMessage);
 			return responseMessage;
 		}
 
