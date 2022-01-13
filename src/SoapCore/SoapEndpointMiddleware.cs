@@ -216,6 +216,11 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
+				if (ex is TargetInvocationException targetInvocationException)
+				{
+					ex = targetInvocationException.InnerException;
+				}
+
 				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
@@ -284,50 +289,37 @@ namespace SoapCore
 
 				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
 
-				try
+				//Create an instance of the service class
+				var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
+
+				SetMessageHeadersToProperty(requestMessage, serviceInstance);
+
+				// Get operation arguments from message
+				var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
+
+				ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
+
+				var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
+				var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
+
+				if (operation.IsOneWay)
 				{
-					//Create an instance of the service class
-					var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
-
-					SetMessageHeadersToProperty(requestMessage, serviceInstance);
-
-					// Get operation arguments from message
-					var arguments = GetRequestArguments(requestMessage, reader, operation, httpContext);
-
-					ExecuteFiltersAndTune(httpContext, serviceProvider, operation, arguments, serviceInstance);
-
-					var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
-					var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
-
-					if (operation.IsOneWay)
-					{
-						httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
-						return null;
-					}
-
-					var resultOutDictionary = new Dictionary<string, object>();
-					foreach (var parameterInfo in operation.OutParameters)
-					{
-						resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
-					}
-
-					responseMessage = CreateResponseMessage(
-						operation, responseObject, resultOutDictionary, soapAction, requestMessage, messageEncoder);
-
-					httpContext.Response.ContentType = httpContext.Request.ContentType;
-					httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
-
-					correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
+					httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
+					return null;
 				}
-				catch (Exception exception)
+
+				var resultOutDictionary = new Dictionary<string, object>();
+				foreach (var parameterInfo in operation.OutParameters)
 				{
-					if (exception is TargetInvocationException targetInvocationException)
-					{
-						throw targetInvocationException.InnerException;
-					}
-
-					throw;
+					resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 				}
+
+				responseMessage = CreateResponseMessage(operation, responseObject, resultOutDictionary, soapAction, requestMessage, messageEncoder);
+
+				httpContext.Response.ContentType = httpContext.Request.ContentType;
+				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
+
+				correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
 			}
 			finally
 			{
