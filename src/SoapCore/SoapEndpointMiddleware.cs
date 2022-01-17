@@ -102,6 +102,10 @@ namespace SoapCore
 							httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 							await httpContext.Response.WriteAsync($"Service does not support \"{remainingPath}\"");
 						}
+						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
+						{
+							await ProcessXSD(httpContext);
+						}
 						else if (string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl"))
 						{
 							if (_options.WsdlFileOptions != null)
@@ -112,10 +116,6 @@ namespace SoapCore
 							{
 								await ProcessMeta(httpContext);
 							}
-						}
-						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
-						{
-							await ProcessXSD(httpContext);
 						}
 					}
 					else

@@ -4,20 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.ServiceModel.Channels;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
+using System.Xml.Schema;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Shouldly;
-using SoapCore.MessageEncoder;
-using SoapCore.Meta;
-using SoapCore.ServiceModel;
 using SoapCore.Tests.WsdlFromFile.Services;
 
 namespace SoapCore.Tests.WsdlFromFile
@@ -25,8 +19,6 @@ namespace SoapCore.Tests.WsdlFromFile
 	[TestClass]
 	public class WsdlTests
 	{
-		private readonly XNamespace _xmlSchema = "http://www.w3.org/2001/XMLSchema";
-
 		private IWebHost _host;
 
 		[TestMethod]
@@ -37,6 +29,13 @@ namespace SoapCore.Tests.WsdlFromFile
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			var element = root.SelectSingleNode("/wsdl:definitions", nsmgr);
+			Assert.IsNotNull(element);
 		}
 
 		[TestMethod]
@@ -47,6 +46,13 @@ namespace SoapCore.Tests.WsdlFromFile
 			Trace.TraceInformation(xsd);
 			Assert.IsNotNull(xsd);
 			StopServer();
+
+			XmlSchema.Read(new XmlTextReader(new StringReader(xsd)), ValidationCallback);
+
+			static void ValidationCallback(object sender, ValidationEventArgs args)
+			{
+				Assert.Fail(args.Message);
+			}
 		}
 
 		[TestMethod]
