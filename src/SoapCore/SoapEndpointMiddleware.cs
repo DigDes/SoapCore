@@ -484,6 +484,18 @@ namespace SoapCore
 								serviceKnownTypes);
 						}
 
+						// sometimes there's no namespace for the parameter (ex. MS SOAP SDK)
+						if (argumentValue == null)
+						{
+							argumentValue = _serializerHelper.DeserializeInputParameter(
+								xmlReader,
+								parameterInfo.Parameter.ParameterType,
+								parameterInfo.Name,
+								string.Empty,
+								parameterInfo.Parameter,
+								serviceKnownTypes);
+						}
+
 						arguments[parameterInfo.Index] = argumentValue;
 					}
 
