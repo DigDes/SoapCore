@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -81,6 +82,38 @@ namespace SoapCore.Tests
 				var response = res.Content.ReadAsStringAsync().Result;
 				Assert.IsTrue(response.Contains(pingValue));
 			}
+		}
+
+		[TestMethod]
+		public async Task Soap11PingInMultipart()
+		{
+			var pingValue = "abc";
+			var soapBody = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+				<soapenv:Body>
+					<Ping xmlns=""http://tempuri.org/"">
+						<s>{pingValue}</s>
+					</Ping>
+				</soapenv:Body>
+			</soapenv:Envelope>";
+
+			using var host = CreateTestHost();
+			using var client = host.CreateClient();
+			using var multipartContent = new MultipartContent("related");
+			multipartContent.Headers.ContentType!.Parameters.Add(new NameValueHeaderValue("type", "\"text/xml\""));
+
+			using var soapContent = new StringContent(soapBody, Encoding.UTF8, "text/xml");
+			soapContent.Headers.Add("SOAPAction", @"""Ping""");
+
+			using var extraContent = new StringContent("some text payload", Encoding.UTF8, "text/plain");
+
+			multipartContent.Add(soapContent);
+			multipartContent.Add(extraContent);
+
+			using var res = await host.CreateRequest("/Service.svc").And(msg => msg.Content = multipartContent).PostAsync();
+
+			res.EnsureSuccessStatusCode();
+			var response = await res.Content.ReadAsStringAsync();
+			Assert.IsTrue(response.Contains(pingValue));
 		}
 
 		private TestServer CreateTestHost()

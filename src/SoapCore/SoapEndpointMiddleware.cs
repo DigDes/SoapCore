@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.ServiceModel;
@@ -13,6 +14,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SoapCore.Extensibility;
@@ -143,22 +145,63 @@ namespace SoapCore
 		{
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body);
 		}
-
-		private static Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
-		{
-			return messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
-		}
 #else
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
 			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
 		}
-
-		private static Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
-		{
-			return messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
-		}
 #endif
+
+		private static string TryGetMultipartBoundary(HttpRequest request)
+		{
+			var parsedContentType = MediaTypeHeaderValue.Parse(request.ContentType);
+			if (parsedContentType.MediaType != "multipart/related")
+			{
+				return null;
+			}
+
+			var boundaryValue = parsedContentType.Parameters
+				.FirstOrDefault(p => p.Name.Equals("boundary", StringComparison.OrdinalIgnoreCase))
+				?.Value;
+
+			if (string.IsNullOrWhiteSpace(boundaryValue))
+			{
+				return null;
+			}
+
+			return boundaryValue.Trim('"');
+		}
+
+		private async Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
+		{
+			var boundary = TryGetMultipartBoundary(httpContext.Request);
+
+			if (!string.IsNullOrWhiteSpace(boundary))
+			{
+				var multipartReader = new MultipartReader(boundary, httpContext.Request.Body);
+
+				while (true)
+				{
+					var multipartSection = await multipartReader.ReadNextSectionAsync();
+
+					if (multipartSection == null)
+					{
+						break;
+					}
+
+					if (messageEncoder.IsContentTypeSupported(multipartSection.ContentType, true)
+						|| messageEncoder.IsContentTypeSupported(multipartSection.ContentType, false))
+					{
+						return await messageEncoder.ReadMessageAsync(multipartSection.Body, 0x10000, multipartSection.ContentType);
+					}
+				}
+			}
+#if !NETCOREAPP3_0_OR_GREATER
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+#else
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
+#endif
+		}
 
 		private async Task ProcessMeta(HttpContext httpContext)
 		{
