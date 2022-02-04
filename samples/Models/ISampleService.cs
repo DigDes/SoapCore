@@ -3,25 +3,28 @@ using System.Threading.Tasks;
 
 namespace Models
 {
-	[ServiceContract]
-	public interface ISampleService
-	{
-		[OperationContract]
-		string Ping(string s);
+    [ServiceContract]
+    public interface ISampleService
+    {
+        [OperationContract]
+        string Ping(string s);
 
-		[OperationContract]
-		ComplexModelResponse PingComplexModel(ComplexModelInput inputModel);
+        [OperationContract]
+        ComplexModelResponse PingComplexModel(ComplexModelInput inputModel);
 
-		[OperationContract]
-		void VoidMethod(out string s);
+        [OperationContract]
+        int[] IntArray();
 
-		[OperationContract]
-		Task<int> AsyncMethod();
+        [OperationContract]
+        void VoidMethod(out string s);
 
-		[OperationContract]
-		int? NullableMethod(bool? arg);
+        [OperationContract]
+        Task<int> AsyncMethod();
 
-		[OperationContract]
-		void XmlMethod(System.Xml.Linq.XElement xml);
-	}
+        [OperationContract]
+        int? NullableMethod(bool? arg);
+
+        [OperationContract]
+        void XmlMethod(System.Xml.Linq.XElement xml);
+    }
 }
