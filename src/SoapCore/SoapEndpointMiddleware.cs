@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using SoapCore.Extensibility;
 using SoapCore.MessageEncoder;
 using SoapCore.Meta;
@@ -102,9 +103,7 @@ namespace SoapCore
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
-							ProcessGetOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
-							//httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-							//await httpContext.Response.WriteAsync($"Service does not support \"{remainingPath}\"");
+							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
 						}
 						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
 						{
@@ -124,7 +123,20 @@ namespace SoapCore
 					}
 					else
 					{
-						await ProcessOperation(httpContext, serviceProvider);
+						if (!string.IsNullOrWhiteSpace(remainingPath))
+						{
+							if ((httpContext.Request.IsHttps && !_options.HttpsPostEnabled) || (!httpContext.Request.IsHttps && !_options.HttpPostEnabled))
+							{
+								httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+								return;
+							}
+
+							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
+						}
+						else
+						{
+							await ProcessOperation(httpContext, serviceProvider);
+						}
 					}
 				}
 				catch (Exception ex)
@@ -275,7 +287,7 @@ namespace SoapCore
 			}
 		}
 
-		private async Task ProcessGetOperation(HttpContext context, IServiceProvider serviceProvider, string methodName)
+		private async Task ProcessHttpOperation(HttpContext context, IServiceProvider serviceProvider, string methodName)
 		{
 			if (!TryGetOperation(methodName, out var operation))
 			{
@@ -288,14 +300,25 @@ namespace SoapCore
 
 			var missingParameters = new List<string>();
 
+			bool TryGetRequestValue(string key, out StringValues value)
+			{
+				if (context.Request.Method?.ToLower() == "get")
+				{
+					return context.Request.Query.TryGetValue(key, out value);
+				}
+
+				return context.Request.Form.TryGetValue(key, out value);
+			}
+
 			foreach (var parameter in operation.InParameters)
 			{
-				if (context.Request.Query.TryGetValue(parameter.Name, out var queryValue))
+
+				if (TryGetRequestValue(parameter.Name, out var requestValue))
 				{
 					var baseType = parameter.Parameter.ParameterType;
 					var nullableType = Nullable.GetUnderlyingType(baseType);
 
-					arguments[parameter.Index] = Convert.ChangeType(queryValue.ToString(), nullableType ?? baseType);
+					arguments[parameter.Index] = Convert.ChangeType(requestValue.ToString(), nullableType ?? baseType);
 				}
 				else
 				{
@@ -328,14 +351,16 @@ namespace SoapCore
 
 			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, new Dictionary<string, object>());
 
-			StringBuilder strBuilder = new StringBuilder();
-			XmlWriter writer = XmlWriter.Create(context.Response.Body);
+			context.Response.StatusCode = (int)HttpStatusCode.OK;
+			context.Response.ContentType = "text/xml";
+
+			StringBuilder resultSb = new StringBuilder();
+			XmlWriter writer = XmlWriter.Create(resultSb);
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
 			dictionaryWriter.Flush();
-			context.Response.StatusCode = (int)HttpStatusCode.OK;
-			context.Response.ContentType = "text/xml";
+			await context.Response.WriteAsync(resultSb.ToString());
 		}
 
 		private Func<Message, Task<Message>> MakeProcessorPipe(ISoapMessageProcessor[] soapMessageProcessors, HttpContext httpContext, Func<Message, Task<Message>> processMessageFunc)
