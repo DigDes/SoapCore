@@ -1,3 +1,13 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+using SoapCore.Extensibility;
+using SoapCore.MessageEncoder;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,17 +22,6 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Serialization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
-using SoapCore.Extensibility;
-using SoapCore.MessageEncoder;
-using SoapCore.Meta;
-using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -292,7 +291,7 @@ namespace SoapCore
 			if (!TryGetOperation(methodName, out var operation))
 			{
 				context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-				await context.Response.WriteAsync($"Service does not support \"{methodName}\"");
+				await context.Response.WriteAsync($"Service does not support \"/{methodName}\"");
 				return;
 			}
 
@@ -312,17 +311,18 @@ namespace SoapCore
 
 			foreach (var parameter in operation.InParameters)
 			{
-
+				var baseType = parameter.Parameter.ParameterType;
+				var nullableType = Nullable.GetUnderlyingType(baseType);
 				if (TryGetRequestValue(parameter.Name, out var requestValue))
 				{
-					var baseType = parameter.Parameter.ParameterType;
-					var nullableType = Nullable.GetUnderlyingType(baseType);
-
 					arguments[parameter.Index] = Convert.ChangeType(requestValue.ToString(), nullableType ?? baseType);
 				}
 				else
 				{
-					missingParameters.Add(parameter.Name);
+					if (nullableType == null)
+					{
+						missingParameters.Add(parameter.Name);
+					}
 				}
 			}
 
@@ -349,7 +349,13 @@ namespace SoapCore
 				return;
 			}
 
-			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, new Dictionary<string, object>());
+			var resultOutDictionary = new Dictionary<string, object>();
+			foreach (var parameterInfo in operation.OutParameters)
+			{
+				resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
+			}
+
+			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
 
 			context.Response.StatusCode = (int)HttpStatusCode.OK;
 			context.Response.ContentType = "text/xml";
