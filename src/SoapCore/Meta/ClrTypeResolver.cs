@@ -42,6 +42,10 @@ namespace SoapCore.Meta
 					return "string";
 				case "Byte[]":
 					return "base64Binary";
+#if NET6_0_OR_GREATER
+				case "DateOnly":
+					return "date";
+#endif
 			}
 
 			return null;

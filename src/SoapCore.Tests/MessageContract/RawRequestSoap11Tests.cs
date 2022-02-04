@@ -287,6 +287,30 @@ namespace SoapCore.Tests.MessageContract
 			}
 		}
 
+		[TestMethod]
+		public async Task SoapMessageContractWithAdditionalEnvelopeXmlnsAttributes()
+		{
+			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soapenv:Header/>
+  <soapenv:Body/>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost(typeof(TestService)))
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = host.CreateRequest("/ServiceWithAdditionalEnvelopeXmlnsAttributes.asmx").AddHeader("SOAPAction", @"""EmptyRequest""").And(msg => msg.Content = content).PostAsync().Result)
+			{
+				res.EnsureSuccessStatusCode();
+				var stream = await res.Content.ReadAsStreamAsync();
+				XmlDocument doc = new XmlDocument();
+				doc.Load(stream);
+				XmlElement root = doc.DocumentElement;
+				Assert.IsTrue(root.HasAttribute("xmlns:arr"));
+				Assert.AreEqual(root.GetAttribute("xmlns:arr"), "http://schemas.microsoft.com/2003/10/Serialization/Arrays");
+			}
+		}
+
 		private TestServer CreateTestHost(Type serviceType)
 		{
 			var webHostBuilder = new WebHostBuilder()

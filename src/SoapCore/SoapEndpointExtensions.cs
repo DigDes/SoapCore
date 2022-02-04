@@ -338,8 +338,8 @@ namespace SoapCore
 				.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions)
 				.Build();
 
-			routes.Map(soapOptions.Path + "/$metadata", pipeline);
-			routes.Map(soapOptions.Path + "/mex", pipeline);
+			routes.Map(soapOptions.Path?.TrimEnd('/') + "/$metadata", pipeline);
+			routes.Map(soapOptions.Path?.TrimEnd('/') + "/mex", pipeline);
 
 			return routes.Map(soapOptions.Path, pipeline)
 				.WithDisplayName("SoapCore");
