@@ -14,10 +14,12 @@ namespace SoapCore.Tests.WsdlFromFile
 	public class Startup
 	{
 		private readonly Type _serviceType;
+		private readonly string _wsdlFile;
 
 		public Startup(IStartupConfiguration configuration)
 		{
 			_serviceType = configuration.ServiceType;
+			_wsdlFile = configuration.WsdlFile;
 		}
 
 		public void ConfigureServices(IServiceCollection services)
@@ -40,7 +42,7 @@ namespace SoapCore.Tests.WsdlFromFile
 						"Service.asmx", new WebServiceWSDLMapping
 						{
 							SchemaFolder = "/WsdlFromFile/WSDL",
-							WsdlFile = "SnapshotPull.wsdl",
+							WsdlFile = _wsdlFile,
 							WSDLFolder = "/WsdlFromFile/WSDL"
 						}
 					}
@@ -66,7 +68,7 @@ namespace SoapCore.Tests.WsdlFromFile
 						"Service.asmx", new WebServiceWSDLMapping
 						{
 							SchemaFolder = "/WsdlFromFile/WSDL",
-							WsdlFile = "SnapshotPull.wsdl",
+							WsdlFile = _wsdlFile,
 							WSDLFolder = "/WsdlFromFile/WSDL"
 						}
 					}

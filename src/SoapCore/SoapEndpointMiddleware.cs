@@ -962,6 +962,8 @@ namespace SoapCore
 			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
 			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
 
+			xmlNamespaceManager.AddNamespace("tns", _service.GeneralContract.Namespace);
+
 			if (_options.XmlNamespacePrefixOverrides != null)
 			{
 				foreach (var ns in _options.XmlNamespacePrefixOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
