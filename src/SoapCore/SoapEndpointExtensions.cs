@@ -340,6 +340,7 @@ namespace SoapCore
 
 			routes.Map(soapOptions.Path?.TrimEnd('/') + "/$metadata", pipeline);
 			routes.Map(soapOptions.Path?.TrimEnd('/') + "/mex", pipeline);
+			routes.Map(soapOptions.Path?.TrimEnd('/') + "/{methodName}", pipeline);
 
 			return routes.Map(soapOptions.Path, pipeline)
 				.WithDisplayName("SoapCore");
