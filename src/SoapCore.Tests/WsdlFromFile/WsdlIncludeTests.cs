@@ -17,25 +17,34 @@ using SoapCore.Tests.WsdlFromFile.Services;
 namespace SoapCore.Tests.WsdlFromFile
 {
 	[TestClass]
-	public class WsdlTests
+	public class WsdlIncludeTests
 	{
 		private IWebHost _host;
 
 		[TestMethod]
-		public void CheckWSDLExists()
+		public void CheckXSDInclude()
 		{
-			StartService(typeof(MeasurementSiteTablePublicationService));
+			StartService(typeof(EchoIncludeService));
 			var wsdl = GetWsdlFromAsmx();
-			Trace.TraceInformation(wsdl);
-			Assert.IsNotNull(wsdl);
 			StopServer();
 
 			var root = new XmlDocument();
 			root.LoadXml(wsdl);
+
 			var nsmgr = new XmlNamespaceManager(root.NameTable);
 			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
-			var element = root.SelectSingleNode("/wsdl:definitions", nsmgr);
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:include[1]", nsmgr);
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			string url = address + "/Service.asmx?xsd&name=echoInclude.xsd";
+
 			Assert.IsNotNull(element);
+			Assert.AreEqual(url, element.Attributes["schemaLocation"]?.Value);
 		}
 
 		[TestMethod]
@@ -56,79 +65,35 @@ namespace SoapCore.Tests.WsdlFromFile
 		}
 
 		[TestMethod]
-		public void CheckAddressLocation()
+		public void CheckXSDIncludeXSD()
 		{
-			StartService(typeof(MeasurementSiteTablePublicationService));
-			var wsdl = GetWsdlFromAsmx();
+			StartService(typeof(EchoIncludeService));
+			var xsd = GetXSDFromAsmx();
 			StopServer();
 
 			var root = new XmlDocument();
-			root.LoadXml(wsdl);
+			root.LoadXml(xsd);
 
 			var nsmgr = new XmlNamespaceManager(root.NameTable);
 			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
 			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
 			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
 
-			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:service/wsdl:port/soapbind:address", nsmgr);
+			var element = root.SelectSingleNode("/xs:schema/xs:include[1]", nsmgr);
 
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
-			string url = address + "/Service.asmx";
-			Assert.IsNotNull(element);
-			Assert.AreEqual(element.Attributes["location"]?.Value, url);
-		}
-
-		[TestMethod]
-		public void CheckXSDImport()
-		{
-			StartService(typeof(MeasurementSiteTablePublicationService));
-			var wsdl = GetWsdlFromAsmx();
-			StopServer();
-
-			var root = new XmlDocument();
-			root.LoadXml(wsdl);
-
-			var nsmgr = new XmlNamespaceManager(root.NameTable);
-			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
-			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
-			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
-
-			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:import[1]", nsmgr);
-
-			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
-			var address = addresses.Addresses.Single();
-
-			string url = address + "/Service.asmx?xsd&name=DATEXII_3_MessageContainer.xsd";
+			string url = address + "/Service.asmx?xsd&name=echoIncluded.xsd";
 
 			Assert.IsNotNull(element);
-			Assert.AreEqual(element.Attributes["namespace"]?.Value, "http://datex2.eu/schema/3/messageContainer");
-			Assert.AreEqual(element.Attributes["schemaLocation"]?.Value, url);
+			Assert.AreEqual(url, element.Attributes["schemaLocation"]?.Value);
 		}
 
 		[TestCleanup]
 		public void StopServer()
 		{
 			_host?.StopAsync();
-		}
-
-		private string GetWsdl()
-		{
-			var serviceName = "Service.svc";
-
-			return GetWsdlFromService(serviceName);
-		}
-
-		private string GetWsdlFromService(string serviceName)
-		{
-			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
-			var address = addresses.Addresses.Single();
-
-			using (var httpClient = new HttpClient())
-			{
-				return httpClient.GetStringAsync(string.Format("{0}/{1}?wsdl", address, serviceName)).Result;
-			}
 		}
 
 		private string GetWsdlFromAsmx()
@@ -153,7 +118,7 @@ namespace SoapCore.Tests.WsdlFromFile
 
 			using (var httpClient = new HttpClient())
 			{
-				return httpClient.GetStringAsync(string.Format("{0}/{1}?xsd&name=DATEXII_3_MessageContainer.xsd", address, serviceName)).Result;
+				return httpClient.GetStringAsync(string.Format("{0}/{1}?xsd&name=echoInclude.xsd", address, serviceName)).Result;
 			}
 		}
 
@@ -162,7 +127,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			_host = new WebHostBuilder()
 					.UseKestrel()
 					.UseUrls("http://127.0.0.1:0")
-					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType, "SnapshotPull.wsdl")))
+					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType, "echoInclude.wsdl")))
 					.UseStartup<Startup>()
 					.Build();
 
@@ -176,22 +141,6 @@ namespace SoapCore.Tests.WsdlFromFile
 			{
 				Thread.Sleep(2000);
 			}
-		}
-
-		private List<XElement> GetElements(XElement root, XName name)
-		{
-			var list = new List<XElement>();
-			foreach (var xElement in root.Elements())
-			{
-				if (xElement.Name.Equals(name))
-				{
-					list.Add(xElement);
-				}
-
-				list.AddRange(GetElements(xElement, name));
-			}
-
-			return list;
 		}
 	}
 }
