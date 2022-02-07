@@ -55,5 +55,22 @@ namespace Server
         {
             Console.WriteLine(xml.ToString());
         }
+
+        public ComplexReturnModel[] ComplexReturnModel()
+        {
+            return new ComplexReturnModel[]
+            {
+                new ComplexReturnModel
+                {
+                    Id = 1,
+                    Name = "Item 1"
+                },
+                new ComplexReturnModel
+                {
+                    Id = 2,
+                    Name = "Item 2"
+                }
+            };
+        }
     }
 }

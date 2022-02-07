@@ -16,6 +16,9 @@ namespace Models
         int[] IntArray();
 
         [OperationContract]
+        ComplexReturnModel[] ComplexReturnModel();
+
+        [OperationContract]
         void VoidMethod(out string s);
 
         [OperationContract]
