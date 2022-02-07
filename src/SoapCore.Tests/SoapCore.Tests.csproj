@@ -85,5 +85,14 @@
 		<None Update="WsdlFromFile\WSDL\SnapshotPull.wsdl">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Update="WsdlFromFile\WSDL\echoInclude.wsdl">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="WsdlFromFile\WSDL\echoInclude.xsd">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="WsdlFromFile\WSDL\echoIncluded.xsd">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>
