@@ -355,7 +355,7 @@ namespace SoapCore
 				resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
 			}
 
-			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
+			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary, true);
 
 			context.Response.StatusCode = (int)HttpStatusCode.OK;
 			context.Response.ContentType = "text/xml";
