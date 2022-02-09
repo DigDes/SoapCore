@@ -108,10 +108,18 @@ namespace SoapCore.Meta
 					{
 						if (schemaNode.Name == (!string.IsNullOrWhiteSpace(schemaNode.Prefix) ? schemaNode.Prefix + ":" : schemaNode.Prefix) + "port")
 						{
-							foreach (XmlNode soapAdressNode in schemaNode.ChildNodes)
+							foreach (XmlNode portNode in schemaNode.ChildNodes)
 							{
-								soapAdressNode.Attributes["location"].InnerText = WebServiceLocation();
-								break;
+								if (portNode.Name == (!string.IsNullOrWhiteSpace(portNode.Prefix) ? portNode.Prefix + ":" : portNode.Prefix) + "address")
+								{
+									if (portNode.Attributes["location"] == null)
+									{
+										portNode.Attributes.Append(xmlDoc.CreateAttribute("location"));
+									}
+
+									portNode.Attributes["location"].InnerText = WebServiceLocation();
+									break;
+								}
 							}
 						}
 					}

@@ -47,6 +47,7 @@
 	
 	<service name="snapshotPull">
 		<port name="snapshotPullSoapEndPoint" binding="tns:snapshotPullSoapBinding">
+			<soapbind:documentation>The service endpoint</soapbind:documentation>
 			<soapbind:address location="http://localhost/snapshotPullService/2020"/>
 			<!-- Here, the "location" depends on each implementation and MUST be filled  by each developer, for instance "http://localhost:8080/snapshotPullService/2020"-->
 		</port>
