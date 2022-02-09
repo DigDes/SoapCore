@@ -61,7 +61,6 @@ namespace SoapCore.Meta
 			BindingName = bindingName;
 			PortName = bindingName;
 			SoapBindings = soapBindings;
-
 		}
 
 		private SoapBindingInfo[] SoapBindings { get; }
@@ -689,7 +688,6 @@ namespace SoapCore.Meta
 			{
 				(var soap, var soapNamespace, var qualifiedBindingName, var qualifiedPortName) = GetSoapMetaParameters(bindingInfo);
 
-
 				writer.WriteStartElement("wsdl", "port", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", qualifiedPortName);
 				writer.WriteAttributeString("binding", "tns:" + qualifiedBindingName);
@@ -1066,7 +1064,11 @@ namespace SoapCore.Meta
 						writer.WriteXmlnsAttribute(ns, Namespaces.ARRAYS_NS);
 						writer.WriteAttributeString("name", name);
 						WriteQualification(writer, isUnqualified);
-						writer.WriteAttributeString("nillable", "true");
+
+						if (!isArray)
+						{
+							writer.WriteAttributeString("nillable", "true");
+						}
 
 						writer.WriteAttributeString("type", $"{ns}:{newTypeToBuild.TypeName}");
 

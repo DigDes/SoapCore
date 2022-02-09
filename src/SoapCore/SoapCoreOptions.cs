@@ -62,6 +62,18 @@ namespace SoapCore
 		public bool HttpsGetEnabled { get; set; } = true;
 
 		/// <summary>
+		/// Gets or sets a value indicating whether invocation by posting formdata on HTTP is activated
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool HttpPostEnabled { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether invocation by posting formdata on HTTP is activated
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool HttpsPostEnabled { get; set; } = true;
+
+		/// <summary>
 		/// The maximum size in bytes of the in-memory <see cref="System.Buffers.ArrayPool{Byte}"/> used to buffer the
 		/// stream. Larger request bodies are written to disk.
 		/// </summary>
@@ -99,5 +111,10 @@ namespace SoapCore
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 
 		public WsdlFileOptions WsdlFileOptions { get; set; }
+
+		/// <summary>
+		/// Sets additional namespace declaration attributes in envelope
+		/// </summary>
+		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
 	}
 }

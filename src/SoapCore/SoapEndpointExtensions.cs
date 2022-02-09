@@ -1,6 +1,8 @@
 using System;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SoapCore.Extensibility;
@@ -336,8 +338,9 @@ namespace SoapCore
 				.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions)
 				.Build();
 
-			routes.Map(soapOptions.Path + "/$metadata", pipeline);
-			routes.Map(soapOptions.Path + "/mex", pipeline);
+			routes.Map(soapOptions.Path?.TrimEnd('/') + "/$metadata", pipeline);
+			routes.Map(soapOptions.Path?.TrimEnd('/') + "/mex", pipeline);
+			routes.Map(soapOptions.Path?.TrimEnd('/') + "/{methodName}", pipeline);
 
 			return routes.Map(soapOptions.Path, pipeline)
 				.WithDisplayName("SoapCore");
@@ -424,6 +427,18 @@ namespace SoapCore
 		public static IServiceCollection AddSoapServiceOperationTuner(this IServiceCollection serviceCollection, IServiceOperationTuner serviceOperationTuner)
 		{
 			serviceCollection.TryAddSingleton(serviceOperationTuner);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapMessageProcessor(this IServiceCollection serviceCollection, ISoapMessageProcessor messageProcessor)
+		{
+			serviceCollection.TryAddSingleton(messageProcessor);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapMessageProcessor(this IServiceCollection serviceCollection, Func<Message, HttpContext, Func<Message, Task<Message>>, Task<Message>> messageProcessor)
+		{
+			serviceCollection.TryAddSingleton<ISoapMessageProcessor>(new LambdaSoapMessageProcessor(messageProcessor));
 			return serviceCollection;
 		}
 	}

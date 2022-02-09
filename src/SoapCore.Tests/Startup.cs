@@ -73,7 +73,7 @@ namespace SoapCore.Tests
 		{
 			app.UseRouting();
 
-			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
+			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction") || ctx.Request.ContentType.StartsWith("multipart"), app2 =>
 			{
 				app2.UseRouting();
 
@@ -93,7 +93,7 @@ namespace SoapCore.Tests
 				});
 			});
 
-			app.UseWhen(ctx => !ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
+			app.UseWhen(ctx => !ctx.Request.Headers.ContainsKey("SOAPAction") && !ctx.Request.ContentType.StartsWith("multipart"), app2 =>
 			{
 				app2.UseRouting();
 

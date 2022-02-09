@@ -58,7 +58,6 @@ namespace SoapCore.Meta
 				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
 			}
 
-			_xmlNamespaceManager.AddNamespace("tns", _service.GeneralContract.Namespace);
 			WriteXmlnsAttribute(writer, _service.GeneralContract.Namespace);
 			WriteXmlnsAttribute(writer, Namespaces.XMLNS_XSD);
 			WriteXmlnsAttribute(writer, Namespaces.HTTP_NS);

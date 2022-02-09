@@ -1,3 +1,5 @@
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +11,6 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
 using System.Xml.Serialization;
-using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -22,8 +23,9 @@ namespace SoapCore
 		private readonly string _resultName;
 		private readonly object _result;
 		private readonly Dictionary<string, object> _outResults;
+		private readonly bool _skipResponseEnvelope;
 
-		public ServiceBodyWriter(SoapSerializer serializer, OperationDescription operation, object result, Dictionary<string, object> outResults) : base(isBuffered: true)
+		public ServiceBodyWriter(SoapSerializer serializer, OperationDescription operation, object result, Dictionary<string, object> outResults, bool skipResponseEnvelope = false) : base(isBuffered: true)
 		{
 			_serializer = serializer;
 			_operation = operation;
@@ -32,6 +34,7 @@ namespace SoapCore
 			_resultName = operation.ReturnName;
 			_result = result;
 			_outResults = outResults ?? new Dictionary<string, object>();
+			_skipResponseEnvelope = skipResponseEnvelope;
 		}
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)
@@ -84,6 +87,11 @@ namespace SoapCore
 			// Do not wrap old-style single element response into additional xml element for xml serializer
 			var needResponseEnvelope = _result == null || (_outResults.Count > 0) || !_operation.IsMessageContractResponse;
 
+			if (_skipResponseEnvelope)
+			{
+				needResponseEnvelope = false;
+			}
+
 			if (needResponseEnvelope)
 			{
 				writer.WriteStartElement(_envelopeName, _serviceNamespace);
@@ -103,7 +111,7 @@ namespace SoapCore
 						? _resultName
 						: xmlRootAttr.ElementName)
 					: (string.IsNullOrWhiteSpace(xmlRootAttr?.ElementName)
-					? resultType.Name
+					? BodyWriterExtensions.GetSerializedTypeName(resultType)
 					: xmlRootAttr.ElementName));
 
 				var xmlNs = _operation.ReturnNamespace ?? messageContractAttribute?.WrapperNamespace
