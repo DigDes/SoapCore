@@ -85,17 +85,17 @@ namespace SoapCore.Meta
 					{
 						if (schemaNode.Name == (!string.IsNullOrWhiteSpace(schemaNode.Prefix) ? schemaNode.Prefix + ":" : schemaNode.Prefix) + "schema")
 						{
-							foreach (XmlNode importNode in schemaNode.ChildNodes)
+							foreach (XmlNode importOrIncludeNode in schemaNode.ChildNodes)
 							{
-								if (importNode.Name == (!string.IsNullOrWhiteSpace(importNode.Prefix) ? importNode.Prefix + ":" : importNode.Prefix) + "import")
+								if (importOrIncludeNode.Name == ImportNodeName(importOrIncludeNode) || importOrIncludeNode.Name == IncludeNodeName(importOrIncludeNode))
 								{
-									if (importNode.Attributes["schemaLocation"] == null)
+									if (importOrIncludeNode.Attributes["schemaLocation"] == null)
 									{
-										importNode.Attributes.Append(xmlDoc.CreateAttribute("schemaLocation"));
+										importOrIncludeNode.Attributes.Append(xmlDoc.CreateAttribute("schemaLocation"));
 									}
 
-									string name = importNode.Attributes["schemaLocation"].InnerText;
-									importNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
+									string name = importOrIncludeNode.Attributes["schemaLocation"].InnerText;
+									importOrIncludeNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
 								}
 							}
 						}
@@ -108,10 +108,18 @@ namespace SoapCore.Meta
 					{
 						if (schemaNode.Name == (!string.IsNullOrWhiteSpace(schemaNode.Prefix) ? schemaNode.Prefix + ":" : schemaNode.Prefix) + "port")
 						{
-							foreach (XmlNode soapAdressNode in schemaNode.ChildNodes)
+							foreach (XmlNode portNode in schemaNode.ChildNodes)
 							{
-								soapAdressNode.Attributes["location"].InnerText = WebServiceLocation();
-								break;
+								if (portNode.Name == (!string.IsNullOrWhiteSpace(portNode.Prefix) ? portNode.Prefix + ":" : portNode.Prefix) + "address")
+								{
+									if (portNode.Attributes["location"] == null)
+									{
+										portNode.Attributes.Append(xmlDoc.CreateAttribute("location"));
+									}
+
+									portNode.Attributes["location"].InnerText = WebServiceLocation();
+									break;
+								}
 							}
 						}
 					}
@@ -128,7 +136,7 @@ namespace SoapCore.Meta
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{
-				if (node.Name == (!string.IsNullOrWhiteSpace(node.Prefix) ? node.Prefix + ":" : node.Prefix) + "import")
+				if (node.Name == ImportNodeName(node) || node.Name == IncludeNodeName(node))
 				{
 					string name = node.Attributes["schemaLocation"].InnerText;
 					node.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
@@ -137,6 +145,10 @@ namespace SoapCore.Meta
 
 			return xmlDoc.InnerXml;
 		}
+
+		private static string ImportNodeName(XmlNode node) => (!string.IsNullOrWhiteSpace(node.Prefix) ? node.Prefix + ":" : node.Prefix) + "import";
+
+		private static string IncludeNodeName(XmlNode node) => (!string.IsNullOrWhiteSpace(node.Prefix) ? node.Prefix + ":" : node.Prefix) + "include";
 
 		private string SchemaLocation()
 		{

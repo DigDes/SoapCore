@@ -27,16 +27,28 @@ namespace SoapCore
 		public long BufferLimit { get; set; }
 
 		/// <summary>
-		/// Gets or sets a value indicating whether publication of service metadata on HTTP GET request is activated
+		/// Gets or sets a value indicating whether publication of service metadata on HTTP GET request, and invocation of service operation by GET, is activated
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpGetEnabled { get; set; } = true;
 
 		/// <summary>
-		/// Gets or sets a value indicating whether publication of service metadata on HTTPS GET request is activated
+		/// Gets or sets a value indicating whether publication of service metadata on HTTPS GET request, and invocation of service operation by GET, is activated
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpsGetEnabled { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether invocation by posting formdata on HTTP is activated
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool HttpPostEnabled { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether invocation by posting formdata on HTTP is activated
+		/// <para>Defaults to true</para>
+		/// </summary>
+		public bool HttpsPostEnabled { get; set; } = true;
 
 		public bool OmitXmlDeclaration { get; set; } = true;
 
@@ -71,6 +83,8 @@ namespace SoapCore
 				UseBasicAuthentication = opt.UseBasicAuthentication,
 				HttpsGetEnabled = opt.HttpsGetEnabled,
 				HttpGetEnabled = opt.HttpGetEnabled,
+				HttpPostEnabled = opt.HttpPostEnabled,
+				HttpsPostEnabled = opt.HttpsPostEnabled,
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
 				IndentXml = opt.IndentXml,
 				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,

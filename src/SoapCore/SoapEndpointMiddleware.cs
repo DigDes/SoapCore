@@ -1,3 +1,13 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+using SoapCore.Extensibility;
+using SoapCore.MessageEncoder;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,18 +19,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Serialization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using SoapCore.Extensibility;
-using SoapCore.MessageEncoder;
-using SoapCore.Meta;
-using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -101,8 +102,7 @@ namespace SoapCore
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
-							httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-							await httpContext.Response.WriteAsync($"Service does not support \"{remainingPath}\"");
+							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
 						}
 						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
 						{
@@ -122,7 +122,20 @@ namespace SoapCore
 					}
 					else
 					{
-						await ProcessOperation(httpContext, serviceProvider);
+						if (!string.IsNullOrWhiteSpace(remainingPath))
+						{
+							if ((httpContext.Request.IsHttps && !_options.HttpsPostEnabled) || (!httpContext.Request.IsHttps && !_options.HttpPostEnabled))
+							{
+								httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+								return;
+							}
+
+							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
+						}
+						else
+						{
+							await ProcessOperation(httpContext, serviceProvider);
+						}
 					}
 				}
 				catch (Exception ex)
@@ -273,6 +286,89 @@ namespace SoapCore
 			}
 		}
 
+		private async Task ProcessHttpOperation(HttpContext context, IServiceProvider serviceProvider, string methodName)
+		{
+			if (!TryGetOperation(methodName, out var operation))
+			{
+				context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+				await context.Response.WriteAsync($"Service does not support \"/{methodName}\"");
+				return;
+			}
+
+			var arguments = new object[operation.AllParameters.Length];
+
+			var missingParameters = new List<string>();
+
+			bool TryGetRequestValue(string key, out StringValues value)
+			{
+				if (context.Request.Method?.ToLower() == "get")
+				{
+					return context.Request.Query.TryGetValue(key, out value);
+				}
+
+				return context.Request.Form.TryGetValue(key, out value);
+			}
+
+			foreach (var parameter in operation.InParameters)
+			{
+				var baseType = parameter.Parameter.ParameterType;
+				var nullableType = Nullable.GetUnderlyingType(baseType);
+				if (TryGetRequestValue(parameter.Name, out var requestValue))
+				{
+					arguments[parameter.Index] = Convert.ChangeType(requestValue.ToString(), nullableType ?? baseType);
+				}
+				else
+				{
+					if (nullableType == null)
+					{
+						missingParameters.Add(parameter.Name);
+					}
+				}
+			}
+
+			if (missingParameters.Count > 0)
+			{
+				context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+				await context.Response.WriteAsync($"Missing value for parameter(s): \"{methodName}\", ({string.Join(", ", missingParameters)})");
+				return;
+			}
+
+			var httpContextParameter = operation.InParameters.FirstOrDefault(x => x.Parameter.ParameterType == typeof(HttpContext));
+			if (httpContextParameter != default)
+			{
+				arguments[httpContextParameter.Index] = context;
+			}
+
+			var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
+			var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
+			var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
+
+			if (operation.IsOneWay)
+			{
+				context.Response.StatusCode = (int)HttpStatusCode.Accepted;
+				return;
+			}
+
+			var resultOutDictionary = new Dictionary<string, object>();
+			foreach (var parameterInfo in operation.OutParameters)
+			{
+				resultOutDictionary[parameterInfo.Name] = arguments[parameterInfo.Index];
+			}
+
+			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary, true);
+
+			context.Response.StatusCode = (int)HttpStatusCode.OK;
+			context.Response.ContentType = "text/xml";
+
+			StringBuilder resultSb = new StringBuilder();
+			XmlWriter writer = XmlWriter.Create(resultSb);
+			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
+
+			bodyWriter.WriteBodyContents(dictionaryWriter);
+			dictionaryWriter.Flush();
+			await context.Response.WriteAsync(resultSb.ToString());
+		}
+
 		private Func<Message, Task<Message>> MakeProcessorPipe(ISoapMessageProcessor[] soapMessageProcessors, HttpContext httpContext, Func<Message, Task<Message>> processMessageFunc)
 		{
 			Func<Message, Task<Message>> MakeProcessorPipe(int i = 0)
@@ -316,18 +412,9 @@ namespace SoapCore
 
 			try
 			{
-				var operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(soapAction, StringComparison.Ordinal)
-				|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(soapAction), StringComparison.Ordinal)
-				|| soapAction.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));
-
-				if (operation == null)
+				if (!TryGetOperation(soapAction, out var operation))
 				{
-					operation = _service.Operations.FirstOrDefault(o => soapAction.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal));
-				}
-
-				if (operation == null)
-				{
-					throw new InvalidOperationException($"No operation found for specified action: {requestMessage.Headers.Action}");
+					throw new InvalidOperationException($"No operation found for specified action: {soapAction}");
 				}
 
 				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
@@ -377,6 +464,20 @@ namespace SoapCore
 
 			SetHttpResponse(httpContext, responseMessage);
 			return responseMessage;
+		}
+
+		private bool TryGetOperation(string methodName, out OperationDescription operation)
+		{
+			operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.Ordinal)
+							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.Ordinal)
+							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));
+
+			if (operation == null)
+			{
+				operation = _service.Operations.FirstOrDefault(o => methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal));
+			}
+
+			return operation != null;
 		}
 
 		private Message CreateResponseMessage(
