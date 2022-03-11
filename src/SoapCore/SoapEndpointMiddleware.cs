@@ -82,9 +82,18 @@ namespace SoapCore
 
 			trailPathTuner?.ConvertPath(httpContext);
 
+			var requestMethod = httpContext.Request.Method;
+
 			if (httpContext.Request.Path.StartsWithSegments(_options.Path, _pathComparisonStrategy, out var remainingPath))
 			{
-				if (httpContext.Request.Method?.ToLower() == "get")
+				if (requestMethod?.ToLower() == "head")
+				{
+					// Since there's no information about what you should do with HEAD requests for SOAP APIs, we just silently return "200 OK"
+					httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
+					return;
+				}
+
+				if (requestMethod?.ToLower() == "get")
 				{
 					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
 					if ((httpContext.Request.IsHttps && !_options.HttpsGetEnabled) || (!httpContext.Request.IsHttps && !_options.HttpGetEnabled))
@@ -98,7 +107,7 @@ namespace SoapCore
 				{
 					_logger.LogDebug("Received SOAP Request for {0} ({1} bytes)", httpContext.Request.Path, httpContext.Request.ContentLength ?? 0);
 
-					if (httpContext.Request.Method?.ToLower() == "get")
+					if (requestMethod?.ToLower() == "get")
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
