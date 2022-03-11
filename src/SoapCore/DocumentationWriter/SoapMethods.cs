@@ -1,4 +1,6 @@
+#if !NETCOREAPP3_1_OR_GREATER
 using Newtonsoft.Json;
+#endif
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -49,6 +51,12 @@ namespace SoapCore.DocumentationWriter
 
 		public string GenerateDocumentation()
 		{
+#if NETCOREAPP3_1_OR_GREATER
+			var json = System.Text.Json.JsonSerializer.Serialize(this);
+#else
+			var json = JsonConvert.SerializeObject(this);
+#endif
+
 			var html = $@"<!DOCTYPE html>
 <html lang=""en"">
 	<head>
@@ -72,7 +80,7 @@ namespace SoapCore.DocumentationWriter
 		<script src=""https://unpkg.com/react@17/umd/react.production.min.js"" crossorigin></script>
 		<script src=""https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"" crossorigin></script>
 		<script type=""text/javascript"">
-			window.SoapApiData = {JsonConvert.SerializeObject(this)};
+			window.SoapApiData = {json};
 
 			const soapOldEnvelopeStart = `<?xml version=""1.0"" encoding=""utf-8""?>
 <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
