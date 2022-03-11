@@ -42,7 +42,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
     app.UseRouting();
 
     app.UseEndpoints(endpoints => {
-        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions());
+        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
     });
     
 }
