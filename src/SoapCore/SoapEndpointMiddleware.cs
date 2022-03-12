@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using SoapCore.DocumentationWriter;
 using SoapCore.Extensibility;
 using SoapCore.MessageEncoder;
 using SoapCore.Meta;
@@ -119,13 +120,16 @@ namespace SoapCore
 						}
 						else if (string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl"))
 						{
+							// Shows automatically generated documentation based on the generated WSDL (WIP)
+							var showDocumentation = httpContext.Request.Query.ContainsKey("documentation");
+
 							if (_options.WsdlFileOptions != null)
 							{
-								await ProcessMetaFromFile(httpContext);
+								await ProcessMetaFromFile(httpContext, showDocumentation);
 							}
 							else
 							{
-								await ProcessMeta(httpContext);
+								await ProcessMeta(httpContext, showDocumentation);
 							}
 						}
 					}
@@ -225,7 +229,7 @@ namespace SoapCore
 #endif
 		}
 
-		private async Task ProcessMeta(HttpContext httpContext)
+		private async Task ProcessMeta(HttpContext httpContext, bool showDocumentation)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 			var xmlNamespaceManager = GetXmlNamespaceManager(null);
@@ -244,6 +248,23 @@ namespace SoapCore
 				GetXmlNamespaceManager(messageEncoder),
 				bindingName,
 				_options.UseBasicAuthentication);
+
+			if (showDocumentation)
+			{
+				httpContext.Response.ContentType = "text/html;charset=UTF-8";
+
+				using var ms = new MemoryStream();
+				await messageEncoder.WriteMessageAsync(responseMessage, ms);
+				ms.Position = 0;
+				using var sr = new StreamReader(ms);
+				var wsdl = await sr.ReadToEndAsync();
+
+				var documentation = SoapDefinition.DeserializeFromString(wsdl).GenerateDocumentation();
+
+				await httpContext.Response.WriteAsync(documentation);
+
+				return;
+			}
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
@@ -932,7 +953,7 @@ namespace SoapCore
 			await httpContext.Response.WriteAsync(modifiedxsd);
 		}
 
-		private async Task ProcessMetaFromFile(HttpContext httpContext)
+		private async Task ProcessMetaFromFile(HttpContext httpContext, bool showDocumentation)
 		{
 			var meta = new MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
@@ -960,6 +981,17 @@ namespace SoapCore
 			string path = _options.WsdlFileOptions.AppPath;
 			string wsdl = await meta.ReadLocalFileAsync(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
+
+			if (showDocumentation)
+			{
+				httpContext.Response.ContentType = "text/html;charset=UTF-8";
+
+				var documentation = SoapDefinition.DeserializeFromString(modifiedWsdl).GenerateDocumentation();
+
+				await httpContext.Response.WriteAsync(documentation);
+
+				return;
+			}
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
