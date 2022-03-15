@@ -793,7 +793,7 @@ namespace SoapCore.Meta
 		{
 			var toBuildName = GetTypeName(type);
 
-			if (_builtComplexTypes.Contains(toBuildName))
+			if (_builtComplexTypes.Contains(type.FullName))
 			{
 				return;
 			}
@@ -918,7 +918,7 @@ namespace SoapCore.Meta
 
 			writer.WriteEndElement(); // xs:complexType
 
-			_builtComplexTypes.Add(toBuildName);
+			_builtComplexTypes.Add(type.FullName);
 		}
 
 		private void AddMessages(XmlDictionaryWriter writer)
