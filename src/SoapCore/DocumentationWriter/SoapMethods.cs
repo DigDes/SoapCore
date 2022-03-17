@@ -356,8 +356,6 @@ ${{escapeHtml(generatedResponse)}}${{escapeHtml(envelopeEnd)}}</code></pre>`;
 
 				if(hashValue.length == 0) {{ hashValue = '_index'; }}
 
-				console.log('Hash', hashValue, hashValue.length);
-
 				if(hashValue == '_index') {{
 					if(window.MethodModal) {{
 						window.MethodModal.hide();
