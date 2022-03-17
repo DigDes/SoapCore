@@ -426,19 +426,19 @@ namespace SoapCore
 
 		public static IServiceCollection AddSoapServiceOperationTuner(this IServiceCollection serviceCollection, IServiceOperationTuner serviceOperationTuner)
 		{
-			serviceCollection.TryAddSingleton(serviceOperationTuner);
+			serviceCollection.AddSingleton(serviceOperationTuner);
 			return serviceCollection;
 		}
 
 		public static IServiceCollection AddSoapMessageProcessor(this IServiceCollection serviceCollection, ISoapMessageProcessor messageProcessor)
 		{
-			serviceCollection.TryAddSingleton(messageProcessor);
+			serviceCollection.AddSingleton(messageProcessor);
 			return serviceCollection;
 		}
 
 		public static IServiceCollection AddSoapMessageProcessor(this IServiceCollection serviceCollection, Func<Message, HttpContext, Func<Message, Task<Message>>, Task<Message>> messageProcessor)
 		{
-			serviceCollection.TryAddSingleton<ISoapMessageProcessor>(new LambdaSoapMessageProcessor(messageProcessor));
+			serviceCollection.AddSingleton<ISoapMessageProcessor>(new LambdaSoapMessageProcessor(messageProcessor));
 			return serviceCollection;
 		}
 	}
