@@ -96,6 +96,8 @@ namespace SoapCore.DocumentationWriter
 </soap12:Envelope>`;
 			const soap12ContentType = 'application/soap+xml';
 
+			window.MethodModal = null;
+
 			function GetMethodData(methodName) {{
 				const clickedMethod = SoapApiData.PortType.Operations.find(i => i.Name == methodName);
 
@@ -264,11 +266,10 @@ The <code>placeholders</code> shown need to be replaced with actual values.<br /
 
 				hljs.highlightAll();
 
-				const methodModal = new bootstrap.Modal(document.getElementById('methodModal'));
 				document.getElementById('methodModal').addEventListener('hidden.bs.modal', function() {{
 					location.hash = '';
 				}});
-				methodModal.show();
+				window.MethodModal.show();
 			}}
 
 			function generateSampleCallAndResult(binding, contentType, envelopeStart, envelopeEnd) {{
@@ -347,11 +348,20 @@ ${{escapeHtml(generatedResponse)}}${{escapeHtml(envelopeEnd)}}</code></pre>`;
 			}}
 
 			function hashRouter() {{
+				if(window.MethodModal == null) {{
+					window.MethodModal = new bootstrap.Modal(document.getElementById('methodModal'))
+				}}
+
 				let hashValue = location.hash.substr(1);
 
 				if(hashValue.length == 0) {{ hashValue = '_index'; }}
 
+				console.log('Hash', hashValue, hashValue.length);
+
 				if(hashValue == '_index') {{
+					if(window.MethodModal) {{
+						window.MethodModal.hide();
+					}}
 				}} else {{
 					let method = GetMethodData(hashValue);
 					if(method != null) {{
@@ -361,6 +371,7 @@ ${{escapeHtml(generatedResponse)}}${{escapeHtml(envelopeEnd)}}</code></pre>`;
 			}}
 
 			window.addEventListener('DOMContentLoaded', hashRouter);
+			window.addEventListener('hashchange', hashRouter);
 		</script>
 		<script type=""text/javascript"">
 			""use strict"";
