@@ -390,13 +390,13 @@ namespace SoapCore
 			context.Response.StatusCode = (int)HttpStatusCode.OK;
 			context.Response.ContentType = "text/xml";
 
-			StringBuilder resultSb = new StringBuilder();
-			XmlWriter writer = XmlWriter.Create(resultSb);
+			using var ms = new MemoryStream();
+			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = new UTF8Encoding(true) });
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
 			dictionaryWriter.Flush();
-			await context.Response.WriteAsync(resultSb.ToString());
+			await context.Response.WriteAsync(Encoding.UTF8.GetString(ms.ToArray()));
 		}
 
 		private Func<Message, Task<Message>> MakeProcessorPipe(ISoapMessageProcessor[] soapMessageProcessors, HttpContext httpContext, Func<Message, Task<Message>> processMessageFunc)
