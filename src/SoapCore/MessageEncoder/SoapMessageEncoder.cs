@@ -14,6 +14,7 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.AspNetCore.Http;
 
 namespace SoapCore.MessageEncoder
 {
@@ -146,13 +147,19 @@ namespace SoapCore.MessageEncoder
 			return Task.FromResult(message);
 		}
 
-		public virtual async Task WriteMessageAsync(Message message, PipeWriter pipeWriter)
+		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext)
 		{
 			if (message == null)
 			{
 				throw new ArgumentNullException(nameof(message));
 			}
 
+			if (httpContext == null)
+			{
+				throw new ArgumentNullException(nameof(httpContext));
+			}
+
+			var pipeWriter = httpContext.Response.BodyWriter;
 			if (pipeWriter == null)
 			{
 				throw new ArgumentNullException(nameof(pipeWriter));
@@ -160,7 +167,8 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			using var xmlTextWriter = XmlWriter.Create(pipeWriter.AsStream(true), new XmlWriterSettings
+			var builder = new StringBuilder();
+			using var xmlTextWriter = XmlWriter.Create(builder, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
 				Indent = _indentXml,
@@ -174,6 +182,13 @@ namespace SoapCore.MessageEncoder
 			xmlWriter.WriteEndDocument();
 			xmlWriter.Flush();
 
+			var data = builder.ToString();
+
+			//Set Content-length in Response
+			httpContext.Response.ContentLength = data.Length;
+
+			var soapMessage = Encoding.UTF8.GetBytes(data);
+			await pipeWriter.WriteAsync(soapMessage);
 			await pipeWriter.FlushAsync();
 		}
 

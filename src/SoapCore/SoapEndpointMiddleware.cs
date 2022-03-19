@@ -174,7 +174,7 @@ namespace SoapCore
 #else
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
-			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext);
 		}
 #endif
 
