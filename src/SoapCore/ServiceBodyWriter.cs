@@ -1,5 +1,3 @@
-using SoapCore.Meta;
-using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,6 +9,8 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
 using System.Xml.Serialization;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
