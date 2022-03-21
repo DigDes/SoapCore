@@ -166,30 +166,34 @@ namespace SoapCore.MessageEncoder
 			}
 
 			ThrowIfMismatchedMessageVersion(message);
-
-			var builder = new StringBuilder();
-			using var xmlTextWriter = XmlWriter.Create(builder, new XmlWriterSettings
+	
+			//Custom string writer with custom encoding support
+			using (var stringWriter = new CustomStringWriter(_writeEncoding))
 			{
-				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
-				Indent = _indentXml,
-				Encoding = _writeEncoding,
-				CloseOutput = true,
-				CheckCharacters = _checkXmlCharacters
-			});
+				using (var xmlTextWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings
+				{
+					OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
+					Indent = _indentXml,
+					Encoding = _writeEncoding,
+					CloseOutput = true,
+					CheckCharacters = _checkXmlCharacters
+				}))
+				{
+					using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+					message.WriteMessage(xmlWriter);
+					xmlWriter.WriteEndDocument();
+					xmlWriter.Flush();
+				}
 
-			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-			message.WriteMessage(xmlWriter);
-			xmlWriter.WriteEndDocument();
-			xmlWriter.Flush();
+				var data = stringWriter.ToString();
 
-			var data = builder.ToString();
+				//Set Content-length in Response
+				httpContext.Response.ContentLength = data.Length;
 
-			//Set Content-length in Response
-			httpContext.Response.ContentLength = data.Length;
-
-			var soapMessage = Encoding.UTF8.GetBytes(data);
-			await pipeWriter.WriteAsync(soapMessage);
-			await pipeWriter.FlushAsync();
+				var soapMessage = _writeEncoding.GetBytes(data);
+				await pipeWriter.WriteAsync(soapMessage);		
+				await pipeWriter.FlushAsync();	
+			}
 		}
 
 		public virtual Task WriteMessageAsync(Message message, Stream stream)
