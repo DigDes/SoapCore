@@ -391,7 +391,7 @@ namespace SoapCore
 			context.Response.ContentType = "text/xml";
 
 			using var ms = new MemoryStream();
-			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = new UTF8Encoding(true) });
+			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = new UTF8Encoding(false) });
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
