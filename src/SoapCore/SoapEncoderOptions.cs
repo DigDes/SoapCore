@@ -7,7 +7,7 @@ namespace SoapCore
 	public class SoapEncoderOptions
 	{
 		public MessageVersion MessageVersion { get; set; } = MessageVersion.Soap11;
-		public Encoding WriteEncoding { get; set; } = Encoding.UTF8;
+		public Encoding WriteEncoding { get; set; } = DefaultEncodings.UTF8;
 		public XmlDictionaryReaderQuotas ReaderQuotas { get; set; } = XmlDictionaryReaderQuotas.Max;
 		public string BindingName { get; set; } = null;
 		public string PortName { get; set; } = null;

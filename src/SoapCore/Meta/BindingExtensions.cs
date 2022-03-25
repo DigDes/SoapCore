@@ -31,7 +31,7 @@ namespace SoapCore.Meta
 				var encoderOption = new SoapEncoderOptions
 				{
 					MessageVersion = elements[i].MessageVersion,
-					WriteEncoding = Encoding.UTF8,
+					WriteEncoding = DefaultEncodings.UTF8,
 					ReaderQuotas = XmlDictionaryReaderQuotas.Max
 				};
 

@@ -45,7 +45,7 @@ namespace SoapCore.DocumentationWriter
 
 			xs.UnknownElement += _unknownElementHandler;
 
-			using var sr = new MemoryStream(Encoding.UTF8.GetBytes(xml));
+			using var sr = new MemoryStream(DefaultEncodings.UTF8.GetBytes(xml));
 			return (SoapDefinition)xs.Deserialize(sr);
 		}
 
