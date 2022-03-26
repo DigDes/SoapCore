@@ -147,7 +147,7 @@ namespace SoapCore.MessageEncoder
 			return Task.FromResult(message);
 		}
 
-		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext)
+		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter)
 		{
 			if (message == null)
 			{
@@ -159,14 +159,13 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(httpContext));
 			}
 
-			var pipeWriter = httpContext.Response.BodyWriter;
 			if (pipeWriter == null)
 			{
 				throw new ArgumentNullException(nameof(pipeWriter));
 			}
 
 			ThrowIfMismatchedMessageVersion(message);
-	
+
 			//Custom string writer with custom encoding support
 			using (var stringWriter = new CustomStringWriter(_writeEncoding))
 			{
@@ -191,8 +190,8 @@ namespace SoapCore.MessageEncoder
 				httpContext.Response.ContentLength = data.Length;
 
 				var soapMessage = _writeEncoding.GetBytes(data);
-				await pipeWriter.WriteAsync(soapMessage);		
-				await pipeWriter.FlushAsync();	
+				await pipeWriter.WriteAsync(soapMessage);
+				await pipeWriter.FlushAsync();
 			}
 		}
 
@@ -301,7 +300,7 @@ namespace SoapCore.MessageEncoder
 		internal virtual bool IsCharSetSupported(string charset)
 		{
 			return CharSet?.Equals(charset, StringComparison.OrdinalIgnoreCase)
-			       ?? false;
+				   ?? false;
 		}
 
 		private static bool IsUtf8Encoding(Encoding encoding)
