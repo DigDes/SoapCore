@@ -9,14 +9,14 @@ namespace SoapCore.MessageEncoder
 {
 	internal class SoapMessageEncoderDefaults
 	{
-		public static readonly Encoding[] SupportedEncodings = { Encoding.UTF8, Encoding.Unicode, Encoding.BigEndianUnicode };
+		public static readonly Encoding[] SupportedEncodings = { DefaultEncodings.UTF8, DefaultEncodings.Unicode, DefaultEncodings.BigEndianUnicode };
 
 		// Desktop: System.ServiceModel.Configuration.ConfigurationStrings.Soap12WSAddressing10;
 		public static readonly CharSetEncoding[] CharSetEncodings =
 		{
-			new CharSetEncoding("utf-8", Encoding.UTF8),
-			new CharSetEncoding("utf-16LE", Encoding.Unicode),
-			new CharSetEncoding("utf-16BE", Encoding.BigEndianUnicode),
+			new CharSetEncoding("utf-8", DefaultEncodings.UTF8),
+			new CharSetEncoding("utf-16LE", DefaultEncodings.Unicode),
+			new CharSetEncoding("utf-16BE", DefaultEncodings.BigEndianUnicode),
 			new CharSetEncoding("utf-16", null),   // Ignore.  Ambiguous charSet, so autodetect.
 			new CharSetEncoding(null, null),       // CharSet omitted, so autodetect.
 		};
