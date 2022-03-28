@@ -185,11 +185,11 @@ namespace SoapCore.MessageEncoder
 				}
 
 				var data = stringWriter.ToString();
+				var soapMessage = _writeEncoding.GetBytes(data);
 
 				//Set Content-length in Response
-				httpContext.Response.ContentLength = data.Length;
+				httpContext.Response.ContentLength = soapMessage.Length;
 
-				var soapMessage = _writeEncoding.GetBytes(data);
 				await pipeWriter.WriteAsync(soapMessage);
 				await pipeWriter.FlushAsync();
 			}
