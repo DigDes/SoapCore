@@ -14,6 +14,7 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.AspNetCore.Http;
 
 namespace SoapCore.MessageEncoder
 {
@@ -146,11 +147,16 @@ namespace SoapCore.MessageEncoder
 			return Task.FromResult(message);
 		}
 
-		public virtual async Task WriteMessageAsync(Message message, PipeWriter pipeWriter)
+		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter)
 		{
 			if (message == null)
 			{
 				throw new ArgumentNullException(nameof(message));
+			}
+
+			if (httpContext == null)
+			{
+				throw new ArgumentNullException(nameof(httpContext));
 			}
 
 			if (pipeWriter == null)
@@ -160,21 +166,33 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			using var xmlTextWriter = XmlWriter.Create(pipeWriter.AsStream(true), new XmlWriterSettings
+			//Custom string writer with custom encoding support
+			using (var stringWriter = new CustomStringWriter(_writeEncoding))
 			{
-				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
-				Indent = _indentXml,
-				Encoding = _writeEncoding,
-				CloseOutput = true,
-				CheckCharacters = _checkXmlCharacters
-			});
+				using (var xmlTextWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings
+				{
+					OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
+					Indent = _indentXml,
+					Encoding = _writeEncoding,
+					CloseOutput = true,
+					CheckCharacters = _checkXmlCharacters
+				}))
+				{
+					using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+					message.WriteMessage(xmlWriter);
+					xmlWriter.WriteEndDocument();
+					xmlWriter.Flush();
+				}
 
-			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-			message.WriteMessage(xmlWriter);
-			xmlWriter.WriteEndDocument();
-			xmlWriter.Flush();
+				var data = stringWriter.ToString();
 
-			await pipeWriter.FlushAsync();
+				//Set Content-length in Response
+				httpContext.Response.ContentLength = data.Length;
+
+				var soapMessage = _writeEncoding.GetBytes(data);
+				await pipeWriter.WriteAsync(soapMessage);
+				await pipeWriter.FlushAsync();
+			}
 		}
 
 		public virtual Task WriteMessageAsync(Message message, Stream stream)
@@ -282,7 +300,7 @@ namespace SoapCore.MessageEncoder
 		internal virtual bool IsCharSetSupported(string charset)
 		{
 			return CharSet?.Equals(charset, StringComparison.OrdinalIgnoreCase)
-			       ?? false;
+				   ?? false;
 		}
 
 		private static bool IsUtf8Encoding(Encoding encoding)
