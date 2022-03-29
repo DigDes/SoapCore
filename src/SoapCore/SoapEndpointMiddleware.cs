@@ -935,7 +935,7 @@ namespace SoapCore
 			//Check to prevent path traversal
 			if (string.IsNullOrEmpty(xsdfile) || Path.GetFileName(xsdfile) != xsdfile)
 			{
-				throw new ArgumentNullException("xsd parameter contains illeagal values");
+				throw new ArgumentNullException("xsd parameter contains illegal values");
 			}
 
 			if (!xsdfile.Contains(".xsd"))
