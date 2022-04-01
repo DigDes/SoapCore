@@ -200,17 +200,46 @@ namespace SoapCore.Meta
 		{
 			foreach (ServiceKnownTypeAttribute knownType in serviceKnownTypes)
 			{
-				if (knownType.Type is null)
+				if (knownType.Type is not null)
 				{
-					throw new NotSupportedException($"Only type property of `{nameof(ServiceKnownTypeAttribute)}` is supported.");
+					AddKnownType(knownType.Type);
 				}
+				else if (knownType.DeclaringType is not null && !string.IsNullOrWhiteSpace(knownType.MethodName))
+				{
+					var method = knownType.DeclaringType.GetMethod(knownType.MethodName, BindingFlags.Static | BindingFlags.Public);
+					if (method is null)
+					{
+						throw new NotSupportedException($"Method `{knownType.MethodName}` doesn't exist on Type `{knownType.DeclaringType.FullName}`.");
+					}
 
-				// Add service known type
-				_complexTypeToBuild[knownType.Type] = GetDataContractNamespace(knownType.Type);
+					var knownTypeList = method.Invoke(null, new object[0]) as IEnumerable;
+					if (knownTypeList is null)
+					{
+						throw new NotSupportedException($"Method `{knownType.MethodName}` on Type `{knownType.DeclaringType.FullName}` returned null or not an IEnumerable.");
+					}
 
-				// Discover type known types
-				DiscoverTypes(knownType.Type, false);
+					foreach (var type in knownTypeList.OfType<Type>())
+					{
+						if (type != null)
+						{
+							AddKnownType(type);
+						}
+					}
+				}
+				else
+				{
+					throw new NotSupportedException($"You must specify Type property or DeclaringType and MethodName properties of `{nameof(ServiceKnownTypeAttribute)}`.");
+				}
 			}
+		}
+
+		private void AddKnownType(Type type)
+		{
+			// Add service known type
+			_complexTypeToBuild[type] = GetDataContractNamespace(type);
+
+			// Discover type known types
+			DiscoverTypes(type, false);
 		}
 
 		private void AddContractOperations(XmlDictionaryWriter writer, ContractDescription contract)
