@@ -137,7 +137,7 @@ namespace SoapCore
 			XmlElementAttribute[] xmlElementAttributes = customAttributeProvider.GetCustomAttributes(typeof(XmlElementAttribute), true) as XmlElementAttribute[];
 
 			// Choice : if an array has a choice of item, the first one in the XML is the only considered to fill the array.
-			XmlElementAttribute xmlElementAttribute = xmlElementAttributes?.Length > 1 ? ChoiceElementToSerialize(xmlReader, xmlElementAttributes, parameterNs) : xmlElementAttributes.FirstOrDefault();
+			XmlElementAttribute xmlElementAttribute = ChoiceElementToSerialize(xmlReader, xmlElementAttributes, parameterNs) ?? xmlElementAttributes.FirstOrDefault();
 
 			var isEmpty = xmlReader.IsEmptyElement;
 			var hasContainerElement = xmlElementAttribute == null;
