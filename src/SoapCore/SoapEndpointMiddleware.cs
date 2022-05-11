@@ -504,7 +504,9 @@ namespace SoapCore
 
 			if (operation == null)
 			{
-				operation = _service.Operations.FirstOrDefault(o => methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal));
+				operation = _service.Operations.FirstOrDefault(o =>
+							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal)
+							|| methodName.Contains(HeadersHelper.GetTrimmedSoapAction(o.Name)));
 			}
 
 			return operation != null;
