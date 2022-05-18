@@ -38,13 +38,18 @@ namespace SoapCore
 			try
 			{
 				wsUsernameToken = GetWsUsernameToken(message);
+				ValidateWsUsernameTokenModel(wsUsernameToken);
 			}
 			catch (Exception)
 			{
 				throw new AuthenticationException(_authMissingErrorMessage);
 			}
 
-			if (!ValidateWsUsernameToken(wsUsernameToken))
+			try
+			{
+				ValidateWsUsernameToken(wsUsernameToken);
+			}
+			catch (Exception)
 			{
 				throw new InvalidCredentialException(_authInvalidErrorMessage);
 			}
@@ -76,30 +81,48 @@ namespace SoapCore
 				throw new Exception();
 			}
 
-			if (wsUsernameToken.Nonce != null ^ wsUsernameToken.Created != null)
+			return wsUsernameToken;
+		}
+
+		private bool IsPasswordClearText(WsUsernameToken.PasswordString password) =>
+			string.IsNullOrEmpty(password?.Type) || _passwordTextType.Equals(password?.Type);
+
+		private void ValidateWsUsernameTokenModel(WsUsernameToken wsUsernameToken)
+		{
+			if (!IsPasswordClearText(wsUsernameToken.Password))
+			{
+				if (!string.IsNullOrEmpty(wsUsernameToken.Nonce) ^ !string.IsNullOrEmpty(wsUsernameToken.Created))
+				{
+					throw new Exception();
+				}
+
+				if (!string.IsNullOrEmpty(wsUsernameToken.Nonce))
+				{
+					FromBase64String(wsUsernameToken.Nonce);
+				}
+			}
+		}
+
+		private void ValidateWsUsernameToken(WsUsernameToken wsUsernameToken)
+		{
+			if (wsUsernameToken.Username != _username)
 			{
 				throw new Exception();
 			}
 
-			return wsUsernameToken;
-		}
-
-		private bool ValidateWsUsernameToken(WsUsernameToken wsUsernameToken)
-		{
-			if (wsUsernameToken.Username != _username)
+			if (IsPasswordClearText(wsUsernameToken.Password))
 			{
-				return false;
+				if (wsUsernameToken.Password?.Value == _password)
+				{
+					return;
+				}
+
+				throw new Exception();
 			}
 
-			var isClearText = wsUsernameToken.Password?.Type == null || wsUsernameToken.Password.Type == _passwordTextType;
-			if (isClearText)
-			{
-				return wsUsernameToken.Password?.Value == _password;
-			}
-
-			var nonceArray = wsUsernameToken.Nonce != null ? wsUsernameToken.Nonce : Array.Empty<byte>();
-			var createdArray = wsUsernameToken.Created != null ? UTF8.GetBytes(wsUsernameToken.Created) : Array.Empty<byte>();
-			var passwordArray = _password != null ? UTF8.GetBytes(_password) : Array.Empty<byte>();
+			var nonceArray = !string.IsNullOrEmpty(wsUsernameToken.Nonce) ? FromBase64String(wsUsernameToken.Nonce) : Array.Empty<byte>();
+			var createdArray = !string.IsNullOrEmpty(wsUsernameToken.Created) ? UTF8.GetBytes(wsUsernameToken.Created) : Array.Empty<byte>();
+			var passwordArray = !string.IsNullOrEmpty(_password) ? UTF8.GetBytes(_password) : Array.Empty<byte>();
 			var hashArray = new byte[nonceArray.Length + createdArray.Length + passwordArray.Length];
 			Buffer.BlockCopy(nonceArray, 0, hashArray, 0, nonceArray.Length);
 			Buffer.BlockCopy(createdArray, 0, hashArray, nonceArray.Length, createdArray.Length);
@@ -109,7 +132,10 @@ namespace SoapCore
 			var serverPasswordDigest = ToBase64String(hash);
 
 			var clientPasswordDigest = wsUsernameToken.Password?.Value;
-			return serverPasswordDigest == clientPasswordDigest;
+			if (serverPasswordDigest != clientPasswordDigest)
+			{
+				throw new Exception();
+			}
 		}
 	}
 }
