@@ -30,31 +30,35 @@ namespace SoapCore.Tests.Wsdl
 
 		private IWebHost _host;
 
-		[TestMethod]
-		public async Task CheckBindingAndPortName()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckBindingAndPortName(SoapSerializer soapSerializer)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(SoapSerializer.XmlSerializer, "MyBinding", "MyPort");
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, "BindingName", "PortName");
 			var root = XElement.Parse(wsdl);
 
 			// We should have in the wsdl the definition of a complex type representing the nullable enum
-			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("MyBinding") == true).ToArray();
+			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("BindingName") == true).ToArray();
 			bindingElements.ShouldNotBeEmpty();
 
-			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("MyPort") == true).ToArray();
+			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("PortName") == true).ToArray();
 			portElements.ShouldNotBeEmpty();
 		}
 
-		[TestMethod]
-		public async Task CheckDefaultBindingAndPortName()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer, "_soap")]
+		[DataRow(SoapSerializer.DataContractSerializer, "")]
+		public async Task CheckDefaultBindingAndPortName(SoapSerializer soapSerializer, string bindingSuffix)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer);
 			var root = XElement.Parse(wsdl);
 
 			// We should have in the wsdl the definition of a complex type representing the nullable enum
-			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("BasicHttpBinding_soap") == true).ToArray();
+			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("BasicHttpBinding" + bindingSuffix) == true).ToArray();
 			bindingElements.ShouldNotBeEmpty();
 
-			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("BasicHttpBinding_soap") == true).ToArray();
+			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("BasicHttpBinding" + bindingSuffix) == true).ToArray();
 			portElements.ShouldNotBeEmpty();
 		}
 
@@ -440,13 +444,15 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(myStringElement);
 		}
 
-		[TestMethod]
-		public async Task CheckStringArrayNameWsdl()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckStringArrayNameWsdl(SoapSerializer soapSerializer)
 		{
 			//StartService(typeof(StringListService));
 			//var wsdl = GetWsdl();
 			//StopServer();
-			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<StringListService>(soapSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -476,13 +482,15 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsTrue(matched);
 		}
 
-		[TestMethod]
-		public async Task CheckComplexTypeAndOutParameterWsdl()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckComplexTypeAndOutParameterWsdl(SoapSerializer soapSerializer)
 		{
 			//StartService(typeof(StringListService));
 			//var wsdl = GetWsdl();
 			//StopServer();
-			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(soapSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -507,10 +515,12 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(testElementMessage);
 		}
 
-		[TestMethod]
-		public async Task CheckUnqualifiedMembersService()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckUnqualifiedMembersService(SoapSerializer soapSerializer)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<UnqualifiedMembersService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, "BindingName", "PortName");
 			Trace.TraceInformation(wsdl);
 
 			var root = XElement.Parse(wsdl);
@@ -525,13 +535,15 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsTrue(allNeededAreQualified);
 		}
 
-		[TestMethod]
-		public async Task CheckDateTimeOffsetServiceWsdl()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckDateTimeOffsetServiceWsdl(SoapSerializer soapSerializer)
 		{
 			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
 			string systemNs = "http://schemas.datacontract.org/2004/07/System";
 
-			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(soapSerializer);
 			var root = XElement.Parse(wsdl);
 			var responseDateElem = root.XPathSelectElement($"//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult']", nm);
 			Assert.IsTrue(responseDateElem.ToString().Contains(systemNs));
@@ -544,10 +556,12 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNull(dayOfYearElem);
 		}
 
-		[TestMethod]
-		public async Task CheckXmlSchemaProviderTypeServiceWsdl()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckXmlSchemaProviderTypeServiceWsdl(SoapSerializer soapSerializer)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<XmlSchemaProviderTypeService>(soapSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -558,10 +572,12 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(responseDateElem);
 		}
 
-		[TestMethod]
-		public async Task CheckTestMultipleTypesServiceWsdl()
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckTestMultipleTypesServiceWsdl(SoapSerializer soapSerializer)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>(SoapSerializer.XmlSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<TestMultipleTypesService>(soapSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 		}
@@ -639,7 +655,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.AreEqual(5, propElementsCount);
 		}
 
-		[TestMethod]
+		[DataTestMethod]
 		public async Task CheckXmlAnnotatedTypeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlModelsService>(SoapSerializer.XmlSerializer);
@@ -685,7 +701,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(propAnonAttribute);
 		}
 
-		[TestMethod]
+		[DataTestMethod]
 		public async Task CheckXmlAnnotatedChoiceReturnServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<XmlAnnotatedChoiceReturnService>(SoapSerializer.XmlSerializer);
@@ -716,7 +732,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(choiceComplexTypeElement.XPathSelectElement("//xsd:complexType/xsd:sequence/xsd:choice/xsd:element[@name='second' and @type='xsd:string']", nm));
 		}
 
-		[TestMethod]
+		[DataTestMethod]
 		public async Task CheckMessageHeadersServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<MessageHeadersService>(SoapSerializer.XmlSerializer);
@@ -774,12 +790,13 @@ namespace SoapCore.Tests.Wsdl
 			var service = new ServiceDescription(typeof(T));
 			var baseUrl = "http://tempuri.org/";
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
+			var defaultBindingName = !string.IsNullOrWhiteSpace(bindingName) ? bindingName : "BasicHttpBinding";
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
-				? new MetaWCFBodyWriter(service, baseUrl, "BasicHttpBinding", false) as BodyWriter
-				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, "BasicHttpBinding", new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter;
+				? new MetaWCFBodyWriter(service, baseUrl, defaultBindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter
+				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, defaultBindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true, false, null, bindingName, portName);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, "BasicHttpBinding", false);
+			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, defaultBindingName, false);
 
 			using (var memoryStream = new MemoryStream())
 			{

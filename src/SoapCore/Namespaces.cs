@@ -18,6 +18,7 @@ namespace SoapCore
 		public const string SERIALIZATION_NS = "http://schemas.microsoft.com/2003/10/Serialization/";
 		public const string WSP_NS = "http://schemas.xmlsoap.org/ws/2004/09/policy";
 		public const string WSAM_NS = "http://www.w3.org/2007/05/addressing/metadata";
+		public const string WSAW_NS = "http://www.w3.org/2006/05/addressing/wsdl";
 		public const string SystemData_NS = "http://schemas.datacontract.org/2004/07/System.Data";
 		public const string MSC_NS = "http://schemas.microsoft.com/ws/2005/12/wsdl/contract";
 		public const string WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
