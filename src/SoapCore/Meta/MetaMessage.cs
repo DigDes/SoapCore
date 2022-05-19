@@ -69,24 +69,19 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", _service.ServiceName);
 			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
-			writer.WriteStartElement("Policy", Namespaces.WSP_NS);
-			writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_bindingName}_policy");
-			writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
-			writer.WriteStartElement("All", Namespaces.WSP_NS);
-
 			if (_hasBasicAuthentication)
 			{
+				writer.WriteStartElement("Policy", Namespaces.WSP_NS);
+				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_bindingName}_{_service.GeneralContract.Name}_policy");
+				writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
+				writer.WriteStartElement("All", Namespaces.WSP_NS);
 				writer.WriteStartElement("BasicAuthentication", Namespaces.HTTP_NS);
-			}
-			else
-			{
 				writer.WriteStartElement("wsaw", "UsingAddressing", Namespaces.WSAW_NS);
+				writer.WriteEndElement();
+				writer.WriteEndElement();
+				writer.WriteEndElement();
+				writer.WriteEndElement();
 			}
-
-			writer.WriteEndElement();
-			writer.WriteEndElement();
-			writer.WriteEndElement();
-			writer.WriteEndElement();
 		}
 
 		protected override void OnWriteStartBody(XmlDictionaryWriter writer)

@@ -1069,10 +1069,6 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("name", BindingName);
 				writer.WriteAttributeString("type", "tns:" + BindingType);
 
-				writer.WriteStartElement("wsp", "PolicyReference", Namespaces.WSP_NS);
-				writer.WriteAttributeString("URI", $"#{BindingName}_policy");
-				writer.WriteEndElement();
-
 				writer.WriteStartElement(soap, "binding", soapNamespace);
 				writer.WriteAttributeString("transport", Namespaces.TRANSPORT_SCHEMA);
 				writer.WriteEndElement(); // soap:binding

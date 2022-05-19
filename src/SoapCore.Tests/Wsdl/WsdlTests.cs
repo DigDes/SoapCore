@@ -25,8 +25,6 @@ namespace SoapCore.Tests.Wsdl
 	[TestClass]
 	public class WsdlTests
 	{
-		private const string BindingName = "BindingName";
-		private const string PortName = "PortName";
 		private readonly XNamespace _xmlSchema = "http://www.w3.org/2001/XMLSchema";
 		private readonly XNamespace _wsdlSchema = "http://schemas.xmlsoap.org/wsdl/";
 
@@ -37,30 +35,30 @@ namespace SoapCore.Tests.Wsdl
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckBindingAndPortName(SoapSerializer soapSerializer)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, BindingName, PortName);
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, "BindingName", "PortName");
 			var root = XElement.Parse(wsdl);
 
 			// We should have in the wsdl the definition of a complex type representing the nullable enum
-			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals(BindingName) == true).ToArray();
+			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("BindingName") == true).ToArray();
 			bindingElements.ShouldNotBeEmpty();
 
-			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals(PortName) == true).ToArray();
+			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("PortName") == true).ToArray();
 			portElements.ShouldNotBeEmpty();
 		}
 
 		[DataTestMethod]
-		[DataRow(SoapSerializer.XmlSerializer)]
-		[DataRow(SoapSerializer.DataContractSerializer)]
-		public async Task CheckDefaultBindingAndPortName(SoapSerializer soapSerializer)
+		[DataRow(SoapSerializer.XmlSerializer, "_soap")]
+		[DataRow(SoapSerializer.DataContractSerializer, "")]
+		public async Task CheckDefaultBindingAndPortName(SoapSerializer soapSerializer, string bindingSuffix)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, BindingName, PortName);
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer);
 			var root = XElement.Parse(wsdl);
 
 			// We should have in the wsdl the definition of a complex type representing the nullable enum
-			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals(BindingName) == true).ToArray();
+			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("BasicHttpBinding" + bindingSuffix) == true).ToArray();
 			bindingElements.ShouldNotBeEmpty();
 
-			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals(PortName) == true).ToArray();
+			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("BasicHttpBinding" + bindingSuffix) == true).ToArray();
 			portElements.ShouldNotBeEmpty();
 		}
 
@@ -522,7 +520,7 @@ namespace SoapCore.Tests.Wsdl
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckUnqualifiedMembersService(SoapSerializer soapSerializer)
 		{
-			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, BindingName, PortName);
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, "BindingName", "PortName");
 			Trace.TraceInformation(wsdl);
 
 			var root = XElement.Parse(wsdl);
@@ -792,12 +790,13 @@ namespace SoapCore.Tests.Wsdl
 			var service = new ServiceDescription(typeof(T));
 			var baseUrl = "http://tempuri.org/";
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
+			var defaultBindingName = !string.IsNullOrWhiteSpace(bindingName) ? bindingName : "BasicHttpBinding";
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
-				? new MetaWCFBodyWriter(service, baseUrl, bindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter
-				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, bindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter;
+				? new MetaWCFBodyWriter(service, baseUrl, defaultBindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter
+				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, defaultBindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, System.Text.Encoding.UTF8, XmlDictionaryReaderQuotas.Max, false, true, false, null, bindingName, portName);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, bindingName, false);
+			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, defaultBindingName, false);
 
 			using (var memoryStream = new MemoryStream())
 			{
