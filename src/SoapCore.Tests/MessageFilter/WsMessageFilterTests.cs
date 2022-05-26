@@ -80,7 +80,7 @@ namespace SoapCore.Tests.MessageFilter
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
 				new XElement(_wsse + "Username", "yourusername"),
-				new XElement(_wsse + "Password", "yourpassword"),
+				new XElement(_wsse + "Password", new XAttribute("Type", _passwordDigest), "yourpassword"),
 				new XElement(_wsse + "Nonce", ToBase64String(Guid.NewGuid().ToByteArray())));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
@@ -94,7 +94,7 @@ namespace SoapCore.Tests.MessageFilter
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
 				new XElement(_wsse + "Username", "yourusername"),
-				new XElement(_wsse + "Password", "yourpassword"),
+				new XElement(_wsse + "Password", new XAttribute("Type", _passwordDigest), "yourpassword"),
 				new XElement(_wsu + "Created", "2003-07-16T01:24:32Z"));
 
 			var filter = new WsMessageFilter("yourusername", "yourpassword");
@@ -138,7 +138,7 @@ namespace SoapCore.Tests.MessageFilter
 			var usernameToken = new XElement(
 				_wsse + "UsernameToken",
 				new XElement(_wsse + "Username", "yourusername"),
-				new XElement(_wsse + "Password", "yourpassword"),
+				new XElement(_wsse + "Password", new XAttribute("Type", _passwordDigest), "yourpassword"),
 				new XElement(_wsse + "Nonce", notBase64Encoded),
 				new XElement(_wsu + "Created", "2020-03-06T19:58:28.134Z"));
 
