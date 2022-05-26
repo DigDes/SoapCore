@@ -73,7 +73,7 @@ namespace SoapCore
 
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, options.EncoderOptions[i].XmlNamespaceOverrides, options.EncoderOptions[i].BindingName, options.EncoderOptions[i].PortName);
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, options.EncoderOptions[i].XmlNamespaceOverrides, options.EncoderOptions[i].BindingName, options.EncoderOptions[i].PortName, options.EncoderOptions[i].MaxSoapHeaderSize);
 			}
 		}
 
@@ -218,14 +218,14 @@ namespace SoapCore
 					if (messageEncoder.IsContentTypeSupported(multipartSection.ContentType, true)
 						|| messageEncoder.IsContentTypeSupported(multipartSection.ContentType, false))
 					{
-						return await messageEncoder.ReadMessageAsync(multipartSection.Body, 0x10000, multipartSection.ContentType);
+						return await messageEncoder.ReadMessageAsync(multipartSection.Body, messageEncoder.MaxSoapHeaderSize, multipartSection.ContentType);
 					}
 				}
 			}
 #if !NETCOREAPP3_0_OR_GREATER
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType);
 #else
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType);
 #endif
 		}
 
