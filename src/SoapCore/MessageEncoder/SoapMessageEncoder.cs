@@ -31,7 +31,7 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
@@ -53,6 +53,7 @@ namespace SoapCore.MessageEncoder
 
 			ReaderQuotas = new XmlDictionaryReaderQuotas();
 			(quotas ?? XmlDictionaryReaderQuotas.Max).CopyTo(ReaderQuotas);
+			MaxSoapHeaderSize = maxSoapHeaderSize;
 
 			MediaType = GetMediaType(version);
 			CharSet = SoapMessageEncoderDefaults.EncodingToCharSet(writeEncoding);
@@ -73,6 +74,8 @@ namespace SoapCore.MessageEncoder
 		public MessageVersion MessageVersion { get; }
 
 		public XmlDictionaryReaderQuotas ReaderQuotas { get; }
+
+		public int MaxSoapHeaderSize { get; }
 
 		public XmlNamespaceManager XmlNamespaceOverrides { get; }
 

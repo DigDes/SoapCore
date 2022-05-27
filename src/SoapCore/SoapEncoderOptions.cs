@@ -14,6 +14,8 @@ namespace SoapCore
 
 		public XmlNamespaceManager XmlNamespaceOverrides { get; set; } = null;
 
+		public int MaxSoapHeaderSize { get; set; } = MessageEncoder.SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault;
+
 		internal static SoapEncoderOptions[] ToArray(SoapEncoderOptions options)
 		{
 			return options is null ? null : new[] { options };

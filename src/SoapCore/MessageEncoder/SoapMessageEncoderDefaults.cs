@@ -9,6 +9,7 @@ namespace SoapCore.MessageEncoder
 {
 	internal class SoapMessageEncoderDefaults
 	{
+		public const int MaxSoapHeaderSizeDefault = 0x10000;
 		public static readonly Encoding[] SupportedEncodings = { DefaultEncodings.UTF8, DefaultEncodings.Unicode, DefaultEncodings.BigEndianUnicode };
 
 		// Desktop: System.ServiceModel.Configuration.ConfigurationStrings.Soap12WSAddressing10;
