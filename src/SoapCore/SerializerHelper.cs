@@ -66,7 +66,7 @@ namespace SoapCore
 
 			if (parameterType.IsArray)
 			{
-				return Array.CreateInstance(parameterType.GetElementType(), 0);
+				return DeserializeArrayXmlSerializer(xmlReader, parameterType, parameterName, parameterNs, customAttributeProvider);
 			}
 
 			return null;
@@ -114,12 +114,30 @@ namespace SoapCore
 			return serializer.ReadObject(xmlReader, verifyObjectName: true);
 		}
 
+		private XmlElementAttribute ChoiceElementToSerialize(System.Xml.XmlDictionaryReader xmlReader, XmlElementAttribute[] xmlElementAttributes, string parameterNs)
+		{
+			if (xmlElementAttributes != null && xmlElementAttributes.Length > 0)
+			{
+				foreach (XmlElementAttribute xmlElementAttribute in xmlElementAttributes)
+				{
+					if (xmlReader.IsStartElement(xmlElementAttribute.ElementName, parameterNs))
+					{
+						return xmlElementAttribute;
+					}
+				}
+			}
+
+			return null;
+		}
+
 		private object DeserializeArrayXmlSerializer(System.Xml.XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, ICustomAttributeProvider customAttributeProvider)
 		{
 			var xmlArrayAttributes = customAttributeProvider.GetCustomAttributes(typeof(XmlArrayItemAttribute), true);
 			XmlArrayItemAttribute xmlArrayItemAttribute = xmlArrayAttributes.FirstOrDefault() as XmlArrayItemAttribute;
-			var xmlElementAttributes = customAttributeProvider.GetCustomAttributes(typeof(XmlElementAttribute), true);
-			XmlElementAttribute xmlElementAttribute = xmlElementAttributes.FirstOrDefault() as XmlElementAttribute;
+			XmlElementAttribute[] xmlElementAttributes = customAttributeProvider.GetCustomAttributes(typeof(XmlElementAttribute), true) as XmlElementAttribute[];
+
+			// Choice : if an array has a choice of item, the first one in the XML is the only considered to fill the array.
+			XmlElementAttribute xmlElementAttribute = ChoiceElementToSerialize(xmlReader, xmlElementAttributes, parameterNs) ?? xmlElementAttributes.FirstOrDefault();
 
 			var isEmpty = xmlReader.IsEmptyElement;
 			var hasContainerElement = xmlElementAttribute == null;
@@ -128,7 +146,7 @@ namespace SoapCore
 				xmlReader.ReadStartElement(parameterName, parameterNs);
 			}
 
-			var elementType = parameterType.GetElementType();
+			var elementType = xmlElementAttribute?.Type ?? parameterType.GetElementType();
 
 			var arrayItemName = xmlArrayItemAttribute?.ElementName ?? xmlElementAttribute?.ElementName ?? elementType.Name;
 			if (xmlArrayItemAttribute?.ElementName == null && elementType.Namespace?.StartsWith("System") == true)

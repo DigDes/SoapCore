@@ -1,13 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
-using SoapCore.Extensibility;
-using SoapCore.MessageEncoder;
-using SoapCore.Meta;
-using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,6 +12,17 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+using SoapCore.DocumentationWriter;
+using SoapCore.Extensibility;
+using SoapCore.MessageEncoder;
+using SoapCore.Meta;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -72,7 +73,7 @@ namespace SoapCore
 
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
-				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, options.EncoderOptions[i].XmlNamespaceOverrides, options.EncoderOptions[i].BindingName, options.EncoderOptions[i].PortName);
+				_messageEncoders[i] = new SoapMessageEncoder(options.EncoderOptions[i].MessageVersion, options.EncoderOptions[i].WriteEncoding, options.EncoderOptions[i].ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, options.EncoderOptions[i].XmlNamespaceOverrides, options.EncoderOptions[i].BindingName, options.EncoderOptions[i].PortName, options.EncoderOptions[i].MaxSoapHeaderSize);
 			}
 		}
 
@@ -82,9 +83,18 @@ namespace SoapCore
 
 			trailPathTuner?.ConvertPath(httpContext);
 
+			var requestMethod = httpContext.Request.Method;
+
 			if (httpContext.Request.Path.StartsWithSegments(_options.Path, _pathComparisonStrategy, out var remainingPath))
 			{
-				if (httpContext.Request.Method?.ToLower() == "get")
+				if (requestMethod?.ToLower() == "head")
+				{
+					// Since there's no information about what you should do with HEAD requests for SOAP APIs, we just silently return "200 OK"
+					httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
+					return;
+				}
+
+				if (requestMethod?.ToLower() == "get")
 				{
 					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
 					if ((httpContext.Request.IsHttps && !_options.HttpsGetEnabled) || (!httpContext.Request.IsHttps && !_options.HttpGetEnabled))
@@ -98,7 +108,7 @@ namespace SoapCore
 				{
 					_logger.LogDebug("Received SOAP Request for {0} ({1} bytes)", httpContext.Request.Path, httpContext.Request.ContentLength ?? 0);
 
-					if (httpContext.Request.Method?.ToLower() == "get")
+					if (requestMethod?.ToLower() == "get")
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
@@ -110,13 +120,16 @@ namespace SoapCore
 						}
 						else if (string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl"))
 						{
+							// Shows automatically generated documentation based on the generated WSDL (WIP)
+							var showDocumentation = httpContext.Request.Query.ContainsKey("documentation");
+
 							if (_options.WsdlFileOptions != null)
 							{
-								await ProcessMetaFromFile(httpContext);
+								await ProcessMetaFromFile(httpContext, showDocumentation);
 							}
 							else
 							{
-								await ProcessMeta(httpContext);
+								await ProcessMeta(httpContext, showDocumentation);
 							}
 						}
 					}
@@ -161,7 +174,7 @@ namespace SoapCore
 #else
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
 		{
-			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.BodyWriter);
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext, httpContext.Response.BodyWriter);
 		}
 #endif
 
@@ -205,26 +218,25 @@ namespace SoapCore
 					if (messageEncoder.IsContentTypeSupported(multipartSection.ContentType, true)
 						|| messageEncoder.IsContentTypeSupported(multipartSection.ContentType, false))
 					{
-						return await messageEncoder.ReadMessageAsync(multipartSection.Body, 0x10000, multipartSection.ContentType);
+						return await messageEncoder.ReadMessageAsync(multipartSection.Body, messageEncoder.MaxSoapHeaderSize, multipartSection.ContentType);
 					}
 				}
 			}
 #if !NETCOREAPP3_0_OR_GREATER
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, 0x10000, httpContext.Request.ContentType);
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType);
 #else
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, 0x10000, httpContext.Request.ContentType);
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType);
 #endif
 		}
 
-		private async Task ProcessMeta(HttpContext httpContext)
+		private async Task ProcessMeta(HttpContext httpContext, bool showDocumentation)
 		{
 			var baseUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 			var xmlNamespaceManager = GetXmlNamespaceManager(null);
-			var bindingName = "BasicHttpBinding_" + _service.GeneralContract.Name;
-
+			var bindingName = !string.IsNullOrWhiteSpace(_options.EncoderOptions[0].BindingName) ? _options.EncoderOptions[0].BindingName : "BasicHttpBinding_" + _service.GeneralContract.Name;
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
 				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray())
-				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication);
+				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray());
 
 			//assumption that you want soap12 if your service supports that
 			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.MessageVersion == MessageVersion.Soap12WSAddressing10 || me.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004) ?? _messageEncoders[0];
@@ -235,6 +247,23 @@ namespace SoapCore
 				GetXmlNamespaceManager(messageEncoder),
 				bindingName,
 				_options.UseBasicAuthentication);
+
+			if (showDocumentation)
+			{
+				httpContext.Response.ContentType = "text/html;charset=UTF-8";
+
+				using var ms = new MemoryStream();
+				await messageEncoder.WriteMessageAsync(responseMessage, ms);
+				ms.Position = 0;
+				using var sr = new StreamReader(ms);
+				var wsdl = await sr.ReadToEndAsync();
+
+				var documentation = SoapDefinition.DeserializeFromString(wsdl).GenerateDocumentation();
+
+				await httpContext.Response.WriteAsync(documentation);
+
+				return;
+			}
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
@@ -360,13 +389,13 @@ namespace SoapCore
 			context.Response.StatusCode = (int)HttpStatusCode.OK;
 			context.Response.ContentType = "text/xml";
 
-			StringBuilder resultSb = new StringBuilder();
-			XmlWriter writer = XmlWriter.Create(resultSb);
+			using var ms = new MemoryStream();
+			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = DefaultEncodings.UTF8 });
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
 			dictionaryWriter.Flush();
-			await context.Response.WriteAsync(resultSb.ToString());
+			await context.Response.WriteAsync(DefaultEncodings.UTF8.GetString(ms.ToArray()));
 		}
 
 		private Func<Message, Task<Message>> MakeProcessorPipe(ISoapMessageProcessor[] soapMessageProcessors, HttpContext httpContext, Func<Message, Task<Message>> processMessageFunc)
@@ -474,7 +503,9 @@ namespace SoapCore
 
 			if (operation == null)
 			{
-				operation = _service.Operations.FirstOrDefault(o => methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal));
+				operation = _service.Operations.FirstOrDefault(o =>
+							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal)
+							|| methodName.Contains(HeadersHelper.GetTrimmedSoapAction(o.Name)));
 			}
 
 			return operation != null;
@@ -905,7 +936,7 @@ namespace SoapCore
 			//Check to prevent path traversal
 			if (string.IsNullOrEmpty(xsdfile) || Path.GetFileName(xsdfile) != xsdfile)
 			{
-				throw new ArgumentNullException("xsd parameter contains illeagal values");
+				throw new ArgumentNullException("xsd parameter contains illegal values");
 			}
 
 			if (!xsdfile.Contains(".xsd"))
@@ -923,7 +954,7 @@ namespace SoapCore
 			await httpContext.Response.WriteAsync(modifiedxsd);
 		}
 
-		private async Task ProcessMetaFromFile(HttpContext httpContext)
+		private async Task ProcessMetaFromFile(HttpContext httpContext, bool showDocumentation)
 		{
 			var meta = new MetaFromFile();
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
@@ -951,6 +982,17 @@ namespace SoapCore
 			string path = _options.WsdlFileOptions.AppPath;
 			string wsdl = await meta.ReadLocalFileAsync(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
+
+			if (showDocumentation)
+			{
+				httpContext.Response.ContentType = "text/html;charset=UTF-8";
+
+				var documentation = SoapDefinition.DeserializeFromString(modifiedWsdl).GenerateDocumentation();
+
+				await httpContext.Response.WriteAsync(documentation);
+
+				return;
+			}
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";

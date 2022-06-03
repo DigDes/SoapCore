@@ -76,6 +76,7 @@ namespace SoapCore.Meta
 				writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
 				writer.WriteStartElement("All", Namespaces.WSP_NS);
 				writer.WriteStartElement("BasicAuthentication", Namespaces.HTTP_NS);
+				writer.WriteStartElement("wsaw", "UsingAddressing", Namespaces.WSAW_NS);
 				writer.WriteEndElement();
 				writer.WriteEndElement();
 				writer.WriteEndElement();

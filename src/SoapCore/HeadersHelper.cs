@@ -98,6 +98,24 @@ namespace SoapCore
 					}
 				}
 
+				if (string.IsNullOrEmpty(soapAction))
+				{
+					if (!string.IsNullOrEmpty(message.Headers.Action))
+					{
+						soapAction = message.Headers.Action;
+					}
+
+					if (string.IsNullOrEmpty(soapAction))
+					{
+						var headerInfo = message.Headers.FirstOrDefault(h => h.Name.ToLowerInvariant() == "action");
+
+						if (headerInfo != null)
+						{
+							soapAction = message.Headers.GetHeader<string>(headerInfo.Name, headerInfo.Namespace);
+						}
+					}
+				}
+
 				if (string.IsNullOrEmpty(soapAction) && reader != null)
 				{
 					soapAction = reader.LocalName;
