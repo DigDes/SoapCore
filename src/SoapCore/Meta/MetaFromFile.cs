@@ -89,13 +89,16 @@ namespace SoapCore.Meta
 							{
 								if (importOrIncludeNode.Name == ImportNodeName(importOrIncludeNode) || importOrIncludeNode.Name == IncludeNodeName(importOrIncludeNode))
 								{
-									if (importOrIncludeNode.Attributes["schemaLocation"] == null)
+									if (XsdFolder != null)
 									{
-										importOrIncludeNode.Attributes.Append(xmlDoc.CreateAttribute("schemaLocation"));
-									}
+										if (importOrIncludeNode.Attributes["schemaLocation"] == null)
+										{
+											importOrIncludeNode.Attributes.Append(xmlDoc.CreateAttribute("schemaLocation"));
+										}
 
-									string name = importOrIncludeNode.Attributes["schemaLocation"].InnerText;
-									importOrIncludeNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
+										string name = importOrIncludeNode.Attributes["schemaLocation"].InnerText;
+										importOrIncludeNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
+									}
 								}
 							}
 						}
