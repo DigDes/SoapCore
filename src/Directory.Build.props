@@ -6,4 +6,9 @@
 		<DefineConstants Condition="$(TargetFramework) == 'netcoreapp3.1'">$(DefineConstants);NETCOREAPP2_1_OR_GREATER;NETCOREAPP3_0_OR_GREATER</DefineConstants>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<!-- https://github.com/dotnet/reproducible-builds -->
+		<PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1" PrivateAssets="All"/>
+	</ItemGroup>
+
 </Project>
