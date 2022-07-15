@@ -52,6 +52,11 @@ namespace SoapCore
 			}
 		}
 
+		protected override void OnWriteStartHeaders(XmlDictionaryWriter writer)
+		{
+			writer.WriteStartElement(Version.Envelope.NamespacePrefix(NamespaceManager), "Header", Version.Envelope.Namespace());
+		}
+
 		protected override void OnWriteStartBody(XmlDictionaryWriter writer)
 		{
 			writer.WriteStartElement(Version.Envelope.NamespacePrefix(NamespaceManager), "Body", Version.Envelope.Namespace());
