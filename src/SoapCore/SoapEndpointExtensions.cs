@@ -441,5 +441,12 @@ namespace SoapCore
 			serviceCollection.AddSingleton<ISoapMessageProcessor>(new LambdaSoapMessageProcessor(messageProcessor));
 			return serviceCollection;
 		}
+
+		public static IServiceCollection AddSoapMessageProcessor<TProcessor>(this IServiceCollection serviceCollection, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+			where TProcessor : class, ISoapMessageProcessor
+		{
+			serviceCollection.Add(new ServiceDescriptor(typeof(ISoapMessageProcessor), typeof(TProcessor), lifetime));
+			return serviceCollection;
+		}
 	}
 }
