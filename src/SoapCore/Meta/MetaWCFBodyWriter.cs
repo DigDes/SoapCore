@@ -710,16 +710,44 @@ namespace SoapCore.Meta
 			IEnumerable<KnownTypeAttribute> knownTypes = type.GetCustomAttributes<KnownTypeAttribute>(inherit: false);
 			foreach (KnownTypeAttribute knownType in knownTypes)
 			{
-				if (knownType.Type is null)
+				if (knownType.Type is not null)
 				{
-					throw new NotSupportedException($"Only type property of `{nameof(KnownTypeAttribute)}` is supported.");
+					// add known type
+					_complexTypeToBuild[knownType.Type] = GetDataContractNamespace(knownType.Type);
+
+					// discover recursive
+					DiscoverTypes(knownType.Type, false);
 				}
+				else if (!string.IsNullOrWhiteSpace(knownType.MethodName))
+				{
+					var method = type.GetMethod(knownType.MethodName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+					if (method is null)
+					{
+						throw new NotSupportedException($"Method `{knownType.MethodName}` doesn't exist on Type `{type.FullName}`.");
+					}
 
-				// add known type
-				_complexTypeToBuild[knownType.Type] = GetDataContractNamespace(knownType.Type);
+					var knownTypeList = method.Invoke(null, new object[0]) as IEnumerable;
+					if (knownTypeList is null)
+					{
+						throw new NotSupportedException($"Method `{knownType.MethodName}` on Type `{type.FullName}` returned null or not an IEnumerable.");
+					}
 
-				// discover recursive
-				DiscoverTypes(knownType.Type, false);
+					foreach (var item in knownTypeList.OfType<Type>())
+					{
+						if (item != null)
+						{
+							// add known type
+							_complexTypeToBuild[item] = GetDataContractNamespace(item);
+
+							// discover recursive
+							DiscoverTypes(item, false);
+						}
+					}
+				}
+				else
+				{
+					throw new NotSupportedException($"You must specify Type property or MethodName properties of `{nameof(KnownTypeAttribute)}`.");
+				}
 			}
 
 			if (HasBaseType(type) && type.BaseType != null)
