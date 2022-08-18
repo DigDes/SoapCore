@@ -1,9 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace SoapCore.Tests.Model
 {
-	[KnownType(typeof(ComplexInheritanceModelInputA))]
-	[KnownType(typeof(ComplexInheritanceModelInputB))]
+	[KnownType(nameof(GetKnownTypes))]
 	[DataContract(Name = "ComplexInheritanceModelInputBase")]
 	public abstract class ComplexInheritanceModelInputBase
 	{
@@ -12,5 +13,11 @@ namespace SoapCore.Tests.Model
 
 		[DataMember]
 		public abstract string Example { get; set; }
+
+		private static IEnumerable<Type> GetKnownTypes()
+		{
+			yield return typeof(ComplexInheritanceModelInputA);
+			yield return typeof(ComplexInheritanceModelInputB);
+		}
 	}
 }
