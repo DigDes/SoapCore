@@ -748,6 +748,27 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(stringPropertyElement);
 		}
 
+		[TestMethod]
+		public async Task CheckDataContractKnownTypeAttributeServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<TestService>(SoapSerializer.DataContractSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var schemaElement = root.XPathSelectElement("//xsd:schema[@targetNamespace='http://schemas.datacontract.org/2004/07/SoapCore.Tests.Model']", nm);
+			Assert.IsNotNull(schemaElement);
+
+			Assert.IsNotNull(schemaElement.XPathSelectElement("//xsd:complexType[@name='ComplexInheritanceModelInputA']/xsd:complexContent/xsd:extension[@base='tns:ComplexInheritanceModelInputBase']", nm));
+			Assert.IsNotNull(schemaElement.XPathSelectElement("//xsd:element[@name='ComplexInheritanceModelInputA' and @type='tns:ComplexInheritanceModelInputA']", nm));
+			Assert.IsNotNull(schemaElement.XPathSelectElement("//xsd:complexType[@name='ComplexInheritanceModelInputB']/xsd:complexContent/xsd:extension[@base='tns:ComplexInheritanceModelInputA']", nm));
+			Assert.IsNotNull(schemaElement.XPathSelectElement("//xsd:element[@name='ComplexInheritanceModelInputB' and @type='tns:ComplexInheritanceModelInputB']", nm));
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
