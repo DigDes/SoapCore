@@ -43,7 +43,8 @@ namespace SoapCore.Tests.WsdlFromFile
 						{
 							SchemaFolder = "/WsdlFromFile/WSDL",
 							WsdlFile = _wsdlFile,
-							WSDLFolder = "/WsdlFromFile/WSDL"
+							WSDLFolder = "/WsdlFromFile/WSDL",
+							UrlOverride = "Management/Service.asmx"
 						}
 					}
 				},
@@ -69,7 +70,8 @@ namespace SoapCore.Tests.WsdlFromFile
 						{
 							SchemaFolder = "/WsdlFromFile/WSDL",
 							WsdlFile = _wsdlFile,
-							WSDLFolder = "/WsdlFromFile/WSDL"
+							WSDLFolder = "/WsdlFromFile/WSDL",
+							UrlOverride = "Management/Service.asmx"
 						}
 					}
 				},
