@@ -957,14 +957,24 @@ namespace SoapCore
 		private async Task ProcessMetaFromFile(HttpContext httpContext, bool showDocumentation)
 		{
 			var meta = new MetaFromFile();
+
+			var url = httpContext.Request.Path.Value.Replace("/", string.Empty);
+
+			WebServiceWSDLMapping mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[url];
+
 			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
 			{
 				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
 			}
 
-			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
-
-			WebServiceWSDLMapping mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[meta.CurrentWebService];
+			if (string.IsNullOrEmpty(mapping.UrlOverride))
+			{
+				meta.CurrentWebService = url;
+			}
+			else
+			{
+				meta.CurrentWebService = mapping.UrlOverride;
+			}
 
 			meta.XsdFolder = mapping.SchemaFolder;
 			meta.WSDLFolder = mapping.WSDLFolder;
