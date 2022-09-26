@@ -78,22 +78,26 @@ To use it, add a setting like this to appsettings
 ```csharp
  "FileWSDL": {
     "UrlOverride": "",
+    "VirtualPath": "",
     "WebServiceWSDLMapping": {
-      "Service.asmx": {
+      "Service.asmx": { ,
+        "UrlOverride": "Management/Service.asmx",
         "WsdlFile": "snapshotpull.wsdl",
         "SchemaFolder": "Schemas",
         "WsdlFolder": "Schemas"
       }
-    },
-    "VirtualPath": ""
+    }
 ```
 
 * UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
-* Service.asmx - is the endpoint of the service you expose. You can have more than one.
-* WsdlFile - is the name of the WSDL on disc.
-* SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
-* WsdlFolder - is the folder that the WSDL file is stored on disc.
-* VirualPath - can be used if you like to add a path between the base URL and service.
+* VirualPath - can be used if you like to add a path between the base URL and service. 
+* WebServiceWSDLMapping
+  * UrlOverride - can be used to override the URL for a specific WSDL mapping. This can be useful if you want to host different services under different folder.
+  * Service.asmx - is the endpoint of the service you expose. You can have more than one.
+  * WsdlFile - is the name of the WSDL on disc.
+  * SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
+  * WsdlFolder - is the folder that the WSDL file is stored on disc.
+
 
 To read the setting you can do the following
 
@@ -101,8 +105,11 @@ In Startup.cs:
 
 
 ```csharp
-
 var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
+
+// For case-insensitive mapping, if you are using "SoapCoreOptions.CaseInsensitivePath = true" - otherwise URLs with different casing won't be mapped correctly
+//var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptionsCaseInsensitive>();
+
 settings.AppPath = env.ContentRootPath; // The hosting environment root path
 ...
 
