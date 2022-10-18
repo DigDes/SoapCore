@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -875,7 +876,20 @@ namespace SoapCore.Meta
 			}
 			else
 			{
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified);
+				string defaultValue = null;
+				var defaultAttribute = member.GetCustomAttribute<DefaultValueAttribute>();
+				if (defaultAttribute != null)
+				{
+					if (defaultAttribute.Value is bool value)
+					{
+						defaultValue = value ? "true" : "false";
+					}
+					else
+					{
+						defaultValue = defaultAttribute.Value.ToString();
+					}
+				}
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
 			}
 		}
 
@@ -895,7 +909,7 @@ namespace SoapCore.Meta
 			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null)
 		{
 			var type = toBuild.Type;
 
@@ -982,8 +996,12 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					writer.WriteAttributeString("minOccurs", type.IsValueType ? "1" : "0");
+					writer.WriteAttributeString("minOccurs", type.IsValueType && defaultValue == null ? "1" : "0");
 					writer.WriteAttributeString("maxOccurs", "1");
+					if (defaultValue != null)
+					{
+						writer.WriteAttributeString("default", defaultValue);
+					}
 				}
 
 				if (string.IsNullOrEmpty(name))

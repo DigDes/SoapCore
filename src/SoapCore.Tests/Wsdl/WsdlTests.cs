@@ -749,6 +749,40 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public async Task CheckDefaultValueAttributesServiceWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<DefaultValueAttributesService>(SoapSerializer.XmlSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			Assert.IsFalse(wsdl.Contains("name=\"\""));
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+
+			var booleanWithNoDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithNoDefaultProperty' and @minOccurs='1' and @maxOccurs='1' and not(@default)]", nm);
+			Assert.IsNotNull(booleanWithNoDefaultPropertyElement);
+
+			var booleanWithDefaultFalsePropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithDefaultFalseProperty' and @minOccurs='0' and @maxOccurs='1' and @default='false']", nm);
+			Assert.IsNotNull(booleanWithDefaultFalsePropertyElement);
+
+			var booleanWithDefaultTruePropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithDefaultTrueProperty' and @minOccurs='0' and @maxOccurs='1' and @default='true']", nm);
+			Assert.IsNotNull(booleanWithDefaultTruePropertyElement);
+
+			var intWithNoDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='IntWithNoDefaultProperty' and @minOccurs='1' and @maxOccurs='1' and not(@default)]", nm);
+			Assert.IsNotNull(intWithNoDefaultPropertyElement);
+
+			var intWithDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='IntWithDefaultProperty' and @minOccurs='0' and @maxOccurs='1' and @default='42']", nm);
+			Assert.IsNotNull(intWithDefaultPropertyElement);
+
+			var stringWithNoDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='StringWithNoDefaultProperty' and @minOccurs='0' and @maxOccurs='1' and not(@default)]", nm);
+			Assert.IsNotNull(stringWithNoDefaultPropertyElement);
+
+			var stringWithDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='StringWithDefaultProperty' and @minOccurs='0' and @maxOccurs='1' and @default='default']", nm);
+			Assert.IsNotNull(stringWithDefaultPropertyElement);
+		}
+
+		[TestMethod]
 		public async Task CheckDataContractKnownTypeAttributeServiceWsdl()
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<TestService>(SoapSerializer.DataContractSerializer);
