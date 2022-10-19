@@ -877,16 +877,16 @@ namespace SoapCore.Meta
 			else
 			{
 				string defaultValue = null;
-				var defaultAttribute = member.GetCustomAttribute<DefaultValueAttribute>();
-				if (defaultAttribute != null)
+				var defaultAttributeValue = member.GetCustomAttribute<DefaultValueAttribute>()?.Value;
+				if (defaultAttributeValue != null)
 				{
-					if (defaultAttribute.Value is bool value)
+					if (defaultAttributeValue is bool value)
 					{
 						defaultValue = value ? "true" : "false";
 					}
 					else
 					{
-						defaultValue = defaultAttribute.Value.ToString();
+						defaultValue = defaultAttributeValue.ToString();
 					}
 				}
 				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);

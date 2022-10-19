@@ -763,6 +763,9 @@ namespace SoapCore.Tests.Wsdl
 			var booleanWithNoDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithNoDefaultProperty' and @minOccurs='1' and @maxOccurs='1' and not(@default)]", nm);
 			Assert.IsNotNull(booleanWithNoDefaultPropertyElement);
 
+			var booleanWithDefaultNullPropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithDefaultNullProperty' and @minOccurs='1' and @maxOccurs='1' and not(@default)]", nm);
+			Assert.IsNotNull(booleanWithDefaultNullPropertyElement);
+
 			var booleanWithDefaultFalsePropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithDefaultFalseProperty' and @minOccurs='0' and @maxOccurs='1' and @default='false']", nm);
 			Assert.IsNotNull(booleanWithDefaultFalsePropertyElement);
 
@@ -777,6 +780,9 @@ namespace SoapCore.Tests.Wsdl
 
 			var stringWithNoDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='StringWithNoDefaultProperty' and @minOccurs='0' and @maxOccurs='1' and not(@default)]", nm);
 			Assert.IsNotNull(stringWithNoDefaultPropertyElement);
+
+			var stringWithDefaultNullPropertyElement = root.XPathSelectElement("//xsd:element[@name='StringWithDefaultNullProperty' and @minOccurs='0' and @maxOccurs='1' and not(@default)]", nm);
+			Assert.IsNotNull(stringWithDefaultNullPropertyElement);
 
 			var stringWithDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='StringWithDefaultProperty' and @minOccurs='0' and @maxOccurs='1' and @default='default']", nm);
 			Assert.IsNotNull(stringWithDefaultPropertyElement);

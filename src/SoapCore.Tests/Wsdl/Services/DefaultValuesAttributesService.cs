@@ -24,6 +24,9 @@ namespace SoapCore.Tests.Wsdl.Services
 	{
 		public bool BooleanWithNoDefaultProperty { get; set; }
 
+		[DefaultValue(null)]
+		public bool BooleanWithDefaultNullProperty { get; set; }
+
 		[DefaultValue(false)]
 		public bool BooleanWithDefaultFalseProperty { get; set; }
 
@@ -36,6 +39,9 @@ namespace SoapCore.Tests.Wsdl.Services
 		public int IntWithDefaultProperty { get; set; }
 
 		public string StringWithNoDefaultProperty { get; set; }
+
+		[DefaultValue(null)]
+		public string StringWithDefaultNullProperty { get; set; }
 
 		[DefaultValue("default")]
 		public string StringWithDefaultProperty { get; set; }
