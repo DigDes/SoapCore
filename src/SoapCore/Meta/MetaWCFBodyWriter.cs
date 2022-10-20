@@ -190,6 +190,8 @@ namespace SoapCore.Meta
 		{
 			foreach (var parameterInfo in parameterInfos)
 			{
+				if (parameterInfo.Parameter.ParameterType.FullName == "System.Threading.CancellationToken")
+					continue;
 				var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
 				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
 										? elementAttribute.ElementName
@@ -268,6 +270,8 @@ namespace SoapCore.Meta
 				{
 					var type = parameter.Parameter.ParameterType;
 					var typeInfo = type.GetTypeInfo();
+					if (typeInfo.FullName == "System.Threading.CancellationToken")
+						continue;
 					if (typeInfo.IsByRef)
 					{
 						type = typeInfo.GetElementType();
