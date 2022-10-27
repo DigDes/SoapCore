@@ -81,6 +81,7 @@ namespace SoapCore.Meta
 				writer.WriteEndElement();
 				writer.WriteEndElement();
 				writer.WriteEndElement();
+				writer.WriteEndElement();
 			}
 		}
 
