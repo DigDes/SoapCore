@@ -148,15 +148,8 @@ namespace SoapCore.MessageEncoder
 			}
 			else
 			{
-				var xmlReaderSettings = new XmlReaderSettings()
-				{
-					IgnoreWhitespace = true,
-					DtdProcessing = DtdProcessing.Prohibit,
-					CloseInput = true
-				};
-
 				var streamReaderWithEncoding = new StreamReader(stream, _writeEncoding);
-				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
+				reader = XmlReader.Create(streamReaderWithEncoding, new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true });
 			}
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
