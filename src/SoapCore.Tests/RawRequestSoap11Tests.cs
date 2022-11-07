@@ -116,6 +116,66 @@ namespace SoapCore.Tests
 			Assert.IsTrue(response.Contains(pingValue));
 		}
 
+		[TestMethod]
+		public async Task Soap11PingResponseBodyEncodingSameAsWriteEncoding()
+		{
+			var pingValue = "abc";
+			var body = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soapenv:Body>
+    <Ping xmlns=""http://tempuri.org/"">
+      <s>{pingValue}</s>
+    </Ping>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.GetEncoding("ISO-8859-1"), "text/xml"))
+			{
+				var requestBuilder = host.CreateRequest("/ServiceWithDifferentEncodings.asmx").AddHeader("SOAPAction", @"""Ping""").And(msg => msg.Content = content);
+				using (var res = requestBuilder.PostAsync().Result)
+				{
+					res.EnsureSuccessStatusCode();
+
+					var response = await res.Content.ReadAsStringAsync();
+
+					Assert.IsTrue(response.Contains(pingValue));
+					Assert.IsTrue(response.Contains("<?xml version=\"1.0\" encoding=\"utf-8\"?>"));
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task Soap11PingWithOverwrittenContentType()
+		{
+			var pingValue = "abc";
+			var body = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soapenv:Body>
+    <Ping xmlns=""http://tempuri.org/"">
+      <s>{pingValue}</s>
+    </Ping>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.GetEncoding("ISO-8859-1"), "text/xml"))
+			{
+				var requestBuilder = host.CreateRequest("/ServiceWithOverwrittenContentType.asmx").AddHeader("SOAPAction", @"""Ping""").And(msg => msg.Content = content);
+				using (var res = requestBuilder.PostAsync().Result)
+				{
+					res.EnsureSuccessStatusCode();
+
+					var response = await res.Content.ReadAsStringAsync();
+					var requestContentType = res.RequestMessage.Content.Headers.ContentType.ToString();
+					var responseContentType = res.Content.Headers.ContentType.ToString();
+
+					Assert.IsTrue(response.Contains(pingValue));
+					Assert.AreNotEqual(requestContentType, responseContentType);
+				}
+			}
+		}
+
 		private TestServer CreateTestHost()
 		{
 			var webHostBuilder = new WebHostBuilder()
