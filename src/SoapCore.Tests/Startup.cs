@@ -127,6 +127,42 @@ namespace SoapCore.Tests
 
 				app.UseSoapEndpoint<TestService>("/WSA11ISO88591Service.svc", soapEncodingOptions, SoapSerializer.DataContractSerializer);
 			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("asmx"), app2 =>
+			{
+				app2.UseRouting();
+
+				var soapEncodingOptions = new SoapEncoderOptions
+				{
+					MessageVersion = MessageVersion.Soap11,
+					WriteEncoding = Encoding.UTF8,
+					ReadEncoding = Encoding.GetEncoding("ISO-8859-1"),
+					OverwriteResponseContentType = false
+				};
+
+				app2.UseSoapEndpoint<TestService>(opt =>
+				{
+					opt.Path = "/ServiceWithDifferentEncodings.asmx";
+					opt.EncoderOptions = new[] { soapEncodingOptions };
+					opt.OmitXmlDeclaration = false;
+					opt.SoapSerializer = SoapSerializer.XmlSerializer;
+				});
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("asmx"), app2 =>
+			{
+				app2.UseRouting();
+
+				var soapEncodingOptions = new SoapEncoderOptions
+				{
+					MessageVersion = MessageVersion.Soap11,
+					WriteEncoding = Encoding.UTF8,
+					ReadEncoding = Encoding.GetEncoding("ISO-8859-1"),
+					OverwriteResponseContentType = true
+				};
+
+				app2.UseSoapEndpoint<TestService>("/ServiceWithOverwrittenContentType.asmx", soapEncodingOptions, SoapSerializer.XmlSerializer);
+			});
 		}
 #endif
 	}
