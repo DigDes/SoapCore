@@ -190,6 +190,8 @@ namespace SoapCore.Meta
 		{
 			foreach (var parameterInfo in parameterInfos)
 			{
+				if (parameterInfo.Parameter.ParameterType.FullName == "System.Threading.CancellationToken")
+					continue;
 				var elementAttribute = parameterInfo.Parameter.GetCustomAttribute<XmlElementAttribute>();
 				var parameterName = !string.IsNullOrEmpty(elementAttribute?.ElementName)
 										? elementAttribute.ElementName
@@ -268,6 +270,8 @@ namespace SoapCore.Meta
 				{
 					var type = parameter.Parameter.ParameterType;
 					var typeInfo = type.GetTypeInfo();
+					if (typeInfo.FullName == "System.Threading.CancellationToken")
+						continue;
 					if (typeInfo.IsByRef)
 					{
 						type = typeInfo.GetElementType();
@@ -308,7 +312,7 @@ namespace SoapCore.Meta
 
 			var groupedByNamespace = _complexTypeToBuild.GroupBy(x => x.Value).ToDictionary(x => x.Key, x => x.Select(k => k.Key));
 
-			foreach (var @namespace in groupedByNamespace.Keys.Where(x => x != null && x != _service.ServiceType.Namespace).Distinct())
+			foreach (var @namespace in groupedByNamespace.Keys.Where(x => x != null && x != _service.ServiceType.Namespace && x != contract.Namespace).Distinct())
 			{
 				writer.WriteStartElement("xs", "import", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("namespace", @namespace);

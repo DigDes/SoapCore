@@ -41,7 +41,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
-			string url = address + "/Service.asmx?xsd&name=echoInclude.xsd";
+			string url = address + "/Management/Service.asmx?xsd&name=echoInclude.xsd";
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(url, element.Attributes["schemaLocation"]?.Value);
