@@ -141,9 +141,16 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			XmlReader reader = _supportXmlDictionaryReader ?
-			 	XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { }) :
-				XmlReader.Create(stream, new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit });
+			XmlReader reader;
+			if (_supportXmlDictionaryReader)
+			{
+				reader = XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { });
+			}
+			else
+			{
+				var streamReaderWithEncoding = new StreamReader(stream, _writeEncoding);
+				reader = XmlReader.Create(streamReaderWithEncoding, new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true });
+			}
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 
