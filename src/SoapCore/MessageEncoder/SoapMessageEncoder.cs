@@ -25,13 +25,15 @@ namespace SoapCore.MessageEncoder
 		private const string XmlMediaType = "application/xml";
 
 		private readonly Encoding _writeEncoding;
+		private readonly Encoding _readEncoding;
+		private readonly bool _overwriteResponseContentType;
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
 		private readonly bool _indentXml;
 		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, Encoding readEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
@@ -44,10 +46,18 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(writeEncoding));
 			}
 
-			_supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(writeEncoding, out _);
+			if (readEncoding == null)
+			{
+				throw new ArgumentNullException(nameof(readEncoding));
+			}
+
+			_supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
 
 			_writeEncoding = writeEncoding;
+			_readEncoding = readEncoding;
 			_optimizeWriteForUtf8 = IsUtf8Encoding(writeEncoding);
+
+			_overwriteResponseContentType = overwriteResponseContentType;
 
 			MessageVersion = version ?? throw new ArgumentNullException(nameof(version));
 
@@ -144,12 +154,13 @@ namespace SoapCore.MessageEncoder
 			XmlReader reader;
 			if (_supportXmlDictionaryReader)
 			{
-				reader = XmlDictionaryReader.CreateTextReader(stream, _writeEncoding, ReaderQuotas, dictionaryReader => { });
+				reader = XmlDictionaryReader.CreateTextReader(stream, _readEncoding, ReaderQuotas, dictionaryReader => { });
 			}
 			else
 			{
-				var streamReaderWithEncoding = new StreamReader(stream, _writeEncoding);
-				reader = XmlReader.Create(streamReaderWithEncoding, new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true });
+				var streamReaderWithEncoding = new StreamReader(stream, _readEncoding);
+				var xmlReaderSettings = new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
+				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
 			}
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
@@ -199,6 +210,11 @@ namespace SoapCore.MessageEncoder
 
 				//Set Content-length in Response
 				httpContext.Response.ContentLength = soapMessage.Length;
+
+				if (_overwriteResponseContentType)
+				{
+					httpContext.Response.ContentType = ContentType;
+				}
 
 				await pipeWriter.WriteAsync(soapMessage);
 				await pipeWriter.FlushAsync();
