@@ -74,7 +74,7 @@ namespace SoapCore
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
 				var encoderOptions = options.EncoderOptions[i];
-				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions.MessageVersion, encoderOptions.ReadEncoding, encoderOptions.WriteEncoding, encoderOptions.OverwriteResponseContentType,  encoderOptions.ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, encoderOptions.XmlNamespaceOverrides, encoderOptions.BindingName, encoderOptions.PortName, encoderOptions.MaxSoapHeaderSize);
+				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions.MessageVersion, encoderOptions.WriteEncoding, encoderOptions.ReadEncoding, encoderOptions.OverwriteResponseContentType,  encoderOptions.ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, encoderOptions.XmlNamespaceOverrides, encoderOptions.BindingName, encoderOptions.PortName, encoderOptions.MaxSoapHeaderSize);
 			}
 		}
 

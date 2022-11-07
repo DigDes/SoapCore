@@ -24,8 +24,8 @@ namespace SoapCore.MessageEncoder
 		internal const string Soap12MediaType = "application/soap+xml";
 		private const string XmlMediaType = "application/xml";
 
-		private readonly Encoding _readEncoding;
 		private readonly Encoding _writeEncoding;
+		private readonly Encoding _readEncoding;
 		private readonly bool _overwriteResponseContentType;
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
@@ -33,7 +33,7 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding readEncoding, Encoding writeEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, Encoding readEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
@@ -41,20 +41,20 @@ namespace SoapCore.MessageEncoder
 			BindingName = bindingName;
 			PortName = portName;
 
-			if (readEncoding == null)
-			{
-				throw new ArgumentNullException(nameof(readEncoding));
-			}
-
 			if (writeEncoding == null)
 			{
 				throw new ArgumentNullException(nameof(writeEncoding));
 			}
 
+			if (readEncoding == null)
+			{
+				throw new ArgumentNullException(nameof(readEncoding));
+			}
+
 			_supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
 
-			_readEncoding = readEncoding;
 			_writeEncoding = writeEncoding;
+			_readEncoding = readEncoding;
 			_optimizeWriteForUtf8 = IsUtf8Encoding(writeEncoding);
 
 			_overwriteResponseContentType = overwriteResponseContentType;
