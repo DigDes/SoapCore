@@ -25,15 +25,13 @@ namespace SoapCore.MessageEncoder
 		private const string XmlMediaType = "application/xml";
 
 		private readonly Encoding _writeEncoding;
-		private readonly Encoding _readEncoding;
 		private readonly bool _overwriteResponseContentType;
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
 		private readonly bool _indentXml;
-		private readonly bool _supportXmlDictionaryReader;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, Encoding readEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
 		{
 			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
@@ -41,20 +39,7 @@ namespace SoapCore.MessageEncoder
 			BindingName = bindingName;
 			PortName = portName;
 
-			if (writeEncoding == null)
-			{
-				throw new ArgumentNullException(nameof(writeEncoding));
-			}
-
-			if (readEncoding == null)
-			{
-				throw new ArgumentNullException(nameof(readEncoding));
-			}
-
-			_supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
-
 			_writeEncoding = writeEncoding;
-			_readEncoding = readEncoding;
 			_optimizeWriteForUtf8 = IsUtf8Encoding(writeEncoding);
 
 			_overwriteResponseContentType = overwriteResponseContentType;
@@ -152,13 +137,24 @@ namespace SoapCore.MessageEncoder
 			}
 
 			XmlReader reader;
-			if (_supportXmlDictionaryReader)
+
+			var readEncoding = SoapMessageEncoderDefaults.ContentTypeToEncoding(contentType);
+
+			if (readEncoding == null)
 			{
-				reader = XmlDictionaryReader.CreateTextReader(stream, _readEncoding, ReaderQuotas, dictionaryReader => { });
+				// Fallback to default or writeEncoding
+				readEncoding = _writeEncoding;
+			}
+
+			var supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
+
+			if (supportXmlDictionaryReader)
+			{
+				reader = XmlDictionaryReader.CreateTextReader(stream, readEncoding, ReaderQuotas, dictionaryReader => { });
 			}
 			else
 			{
-				var streamReaderWithEncoding = new StreamReader(stream, _readEncoding);
+				var streamReaderWithEncoding = new StreamReader(stream, readEncoding);
 				var xmlReaderSettings = new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
 				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
 			}
@@ -288,7 +284,7 @@ namespace SoapCore.MessageEncoder
 				return true;
 			}
 
-			MediaTypeHeaderValue parsedContentType = null;
+			MediaTypeHeaderValue parsedContentType;
 
 			try
 			{
