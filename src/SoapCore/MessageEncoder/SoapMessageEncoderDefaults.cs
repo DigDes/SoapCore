@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace SoapCore.MessageEncoder
@@ -10,30 +11,24 @@ namespace SoapCore.MessageEncoder
 	internal class SoapMessageEncoderDefaults
 	{
 		public const int MaxSoapHeaderSizeDefault = 0x10000;
-		public static readonly Encoding[] SupportedEncodings = { DefaultEncodings.UTF8, DefaultEncodings.Unicode, DefaultEncodings.BigEndianUnicode };
+		private static readonly Encoding[] XmlDictionaryReaderSupportedEncodings = { DefaultEncodings.UTF8, DefaultEncodings.Unicode, DefaultEncodings.BigEndianUnicode };
 
 		// Desktop: System.ServiceModel.Configuration.ConfigurationStrings.Soap12WSAddressing10;
-		public static readonly CharSetEncoding[] CharSetEncodings =
+		private static readonly CharSetEncoding[] CharSetEncodings =
 		{
 			new CharSetEncoding("utf-8", DefaultEncodings.UTF8),
 			new CharSetEncoding("utf-16LE", DefaultEncodings.Unicode),
 			new CharSetEncoding("utf-16BE", DefaultEncodings.BigEndianUnicode),
 			new CharSetEncoding("utf-16", null),   // Ignore.  Ambiguous charSet, so autodetect.
 			new CharSetEncoding(null, null),       // CharSet omitted, so autodetect.
+			new CharSetEncoding("ISO8859-1", DefaultEncodings.Iso88591),
+			new CharSetEncoding("windows-1252", DefaultEncodings.Iso88591) // technically it's same encodings, but in .NET Core windows-* encodings are not supported out of the box
 		};
-
-		public static void ValidateEncoding(Encoding encoding)
-		{
-			if (TryValidateEncoding(encoding, out var error) == false)
-			{
-				throw error;
-			}
-		}
 
 		public static bool TryValidateEncoding(Encoding encoding, out Exception exception)
 		{
 			string charSet = encoding.WebName;
-			Encoding[] supportedEncodings = SupportedEncodings;
+			Encoding[] supportedEncodings = XmlDictionaryReaderSupportedEncodings;
 
 			for (int i = 0; i < supportedEncodings.Length; i++)
 			{
@@ -46,6 +41,26 @@ namespace SoapCore.MessageEncoder
 
 			exception = new ArgumentException($"The text encoding '{charSet}' used in the text message format is not supported.", nameof(encoding));
 			return false;
+		}
+
+		public static Encoding ContentTypeToEncoding(string contentType)
+		{
+			var charSet = MediaTypeHeaderValue.Parse(contentType).CharSet;
+
+			foreach (var charSetEncoding in CharSetEncodings)
+			{
+				if (charSetEncoding.Encoding == null)
+				{
+					continue;
+				}
+
+				if (charSetEncoding.CharSet == charSet)
+				{
+					return charSetEncoding.Encoding;
+				}
+			}
+
+			return null;
 		}
 
 		public static string EncodingToCharSet(Encoding encoding)
