@@ -136,7 +136,6 @@ namespace SoapCore.Tests
 				{
 					MessageVersion = MessageVersion.Soap11,
 					WriteEncoding = Encoding.UTF8,
-					ReadEncoding = Encoding.GetEncoding("ISO-8859-1"),
 					OverwriteResponseContentType = false
 				};
 
@@ -157,7 +156,6 @@ namespace SoapCore.Tests
 				{
 					MessageVersion = MessageVersion.Soap11,
 					WriteEncoding = Encoding.UTF8,
-					ReadEncoding = Encoding.GetEncoding("ISO-8859-1"),
 					OverwriteResponseContentType = true
 				};
 
