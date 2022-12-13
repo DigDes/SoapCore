@@ -97,7 +97,7 @@ namespace SoapCore
 		/// Gets or sets a value indicating wheter to add the stand alone attribute in the XML declaration
 		/// <para>Defaults to false</para>
 		/// </summary>
-		public bool? StandAloneAttribute { get; set; } = false;
+		public bool? StandAloneAttribute { get; set; } = null;
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to indent the Xml in responses

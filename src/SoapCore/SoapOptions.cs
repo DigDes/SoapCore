@@ -52,7 +52,7 @@ namespace SoapCore
 
 		public bool OmitXmlDeclaration { get; set; } = true;
 
-		public bool? StandAloneAttribute { get; set; } = false;
+		public bool? StandAloneAttribute { get; set; } = null;
 
 		public bool IndentXml { get; set; } = true;
 
