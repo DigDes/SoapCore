@@ -95,11 +95,35 @@ namespace SoapCore.ServiceModel
 		{
 			foreach (ServiceKnownTypeAttribute serviceKnownType in ServiceKnownTypes)
 			{
+				if (serviceKnownType.Type == null && !string.IsNullOrEmpty(serviceKnownType.MethodName))
+				{
+					var method = serviceKnownType.DeclaringType.GetMethod(serviceKnownType.MethodName,BindingFlags.Public | BindingFlags.Static);
+					var types = (IEnumerable<Type>)method.Invoke(null, new object[]{method});
+					foreach (var t in types)
+					{
+						yield return new ServiceKnownTypeAttribute(t);
+					}
+
+					yield break;
+				}
+
 				yield return serviceKnownType;
 			}
 
 			foreach (ServiceKnownTypeAttribute serviceKnownType in Contract.ServiceKnownTypes)
 			{
+				if (serviceKnownType.Type == null && !string.IsNullOrEmpty(serviceKnownType.MethodName))
+				{
+					var method = serviceKnownType.DeclaringType.GetMethod(serviceKnownType.MethodName,BindingFlags.Public | BindingFlags.Static);
+					var types = (IEnumerable<Type>)method.Invoke(null, new object[]{method});
+					foreach (var t in types)
+					{
+						yield return new ServiceKnownTypeAttribute(t);
+					}
+
+					yield break;
+				}
+
 				yield return serviceKnownType;
 			}
 
@@ -109,6 +133,7 @@ namespace SoapCore.ServiceModel
 				yield return serviceKnownType;
 			}
 		}
+
 
 		private static SoapMethodParameterInfo CreateParameterInfo(ParameterInfo info, int index, ContractDescription contract)
 		{

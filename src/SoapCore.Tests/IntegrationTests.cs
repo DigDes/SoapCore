@@ -214,6 +214,19 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void ComplexModelInputFromServiceKnownTypeProvider()
+		{
+			var client = CreateClient();
+			var input = new ComplexModelInput()
+			{
+				StringProperty = "test"
+			};
+			var output = client.GetComplexModelInputFromKnownTypeProvider(input);
+			Assert.IsInstanceOfType(output, typeof(ComplexTreeModelInput));
+			Assert.AreEqual(input.StringProperty, output.Item.StringProperty);
+		}
+
+		[TestMethod]
 		public void ThrowsFaultException()
 		{
 			var client = CreateClient();
