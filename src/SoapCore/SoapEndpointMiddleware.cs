@@ -530,6 +530,7 @@ namespace SoapCore
 			{
 				responseMessage = new T_MESSAGE
 				{
+					StandAloneAttribute = _options.StandAloneAttribute,
 					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter),
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager
@@ -542,6 +543,7 @@ namespace SoapCore
 			{
 				responseMessage = new T_MESSAGE
 				{
+					StandAloneAttribute = _options.StandAloneAttribute,
 					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter),
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager

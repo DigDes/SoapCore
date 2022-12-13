@@ -20,6 +20,8 @@ namespace SoapCore
 
 		public System.Collections.Generic.Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; internal set; }
 
+		public bool? StandAloneAttribute { get; set; }
+
 		public override MessageHeaders Headers => Message.Headers;
 
 		public override MessageProperties Properties => Message.Properties;
@@ -32,7 +34,15 @@ namespace SoapCore
 
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
-			writer.WriteStartDocument();
+			if (StandAloneAttribute.HasValue)
+			{
+				writer.WriteStartDocument(StandAloneAttribute.Value);
+			}
+			else
+			{
+				writer.WriteStartDocument();
+			}
+
 			var prefix = Version.Envelope.NamespacePrefix(NamespaceManager);
 			writer.WriteStartElement(prefix, "Envelope", Version.Envelope.Namespace());
 			writer.WriteXmlnsAttribute(prefix, Version.Envelope.Namespace());

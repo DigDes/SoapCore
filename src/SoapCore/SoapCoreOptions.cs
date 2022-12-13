@@ -1,8 +1,8 @@
+using SoapCore.Extensibility;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
-using SoapCore.Extensibility;
 
 namespace SoapCore
 {
@@ -92,6 +92,12 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool OmitXmlDeclaration { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets a value indicating wheter to add the stand alone attribute in the XML declaration
+		/// <para>Defaults to false</para>
+		/// </summary>
+		public bool? StandAloneAttribute { get; set; } = false;
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to indent the Xml in responses

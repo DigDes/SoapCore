@@ -1,9 +1,9 @@
+using SoapCore.Extensibility;
+using SoapCore.Meta;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
-using SoapCore.Extensibility;
-using SoapCore.Meta;
 
 namespace SoapCore
 {
@@ -52,6 +52,8 @@ namespace SoapCore
 
 		public bool OmitXmlDeclaration { get; set; } = true;
 
+		public bool? StandAloneAttribute { get; set; } = false;
+
 		public bool IndentXml { get; set; } = true;
 
 		/// <summary>
@@ -86,6 +88,7 @@ namespace SoapCore
 				HttpPostEnabled = opt.HttpPostEnabled,
 				HttpsPostEnabled = opt.HttpsPostEnabled,
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
+				StandAloneAttribute = opt.StandAloneAttribute,
 				IndentXml = opt.IndentXml,
 				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
 				WsdlFileOptions = opt.WsdlFileOptions,
