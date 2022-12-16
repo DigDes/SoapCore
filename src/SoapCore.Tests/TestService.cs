@@ -183,5 +183,18 @@ namespace SoapCore.Tests
 		{
 			return "OK";
 		}
+
+		public IComplexTreeModelInput GetComplexModelInputFromKnownTypeProvider(ComplexModelInput value)
+		{
+			if (value is null)
+			{
+				throw new ArgumentNullException(nameof(value));
+			}
+
+			return new ComplexTreeModelInput()
+			{
+				Item = value
+			};
+		}
 	}
 }

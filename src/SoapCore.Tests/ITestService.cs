@@ -90,5 +90,9 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		string EmpryBody(EmptyMembers members);
+
+		[ServiceKnownType("GetKnownTypes", typeof(TestServiceKnownTypesProvider))]
+		[OperationContract]
+		IComplexTreeModelInput GetComplexModelInputFromKnownTypeProvider(ComplexModelInput value);
 	}
 }

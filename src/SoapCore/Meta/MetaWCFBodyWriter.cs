@@ -217,7 +217,7 @@ namespace SoapCore.Meta
 						throw new NotSupportedException($"Method `{knownType.MethodName}` doesn't exist on Type `{knownType.DeclaringType.FullName}`.");
 					}
 
-					var knownTypeList = method.Invoke(null, new object[0]) as IEnumerable;
+					var knownTypeList = method.Invoke(null, new object[]{(ICustomAttributeProvider)null}) as IEnumerable;
 					if (knownTypeList is null)
 					{
 						throw new NotSupportedException($"Method `{knownType.MethodName}` on Type `{knownType.DeclaringType.FullName}` returned null or not an IEnumerable.");
