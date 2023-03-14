@@ -149,7 +149,7 @@ services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
 	//pass the modified message on to the rest of the pipe.
 	var responseMessage = await next(message);
 
-	//Here you can inspect and modify the contents of returnMessage in the same way as the incoming message.
+	//Inspect and modify the contents of returnMessage in the same way as the incoming message.
 	//finish by returning the modified message.	
 
 	return responseMessage;
