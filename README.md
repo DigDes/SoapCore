@@ -129,7 +129,32 @@ If the WsdFileOptions parameter is supplied then this feature is enabled / used.
 In your ConfigureServices method, you can register some additional items to extend the pipeline:
 * services.AddSoapMessageInspector() - add a custom MessageInspector. This function is similar to the `IDispatchMessageInspector` in WCF. The newer `IMessageInspector2` interface allows you to register multiple inspectors, and to know which service was being called.
 * services.AddSingleton<MyOperatorInvoker>() - add a custom OperationInvoker. Similar to WCF's `IOperationInvoker` this allows you to override the invoking of a service operation, commonly to add custom logging or exception handling logic around it.
-* services.AddSoapMessageProcessor() - add a custom SoapMessageProcessor. Similar to ASP.NET Cores middlewares, this allows you to inspect the message on the way in and out. You can also short-circuit the message processing and return your own custom message instead.
+* services.AddSoapMessageProcessor() - add a custom SoapMessageProcessor. Similar to ASP.NET Cores middlewares, this allows you to inspect the message on the way in and out. You can also short-circuit the message processing and return your own custom message instead. Inspecting and modifying HttpContext is also possible
+
+#### Using ISoapMessageProcessor()
+```csharp
+//Add this to ConfigureServices in Startup.cs
+	
+services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
+{
+	var bufferedMessage = message.CreateBufferedCopy(int.MaxValue);
+	var msg = bufferedMessage.CreateMessage();
+	var reader = msg.GetReaderAtBodyContents();
+	var content = reader.ReadInnerXml();
+
+	//now you can inspect and modify the content at will.
+	//if you want to pass on the original message, use bufferedMessage.CreateMessage(); otherwise use one of the overloads of Message.CreateMessage() to create a new message
+	var message = bufferedMessage.CreateMessage();
+
+	//pass the modified message on to the rest of the pipe.
+	var responseMessage = await next(message);
+
+	//Here you can inspect and modify the contents of returnMessage in the same way as the incoming message.
+	//finish by returning the modified message.	
+
+	return responseMessage;
+}
+```
 
 #### How to get custom HTTP header in SoapCore service
 
