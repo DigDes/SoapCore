@@ -197,7 +197,7 @@ namespace SoapCore.Meta
 										? elementAttribute.ElementName
 										: parameterInfo.Parameter.GetCustomAttribute<MessageParameterAttribute>()?.Name ?? parameterInfo.Parameter.Name;
 				var isRequired = !parameterInfo.Parameter.IsOptional;
-				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, objectNamespace: elementAttribute?.Namespace ?? (parameterInfo.Namespace != "http://tempuri.org/" ? parameterInfo.Namespace : null), isRequired: isRequired);
+				AddSchemaType(writer, parameterInfo.Parameter.ParameterType, parameterName, objectNamespace: GetDataContractNamespace(parameterInfo.Parameter.ParameterType), isRequired: isRequired);
 			}
 		}
 
