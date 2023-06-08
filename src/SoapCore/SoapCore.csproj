@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
-		<Version>1.1.0.37</Version>
+		<Version>1.1.0.38</Version>
 		<Authors>Digital Design</Authors>
 		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
 		<PackageId>SoapCore</PackageId>
