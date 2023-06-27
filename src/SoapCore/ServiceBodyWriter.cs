@@ -116,9 +116,7 @@ namespace SoapCore
 					: xmlRootAttr.ElementName));
 
 				var xmlNs = _operation.ReturnNamespace ?? messageContractAttribute?.WrapperNamespace
-					?? (string.IsNullOrWhiteSpace(xmlRootAttr?.Namespace)
-					? _serviceNamespace
-					: xmlRootAttr.Namespace);
+					?? (xmlRootAttr?.Namespace ?? _serviceNamespace);
 
 				if (_operation.ReturnsChoice)
 				{
