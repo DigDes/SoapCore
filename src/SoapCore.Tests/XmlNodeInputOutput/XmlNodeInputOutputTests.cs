@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -39,7 +40,9 @@ namespace SoapCore.Tests.XmlNodeInputOutput
 				res.EnsureSuccessStatusCode();
 
 				var response = await res.Content.ReadAsStringAsync();
-				Assert.IsTrue(response.Replace("\r\n", string.Empty).Replace("  ", string.Empty).Contains(xmlInput));
+
+				//XML comes back as formatted, need to clear any newlines and replace any double spaces
+				Assert.IsTrue(response.Replace(System.Environment.NewLine, string.Empty).Replace("  ", string.Empty).Contains(xmlInput));
 			}
 		}
 
