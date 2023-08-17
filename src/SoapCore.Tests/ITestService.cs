@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.AspNetCore.Mvc;
 using SoapCore.Tests.Model;
 
@@ -94,5 +95,11 @@ namespace SoapCore.Tests
 		[ServiceKnownType("GetKnownTypes", typeof(TestServiceKnownTypesProvider))]
 		[OperationContract]
 		IComplexTreeModelInput GetComplexModelInputFromKnownTypeProvider(ComplexModelInput value);
+
+		[OperationContract]
+		XmlElement ReturnXmlElement();
+
+		[OperationContract]
+		XmlElement XmlElementInput(XmlElement input);
 	}
 }
