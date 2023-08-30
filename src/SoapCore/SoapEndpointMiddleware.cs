@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security.Authentication;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
@@ -14,6 +15,8 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,7 +77,7 @@ namespace SoapCore
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
 				var encoderOptions = options.EncoderOptions[i];
-				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions.MessageVersion, encoderOptions.WriteEncoding, encoderOptions.OverwriteResponseContentType,  encoderOptions.ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, encoderOptions.XmlNamespaceOverrides, encoderOptions.BindingName, encoderOptions.PortName, encoderOptions.MaxSoapHeaderSize);
+				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions.MessageVersion, encoderOptions.WriteEncoding, encoderOptions.OverwriteResponseContentType, encoderOptions.ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, encoderOptions.XmlNamespaceOverrides, encoderOptions.BindingName, encoderOptions.PortName, encoderOptions.MaxSoapHeaderSize);
 			}
 		}
 
@@ -302,12 +305,21 @@ namespace SoapCore
 			}
 			catch (Exception ex)
 			{
+				var status = StatusCodes.Status500InternalServerError;
 				if (ex is TargetInvocationException targetInvocationException)
 				{
 					ex = targetInvocationException.InnerException;
 				}
+				else if (ex is AuthenticationException)
+				{
+					status = StatusCodes.Status401Unauthorized;
+				}
+				else if (ex is UnauthorizedAccessException)
+				{
+					status = StatusCodes.Status403Forbidden;
+				}
 
-				responseMessage = CreateErrorResponseMessage(ex, StatusCodes.Status500InternalServerError, serviceProvider, requestMessage, messageEncoder, httpContext);
+				responseMessage = CreateErrorResponseMessage(ex, status, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
 
 			if (responseMessage != null)
@@ -373,10 +385,32 @@ namespace SoapCore
 			var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 			var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
-			if (operation.IsOneWay)
+			// If response has an HTTP status code attached
+			if (responseObject is IConvertToActionResult convertToActionResult)
+			{
+				responseObject = convertToActionResult.Convert();
+			}
+
+			if (responseObject is IActionResult actionResult)
+			{
+				var type = actionResult.GetType();
+				context.Response.StatusCode = (int)(actionResult
+					.GetType()
+					.GetProperty("StatusCode")?
+					.GetValue(actionResult, null) ?? HttpStatusCode.OK);
+				responseObject = actionResult
+					.GetType()
+					.GetProperty("Value")?
+					.GetValue(actionResult, null);
+			}
+			else if (operation.IsOneWay)
 			{
 				context.Response.StatusCode = (int)HttpStatusCode.Accepted;
 				return;
+			}
+			else
+			{
+				context.Response.StatusCode = (int)HttpStatusCode.OK;
 			}
 
 			var resultOutDictionary = new Dictionary<string, object>();
@@ -387,7 +421,6 @@ namespace SoapCore
 
 			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary, true);
 
-			context.Response.StatusCode = (int)HttpStatusCode.OK;
 			context.Response.ContentType = "text/xml";
 
 			using var ms = new MemoryStream();
@@ -462,7 +495,26 @@ namespace SoapCore
 				var invoker = serviceProvider.GetService<IOperationInvoker>() ?? new DefaultOperationInvoker();
 				var responseObject = await invoker.InvokeAsync(operation.DispatchMethod, serviceInstance, arguments);
 
-				if (operation.IsOneWay)
+				// If response has an HTTP status code attached
+				if (responseObject is IConvertToActionResult convertToActionResult)
+				{
+					responseObject = convertToActionResult.Convert();
+				}
+
+				if (responseObject is IActionResult actionResult)
+				{
+					var type = actionResult.GetType();
+					httpContext.Response.StatusCode = (int)(actionResult
+						.GetType()
+						.GetProperty("StatusCode")?
+						.GetValue(actionResult, null) ?? HttpStatusCode.OK);
+					responseObject = null;
+					responseObject = actionResult
+						.GetType()
+						.GetProperty("Value")?
+						.GetValue(actionResult, null);
+				}
+				else if (operation.IsOneWay)
 				{
 					httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
 					return null;

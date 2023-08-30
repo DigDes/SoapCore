@@ -304,15 +304,27 @@ namespace SoapCore
 				else
 				{
 					// When operation return type is `System.Object` the `DataContractSerializer` adds `i:type` attribute with the correct object type
-					Type resultType = _operation.ReturnType;
+					Type operationResultType = _operation.ReturnType;
+					Type resultType = _result.GetType();
 					IEnumerable<Type> serviceKnownTypes = _operation
 						.GetServiceKnownTypesHierarchy()
 						.Select(x => x.Type);
 
 					// When `KnownTypeAttribute` is present the `DataContractSerializer` adds `i:type` attribute with the correct object type
-					DataContractSerializer serializer = resultType.TryGetBaseTypeWithKnownTypes(out Type resultBaseTypeWithKnownTypes)
-						? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace, serviceKnownTypes)
-						: new DataContractSerializer(resultType, _resultName, _serviceNamespace, serviceKnownTypes);
+					DataContractSerializer serializer;
+
+					if (operationResultType.IsAssignableFrom(resultType))
+					{
+						serializer = operationResultType.TryGetBaseTypeWithKnownTypes(out Type operationResultBaseTypeWithKnownTypes)
+							? new DataContractSerializer(operationResultBaseTypeWithKnownTypes, _resultName, _serviceNamespace, serviceKnownTypes)
+							: new DataContractSerializer(operationResultType, _resultName, _serviceNamespace, serviceKnownTypes);
+					}
+					else
+					{
+						serializer = resultType.TryGetBaseTypeWithKnownTypes(out Type resultBaseTypeWithKnownTypes)
+							? new DataContractSerializer(resultBaseTypeWithKnownTypes, _resultName, _serviceNamespace, serviceKnownTypes)
+							: new DataContractSerializer(resultType, _resultName, _serviceNamespace, serviceKnownTypes);
+					}
 
 					serializer.WriteObject(writer, _result);
 				}
