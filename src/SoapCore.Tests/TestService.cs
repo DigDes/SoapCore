@@ -4,7 +4,6 @@ using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoapCore.Tests.Model;
 
@@ -242,6 +241,26 @@ namespace SoapCore.Tests
 		}
 
 		public IActionResult JwtAuthenticationAndAuthorizationIActionResultJustAuthenticated(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public IActionResult JwtAuthenticationAndAuthorizationIActionResultUsingPolicy(ComplexModelInput payload)
 		{
 			if (payload == null)
 			{

@@ -13,6 +13,9 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		public abstract string JwtAuthenticationAndAuthorizationIActionResultJustAuthenticated(ComplexModelInput payload);
 
 		[OperationContract]
+		public abstract string JwtAuthenticationAndAuthorizationIActionResultUsingPolicy(ComplexModelInput payload);
+
+		[OperationContract]
 		public abstract string JwtAuthenticationAndAuthorizationIActionResult(ComplexModelInput payload);
 
 		[OperationContract]

@@ -24,7 +24,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 			{
 				var host = new WebHostBuilder()
 					.UseKestrel()
-					.UseUrls("http://localhost:5052")
+					.UseUrls("http://localhost:5054")
 					.UseStartup<Startup>()
 					.Build();
 				host.Run();
@@ -33,7 +33,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 
 		public ITestService CreateClient(string authorizationHeaderValue = null)
 		{
-			string address = string.Format("http://{0}:5052/Service.svc", "localhost");
+			string address = string.Format("http://{0}:5054/Service.svc", "localhost");
 
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(address));
@@ -130,7 +130,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		}
 
 		[TestMethod]
-		public void CheckNoAuthenticationProvidedAndAuthorizationRequired()
+		public void CheckNoAuthenticationProvidedAndRoleAuthorizationRequired()
 		{
 			var inputModel = new ComplexModelInput
 			{
@@ -152,7 +152,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		}
 
 		[TestMethod]
-		public void CheckWrongClaimsProvidedAndAuthorizationRequired()
+		public void CheckWrongRoleProvidedAndRoleAuthorizationRequired()
 		{
 			var inputModel = new ComplexModelInput
 			{
@@ -179,7 +179,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		}
 
 		[TestMethod]
-		public void CheckRightClaimsProvidedAndAuthorizationRequired()
+		public void CheckRightRoleProvidedAndRoleAuthorizationRequired()
 		{
 			var inputModel = new ComplexModelInput
 			{
@@ -193,6 +193,77 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 			{
 				new Claim(ClaimTypes.Name, "user1"),
 				new Claim(ClaimTypes.Role, "role1"),
+			}));
+			var result = client.JwtAuthenticationAndAuthorizationIActionResult(inputModel);
+			Assert.IsNotNull(result);
+			Assert.AreEqual(result, "Number is even.");
+		}
+
+		[TestMethod]
+		public void CheckNoAuthenticationProvidedAndPolicyAuthorizationRequired()
+		{
+			var inputModel = new ComplexModelInput
+			{
+				StringProperty = "string property test value",
+				IntProperty = 124,
+				ListProperty = new List<string> { "test", "list", "of", "strings" },
+				DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+			};
+
+			try
+			{
+				var client = CreateClient();
+				var result = client.JwtAuthenticationAndAuthorizationIActionResult(inputModel);
+			}
+			catch (System.ServiceModel.Security.MessageSecurityException ex)
+			{
+				Assert.IsTrue(ex.Message.Contains("request is unauthorized"));
+			}
+		}
+
+		[TestMethod]
+		public void CheckWrongClaimsProvidedAndPolicyAuthorizationRequired()
+		{
+			var inputModel = new ComplexModelInput
+			{
+				StringProperty = "string property test value",
+				IntProperty = 124,
+				ListProperty = new List<string> { "test", "list", "of", "strings" },
+				DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+			};
+
+			try
+			{
+				var client = CreateClient("Bearer " + GenerateToken(new List<Claim>
+				{
+					new Claim(ClaimTypes.Name, "user1"),
+					new Claim(ClaimTypes.Role, "role2"),
+				}));
+				var result = client.JwtAuthenticationAndAuthorizationIActionResult(inputModel);
+			}
+			catch (System.ServiceModel.Security.MessageSecurityException ex)
+			{
+				Console.WriteLine(ex);
+				Assert.IsTrue(ex.Message.Contains("request was forbidden"));
+			}
+		}
+
+		[TestMethod]
+		public void CheckRightClaimsProvidedAndPolicyAuthorizationRequired()
+		{
+			var inputModel = new ComplexModelInput
+			{
+				StringProperty = "string property test value",
+				IntProperty = 124,
+				ListProperty = new List<string> { "test", "list", "of", "strings" },
+				DateTimeOffsetProperty = new DateTimeOffset(2018, 12, 31, 13, 59, 59, TimeSpan.FromHours(1))
+			};
+
+			var client = CreateClient("Bearer " + GenerateToken(new List<Claim>
+			{
+				new Claim(ClaimTypes.Name, "user1"),
+				new Claim(ClaimTypes.Role, "role1"),
+				new Claim("someclaim", "somevalue"),
 			}));
 			var result = client.JwtAuthenticationAndAuthorizationIActionResult(inputModel);
 			Assert.IsNotNull(result);

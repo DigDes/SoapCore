@@ -55,13 +55,18 @@ namespace SoapCore.Tests
 				{ "/ServiceWithDifferentEncodings.asmx".ToLowerInvariant(), typeof(TestService) },
 				{ "/ServiceWithOverwrittenContentType.asmx".ToLowerInvariant(), typeof(TestService) },
 			}));
+			services.AddAuthorization(options =>
+			{
+				options.AddPolicy("something", policy => policy.RequireClaim("someclaim", "somevalue"));
+			});
 		}
 
 #if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseAuthentication();
-			app.UseMiddleware<RequestResponseLoggingMiddleware>();
+
+			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
 				app2.UseSoapEndpoint<TestService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
@@ -111,7 +116,7 @@ namespace SoapCore.Tests
 			app.UseRouting();
 			app.UseAuthentication();
 
-			app.UseMiddleware<RequestResponseLoggingMiddleware>();
+			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction") || ctx.Request.ContentType.StartsWith("multipart"), app2 =>
 			{
 				app2.UseRouting();
