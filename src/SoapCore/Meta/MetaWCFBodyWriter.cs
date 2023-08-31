@@ -11,6 +11,8 @@ using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
@@ -217,7 +219,7 @@ namespace SoapCore.Meta
 						throw new NotSupportedException($"Method `{knownType.MethodName}` doesn't exist on Type `{knownType.DeclaringType.FullName}`.");
 					}
 
-					var knownTypeList = method.Invoke(null, new object[]{(ICustomAttributeProvider)null}) as IEnumerable;
+					var knownTypeList = method.Invoke(null, new object[] { (ICustomAttributeProvider)null }) as IEnumerable;
 					if (knownTypeList is null)
 					{
 						throw new NotSupportedException($"Method `{knownType.MethodName}` on Type `{knownType.DeclaringType.FullName}` returned null or not an IEnumerable.");
@@ -1179,6 +1181,20 @@ namespace SoapCore.Meta
 
 		private void AddSchemaType(XmlDictionaryWriter writer, Type type, string name, bool isArray = false, string objectNamespace = null, bool isRequired = false)
 		{
+			if (typeof(IActionResult).IsAssignableFrom(type) || typeof(IConvertToActionResult).IsAssignableFrom(type))
+			{
+				var genericArgs = type.GetGenericArguments();
+
+				if (genericArgs.Length > 0)
+				{
+					type = genericArgs[0];
+				}
+				else
+				{
+					type = typeof(object);
+				}
+			}
+
 			var typeInfo = type.GetTypeInfo();
 			var typeName = GetTypeName(type);
 

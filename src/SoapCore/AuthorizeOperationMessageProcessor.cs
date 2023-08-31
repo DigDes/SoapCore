@@ -18,7 +18,7 @@ using SoapCore.ServiceModel;
 
 namespace RBC.VifInterfaceWebServices.Middlewares
 {
-	public class AuthorizeOperationMessageInspector : ISoapMessageProcessor
+	public class AuthorizeOperationMessageProcessor : ISoapMessageProcessor
 	{
 		/// <summary>
 		/// A dictionary that has the path of the endpoint as Key and the corresponding type as the Value. Similar to using the UseSoapEndpoint extension function.
@@ -26,10 +26,10 @@ namespace RBC.VifInterfaceWebServices.Middlewares
 		private readonly Dictionary<string, Type> _pathTypes;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="AuthorizeOperationMessageInspector"/> class.
+		/// Initializes a new instance of the <see cref="AuthorizeOperationMessageProcessor"/> class.
 		/// </summary>
 		/// <param name="pathAndTypes">A dictionary that has the path of the endpoint as Key and the corresponding type as Value. Similar to using the UseSoapEndpoint extension function.</param>
-		public AuthorizeOperationMessageInspector(Dictionary<string, Type> pathAndTypes)
+		public AuthorizeOperationMessageProcessor(Dictionary<string, Type> pathAndTypes)
 		{
 			_pathTypes = pathAndTypes;
 		}
@@ -80,10 +80,10 @@ namespace RBC.VifInterfaceWebServices.Middlewares
 				authorized = authAttrs.Count == 0;
 			}
 
+			var requirements = new List<IAuthorizationRequirement>();
 			if (!authorized)
 			{
 				// Get conditions
-				var requirements = new List<IAuthorizationRequirement>();
 				if (authAttrs.Count > 0)
 				{
 					var authResult = await httpContext.AuthenticateAsync();
@@ -112,6 +112,11 @@ namespace RBC.VifInterfaceWebServices.Middlewares
 					requirements.AddRange(policy.Requirements);
 				}
 
+				authorized = requirements.Count == 0;
+			}
+
+			if (!authorized)
+			{
 				// Check policies
 				var contextFactory = httpContext.RequestServices.GetService<IAuthorizationHandlerContextFactory>();
 				var handlers = httpContext.RequestServices.GetServices<IAuthorizationHandler>();

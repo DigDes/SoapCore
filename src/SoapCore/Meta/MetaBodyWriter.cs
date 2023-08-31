@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using SoapCore.ServiceModel;
 
 namespace SoapCore.Meta
@@ -912,6 +914,22 @@ namespace SoapCore.Meta
 		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null)
 		{
 			var type = toBuild.Type;
+
+			if (typeof(IActionResult).IsAssignableFrom(type) || typeof(IConvertToActionResult).IsAssignableFrom(type))
+			{
+				var genericArgs = type.GetGenericArguments();
+
+				if (genericArgs.Length > 0)
+				{
+					type = genericArgs[0];
+				}
+				else
+				{
+					type = typeof(object);
+				}
+
+				toBuild = new TypeToBuild(type);
+			}
 
 			if (type.IsByRef)
 			{

@@ -445,6 +445,39 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(myStringElement);
 		}
 
+		[TestMethod]
+		public void CheckIActionResultInterfaceDataContract()
+		{
+			StartService(typeof(ActionResultContractService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var iactionReultResponse = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("IActionResultTestResult") == true);
+			Assert.IsNotNull(iactionReultResponse);
+			Assert.AreEqual("xs:anyType", iactionReultResponse.Attribute("type").Value);
+
+			var actionReultResponse = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ActionResultTestResult") == true);
+			Assert.IsNotNull(actionReultResponse);
+			Assert.AreEqual("xs:anyType", actionReultResponse.Attribute("type").Value);
+
+			var genericActionReultResponse = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("GenericActionResultTestResult") == true);
+			Assert.IsNotNull(genericActionReultResponse);
+			Assert.AreEqual("xs:string", genericActionReultResponse.Attribute("type").Value);
+
+			var complexGenericActionReultResponse = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ComplexGenericActionResultTestResult") == true);
+			Assert.IsNotNull(complexGenericActionReultResponse);
+			Assert.AreEqual("http://schemas.datacontract.org/2004/07/SoapCore.Tests.Model", complexGenericActionReultResponse.Attribute(XNamespace.Xmlns + "q1").Value);
+			Assert.AreEqual("q1:ComplexModelInput", complexGenericActionReultResponse.Attribute("type").Value);
+
+			var complexTypeList = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("ComplexModelInput") == true);
+			Assert.IsNotNull(complexTypeList);
+
+			var myStringElement = GetElements(complexTypeList, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("StringProperty") == true);
+			Assert.IsNotNull(myStringElement);
+		}
+
 		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
 		[DataRow(SoapSerializer.DataContractSerializer)]
