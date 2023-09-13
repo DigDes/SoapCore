@@ -989,7 +989,7 @@ namespace SoapCore.Meta
 				{
 					// skip occurence
 				}
-				else if (isArray)
+				else if (isArray && type.Name != "String" && type.Name != "Byte[]")
 				{
 					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
