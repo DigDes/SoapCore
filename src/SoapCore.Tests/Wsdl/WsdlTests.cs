@@ -710,7 +710,7 @@ namespace SoapCore.Tests.Wsdl
 			var referenceToExistingDynamicType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='DataList3' and @type='tns:ArrayOfTestDataTypeData']", nm);
 			Assert.IsNotNull(referenceToExistingDynamicType);
 
-			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
+			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data3' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
 			Assert.IsNotNull(selfContainedType);
 
 			var dynamicTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData']/xsd:sequence/xsd:element[@name='Data']", nm);
