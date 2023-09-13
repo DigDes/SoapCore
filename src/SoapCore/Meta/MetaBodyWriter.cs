@@ -846,9 +846,11 @@ namespace SoapCore.Meta
 
 			var elementItem = member.GetCustomAttribute<XmlElementAttribute>();
 			bool isUnqualified = elementItem?.Form == XmlSchemaForm.Unqualified;
+			string elementNameFromAttribute = null;
 			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
 			{
-				toBuild.ChildElementName = elementItem.ElementName;
+				elementNameFromAttribute = elementItem.ElementName;
+				toBuild.ChildElementName = elementNameFromAttribute;
 				createListWithoutProxyType = toBuild.Type.IsEnumerableType();
 			}
 
@@ -889,7 +891,7 @@ namespace SoapCore.Meta
 						defaultValue = defaultAttributeValue.ToString();
 					}
 				}
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? elementNameFromAttribute ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
 			}
 		}
 
