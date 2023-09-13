@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.AspNetCore.Mvc;
 using SoapCore.Tests.Model;
 
@@ -195,6 +196,28 @@ namespace SoapCore.Tests
 			{
 				Item = value
 			};
+		}
+
+		public XmlElement ReturnXmlElement()
+		{
+			XmlDocument xdOutput = new XmlDocument();
+			xdOutput.LoadXml("<TestXml/>");
+			return xdOutput.DocumentElement;
+		}
+
+		public XmlElement XmlElementInput(XmlElement input)
+		{
+			XmlDocument xdOutput = new XmlDocument();
+			if (input != null)
+			{
+				xdOutput.LoadXml("<Success/>");
+			}
+			else
+			{
+				xdOutput.LoadXml("<Failed/>");
+			}
+
+			return xdOutput.DocumentElement;
 		}
 	}
 }
