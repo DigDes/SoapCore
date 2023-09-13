@@ -526,7 +526,27 @@ namespace SoapCore.Tests.Wsdl
 			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(soapSerializer);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
-			Assert.IsTrue(wsdl.Contains("xsd:string"));
+
+			var root = XElement.Parse(wsdl);
+
+			// Check that method response element exists for xmlserializer meta
+			var testComplexType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "ComplexType");
+			Assert.IsNotNull(testComplexType);
+
+			var testSequence = GetElements(testComplexType, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(testSequence);
+
+			var testElements = GetElements(testSequence, _xmlSchema + "element").ToArray();
+			var stringprop = testElements.SingleOrDefault(a => a.Attribute("name").Value == "stringprop");
+			var byteprop = testElements.SingleOrDefault(a => a.Attribute("name").Value == "mybytes");
+
+			Assert.IsNotNull(stringprop);
+			Assert.IsTrue(stringprop.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(stringprop.Attribute("maxOccurs").Value == "1");
+
+			Assert.IsNotNull(byteprop);
+			Assert.IsTrue(byteprop.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(byteprop.Attribute("maxOccurs").Value == "1");
 		}
 
 		[DataTestMethod]
