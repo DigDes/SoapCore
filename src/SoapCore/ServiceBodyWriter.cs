@@ -8,6 +8,7 @@ using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using SoapCore.Meta;
 using SoapCore.ServiceModel;
@@ -115,9 +116,7 @@ namespace SoapCore
 					: xmlRootAttr.ElementName));
 
 				var xmlNs = _operation.ReturnNamespace ?? messageContractAttribute?.WrapperNamespace
-					?? (string.IsNullOrWhiteSpace(xmlRootAttr?.Namespace)
-					? _serviceNamespace
-					: xmlRootAttr.Namespace);
+					?? (xmlRootAttr?.Namespace ?? _serviceNamespace);
 
 				if (_operation.ReturnsChoice)
 				{
@@ -200,8 +199,20 @@ namespace SoapCore
 						}
 						else
 						{
+							if (_result is XmlNode xmlNode)
+							{
+								writer.WriteStartElement(_resultName, _serviceNamespace);
+								xmlNode.WriteTo(writer);
+								writer.WriteEndElement();
+							}
+							else if (_result is XElement xElement)
+							{
+								writer.WriteStartElement(_resultName, _serviceNamespace);
+								xElement.WriteTo(writer);
+								writer.WriteEndElement();
+							}
 							//https://github.com/DigDes/SoapCore/issues/385
-							if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
+							else if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 							{
 								var importer = new SoapReflectionImporter(_serviceNamespace);
 								var typeMapping = importer.ImportTypeMapping(resultType);

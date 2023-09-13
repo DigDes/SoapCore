@@ -4,6 +4,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SoapCore.Tests.Model;
@@ -224,6 +225,26 @@ namespace SoapCore.Tests
 			var output = client.GetComplexModelInputFromKnownTypeProvider(input);
 			Assert.IsInstanceOfType(output, typeof(ComplexTreeModelInput));
 			Assert.AreEqual(input.StringProperty, output.Item.StringProperty);
+		}
+
+		[TestMethod]
+		public void ReturnXmlElement()
+		{
+			var client = CreateClient();
+			var output = client.ReturnXmlElement();
+			Assert.IsInstanceOfType(output, typeof(XmlElement));
+			Assert.AreEqual(output.OuterXml, "<TestXml xmlns=\"\" />");
+		}
+
+		[TestMethod]
+		public void XmlElemetInput()
+		{
+			var client = CreateClient();
+			XmlDocument xdInput = new XmlDocument();
+			xdInput.LoadXml("<XmlTestInput/>");
+			var output = client.XmlElementInput(xdInput.DocumentElement);
+			Assert.IsInstanceOfType(output, typeof(XmlElement));
+			Assert.IsTrue(output.OuterXml.Contains("Success"));
 		}
 
 		[TestMethod]
