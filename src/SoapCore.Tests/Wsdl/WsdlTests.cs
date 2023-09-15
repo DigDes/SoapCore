@@ -518,6 +518,39 @@ namespace SoapCore.Tests.Wsdl
 
 		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckOccuranceOfStringType(SoapSerializer soapSerializer)
+		{
+			//StartService(typeof(StringListService));
+			//var wsdl = GetWsdl();
+			//StopServer();
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(soapSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// Check that method response element exists for xmlserializer meta
+			var testComplexType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "ComplexType");
+			Assert.IsNotNull(testComplexType);
+
+			var testSequence = GetElements(testComplexType, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(testSequence);
+
+			var testElements = GetElements(testSequence, _xmlSchema + "element").ToArray();
+			var stringprop = testElements.SingleOrDefault(a => a.Attribute("name").Value == "stringprop");
+			var byteprop = testElements.SingleOrDefault(a => a.Attribute("name").Value == "mybytes");
+
+			Assert.IsNotNull(stringprop);
+			Assert.IsTrue(stringprop.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(stringprop.Attribute("maxOccurs").Value == "1");
+
+			Assert.IsNotNull(byteprop);
+			Assert.IsTrue(byteprop.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(byteprop.Attribute("maxOccurs").Value == "1");
+		}
+
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckUnqualifiedMembersService(SoapSerializer soapSerializer)
 		{
@@ -677,7 +710,7 @@ namespace SoapCore.Tests.Wsdl
 			var referenceToExistingDynamicType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='DataList3' and @type='tns:ArrayOfTestDataTypeData']", nm);
 			Assert.IsNotNull(referenceToExistingDynamicType);
 
-			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
+			var selfContainedType = root.XPathSelectElement("//xsd:complexType[@name='TestResponseType']/xsd:sequence/xsd:element[@name='Data3' and @minOccurs='0'and @maxOccurs='unbounded' and not(@type)]", nm);
 			Assert.IsNotNull(selfContainedType);
 
 			var dynamicTypeElement = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfTestDataTypeData']/xsd:sequence/xsd:element[@name='Data']", nm);
