@@ -864,7 +864,7 @@ namespace SoapCore.Meta
 					name = member.Name;
 				}
 
-				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified);
+				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified, xmlElementAttribute: elementItem);
 			}
 			else if (messageBodyMemberAttribute != null)
 			{
@@ -874,7 +874,7 @@ namespace SoapCore.Meta
 					name = member.Name;
 				}
 
-				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
+				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, xmlElementAttribute: elementItem);
 			}
 			else
 			{
@@ -891,7 +891,8 @@ namespace SoapCore.Meta
 						defaultValue = defaultAttributeValue.ToString();
 					}
 				}
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? elementNameFromAttribute ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
+
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? elementNameFromAttribute ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue, xmlElementAttribute: elementItem);
 			}
 		}
 
@@ -911,7 +912,7 @@ namespace SoapCore.Meta
 			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null, XmlElementAttribute xmlElementAttribute = null)
 		{
 			var type = toBuild.Type;
 
@@ -951,7 +952,18 @@ namespace SoapCore.Meta
 			{
 				XmlQualifiedName xsTypename;
 				string ns = null;
-				if (typeof(DateTimeOffset).IsAssignableFrom(type))
+				if (xmlElementAttribute != null && !string.IsNullOrWhiteSpace(xmlElementAttribute.DataType) && !string.IsNullOrWhiteSpace(xmlElementAttribute.Namespace))
+				{
+					ns = _xmlNamespaceManager.LookupPrefix(xmlElementAttribute.Namespace);
+					if (string.IsNullOrEmpty(ns))
+					{
+						ns = $"q{_namespaceCounter++}";
+						writer.WriteXmlnsAttribute(ns, xmlElementAttribute.Namespace);
+					}
+
+					xsTypename = new XmlQualifiedName(xmlElementAttribute.DataType, xmlElementAttribute.Namespace);
+				}
+				else if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
 					if (string.IsNullOrEmpty(name))
 					{

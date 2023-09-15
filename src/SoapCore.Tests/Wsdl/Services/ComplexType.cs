@@ -12,5 +12,8 @@ namespace SoapCore.Tests.Wsdl.Services
 		public string StringProperty { get; set; }
 		[XmlElement(ElementName = "mybytes")]
 		public byte[] ByteArrayProperty { get; set; }
+
+		[XmlElement(DataType = "guid", Namespace = "http://microsoft.com/wsdl/types/")]
+		public Guid MyGuid { get; set; }
 	}
 }
