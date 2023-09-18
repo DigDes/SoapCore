@@ -952,7 +952,7 @@ namespace SoapCore.Meta
 			{
 				XmlQualifiedName xsTypename;
 				string ns = null;
-				if (xmlElementAttribute != null && !string.IsNullOrWhiteSpace(xmlElementAttribute.DataType) && !string.IsNullOrWhiteSpace(xmlElementAttribute.Namespace))
+				if (xmlElementAttribute != null && xmlElementAttribute.Namespace == "http://microsoft.com/wsdl/types/" && type == typeof(Guid))
 				{
 					ns = _xmlNamespaceManager.LookupPrefix(xmlElementAttribute.Namespace);
 					if (string.IsNullOrEmpty(ns))
