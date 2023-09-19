@@ -961,7 +961,7 @@ namespace SoapCore.Meta
 						writer.WriteXmlnsAttribute(ns, xmlElementAttribute.Namespace);
 					}
 
-					xsTypename = new XmlQualifiedName(xmlElementAttribute.DataType, xmlElementAttribute.Namespace);
+					xsTypename = new XmlQualifiedName("guid", xmlElementAttribute.Namespace);
 				}
 				else if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
