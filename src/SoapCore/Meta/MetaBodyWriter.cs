@@ -33,6 +33,7 @@ namespace SoapCore.Meta
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
 		private bool _buildDateTimeOffset;
+		private bool _buildMicrosoftGuid = false;
 
 		[Obsolete]
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null)
@@ -541,6 +542,29 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // schema
 			}
 
+			if(_buildMicrosoftGuid)
+			{
+				writer.WriteStartElement("schema", Namespaces.XMLNS_XSD);
+				writer.WriteAttributeString("elementFormDefault", "qualified");
+				writer.WriteAttributeString("targetNamespace", "http://microsoft.com/wsdl/types/");
+
+				writer.WriteStartElement("simpleType", Namespaces.XMLNS_XSD);
+				writer.WriteAttributeString("name", "guid");
+
+				writer.WriteStartElement("restriction", Namespaces.XMLNS_XSD);
+				writer.WriteAttributeString("base", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
+
+				writer.WriteStartElement("pattern", Namespaces.XMLNS_XSD);
+				writer.WriteAttributeString("value", "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+				writer.WriteEndElement(); // pattern
+
+				writer.WriteEndElement(); // restriction
+
+				writer.WriteEndElement(); // simpleType
+
+				writer.WriteEndElement(); // schema
+			}
+
 			writer.WriteEndElement(); // wsdl:types
 		}
 
@@ -962,6 +986,7 @@ namespace SoapCore.Meta
 					}
 
 					xsTypename = new XmlQualifiedName("guid", xmlElementAttribute.Namespace);
+					_buildMicrosoftGuid = true;
 				}
 				else if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
