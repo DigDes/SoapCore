@@ -13,7 +13,6 @@ namespace SoapCore.Tests.Wsdl.Services
 		[XmlElement(ElementName = "mybytes")]
 		public byte[] ByteArrayProperty { get; set; }
 
-		[XmlElement(Namespace = "http://microsoft.com/wsdl/types/")]
 		public Guid MyGuid { get; set; }
 	}
 }

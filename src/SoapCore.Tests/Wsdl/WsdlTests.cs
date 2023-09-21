@@ -523,7 +523,7 @@ namespace SoapCore.Tests.Wsdl
 			//StartService(typeof(StringListService));
 			//var wsdl = GetWsdl();
 			//StopServer();
-			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(soapSerializer);
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(soapSerializer, useMicrosoftGuid: true);
 			Trace.TraceInformation(wsdl);
 			Assert.IsNotNull(wsdl);
 
@@ -880,7 +880,7 @@ namespace SoapCore.Tests.Wsdl
 			}
 		}
 
-		private async Task<string> GetWsdlFromMetaBodyWriter<T>(SoapSerializer serializer, string bindingName = null, string portName = null)
+		private async Task<string> GetWsdlFromMetaBodyWriter<T>(SoapSerializer serializer, string bindingName = null, string portName = null, bool useMicrosoftGuid = false)
 		{
 			var service = new ServiceDescription(typeof(T));
 			var baseUrl = "http://tempuri.org/";
@@ -888,7 +888,7 @@ namespace SoapCore.Tests.Wsdl
 			var defaultBindingName = !string.IsNullOrWhiteSpace(bindingName) ? bindingName : "BasicHttpBinding";
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
 				? new MetaWCFBodyWriter(service, baseUrl, defaultBindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter
-				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, defaultBindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter;
+				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, defaultBindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }, useMicrosoftGuid) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, Encoding.UTF8, false, XmlDictionaryReaderQuotas.Max, false, true, false, null, bindingName, portName);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, defaultBindingName, false);

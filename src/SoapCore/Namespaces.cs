@@ -26,6 +26,7 @@ namespace SoapCore
 		public const string TRANSPORT_SCHEMA = "http://schemas.xmlsoap.org/soap/http";
 		public const string SOAP11_ENVELOPE_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 		public const string SOAP12_ENVELOPE_NS = "http://www.w3.org/2003/05/soap-envelope";
+		public const string MICROSOFT_TYPES = "http://microsoft.com/wsdl/types/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
 		public static void AddDefaultNamespaces(XmlNamespaceManager xmlNamespaceManager)

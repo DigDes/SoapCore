@@ -42,11 +42,13 @@ namespace SoapCore.Meta
 				baseUrl,
 				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
 				binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
-				new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) })
+				new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) },
+				false)
+
 		{
 		}
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, SoapBindingInfo[] soapBindings) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -63,6 +65,17 @@ namespace SoapCore.Meta
 			BindingName = bindingName;
 			PortName = bindingName;
 			SoapBindings = soapBindings;
+			_buildMicrosoftGuid = buildMicrosoftGuid;
+
+			if (_buildMicrosoftGuid)
+			{
+				var ns = _xmlNamespaceManager.LookupPrefix(Namespaces.MICROSOFT_TYPES);
+				if (string.IsNullOrEmpty(ns))
+				{
+					ns = $"q{_namespaceCounter++}";
+					_xmlNamespaceManager.AddNamespace(ns, Namespaces.MICROSOFT_TYPES);
+				}
+			}
 		}
 
 		private SoapBindingInfo[] SoapBindings { get; }
@@ -546,7 +559,7 @@ namespace SoapCore.Meta
 			{
 				writer.WriteStartElement("schema", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("elementFormDefault", "qualified");
-				writer.WriteAttributeString("targetNamespace", "http://microsoft.com/wsdl/types/");
+				writer.WriteAttributeString("targetNamespace", Namespaces.MICROSOFT_TYPES);
 
 				writer.WriteStartElement("simpleType", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("name", "guid");
@@ -976,17 +989,9 @@ namespace SoapCore.Meta
 			{
 				XmlQualifiedName xsTypename;
 				string ns = null;
-				if (xmlElementAttribute != null && xmlElementAttribute.Namespace == "http://microsoft.com/wsdl/types/" && type == typeof(Guid))
+				if (type == typeof(Guid) && _buildMicrosoftGuid)
 				{
-					ns = _xmlNamespaceManager.LookupPrefix(xmlElementAttribute.Namespace);
-					if (string.IsNullOrEmpty(ns))
-					{
-						ns = $"q{_namespaceCounter++}";
-						writer.WriteXmlnsAttribute(ns, xmlElementAttribute.Namespace);
-					}
-
-					xsTypename = new XmlQualifiedName("guid", xmlElementAttribute.Namespace);
-					_buildMicrosoftGuid = true;
+					xsTypename = new XmlQualifiedName("guid", Namespaces.MICROSOFT_TYPES);
 				}
 				else if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
