@@ -1014,8 +1014,7 @@ namespace SoapCore
 
 		private XmlNamespaceManager GetXmlNamespaceManager(SoapMessageEncoder messageEncoder)
 		{
-			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
-			Namespaces.AddDefaultNamespaces(xmlNamespaceManager);
+			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(_options.UseMicrosoftGuid);
 
 			xmlNamespaceManager.AddNamespace("tns", _service.GeneralContract.Namespace);
 

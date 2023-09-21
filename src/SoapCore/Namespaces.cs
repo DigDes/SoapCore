@@ -68,10 +68,12 @@ namespace SoapCore
 			return existingPrefix;
 		}
 
-		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager()
+		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager(bool addMicrosoftTypesNamespace)
 		{
 			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
 			AddDefaultNamespaces(xmlNamespaceManager);
+			xmlNamespaceManager.AddNamespace("mst", Namespaces.MICROSOFT_TYPES);
+
 			return xmlNamespaceManager;
 		}
 	}

@@ -66,16 +66,6 @@ namespace SoapCore.Meta
 			PortName = bindingName;
 			SoapBindings = soapBindings;
 			_buildMicrosoftGuid = buildMicrosoftGuid;
-
-			if (_buildMicrosoftGuid)
-			{
-				var ns = _xmlNamespaceManager.LookupPrefix(Namespaces.MICROSOFT_TYPES);
-				if (string.IsNullOrEmpty(ns))
-				{
-					ns = $"q{_namespaceCounter++}";
-					_xmlNamespaceManager.AddNamespace(ns, Namespaces.MICROSOFT_TYPES);
-				}
-			}
 		}
 
 		private SoapBindingInfo[] SoapBindings { get; }

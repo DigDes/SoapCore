@@ -558,7 +558,7 @@ namespace SoapCore.Tests.Wsdl
 			Trace.TraceInformation(wsdl);
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			bool allNeededAreUnqualified = root.XPathSelectElements($"//xsd:complexType[@name='{nameof(TypeWithUnqualifiedMembers)}' or @name='{nameof(UnqType2)}']/xsd:sequence/xsd:element[contains(@name, 'Unqualified')]", nm)
 				.All(x => x.Attribute("form")?.Value.Equals("unqualified") == true);
@@ -574,7 +574,7 @@ namespace SoapCore.Tests.Wsdl
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckDateTimeOffsetServiceWsdl(SoapSerializer soapSerializer)
 		{
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 			string systemNs = "http://schemas.datacontract.org/2004/07/System";
 
 			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(soapSerializer);
@@ -600,7 +600,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(wsdl);
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var responseDateElem = root.XPathSelectElement("//xsd:element[@name='GetDateResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='GetDateResult' and contains(@type, ':date')]", nm);
 			Assert.IsNotNull(responseDateElem);
@@ -624,7 +624,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(wsdl);
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var nullableArray = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='LongNullableArray' and @type='tns:ArrayOfNullableLong' and @nillable='true']", nm);
 			Assert.IsNotNull(nullableArray);
@@ -699,7 +699,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsFalse(wsdl.Contains("name=\"\""));
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var requestTypeElement = root.XPathSelectElement("//xsd:element[@name='RequestRoot']", nm);
 			Assert.IsNotNull(requestTypeElement);
@@ -745,7 +745,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsFalse(wsdl.Contains("name=\"\""));
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var requestTypeElement = root.XPathSelectElement("//xsd:element[@name='GetResponseResponse']", nm);
 			Assert.IsNotNull(requestTypeElement);
@@ -776,7 +776,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsFalse(wsdl.Contains("name=\"\""));
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var stringPropertyElement = root.XPathSelectElement("//xsd:element[@name='ModifiedStringProperty']", nm);
 			Assert.IsNotNull(stringPropertyElement);
@@ -792,7 +792,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsFalse(wsdl.Contains("name=\"\""));
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var booleanWithNoDefaultPropertyElement = root.XPathSelectElement("//xsd:element[@name='BooleanWithNoDefaultProperty' and @minOccurs='1' and @maxOccurs='1' and not(@default)]", nm);
 			Assert.IsNotNull(booleanWithNoDefaultPropertyElement);
@@ -832,7 +832,7 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsFalse(wsdl.Contains("name=\"\""));
 
 			var root = XElement.Parse(wsdl);
-			var nm = Namespaces.CreateDefaultXmlNamespaceManager();
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
 
 			var schemaElement = root.XPathSelectElement("//xsd:schema[@targetNamespace='http://schemas.datacontract.org/2004/07/SoapCore.Tests.Model']", nm);
 			Assert.IsNotNull(schemaElement);
@@ -884,7 +884,7 @@ namespace SoapCore.Tests.Wsdl
 		{
 			var service = new ServiceDescription(typeof(T));
 			var baseUrl = "http://tempuri.org/";
-			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager();
+			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(useMicrosoftGuid);
 			var defaultBindingName = !string.IsNullOrWhiteSpace(bindingName) ? bindingName : "BasicHttpBinding";
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
 				? new MetaWCFBodyWriter(service, baseUrl, defaultBindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }) as BodyWriter
