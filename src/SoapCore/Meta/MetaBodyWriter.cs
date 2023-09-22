@@ -891,7 +891,7 @@ namespace SoapCore.Meta
 					name = member.Name;
 				}
 
-				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified, xmlElementAttribute: elementItem);
+				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified);
 			}
 			else if (messageBodyMemberAttribute != null)
 			{
@@ -901,7 +901,7 @@ namespace SoapCore.Meta
 					name = member.Name;
 				}
 
-				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, xmlElementAttribute: elementItem);
+				AddSchemaType(writer, toBuild, name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType);
 			}
 			else
 			{
@@ -919,7 +919,7 @@ namespace SoapCore.Meta
 					}
 				}
 
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? elementNameFromAttribute ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue, xmlElementAttribute: elementItem);
+				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? elementNameFromAttribute ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
 			}
 		}
 
@@ -939,7 +939,7 @@ namespace SoapCore.Meta
 			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null, XmlElementAttribute xmlElementAttribute = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null)
 		{
 			var type = toBuild.Type;
 
