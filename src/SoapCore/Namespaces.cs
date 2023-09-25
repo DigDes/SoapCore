@@ -26,9 +26,10 @@ namespace SoapCore
 		public const string TRANSPORT_SCHEMA = "http://schemas.xmlsoap.org/soap/http";
 		public const string SOAP11_ENVELOPE_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 		public const string SOAP12_ENVELOPE_NS = "http://www.w3.org/2003/05/soap-envelope";
+		public const string MICROSOFT_TYPES = "http://microsoft.com/wsdl/types/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
-		public static void AddDefaultNamespaces(XmlNamespaceManager xmlNamespaceManager)
+		public static void AddDefaultNamespaces(XmlNamespaceManager xmlNamespaceManager, bool addMicrosoftTypesNamespace)
 		{
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "xsd", Namespaces.XMLNS_XSD);
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsdl", Namespaces.WSDL_NS);
@@ -41,6 +42,11 @@ namespace SoapCore
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "soap12", Namespaces.SOAP12_NS);
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "ser", Namespaces.SERIALIZATION_NS);
 			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsam", Namespaces.WSAM_NS);
+
+			if (addMicrosoftTypesNamespace)
+			{
+				AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "mst", Namespaces.MICROSOFT_TYPES);
+			}
 		}
 
 		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceManager xmlNamespaceManager, string preferredPrefix, string uri)
@@ -67,10 +73,11 @@ namespace SoapCore
 			return existingPrefix;
 		}
 
-		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager()
+		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager(bool addMicrosoftTypesNamespace)
 		{
 			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
-			AddDefaultNamespaces(xmlNamespaceManager);
+			AddDefaultNamespaces(xmlNamespaceManager, addMicrosoftTypesNamespace);
+
 			return xmlNamespaceManager;
 		}
 	}

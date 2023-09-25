@@ -69,6 +69,11 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", _service.ServiceName);
 			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
+			if (!string.IsNullOrEmpty(_xmlNamespaceManager.LookupPrefix(Namespaces.MICROSOFT_TYPES)))
+			{
+				WriteXmlnsAttribute(writer, Namespaces.MICROSOFT_TYPES);
+			}
+
 			if (_hasBasicAuthentication)
 			{
 				writer.WriteStartElement("Policy", Namespaces.WSP_NS);

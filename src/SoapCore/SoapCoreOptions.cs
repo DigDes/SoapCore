@@ -112,11 +112,17 @@ namespace SoapCore
 		public bool CheckXmlCharacters { get; set; } = true;
 
 		/// <summary>
+		/// Add Microsoft Guid schema to wsdl
+		/// </summary>
+		public bool UseMicrosoftGuid { get; set; } = false;
+
+		/// <summary>
 		/// Gets or sets an collection of Xml Namespaces to override the default prefix for.
 		/// </summary>
 		public XmlNamespaceManager XmlNamespacePrefixOverrides { get; set; }
 
 		public WsdlFileOptions WsdlFileOptions { get; set; }
+
 
 		/// <summary>
 		/// Sets additional namespace declaration attributes in envelope
