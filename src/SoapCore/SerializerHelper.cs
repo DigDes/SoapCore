@@ -43,7 +43,7 @@ namespace SoapCore
 					switch (_serializer)
 					{
 						case SoapSerializer.XmlSerializer:
-							if (!parameterType.IsArray)
+							if (!parameterType.IsArray || parameterType.GetElementType()?.IsArray == true)
 							{
 								// case [XmlElement("parameter")] int parameter
 								// case [XmlArray("parameter")] int[] parameter
