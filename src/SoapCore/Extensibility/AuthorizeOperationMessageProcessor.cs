@@ -13,10 +13,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using SoapCore;
-using SoapCore.Extensibility;
 using SoapCore.ServiceModel;
 
-namespace RBC.VifInterfaceWebServices.Middlewares
+namespace SoapCore.Extensibility
 {
 	public class AuthorizeOperationMessageProcessor : ISoapMessageProcessor
 	{

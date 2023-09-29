@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using RBC.VifInterfaceWebServices.Middlewares;
+using SoapCore.Extensibility;
 using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
