@@ -135,6 +135,29 @@ namespace SoapCore.Tests.MessageContract
 		}
 
 		[TestMethod]
+		public async Task SoapArrayOfArrayOfByte()
+		{
+			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
+  <soapenv:Header/>
+  <soapenv:Body>
+	<tem:ArrayOfArrayOfByteMethod>
+	<tem:arrayOfArrayOfByteParam><tem:base64Binary>AQI=</tem:base64Binary><tem:base64Binary>AgM=</tem:base64Binary><tem:base64Binary>BAU=</tem:base64Binary><tem:base64Binary>BgU=</tem:base64Binary></tem:arrayOfArrayOfByteParam>
+	</tem:ArrayOfArrayOfByteMethod>
+  </soapenv:Body>
+</soapenv:Envelope>";
+
+			using (var host = CreateTestHost(typeof(ArrayOfArrayOfByteService)))
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = await host.CreateRequest("/Service.asmx").AddHeader("SOAPAction", @"""ArrayOfArrayOfByteMethod""").And(msg => msg.Content = content).PostAsync())
+			{
+				res.EnsureSuccessStatusCode();
+				var resultMessage = await res.Content.ReadAsStringAsync();
+				Assert.IsTrue(resultMessage.Contains("<ArrayOfArrayOfByteMethodResult>[[1,2][2,3][4,5][6,5]]</ArrayOfArrayOfByteMethodResult>"));
+			}
+		}
+
+		[TestMethod]
 		public async Task Soap11MessageContractComplexNotWrapped()
 		{
 			const string body = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:tem=""http://tempuri.org"">
