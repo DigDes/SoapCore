@@ -125,6 +125,12 @@ namespace SoapCore
 				{
 					writer.WriteElementString("faultcode", "s:Client");
 				}
+
+				var actor = faultException.CreateMessageFault()?.Actor;
+				if (!string.IsNullOrWhiteSpace(actor))
+                {
+                    writer.WriteElementString ("faultactor", actor);
+                }
 			}
 			else
 			{
