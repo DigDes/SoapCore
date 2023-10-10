@@ -105,6 +105,24 @@ namespace SoapCore.Meta
 					}
 				}
 
+
+				if (node.Name == (!string.IsNullOrWhiteSpace(xmlDoc.DocumentElement.Prefix) ? xmlDoc.DocumentElement.Prefix + ":" : xmlDoc.DocumentElement.Prefix) + "import")
+				{
+					if (node.Name == ImportNodeName(node) || node.Name == IncludeNodeName(node))
+					{
+						if (XsdFolder != null)
+						{
+							if (node.Attributes["location"] == null)
+							{
+								node.Attributes.Append(xmlDoc.CreateAttribute("location"));
+							}
+
+							string name = node.Attributes["location"].InnerText;
+							node.Attributes["location"].InnerText = DefinitionLocation() + "&name=" + name.Replace("./", string.Empty);
+						}
+					}
+				}
+
 				if (node.Name == (!string.IsNullOrWhiteSpace(xmlDoc.DocumentElement.Prefix) ? xmlDoc.DocumentElement.Prefix + ":" : xmlDoc.DocumentElement.Prefix) + "service")
 				{
 					foreach (XmlNode schemaNode in node.ChildNodes)
@@ -156,6 +174,13 @@ namespace SoapCore.Meta
 		private string SchemaLocation()
 		{
 			var schemaLocation = ServerUrl + CurrentWebServer + CurrentWebService + "?xsd";
+
+			return schemaLocation;
+		}
+
+		private string DefinitionLocation()
+		{
+			var schemaLocation = ServerUrl + CurrentWebServer + CurrentWebService + "?wsdl";
 
 			return schemaLocation;
 		}

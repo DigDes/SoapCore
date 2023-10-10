@@ -119,6 +119,10 @@ namespace SoapCore
 						{
 							await ProcessXSD(httpContext);
 						}
+						else if (httpContext.Request.Query.ContainsKey("wsdl") && _options.WsdlFileOptions != null)
+						{
+							await ProcessWSDL(httpContext);
+						}
 						else if (string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl"))
 						{
 							// Shows automatically generated documentation based on the generated WSDL (WIP)
@@ -911,6 +915,53 @@ namespace SoapCore
 				httpContext.Response.Headers.Add(key, httpProperty.Headers.GetValues(key));
 			}
 		}
+
+		private async Task ProcessWSDL(HttpContext httpContext)
+		{
+			var meta = new MetaFromFile();
+			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
+			{
+				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
+			}
+
+			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
+			var mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[meta.CurrentWebService];
+
+			meta.XsdFolder = mapping.SchemaFolder;
+			meta.WSDLFolder = mapping.WSDLFolder;
+
+			if (_options.WsdlFileOptions.UrlOverride != string.Empty)
+			{
+				meta.ServerUrl = _options.WsdlFileOptions.UrlOverride;
+			}
+			else
+			{
+				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
+			}
+
+			string wsdlfile = httpContext.Request.Query["name"];
+
+			//Check to prevent path traversal
+			if (string.IsNullOrEmpty(wsdlfile) || Path.GetFileName(wsdlfile) != wsdlfile)
+			{
+				throw new ArgumentNullException("wsdl parameter contains illegal values");
+			}
+
+			if (!wsdlfile.Contains(".wsdl"))
+			{
+				throw new Exception("wsdl request must contain .wsdl");
+			}
+
+			string path = _options.WsdlFileOptions.AppPath;
+			string safePath = path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile;
+			string wsdl = await meta.ReadLocalFileAsync(safePath);
+			string modifiedwsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
+
+			//we should use text/xml in wsdl page for browser compability.
+			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
+			await httpContext.Response.WriteAsync(modifiedwsdl);
+		}
+
 
 		private async Task ProcessXSD(HttpContext httpContext)
 		{
