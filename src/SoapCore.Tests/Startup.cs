@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.ServiceModel;
+using System.Security.Claims;
 using System.ServiceModel.Channels;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using SoapCore.Extensibility;
 using SoapCore.Tests.Model;
 
 namespace SoapCore.Tests
@@ -21,11 +24,49 @@ namespace SoapCore.Tests
 			services.AddSoapModelBindingFilter(new ModelBindingFilter.TestModelBindingFilter(new List<Type> { typeof(ComplexModelInputForModelBindingFilter) }));
 			services.AddScoped<ActionFilter.TestActionFilter>();
 			services.AddMvc();
+			services
+				.AddAuthentication(authentication =>
+				{
+					authentication.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+					authentication.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+				})
+				.AddJwtBearer(bearer =>
+				{
+					bearer.RequireHttpsMetadata = false;
+					bearer.SaveToken = true;
+					bearer.TokenValidationParameters = new TokenValidationParameters
+					{
+						ValidateIssuerSigningKey = true,
+						IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("12345678900987654321123456789009")),
+						ValidateIssuer = false,
+						ValidateAudience = false,
+						RoleClaimType = ClaimTypes.Role,
+						ClockSkew = TimeSpan.Zero
+					};
+				});
+
+			services.AddSoapMessageProcessor(new AuthorizeOperationMessageProcessor(new Dictionary<string, Type>
+			{
+				{ "/Service.svc".ToLowerInvariant(), typeof(TestService) },
+				{ "/ServiceCI.svc".ToLowerInvariant(), typeof(TestService) },
+				{ "/Service.asmx".ToLowerInvariant(), typeof(TestService) },
+				{ "/WSA10Service.svc".ToLowerInvariant(), typeof(TestService) },
+				{ "/WSA11ISO88591Service.svc".ToLowerInvariant(), typeof(TestService) },
+				{ "/ServiceWithDifferentEncodings.asmx".ToLowerInvariant(), typeof(TestService) },
+				{ "/ServiceWithOverwrittenContentType.asmx".ToLowerInvariant(), typeof(TestService) },
+			}));
+			services.AddAuthorization(options =>
+			{
+				options.AddPolicy("something", policy => policy.RequireClaim("someclaim", "somevalue"));
+			});
 		}
 
 #if !NETCOREAPP3_0_OR_GREATER
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 		{
+			app.UseAuthentication();
+
+			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction"), app2 =>
 			{
 				app2.UseSoapEndpoint<TestService>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
@@ -67,12 +108,15 @@ namespace SoapCore.Tests
 			});
 
 			app.UseMvc();
+
 		}
 #else
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
 		{
 			app.UseRouting();
+			app.UseAuthentication();
 
+			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
 			app.UseWhen(ctx => ctx.Request.Headers.ContainsKey("SOAPAction") || ctx.Request.ContentType.StartsWith("multipart"), app2 =>
 			{
 				app2.UseRouting();

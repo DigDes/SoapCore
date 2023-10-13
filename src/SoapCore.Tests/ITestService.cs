@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoapCore.Tests.Model;
 
@@ -101,5 +102,67 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		XmlElement XmlElementInput(XmlElement input);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type object, more specifically string.</returns>
+		[OperationContract]
+		IActionResult JwtAuthenticationAndAuthorizationIActionResultUnprotected(ComplexModelInput payload);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type object, more specifically string.</returns>
+		[Authorize]
+		[OperationContract]
+		IActionResult JwtAuthenticationAndAuthorizationIActionResultJustAuthenticated(ComplexModelInput payload);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type object, more specifically string.</returns>
+		[Authorize(Policy = "something")]
+		[OperationContract]
+		IActionResult JwtAuthenticationAndAuthorizationIActionResultUsingPolicy(ComplexModelInput payload);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type object, more specifically string.</returns>
+		[Authorize(Roles = "role1")]
+		[OperationContract]
+		IActionResult JwtAuthenticationAndAuthorizationIActionResult(ComplexModelInput payload);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type object, more specifically string.</returns>
+		[Authorize(Roles = "role1")]
+		[OperationContract]
+		ActionResult JwtAuthenticationAndAuthorizationActionResult(ComplexModelInput payload);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type string.</returns>
+		[Authorize(Roles = "role1")]
+		[OperationContract]
+		ActionResult<string> JwtAuthenticationAndAuthorizationGenericActionResult(ComplexModelInput payload);
+
+		/// <summary>
+		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.
+		/// </summary>
+		/// <param name="payload">Payload</param>
+		/// <returns>The service should return a different type from this one. It will be of type ComplexModelInput.</returns>
+		[Authorize(Roles = "role1")]
+		[OperationContract]
+		ActionResult<ComplexModelInput> JwtAuthenticationAndAuthorizationComplexGenericActionResult(ComplexModelInput payload);
 	}
 }

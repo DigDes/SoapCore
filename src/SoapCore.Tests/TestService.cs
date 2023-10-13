@@ -219,5 +219,145 @@ namespace SoapCore.Tests
 
 			return xdOutput.DocumentElement;
 		}
+
+		public IActionResult JwtAuthenticationAndAuthorizationIActionResultUnprotected(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public IActionResult JwtAuthenticationAndAuthorizationIActionResultJustAuthenticated(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public IActionResult JwtAuthenticationAndAuthorizationIActionResultUsingPolicy(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public IActionResult JwtAuthenticationAndAuthorizationIActionResult(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public ActionResult JwtAuthenticationAndAuthorizationActionResult(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public ActionResult<string> JwtAuthenticationAndAuthorizationGenericActionResult(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult("Request object is empty.");
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult("Number is even.");
+			}
+			else
+			{
+				return new ObjectResult("Number is odd.")
+				{
+					StatusCode = 500
+				};
+			}
+		}
+
+		public ActionResult<ComplexModelInput> JwtAuthenticationAndAuthorizationComplexGenericActionResult(ComplexModelInput payload)
+		{
+			if (payload == null)
+			{
+				return new BadRequestObjectResult(new ComplexModelInput { StringProperty = "Request object is empty." });
+			}
+
+			if (payload.IntProperty % 2 == 0)
+			{
+				return new OkObjectResult(new ComplexModelInput { StringProperty = "Number is even." });
+			}
+			else
+			{
+				return new ObjectResult(new ComplexModelInput { StringProperty = "Number is odd." })
+				{
+					StatusCode = 500
+				};
+			}
+		}
 	}
 }
