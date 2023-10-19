@@ -61,6 +61,22 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 }
 ```
 
+### Using with custom implementation of Serialization
+
+There is an optional feature included where you can implment the ISoapCoreSerializer to built your own custom serializar for body.
+
+In Startup.cs:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSoapCore();
+    services.TryAddSingleton<ServiceContractImpl>();
+    services..AddCustomSoapMessageSerializer<CustomeBodyMessageSerializerImpl>();
+	services.AddMvc();
+}
+```
+
 ### Using with legacy WCF/WS
 
 It is possible to use SoapCore with .NET legacy WCF and Web Services, both as client and service.
@@ -151,7 +167,7 @@ services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
 	//finish by returning the modified message.	
 
 	return responseMessage;
-}
+});
 ```
 
 #### How to get custom HTTP header in SoapCore service

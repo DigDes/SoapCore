@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SoapCore.Extensibility;
 using SoapCore.Meta;
+using SoapCore.Serializer;
 
 #if NETCOREAPP3_0_OR_GREATER
 using Microsoft.AspNetCore.Routing;
@@ -446,6 +447,20 @@ namespace SoapCore
 			where TProcessor : class, ISoapMessageProcessor
 		{
 			serviceCollection.Add(new ServiceDescriptor(typeof(ISoapMessageProcessor), typeof(TProcessor), lifetime));
+			return serviceCollection;
+		}
+
+
+		public static IServiceCollection AddCustomSoapMessageSerializer(this IServiceCollection serviceCollection, ISoapCoreSerializer messageSerializer)
+		{
+			serviceCollection.AddSingleton(messageSerializer);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddCustomSoapMessageSerializer<TProcessor>(this IServiceCollection serviceCollection, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+			where TProcessor : class, ISoapCoreSerializer
+		{
+			serviceCollection.Add(new ServiceDescriptor(typeof(ISoapCoreSerializer), typeof(TProcessor), lifetime));
 			return serviceCollection;
 		}
 	}
