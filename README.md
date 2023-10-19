@@ -151,7 +151,7 @@ services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
 	//finish by returning the modified message.	
 
 	return responseMessage;
-}
+});
 ```
 
 #### How to get custom HTTP header in SoapCore service
