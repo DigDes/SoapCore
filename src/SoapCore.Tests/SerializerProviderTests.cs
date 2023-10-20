@@ -81,6 +81,7 @@ namespace SoapCore.Tests
 			var logger = NullLoggerFactory.Instance.CreateLogger<SoapEndpointMiddleware<CustomMessage>>();
 
 			var serviceCollection = new ServiceCollection();
+			serviceCollection.AddSoapCore();
 			serviceCollection.AddSingleton<DenialOfServiceProofOfConcept>();
 			serviceCollection.AddCustomSoapMessageSerializer<DenialOfServiceProofOfConceptRequestSerializer>();
 

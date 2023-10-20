@@ -596,6 +596,10 @@ namespace SoapCore
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager
 				};
+
+				responseMessage.Headers.Action = operation.ReplyAction;
+				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
+				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 			}
 			else
 			{
@@ -607,10 +611,6 @@ namespace SoapCore
 					NamespaceManager = xmlNamespaceManager
 				};
 			}
-
-			responseMessage.Headers.Action = operation.ReplyAction;
-			responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
-			responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
 
 			if (responseObject != null)
 			{
