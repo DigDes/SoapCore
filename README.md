@@ -26,7 +26,6 @@ There are 2 different ways of adding SoapCore to your ASP.NET Core website. If y
 
 In Startup.cs:
 
-
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
@@ -42,7 +41,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
     app.UseEndpoints(endpoints => {
         endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
     });
-    
+
 }
 ```
 
@@ -70,11 +69,26 @@ In Startup.cs:
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
+    ...
     services.AddSoapCore();
     services.TryAddSingleton<ServiceContractImpl>();
-    services..AddCustomSoapMessageSerializer<CustomeBodyMessageSerializerImpl>();
-	services.AddMvc();
+    services.AddCustomSoapMessageSerializer<CustomeBodyMessageSerializerImpl>();  //Add Your Custom Implementation or Extend Default Serializer
+
+    services.AddMvc();
+    ...
 }
+
+public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+{
+    app.UseSoapEndpoint<ServiceContractImpl>(soapCoreOptions =>
+    {
+        soapCoreOptions.Path = "/ServicePath.asmx";
+        soapCoreOptions.UseCustomSerializer<CustomeBodyMessageSerializerImpl>();  //Specify the Service to Use Service Soap Message Serializer
+        soapCoreOptions.SoapSerializer = SoapSerializer.DataContractSerializer;
+        ...
+    });
+}
+
 ```
 
 ### Using with legacy WCF/WS
@@ -103,20 +117,18 @@ To use it, add a setting like this to appsettings
     }
 ```
 
-* UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
-* VirualPath - can be used if you like to add a path between the base URL and service. 
-* WebServiceWSDLMapping
-  * UrlOverride - can be used to override the URL for a specific WSDL mapping. This can be useful if you want to host different services under different folder.
-  * Service.asmx - is the endpoint of the service you expose. You can have more than one.
-  * WsdlFile - is the name of the WSDL on disc.
-  * SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
-  * WsdlFolder - is the folder that the WSDL file is stored on disc.
-
+- UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
+- VirualPath - can be used if you like to add a path between the base URL and service.
+- WebServiceWSDLMapping
+  - UrlOverride - can be used to override the URL for a specific WSDL mapping. This can be useful if you want to host different services under different folder.
+  - Service.asmx - is the endpoint of the service you expose. You can have more than one.
+  - WsdlFile - is the name of the WSDL on disc.
+  - SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
+  - WsdlFolder - is the folder that the WSDL file is stored on disc.
 
 To read the setting you can do the following
 
 In Startup.cs:
-
 
 ```csharp
 var settings = Configuration.GetSection("FileWSDL").Get<WsdlFileOptions>();
@@ -134,21 +146,23 @@ If the WsdFileOptions parameter is supplied then this feature is enabled / used.
 
 ### References
 
-* [stackify.com/soap-net-core](https://stackify.com/soap-net-core/)
+- [stackify.com/soap-net-core](https://stackify.com/soap-net-core/)
 
 ### Tips and Tricks
 
 #### Extending the pipeline
 
 In your ConfigureServices method, you can register some additional items to extend the pipeline:
-* services.AddSoapMessageInspector() - add a custom MessageInspector. This function is similar to the `IDispatchMessageInspector` in WCF. The newer `IMessageInspector2` interface allows you to register multiple inspectors, and to know which service was being called.
-* services.AddSingleton<MyOperatorInvoker>() - add a custom OperationInvoker. Similar to WCF's `IOperationInvoker` this allows you to override the invoking of a service operation, commonly to add custom logging or exception handling logic around it.
-* services.AddSoapMessageProcessor() - add a custom SoapMessageProcessor. Similar to ASP.NET Cores middlewares, this allows you to inspect the message on the way in and out. You can also short-circuit the message processing and return your own custom message instead. Inspecting and modifying HttpContext is also possible
+
+- services.AddSoapMessageInspector() - add a custom MessageInspector. This function is similar to the `IDispatchMessageInspector` in WCF. The newer `IMessageInspector2` interface allows you to register multiple inspectors, and to know which service was being called.
+- services.AddSingleton<MyOperatorInvoker>() - add a custom OperationInvoker. Similar to WCF's `IOperationInvoker` this allows you to override the invoking of a service operation, commonly to add custom logging or exception handling logic around it.
+- services.AddSoapMessageProcessor() - add a custom SoapMessageProcessor. Similar to ASP.NET Cores middlewares, this allows you to inspect the message on the way in and out. You can also short-circuit the message processing and return your own custom message instead. Inspecting and modifying HttpContext is also possible
 
 #### Using ISoapMessageProcessor()
+
 ```csharp
 //Add this to ConfigureServices in Startup.cs
-	
+
 services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
 {
 	var bufferedMessage = message.CreateBufferedCopy(int.MaxValue);
@@ -164,7 +178,7 @@ services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
 	var responseMessage = await next(message);
 
 	//Inspect and modify the contents of returnMessage in the same way as the incoming message.
-	//finish by returning the modified message.	
+	//finish by returning the modified message.
 
 	return responseMessage;
 });
@@ -176,9 +190,10 @@ Use interface IServiceOperationTuner to tune each operation call.
 
 Create class that implements IServiceOperationTuner.
 Parameters in Tune method:
-* httpContext - current HttpContext. Can be used to get http headers or body.
-* serviceInstance - instance of your service.
-* operation - information about called operation.
+
+- httpContext - current HttpContext. Can be used to get http headers or body.
+- serviceInstance - instance of your service.
+- operation - information about called operation.
 
 ```csharp
 public class MyServiceOperationTuner : IServiceOperationTuner
@@ -238,8 +253,11 @@ public class MyService : IMyServiceService
     }
 }
 ```
+
 #### Additional namespace declaration attributes in envelope
+
 Adding additional namespaces to the **SOAP Envelope** can be done by populating `SoapEncoderOptions.AdditionalEnvelopeXmlnsAttributes` parameter.
+
 ```csharp
 ....
 endpoints.UseSoapEndpoint<IService>(opt =>
@@ -253,7 +271,9 @@ endpoints.UseSoapEndpoint<IService>(opt =>
 });
 ...
 ```
+
 This code will put `xmlns:myNS="...` and `xmlns:arr="...` attributes in `Envelope` and message will look like:
+
 ```xml
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ... xmlns:myNS="http://schemas.someting.org" xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
 ...
@@ -263,7 +283,9 @@ This code will put `xmlns:myNS="...` and `xmlns:arr="...` attributes in `Envelop
     </fin:StringList>
 ...
 ```
+
 instead of:
+
 ```xml
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ... >
 ...
@@ -279,6 +301,7 @@ instead of:
 See [Contributing guide](CONTRIBUTING.md)
 
 ### Contributors
+
 <a href="https://github.com/digdes/soapcore/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=digdes/soapcore" />
 </a>
