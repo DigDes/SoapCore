@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -355,10 +356,7 @@ namespace SoapCore
 
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)
 		{
-			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
-			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<CustomMessage>>();
-
-			return serviceCollection;
+			return AddSoapCore<CustomMessage>(serviceCollection);
 		}
 
 		public static IServiceCollection AddSoapCore<T_MESSAGE>(this IServiceCollection serviceCollection)
@@ -366,6 +364,13 @@ namespace SoapCore
 		{
 			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
 			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<T_MESSAGE>>();
+
+			serviceCollection.AddSingleton<ISoapCoreSerializerResolver>(serviceProvider => serviceType =>
+			{
+				var serrailizes = serviceProvider.GetServices<ISoapCoreSerializer>();
+				var serializer = serrailizes.FirstOrDefault(x => x.GetType() == serviceType);
+				return serializer;
+			});
 
 			return serviceCollection;
 		}

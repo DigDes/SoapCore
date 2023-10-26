@@ -1,3 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Resources;
+using System.Runtime.CompilerServices;
+using System.Security.Authentication;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
+using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -12,20 +27,6 @@ using SoapCore.MessageEncoder;
 using SoapCore.Meta;
 using SoapCore.Serializer;
 using SoapCore.ServiceModel;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security.Authentication;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace SoapCore
 {
@@ -73,7 +74,13 @@ namespace SoapCore
 			_options = options;
 			_serviceProvider = serviceProvider;
 
-			_serializerHelper = _serviceProvider.GetService<ISoapCoreSerializer>();
+			var serializerResolver = _serviceProvider.GetService<ISoapCoreSerializerResolver>();
+			if (serializerResolver != null && _options.SerializerIdentifier != null)
+			{
+				_serializerHelper = serializerResolver(_options.SerializerIdentifier);
+				_ = _serializerHelper ?? throw new InvalidOperationException("custom serializer implementation not found.");
+			}
+
 			_serializerHelper ??= new SerializerHelper(options.SoapSerializer);
 
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
