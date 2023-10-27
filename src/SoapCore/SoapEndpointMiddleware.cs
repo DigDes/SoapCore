@@ -1039,7 +1039,7 @@ namespace SoapCore
 			}
 			else
 			{
-				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
+				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + "/";
 			}
 
 			string wsdlfile = mapping.WsdlFile;
