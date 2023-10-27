@@ -983,7 +983,7 @@ namespace SoapCore
 			}
 			else
 			{
-				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
+				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + "/";
 			}
 
 			string xsdfile = httpContext.Request.Query["name"];
