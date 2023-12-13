@@ -460,10 +460,15 @@ namespace SoapCore
 				throw new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
 			}
 
-			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
 
-			correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
+			using (IServiceScope scope = serviceProvider.CreateScope())
+			{
+				var messageInspector2s = scope.ServiceProvider.GetServices<IMessageInspector2>();
+				correlationObjects2 = messageInspector2s.Select(mi =>
+					(inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service)))
+					.ToList();
+			}
 
 			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
