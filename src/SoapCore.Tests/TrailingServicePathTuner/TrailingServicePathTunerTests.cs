@@ -41,7 +41,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -84,7 +84,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -126,7 +126,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options);
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/v1/Service.svc");
