@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     
     container:
-      image: docker://mcr.microsoft.com/dotnet/sdk:6.0-alpine
+      image: docker://mcr.microsoft.com/dotnet/sdk:8.0-alpine
     steps:
    
     - uses: actions/checkout@v1
