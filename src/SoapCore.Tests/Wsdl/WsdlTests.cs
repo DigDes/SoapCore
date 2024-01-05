@@ -550,6 +550,50 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[DataTestMethod]
+		public async Task CheckComplexComplexTypeWithCustomXmlNamesWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexComplexTypeWithCustomXmlNamesService>(SoapSerializer.XmlSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			//loading definition of ComplexComplexType
+			var testComplexComplexType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "ComplexComplexType");
+			Assert.IsNotNull(testComplexComplexType);
+
+			//checking sequence to be there
+			var testSequenceOfComplexComplexType = GetElements(testComplexComplexType, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(testSequenceOfComplexComplexType);
+
+			//checking custom name specified per XmlElementAttribute is used
+			var testElementOfComplexComplexType = GetElements(testSequenceOfComplexComplexType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "complex");
+			Assert.IsNotNull(testElementOfComplexComplexType);
+
+			//loading definition of ComplexType
+			var testComplexType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "ComplexType");
+			Assert.IsNotNull(testComplexType);
+
+			//checking sequence to be there
+			var testSequenceOfComplexType = GetElements(testComplexType, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(testSequenceOfComplexType);
+
+			//checking custom names specified per XmlElementAttribute are used
+			var testElementWithCustomName = GetElements(testSequenceOfComplexType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "stringprop");
+			Assert.IsNotNull(testElementWithCustomName);
+
+			testElementWithCustomName = GetElements(testSequenceOfComplexType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "mybytes");
+			Assert.IsNotNull(testElementWithCustomName);
+
+			//checking both properties without custom names to use the same names as properties in the ComplexType class
+			var testElementWithDefaultName = GetElements(testSequenceOfComplexType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "IntProperty");
+			Assert.IsNotNull(testElementWithDefaultName);
+
+			testElementWithDefaultName = GetElements(testSequenceOfComplexType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "MyGuid");
+			Assert.IsNotNull(testElementWithDefaultName);
+		}
+
+		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
 		public async Task CheckOccuranceOfStringType(SoapSerializer soapSerializer)
 		{

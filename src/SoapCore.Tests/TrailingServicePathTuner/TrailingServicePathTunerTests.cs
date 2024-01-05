@@ -41,7 +41,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options, new MockServiceProvider(true));
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, new MockServiceProvider(true));
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -84,7 +84,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options, new MockServiceProvider(true));
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, new MockServiceProvider(true));
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -125,8 +125,8 @@ namespace SoapCore.Tests
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
-
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.FromResult(TaskStatus.RanToCompletion), options, new MockServiceProvider(false));
+      
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, new MockServiceProvider(false));
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/v1/Service.svc");
