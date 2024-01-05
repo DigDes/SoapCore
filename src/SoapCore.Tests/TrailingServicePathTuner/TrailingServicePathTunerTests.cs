@@ -125,7 +125,7 @@ namespace SoapCore.Tests
 				SoapModelBounder = new MockModelBounder(),
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
-      
+
 			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, new MockServiceProvider(false));
 
 			var context = new DefaultHttpContext();
