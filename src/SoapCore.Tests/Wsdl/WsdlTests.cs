@@ -594,6 +594,36 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[DataTestMethod]
+		public async Task CheckEnumWithCustomNamesXmlSerializedWsdl()
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<EnumWithCustomNamesService>(SoapSerializer.XmlSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			//loading definition of EnumWithCustomNames
+			var enumWithCustomNamesElement = GetElements(root, _xmlSchema + "simpleType").FirstOrDefault(a => a.Attribute("name")?.Value.Equals("EnumWithCustomNames") == true);
+			Assert.IsNotNull(enumWithCustomNamesElement);
+
+			//checking restriction to be there
+			var testRestrictionOfEnumWithCustomNames = GetElements(enumWithCustomNamesElement, _xmlSchema + "restriction").SingleOrDefault();
+			Assert.IsNotNull(testRestrictionOfEnumWithCustomNames);
+
+			//checking enumeration elements to be there
+			var testEnumerationElements = GetElements(testRestrictionOfEnumWithCustomNames, _xmlSchema + "enumeration").ToList();
+			Assert.IsNotNull(testEnumerationElements);
+			Assert.AreEqual(3, testEnumerationElements.Count);
+
+			//checking custom names specified per XmlEnumAttribute are used
+			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "F"));
+			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "S"));
+
+			//checking default name specified by enum member
+			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "ThirdEnumMember"));
+		}
+
+		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
 		public async Task CheckOccuranceOfStringType(SoapSerializer soapSerializer)
 		{
