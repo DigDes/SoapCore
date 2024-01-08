@@ -462,10 +462,29 @@ namespace SoapCore.Meta
 					writer.WriteStartElement("restriction", Namespaces.XMLNS_XSD);
 					writer.WriteAttributeString("base", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
 
-					foreach (var value in Enum.GetValues(toBuild))
+					var membersWithCustomNames = from n in Enum.GetNames(toBuild)
+												 join m in toBuild.GetMembers() on n equals m.Name
+												 let ca = m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(XmlEnumAttribute))
+												 select new
+												 {
+													 m.Name,
+													 CustomName =
+													 (ca?
+																	.ConstructorArguments?
+																	.FirstOrDefault()
+																	.Value
+																??
+																ca?
+																	.NamedArguments?
+																	.FirstOrDefault(a => a.MemberName == "Name")
+																	.TypedValue
+																	.Value)?
+																.ToString()
+												 };
+					foreach (var member in membersWithCustomNames)
 					{
 						writer.WriteStartElement("enumeration", Namespaces.XMLNS_XSD);
-						writer.WriteAttributeString("value", value.ToString());
+						writer.WriteAttributeString("value", member.CustomName ?? member.Name);
 						writer.WriteEndElement(); // enumeration
 					}
 
