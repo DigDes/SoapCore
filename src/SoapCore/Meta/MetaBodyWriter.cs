@@ -462,27 +462,29 @@ namespace SoapCore.Meta
 					writer.WriteStartElement("restriction", Namespaces.XMLNS_XSD);
 					writer.WriteAttributeString("base", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
 
-					var membersWithCustomNames = toBuild.GetMembersWithAttribute<XmlEnumAttribute>();
-					foreach (var value in Enum.GetNames(toBuild))
+					var membersWithCustomNames = from n in Enum.GetNames(toBuild)
+												 join m in toBuild.GetMembers() on n equals m.Name
+												 let ca = m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(XmlEnumAttribute))
+												 select new
+												 {
+													 m.Name,
+													 CustomName =
+													 (ca?
+																	.ConstructorArguments?
+																	.FirstOrDefault()
+																	.Value
+																??
+																ca?
+																	.NamedArguments?
+																	.FirstOrDefault(a => a.MemberName == "Name")
+																	.TypedValue
+																	.Value)?
+																.ToString()
+												 };
+					foreach (var member in membersWithCustomNames)
 					{
-						var xmlEnumAttribute = membersWithCustomNames
-												.FirstOrDefault(m => m.Name == value)?
-												.CustomAttributes
-												.FirstOrDefault(c => c.AttributeType == typeof(XmlEnumAttribute));
-						var nameFromAttribute = (xmlEnumAttribute?
-													.ConstructorArguments?
-													.FirstOrDefault()
-													.Value
-												??
-												xmlEnumAttribute?
-													.NamedArguments?
-													.FirstOrDefault(a => a.MemberName == "Name")
-													.TypedValue
-													.Value)?
-												.ToString();
-
 						writer.WriteStartElement("enumeration", Namespaces.XMLNS_XSD);
-						writer.WriteAttributeString("value", nameFromAttribute ?? value);
+						writer.WriteAttributeString("value", member.CustomName ?? member.Name);
 						writer.WriteEndElement(); // enumeration
 					}
 
