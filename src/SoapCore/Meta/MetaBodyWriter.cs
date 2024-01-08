@@ -19,6 +19,7 @@ namespace SoapCore.Meta
 {
 	public class MetaBodyWriter : BodyWriter
 	{
+		private const string FaultSuffix = "Fault";
 		private static int _namespaceCounter = 1;
 
 		private readonly ServiceDescription _service;
@@ -437,6 +438,21 @@ namespace SoapCore.Meta
 				}
 
 				writer.WriteEndElement(); // element
+
+				foreach (var faultType in operation.Faults)
+				{
+					var faultTypeToBuild = new TypeToBuild(faultType);
+
+					//enqueue the complex type itself
+					_complexTypeToBuild.Enqueue(faultTypeToBuild);
+
+					//write element pendant for the fault type
+					writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
+					writer.WriteAttributeString("name", EnsureFaultNaming(faultTypeToBuild.TypeName));
+					writer.WriteAttributeString("nillable", "true");
+					writer.WriteAttributeString("type", "tns:" + faultTypeToBuild.TypeName);
+					writer.WriteEndElement(); // element
+				}
 			}
 
 			while (_complexTypeToBuild.Count > 0)
@@ -566,7 +582,7 @@ namespace SoapCore.Meta
 				writer.WriteEndElement(); // schema
 			}
 
-			if(_buildMicrosoftGuid)
+			if (_buildMicrosoftGuid)
 			{
 				writer.WriteStartElement("schema", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("elementFormDefault", "qualified");
@@ -655,6 +671,22 @@ namespace SoapCore.Meta
 					writer.WriteEndElement(); // wsdl:part
 					writer.WriteEndElement(); // wsdl:message
 				}
+
+				AddMessageFaults(writer, operation);
+			}
+		}
+
+		private void AddMessageFaults(XmlDictionaryWriter writer, OperationDescription operation)
+		{
+			foreach (var faultName in operation.Faults.Select(f => f.Name).ToArray())
+			{
+				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
+				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_{EnsureFaultNaming(faultName)}_FaultMessage");
+				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
+				writer.WriteAttributeString("name", "detail");
+				writer.WriteAttributeString("element", $"tns:{EnsureFaultNaming(faultName)}");
+				writer.WriteEndElement(); // wsdl:part
+				writer.WriteEndElement(); // wsdl:message
 			}
 		}
 
@@ -676,10 +708,33 @@ namespace SoapCore.Meta
 					writer.WriteEndElement(); // wsdl:output
 				}
 
+				AddOperationTypeFaults(writer, operation);
+
 				writer.WriteEndElement(); // wsdl:operation
 			}
 
 			writer.WriteEndElement(); // wsdl:portType
+		}
+
+		private void AddOperationTypeFaults(XmlDictionaryWriter writer, OperationDescription operation)
+		{
+			foreach (var faultName in operation.Faults.Select(f => f.Name).ToArray())
+			{
+				writer.WriteStartElement("wsdl", "fault", Namespaces.WSDL_NS);
+				writer.WriteAttributeString("name", $"{EnsureFaultNaming(faultName)}");
+				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_{EnsureFaultNaming(faultName)}_FaultMessage");
+				writer.WriteEndElement(); // wsdl:fault
+			}
+		}
+
+		private string EnsureFaultNaming(string faultName)
+		{
+			if (faultName.EndsWith(FaultSuffix))
+			{
+				return faultName;
+			}
+
+			return $"{faultName}{FaultSuffix}";
 		}
 
 		private void AddBinding(XmlDictionaryWriter writer)
@@ -721,10 +776,28 @@ namespace SoapCore.Meta
 						writer.WriteEndElement(); // wsdl:output
 					}
 
+					AddBindingFaults(writer, operation, soap, soapNamespace);
+
 					writer.WriteEndElement(); // wsdl:operation
 				}
 
 				writer.WriteEndElement(); // wsdl:binding
+			}
+		}
+
+		private void AddBindingFaults(XmlDictionaryWriter writer, OperationDescription operation, string soap, string soapNamespace)
+		{
+			foreach (var faultName in operation.Faults.Select(f => f.Name))
+			{
+				writer.WriteStartElement("wsdl", "fault", Namespaces.WSDL_NS);
+				writer.WriteAttributeString("name", $"{EnsureFaultNaming(faultName)}");
+
+				writer.WriteStartElement(soap, "fault", soapNamespace);
+				writer.WriteAttributeString("use", "literal");
+				writer.WriteAttributeString("name", $"{EnsureFaultNaming(faultName)}");
+				writer.WriteEndElement(); // soap:fault
+
+				writer.WriteEndElement(); // wsdl:fault
 			}
 		}
 
