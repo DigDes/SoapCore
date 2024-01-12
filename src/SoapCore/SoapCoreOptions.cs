@@ -1,8 +1,9 @@
-using SoapCore.Extensibility;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
+using SoapCore.Extensibility;
+using SoapCore.Serializer;
 
 namespace SoapCore
 {
@@ -125,8 +126,19 @@ namespace SoapCore
 
 
 		/// <summary>
+		/// Get or sets a value indicating the use of custom serializer, use for if multiple custom serializer used to services
+		/// </summary>
+		internal Type SerializerIdentifier { get; set; }
+
+		/// <summary>
 		/// Sets additional namespace declaration attributes in envelope
 		/// </summary>
 		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
+
+		public void UseCustomSerializer<TCustomSerializer>()
+			where TCustomSerializer : class, ISoapCoreSerializer
+		{
+			SerializerIdentifier = typeof(TCustomSerializer);
+		}
 	}
 }

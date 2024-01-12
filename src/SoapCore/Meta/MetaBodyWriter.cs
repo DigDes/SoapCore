@@ -921,7 +921,7 @@ namespace SoapCore.Meta
 					}
 				}
 
-				AddSchemaType(writer, toBuild, parentTypeToBuild.ChildElementName ?? elementNameFromAttribute ?? member.Name, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
+				AddSchemaType(writer, toBuild, elementNameFromAttribute ?? member.Name ?? parentTypeToBuild.ChildElementName, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue);
 			}
 		}
 

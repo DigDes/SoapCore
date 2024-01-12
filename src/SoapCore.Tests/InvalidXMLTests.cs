@@ -43,7 +43,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			var soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options);
+			var soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, serviceCollection.BuildServiceProvider());
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/Service.svc");
@@ -63,7 +63,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = "text/xml; charset=utf-8";
 
-			await soapCore.Invoke(context, serviceCollection.BuildServiceProvider());
+			await soapCore.Invoke(context);
 
 			// Assert
 			Assert.IsTrue(context.Response.Body.Length > 0);

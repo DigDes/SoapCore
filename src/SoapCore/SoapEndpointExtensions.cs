@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SoapCore.Extensibility;
 using SoapCore.Meta;
+using SoapCore.Serializer;
 
 #if NETCOREAPP3_0_OR_GREATER
 using Microsoft.AspNetCore.Routing;
@@ -354,10 +356,7 @@ namespace SoapCore
 
 		public static IServiceCollection AddSoapCore(this IServiceCollection serviceCollection)
 		{
-			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
-			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<CustomMessage>>();
-
-			return serviceCollection;
+			return AddSoapCore<CustomMessage>(serviceCollection);
 		}
 
 		public static IServiceCollection AddSoapCore<T_MESSAGE>(this IServiceCollection serviceCollection)
@@ -365,6 +364,13 @@ namespace SoapCore
 		{
 			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
 			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<T_MESSAGE>>();
+
+			serviceCollection.AddSingleton<ISoapCoreSerializerResolver>(serviceProvider => serviceType =>
+			{
+				var serrailizes = serviceProvider.GetServices<ISoapCoreSerializer>();
+				var serializer = serrailizes.FirstOrDefault(x => x.GetType() == serviceType);
+				return serializer;
+			});
 
 			return serviceCollection;
 		}
@@ -446,6 +452,20 @@ namespace SoapCore
 			where TProcessor : class, ISoapMessageProcessor
 		{
 			serviceCollection.Add(new ServiceDescriptor(typeof(ISoapMessageProcessor), typeof(TProcessor), lifetime));
+			return serviceCollection;
+		}
+
+
+		public static IServiceCollection AddCustomSoapMessageSerializer(this IServiceCollection serviceCollection, ISoapCoreSerializer messageSerializer)
+		{
+			serviceCollection.AddSingleton(messageSerializer);
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddCustomSoapMessageSerializer<TProcessor>(this IServiceCollection serviceCollection, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+			where TProcessor : class, ISoapCoreSerializer
+		{
+			serviceCollection.Add(new ServiceDescriptor(typeof(ISoapCoreSerializer), typeof(TProcessor), lifetime));
 			return serviceCollection;
 		}
 	}
