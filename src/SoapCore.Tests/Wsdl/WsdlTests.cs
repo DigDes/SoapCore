@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.ServiceModel.Channels;
 using System.Text;
@@ -28,6 +29,7 @@ namespace SoapCore.Tests.Wsdl
 	{
 		private readonly XNamespace _xmlSchema = "http://www.w3.org/2001/XMLSchema";
 		private readonly XNamespace _wsdlSchema = "http://schemas.xmlsoap.org/wsdl/";
+		private readonly XNamespace _soapSchema = "http://schemas.xmlsoap.org/wsdl/soap/";
 
 		private IWebHost _host;
 
@@ -621,6 +623,98 @@ namespace SoapCore.Tests.Wsdl
 
 			//checking default name specified by enum member
 			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "ThirdEnumMember"));
+		}
+
+		[DataTestMethod]
+		public async Task CheckServiceWithFaultContractsXmlSerializedWsdl()
+		{
+			//we check 2 fault contracts - one named with Fault-suffix and one without
+			var wsdl = await GetWsdlFromMetaBodyWriter<ServiceWithFaultContracts>(SoapSerializer.XmlSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			//checking an element for OperationFault to be there
+			var testFaultElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "OperationFault" && a.Attribute("type").Value == "tns:OperationFault");
+			Assert.IsNotNull(testFaultElement);
+
+			//checking a complexType for OperationFault to be there
+			var testFaultComplexType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "OperationFault");
+			Assert.IsNotNull(testFaultComplexType);
+
+			//checking a fault message for OperationFault to be there and no additional Fault-Suffix is applied
+			var testFaultMessage = GetElements(root, _wsdlSchema + "message").SingleOrDefault(a => a.Attribute("name")?.Value?.Contains("GetEnum_OperationFault_") == true);
+			Assert.IsNotNull(testFaultMessage);
+
+			//checking part to reference correct element
+			var testPartChild = GetElements(testFaultMessage, _wsdlSchema + "part").SingleOrDefault(a => a.Attribute("element")?.Value == "tns:OperationFault");
+			Assert.IsNotNull(testPartChild);
+
+			//checking portType to be there
+			var testPortType = GetElements(root, _wsdlSchema + "portType").SingleOrDefault(a => a.Attribute("name").Value == "IServiceWithFaultContracts");
+			Assert.IsNotNull(testPortType);
+
+			//checking operation for GetEnum to be there
+			var testOperation = GetElements(testPortType, _wsdlSchema + "operation").SingleOrDefault(a => a.Attribute("name").Value == "GetEnum");
+			Assert.IsNotNull(testOperation);
+
+			//checking operation to have fault child with correct message referenced
+			var testFaultForOperation = GetElements(testOperation, _wsdlSchema + "fault").SingleOrDefault(a => a.Attribute("message").Value == "tns:IServiceWithFaultContracts_GetEnum_OperationFault_FaultMessage");
+			Assert.IsNotNull(testFaultForOperation);
+
+			//checking binding to be there
+			var testBinding = GetElements(root, _wsdlSchema + "binding").SingleOrDefault(a => a.Attribute("type").Value == "tns:IServiceWithFaultContracts");
+			Assert.IsNotNull(testBinding);
+
+			//checking operation for GetEnum to be there
+			testOperation = GetElements(testBinding, _wsdlSchema + "operation").SingleOrDefault(a => a.Attribute("name").Value == "GetEnum");
+			Assert.IsNotNull(testOperation);
+
+			//checking fault to be there
+			testFaultForOperation = GetElements(testOperation, _wsdlSchema + "fault").SingleOrDefault(a => a.Attribute("name").Value == "OperationFault");
+			Assert.IsNotNull(testFaultForOperation);
+
+			//and has soap-fault child
+			var testSoapFault = GetElements(testFaultForOperation, _soapSchema + "fault").SingleOrDefault(a => a.Attribute("name").Value == "OperationFault" && a.Attribute("use").Value == "literal");
+			Assert.IsNotNull(testFaultForOperation);
+
+			//from here checking, if fault contract without Fault suffix handled correctly
+			//checking an element for FailedOperation to be there
+			testFaultElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name").Value == "FailedOperationFault" && a.Attribute("type").Value == "tns:FailedOperation");
+			Assert.IsNotNull(testFaultElement);
+
+			//checking a complexType for FailedOperation to be there
+			testFaultComplexType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "FailedOperation");
+			Assert.IsNotNull(testFaultComplexType);
+
+			//checking a fault message for FailedOperation to be there with additional Fault-Suffix applied
+			testFaultMessage = GetElements(root, _wsdlSchema + "message").SingleOrDefault(a => a.Attribute("name")?.Value?.Contains("LoadComplexType_FailedOperationFault_") == true);
+			Assert.IsNotNull(testFaultMessage);
+
+			//checking part to reference correct element
+			testPartChild = GetElements(testFaultMessage, _wsdlSchema + "part").SingleOrDefault(a => a.Attribute("element")?.Value == "tns:FailedOperationFault");
+			Assert.IsNotNull(testPartChild);
+
+			//checking operation for LoadComplexType to be there
+			testOperation = GetElements(testPortType, _wsdlSchema + "operation").SingleOrDefault(a => a.Attribute("name").Value == "LoadComplexType");
+			Assert.IsNotNull(testOperation);
+
+			//checking operation to have fault child with correct message referenced
+			testFaultForOperation = GetElements(testOperation, _wsdlSchema + "fault").SingleOrDefault(a => a.Attribute("message").Value == "tns:IServiceWithFaultContracts_LoadComplexType_FailedOperationFault_FaultMessage");
+			Assert.IsNotNull(testFaultForOperation);
+
+			//checking operation for LoadComplexType under the binding to be there
+			testOperation = GetElements(testBinding, _wsdlSchema + "operation").SingleOrDefault(a => a.Attribute("name").Value == "LoadComplexType");
+			Assert.IsNotNull(testOperation);
+
+			//checking operation to have fault child with correct message referenced
+			testFaultForOperation = GetElements(testOperation, _wsdlSchema + "fault").SingleOrDefault(a => a.Attribute("name").Value == "FailedOperationFault");
+			Assert.IsNotNull(testFaultForOperation);
+
+			//and has soap-fault child
+			testSoapFault = GetElements(testFaultForOperation, _soapSchema + "fault").SingleOrDefault(a => a.Attribute("name").Value == "FailedOperationFault" && a.Attribute("use").Value == "literal");
+			Assert.IsNotNull(testFaultForOperation);
 		}
 
 		[DataTestMethod]
