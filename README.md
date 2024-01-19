@@ -73,18 +73,19 @@ There is an optional feature included where you can instead of generating servic
 
 To use it, add a setting like this to appsettings
 
-```csharp
- "FileWSDL": {
-    "UrlOverride": "",
-    "VirtualPath": "",
-    "WebServiceWSDLMapping": {
-      "Service.asmx": { ,
-        "UrlOverride": "Management/Service.asmx",
-        "WsdlFile": "snapshotpull.wsdl",
-        "SchemaFolder": "Schemas",
-        "WsdlFolder": "Schemas"
-      }
+```json
+"FileWSDL": {
+  "UrlOverride": "",
+  "VirtualPath": "",
+  "WebServiceWSDLMapping": {
+    "Service.asmx": {
+      "UrlOverride": "Management/Service.asmx",
+      "WsdlFile": "snapshotpull.wsdl",
+      "SchemaFolder": "Schemas",
+      "WsdlFolder": "Schemas"
     }
+  }
+}
 ```
 
 * UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
