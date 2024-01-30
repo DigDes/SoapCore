@@ -752,6 +752,37 @@ namespace SoapCore.Tests.Wsdl
 
 		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckArrayOfStringSerialization(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeAndOutParameterService>(soapSerializer, useMicrosoftGuid: true);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// verify that ArrayOfString type has maxOccurs="unbounded" attribute
+			var arrayOfString = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "ArrayOfString");
+			Assert.IsNotNull(arrayOfString);
+			var stringSequence = GetElements(arrayOfString, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(stringSequence);
+			var stringElement = GetElements(stringSequence, _xmlSchema + "element").SingleOrDefault();
+			Assert.IsNotNull(stringElement);
+			Assert.IsTrue(stringElement.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(stringElement.Attribute("maxOccurs").Value == "unbounded");
+
+			// verify that ArrayOfInt type has maxOccurs="unbounded" attribute
+			var arrayOfInt = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "ArrayOfInt");
+			Assert.IsNotNull(arrayOfInt);
+			var intSequence = GetElements(arrayOfInt, _xmlSchema + "sequence").SingleOrDefault();
+			Assert.IsNotNull(intSequence);
+			var intElement = GetElements(intSequence, _xmlSchema + "element").SingleOrDefault();
+			Assert.IsNotNull(intElement);
+			Assert.IsTrue(intElement.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(intElement.Attribute("maxOccurs").Value == "unbounded");
+		}
+
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckUnqualifiedMembersService(SoapSerializer soapSerializer)
 		{
