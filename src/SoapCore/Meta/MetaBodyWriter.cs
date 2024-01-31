@@ -972,7 +972,7 @@ namespace SoapCore.Meta
 			{
 				elementNameFromAttribute = elementItem.ElementName;
 				toBuild.ChildElementName = elementNameFromAttribute;
-				createListWithoutProxyType = toBuild.Type.IsEnumerableType();
+				createListWithoutProxyType = toBuild.Type.IsEnumerableType() && toBuild.Type.Name != "String" && toBuild.Type.Name != "Byte[]";
 			}
 
 			var attributeItem = member.GetCustomAttribute<XmlAttributeAttribute>();
@@ -1133,7 +1133,7 @@ namespace SoapCore.Meta
 				{
 					// skip occurence
 				}
-				else if (isArray && type.Name != "String" && type.Name != "Byte[]")
+				else if (isArray)
 				{
 					writer.WriteAttributeString("minOccurs", "0");
 					writer.WriteAttributeString("maxOccurs", "unbounded");
