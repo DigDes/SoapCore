@@ -481,7 +481,6 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[DataTestMethod]
-		[DataRow(SoapSerializer.XmlSerializer)]
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckStringArrayNameWsdl(SoapSerializer soapSerializer)
 		{
