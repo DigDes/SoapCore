@@ -28,11 +28,9 @@ namespace SoapCore.Meta
 
 		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<TypeToBuild> _complexTypeToBuild;
-		private readonly Queue<Type> _arrayToBuild;
 
 		private readonly HashSet<string> _builtEnumTypes;
 		private readonly HashSet<string> _builtComplexTypes;
-		private readonly HashSet<string> _buildArrayTypes;
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
 		private bool _buildDateTimeOffset;
@@ -59,10 +57,8 @@ namespace SoapCore.Meta
 
 			_enumToBuild = new Queue<Type>();
 			_complexTypeToBuild = new Queue<TypeToBuild>();
-			_arrayToBuild = new Queue<Type>();
 			_builtEnumTypes = new HashSet<string>();
 			_builtComplexTypes = new HashSet<string>();
-			_buildArrayTypes = new HashSet<string>();
 			_requestedDynamicTypes = new Dictionary<string, Dictionary<string, string>>();
 
 			BindingName = bindingName;
@@ -303,10 +299,6 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 
 			writer.WriteStartElement("import", Namespaces.XMLNS_XSD);
-			writer.WriteAttributeString("namespace", Namespaces.ARRAYS_NS);
-			writer.WriteEndElement();
-
-			writer.WriteStartElement("import", Namespaces.XMLNS_XSD);
 			writer.WriteAttributeString("namespace", Namespaces.SYSTEM_NS);
 			writer.WriteEndElement();
 
@@ -512,39 +504,6 @@ namespace SoapCore.Meta
 			}
 
 			writer.WriteEndElement(); // schema
-
-			while (_arrayToBuild.Count > 0)
-			{
-				var toBuild = _arrayToBuild.Dequeue();
-				var toBuildName = toBuild.GetSerializedTypeName();
-
-				if (!_buildArrayTypes.Contains(toBuildName))
-				{
-					writer.WriteStartElement("schema", Namespaces.XMLNS_XSD);
-					writer.WriteXmlnsAttribute("tns", Namespaces.ARRAYS_NS);
-					writer.WriteAttributeString("elementFormDefault", "qualified");
-					writer.WriteAttributeString("targetNamespace", Namespaces.ARRAYS_NS);
-
-					writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
-					writer.WriteAttributeString("name", toBuildName);
-
-					writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-					AddSchemaType(writer, toBuild.GetGenericType(), null, true);
-					writer.WriteEndElement(); // sequence
-
-					writer.WriteEndElement(); // complexType
-
-					writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
-					writer.WriteAttributeString("name", toBuildName);
-					writer.WriteAttributeString("nillable", "true");
-					writer.WriteAttributeString("type", "tns:" + toBuildName);
-					writer.WriteEndElement(); // element
-
-					writer.WriteEndElement(); // schema
-
-					_buildArrayTypes.Add(toBuildName);
-				}
-			}
 
 			if (_buildDateTimeOffset)
 			{
@@ -1214,58 +1173,33 @@ namespace SoapCore.Meta
 				}
 				else if (typeof(IEnumerable).IsAssignableFrom(type))
 				{
-					if (type.GetGenericType().Name == "String")
+					if (string.IsNullOrEmpty(name))
 					{
-						if (string.IsNullOrEmpty(name))
-						{
-							name = typeName;
-						}
+						name = typeName;
+					}
 
-						var ns = $"q{_namespaceCounter++}";
+					writer.WriteAttributeString("name", name);
+					WriteQualification(writer, isUnqualified);
 
-						writer.WriteXmlnsAttribute(ns, Namespaces.ARRAYS_NS);
-						writer.WriteAttributeString("name", name);
-						WriteQualification(writer, isUnqualified);
+					if (!isArray)
+					{
+						writer.WriteAttributeString("nillable", "true");
+					}
 
-						if (!isArray)
-						{
-							writer.WriteAttributeString("nillable", "true");
-						}
+					if (isListWithoutWrapper)
+					{
+						newTypeToBuild = new TypeToBuild(newTypeToBuild.Type.GetGenericType());
+					}
 
-						writer.WriteAttributeString("type", $"{ns}:{newTypeToBuild.TypeName}");
-
-						_arrayToBuild.Enqueue(type);
+					if (newTypeToBuild.IsAnonumous)
+					{
+						AddSchemaComplexType(writer, newTypeToBuild);
 					}
 					else
 					{
-						if (string.IsNullOrEmpty(name))
-						{
-							name = typeName;
-						}
+						writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
 
-						writer.WriteAttributeString("name", name);
-						WriteQualification(writer, isUnqualified);
-
-						if (!isArray)
-						{
-							writer.WriteAttributeString("nillable", "true");
-						}
-
-						if (isListWithoutWrapper)
-						{
-							newTypeToBuild = new TypeToBuild(newTypeToBuild.Type.GetGenericType());
-						}
-
-						if (newTypeToBuild.IsAnonumous)
-						{
-							AddSchemaComplexType(writer, newTypeToBuild);
-						}
-						else
-						{
-							writer.WriteAttributeString("type", "tns:" + newTypeToBuild.TypeName);
-
-							_complexTypeToBuild.Enqueue(newTypeToBuild);
-						}
+						_complexTypeToBuild.Enqueue(newTypeToBuild);
 					}
 				}
 				else if (toBuild.IsAnonumous)
