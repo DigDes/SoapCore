@@ -1100,7 +1100,7 @@ namespace SoapCore.Meta
 				(var soap, var soapNamespace, var qualifiedBindingName, _) = GetSoapMetaParameters(bindingInfo);
 
 				writer.WriteStartElement("wsdl", "binding", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", BindingName);
+				writer.WriteAttributeString("name", qualifiedBindingName);
 				writer.WriteAttributeString("type", "tns:" + BindingType);
 
 				writer.WriteStartElement(soap, "binding", soapNamespace);
