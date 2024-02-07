@@ -164,6 +164,17 @@ namespace SoapCore.Meta
 					attr.AttributeType == typeof(XmlIgnoreAttribute));
 		}
 
+		/// <summary>
+		/// Checks if the parent has a ShouldSerialize*() method defined for a specific member.
+		/// </summary>
+		/// <param name="member">The member to check</param>
+		/// <param name="parent">Parent of the member</param>
+		/// <returns>True if a ShouldSerialize*() method exists</returns>
+		public static bool HasShouldSerializeMethod(this MemberInfo member, TypeToBuild parent)
+		{
+			return parent.Type.GetMethod($"ShouldSerialize{member.Name}", Array.Empty<Type>()) != null;
+		}
+
 		public static bool IsEnumerableType(this Type collectionType)
 		{
 			if (collectionType.IsArray)

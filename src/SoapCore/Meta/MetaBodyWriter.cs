@@ -944,7 +944,9 @@ namespace SoapCore.Meta
 					name = member.Name;
 				}
 
-				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified);
+				bool isOptional = member.HasShouldSerializeMethod(parentTypeToBuild);
+
+				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified, isOptionalAttribute: isOptional);
 			}
 			else if (messageBodyMemberAttribute != null)
 			{
@@ -992,7 +994,7 @@ namespace SoapCore.Meta
 			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null, bool isOptionalAttribute = false)
 		{
 			var type = toBuild.Type;
 
@@ -1121,6 +1123,11 @@ namespace SoapCore.Meta
 				else
 				{
 					writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
+				}
+
+				if (isAttribute && typeInfo.IsValueType && !isOptionalAttribute)
+				{
+					writer.WriteAttributeString("use", "required");
 				}
 			}
 			else
