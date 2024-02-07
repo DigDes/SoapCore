@@ -5,11 +5,11 @@ namespace SoapCore.Tests.Wsdl.Services
 	public enum EnumWithCustomNames
 	{
 		[XmlEnum("F")]
-		FirstEnumMember,
+		FirstEnumMember = -2,
 
 		[XmlEnum("S")]
-		SecondEnumMember,
+		SecondEnumMember = 1,
 
-		ThirdEnumMember
+		ThirdEnumMember = 0
 	}
 }

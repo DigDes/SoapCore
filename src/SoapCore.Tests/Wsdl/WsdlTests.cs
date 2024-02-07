@@ -617,11 +617,12 @@ namespace SoapCore.Tests.Wsdl
 			Assert.AreEqual(3, testEnumerationElements.Count);
 
 			//checking custom names specified per XmlEnumAttribute are used
-			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "F"));
-			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "S"));
+			// also verify that the order of the enum values is correct as specified in the source
+			Assert.IsTrue(testEnumerationElements[0].FirstAttribute?.Value == "F");
+			Assert.IsTrue(testEnumerationElements[1].FirstAttribute?.Value == "S");
 
 			//checking default name specified by enum member
-			Assert.IsNotNull(testEnumerationElements.SingleOrDefault(e => e.FirstAttribute?.Value == "ThirdEnumMember"));
+			Assert.IsTrue(testEnumerationElements[2].FirstAttribute?.Value == "ThirdEnumMember");
 		}
 
 		[DataTestMethod]

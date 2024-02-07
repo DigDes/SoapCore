@@ -470,7 +470,10 @@ namespace SoapCore.Meta
 					writer.WriteStartElement("restriction", Namespaces.XMLNS_XSD);
 					writer.WriteAttributeString("base", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
 
-					var membersWithCustomNames = from n in Enum.GetNames(toBuild)
+					// enum values are ordered by the order in which they are specified in the source code.
+					var orderedNames = toBuild.GetFields().Where(fi => fi.IsStatic).OrderBy(fi => fi.MetadataToken).Select(fi => fi.Name);
+
+					var membersWithCustomNames = from n in orderedNames
 												 join m in toBuild.GetMembers() on n equals m.Name
 												 let ca = m.CustomAttributes.FirstOrDefault(ca => ca.AttributeType == typeof(XmlEnumAttribute))
 												 select new
