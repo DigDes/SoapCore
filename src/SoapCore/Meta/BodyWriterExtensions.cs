@@ -235,7 +235,7 @@ namespace SoapCore.Meta
 
 		private static string GetArrayTypeName(string typeName, bool isNullable)
 		{
-			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName).FirstCharToUpperOrDefault() ?? typeName);
+			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName) ?? typeName).FirstCharToUpperOrDefault();
 		}
 
 		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)

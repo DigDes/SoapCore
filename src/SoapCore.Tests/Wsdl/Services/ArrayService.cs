@@ -37,5 +37,14 @@ namespace SoapCore.Tests.Wsdl.Services
 		public long[] LongArray { get; set; }
 		public long[][] LongArrayArray { get; set; }
 		public List<List<string>> StringListList { get; set; }
+		public List<innerClass> InnerClassList { get; set; }
+	}
+
+// Class starts with lower-case letter on purpose for a test
+#pragma warning disable SA1300 // Element should begin with upper-case letter
+	public class innerClass
+#pragma warning restore SA1300 // Element should begin with upper-case letter
+	{
+		public string Name { get; set; }
 	}
 }

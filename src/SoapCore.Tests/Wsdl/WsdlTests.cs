@@ -869,6 +869,10 @@ namespace SoapCore.Tests.Wsdl
 			var stringListList = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='StringListList' and @type='tns:ArrayOfArrayOfString' and @nillable='true']", nm);
 			Assert.IsNotNull(stringListList);
 
+			// verify that ArrayOfInnerClass uses upper-case "i", even though the class starts with a lower-case letter.
+			var innerClassList = root.XPathSelectElement("//xsd:complexType[@name='ArrayRequest']/xsd:sequence/xsd:element[@name='InnerClassList' and @type='tns:ArrayOfInnerClass' and @nillable='true']", nm);
+			Assert.IsNotNull(innerClassList);
+
 			var nullableEnumerable = root.XPathSelectElement("//xsd:complexType[@name='EnumerableResponse']/xsd:sequence/xsd:element[@name='LongNullableEnumerable' and @type='tns:ArrayOfNullableLong' and @nillable='true']", nm);
 			Assert.IsNotNull(nullableEnumerable);
 
