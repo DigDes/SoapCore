@@ -782,6 +782,31 @@ namespace SoapCore.Tests.Wsdl
 
 		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckXmlAttributeSerialization(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<AttributeService>(soapSerializer);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			var attributeType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "AttributeType");
+			Assert.IsNotNull(attributeType);
+
+			// verify that reference types (such as string) have no use="required" attribute
+			var stringAttribute = GetElements(attributeType, _xmlSchema + "attribute").SingleOrDefault(a => a.Attribute("name")?.Value == "StringProperty");
+			Assert.IsNull(stringAttribute.Attribute("use"));
+
+			// verify that value types (such as int) have use="required" attribute
+			var intAttribute = GetElements(attributeType, _xmlSchema + "attribute").SingleOrDefault(a => a.Attribute("name")?.Value == "IntProperty");
+			Assert.IsTrue(intAttribute.Attribute("use").Value == "required");
+
+			// verify that if a value type has a ShouldSerialize*() method, it is not marked as required
+			var optionalIntAttribute = GetElements(attributeType, _xmlSchema + "attribute").SingleOrDefault(a => a.Attribute("name")?.Value == "OptionalIntProperty");
+			Assert.IsNull(optionalIntAttribute.Attribute("use"));
+		}
+
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckUnqualifiedMembersService(SoapSerializer soapSerializer)
 		{
