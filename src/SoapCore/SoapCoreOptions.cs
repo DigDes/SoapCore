@@ -8,6 +8,8 @@ namespace SoapCore
 {
 	public class SoapCoreOptions
 	{
+		private bool? _indentWsdl = null;
+
 		/// <summary>
 		/// Gets or sets the Path of the Service
 		/// </summary>
@@ -104,6 +106,12 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool IndentXml { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether to indent the generated WSDL.
+		/// <para>Defaults to the value of <see cref="IndentXml"/></para>
+		/// </summary>
+		public bool IndentWsdl { get => _indentWsdl ?? IndentXml; set => _indentWsdl = value; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to check to make sure that the XmlOutput doesn't contain invalid characters
