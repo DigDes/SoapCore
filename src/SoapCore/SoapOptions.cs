@@ -56,6 +56,8 @@ namespace SoapCore
 
 		public bool IndentXml { get; set; } = true;
 
+		public bool IndentWsdl { get; set; } = true;
+
 		public bool UseMicrosoftGuid { get; set; } = false;
 
 		/// <summary>
@@ -92,6 +94,7 @@ namespace SoapCore
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
 				StandAloneAttribute = opt.StandAloneAttribute,
 				IndentXml = opt.IndentXml,
+				IndentWsdl = opt.IndentWsdl,
 				XmlNamespacePrefixOverrides = opt.XmlNamespacePrefixOverrides,
 				WsdlFileOptions = opt.WsdlFileOptions,
 				AdditionalEnvelopeXmlnsAttributes = opt.AdditionalEnvelopeXmlnsAttributes,

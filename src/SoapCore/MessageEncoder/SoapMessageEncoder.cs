@@ -28,12 +28,10 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _overwriteResponseContentType;
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
-		private readonly bool _indentXml;
 		private readonly bool _checkXmlCharacters;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool indentXml, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
 		{
-			_indentXml = indentXml;
 			_omitXmlDeclaration = omitXmlDeclaration;
 			_checkXmlCharacters = checkXmlCharacters;
 			BindingName = bindingName;
@@ -164,7 +162,7 @@ namespace SoapCore.MessageEncoder
 			return Task.FromResult(message);
 		}
 
-		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter)
+		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter, bool indentXml)
 		{
 			if (message == null)
 			{
@@ -189,7 +187,7 @@ namespace SoapCore.MessageEncoder
 				using (var xmlTextWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings
 				{
 					OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
-					Indent = _indentXml,
+					Indent = indentXml,
 					Encoding = _writeEncoding,
 					CloseOutput = true,
 					CheckCharacters = _checkXmlCharacters
@@ -217,7 +215,7 @@ namespace SoapCore.MessageEncoder
 			}
 		}
 
-		public virtual Task WriteMessageAsync(Message message, Stream stream)
+		public virtual Task WriteMessageAsync(Message message, Stream stream, bool indentXml)
 		{
 			if (message == null)
 			{
@@ -234,7 +232,7 @@ namespace SoapCore.MessageEncoder
 			using var xmlTextWriter = XmlWriter.Create(stream, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
-				Indent = _indentXml,
+				Indent = indentXml,
 				Encoding = _writeEncoding,
 				CloseOutput = false,
 				CheckCharacters = _checkXmlCharacters

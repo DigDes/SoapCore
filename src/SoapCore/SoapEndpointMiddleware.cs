@@ -77,7 +77,7 @@ namespace SoapCore
 			for (var i = 0; i < options.EncoderOptions.Length; i++)
 			{
 				var encoderOptions = options.EncoderOptions[i];
-				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions.MessageVersion, encoderOptions.WriteEncoding, encoderOptions.OverwriteResponseContentType, encoderOptions.ReaderQuotas, options.OmitXmlDeclaration, options.IndentXml, options.CheckXmlCharacters, encoderOptions.XmlNamespaceOverrides, encoderOptions.BindingName, encoderOptions.PortName, encoderOptions.MaxSoapHeaderSize);
+				_messageEncoders[i] = new SoapMessageEncoder(encoderOptions.MessageVersion, encoderOptions.WriteEncoding, encoderOptions.OverwriteResponseContentType, encoderOptions.ReaderQuotas, options.OmitXmlDeclaration, options.CheckXmlCharacters, encoderOptions.XmlNamespaceOverrides, encoderOptions.BindingName, encoderOptions.PortName, encoderOptions.MaxSoapHeaderSize);
 			}
 		}
 
@@ -171,14 +171,14 @@ namespace SoapCore
 		}
 
 #if !NETCOREAPP3_0_OR_GREATER
-		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
+		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext, bool indentXml)
 		{
-			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body);
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body, indentXml);
 		}
 #else
-		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext)
+		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext, bool indentXml)
 		{
-			return messageEncoder.WriteMessageAsync(responseMessage, httpContext, httpContext.Response.BodyWriter);
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext, httpContext.Response.BodyWriter, indentXml);
 		}
 #endif
 
@@ -257,7 +257,7 @@ namespace SoapCore
 				httpContext.Response.ContentType = "text/html;charset=UTF-8";
 
 				using var ms = new MemoryStream();
-				await messageEncoder.WriteMessageAsync(responseMessage, ms);
+				await messageEncoder.WriteMessageAsync(responseMessage, ms, _options.IndentWsdl);
 				ms.Position = 0;
 				using var sr = new StreamReader(ms);
 				var wsdl = await sr.ReadToEndAsync();
@@ -272,7 +272,7 @@ namespace SoapCore
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8"; // _messageEncoders[0].ContentType;
 
-			await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
+			await WriteMessageAsync(messageEncoder, responseMessage, httpContext, _options.IndentWsdl);
 		}
 
 		private async Task ProcessOperation(HttpContext httpContext, IServiceProvider serviceProvider)
@@ -324,7 +324,7 @@ namespace SoapCore
 
 			if (responseMessage != null)
 			{
-				await WriteMessageAsync(messageEncoder, responseMessage, httpContext);
+				await WriteMessageAsync(messageEncoder, responseMessage, httpContext, _options.IndentXml);
 			}
 		}
 
