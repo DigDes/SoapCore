@@ -832,19 +832,32 @@ namespace SoapCore.Tests.Wsdl
 		public async Task CheckDateTimeOffsetServiceWsdl(SoapSerializer soapSerializer)
 		{
 			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
-			string systemNs = "http://schemas.datacontract.org/2004/07/System";
 
 			var wsdl = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(soapSerializer);
 			var root = XElement.Parse(wsdl);
 			var responseDateElem = root.XPathSelectElement($"//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult']", nm);
-			Assert.IsTrue(responseDateElem.ToString().Contains(systemNs));
 
-			var wsdlWCF = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(SoapSerializer.DataContractSerializer);
-			var rootWCF = XElement.Parse(wsdlWCF);
-			var responseDateElemWCF = rootWCF.XPathSelectElement($"//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult']", nm);
-			Assert.IsTrue(responseDateElemWCF.ToString().Contains(systemNs));
-			var dayOfYearElem = GetElements(rootWCF, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("DayOfYear") == true);
-			Assert.IsNull(dayOfYearElem);
+			if (soapSerializer == SoapSerializer.DataContractSerializer)
+			{
+				string systemNs = "http://schemas.datacontract.org/2004/07/System";
+				Assert.IsTrue(responseDateElem.ToString().Contains(systemNs));
+
+				var wsdlWCF = await GetWsdlFromMetaBodyWriter<DateTimeOffsetService>(SoapSerializer.DataContractSerializer);
+				var rootWCF = XElement.Parse(wsdlWCF);
+				var responseDateElemWCF = rootWCF.XPathSelectElement($"//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult']", nm);
+				Assert.IsTrue(responseDateElemWCF.ToString().Contains(systemNs));
+				var dayOfYearElem = GetElements(rootWCF, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("DayOfYear") == true);
+				Assert.IsNull(dayOfYearElem);
+			}
+			else
+			{
+				// XmlSerializer serializes DateTimeOffset as string
+				Assert.AreEqual("xsd:string", responseDateElem.Attribute("type").Value);
+
+				// DateTimeOffset is a ValueType
+				Assert.AreEqual("1", responseDateElem.Attribute("minOccurs").Value);
+				Assert.AreEqual("1", responseDateElem.Attribute("maxOccurs").Value);
+			}
 		}
 
 		[DataTestMethod]

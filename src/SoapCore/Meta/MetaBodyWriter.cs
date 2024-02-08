@@ -33,7 +33,6 @@ namespace SoapCore.Meta
 		private readonly HashSet<string> _builtComplexTypes;
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
-		private bool _buildDateTimeOffset;
 		private bool _buildMicrosoftGuid = false;
 
 		[Obsolete]
@@ -299,7 +298,6 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 
 			writer.WriteStartElement("import", Namespaces.XMLNS_XSD);
-			writer.WriteAttributeString("namespace", Namespaces.SYSTEM_NS);
 			writer.WriteEndElement();
 
 			foreach (var operation in _service.Operations)
@@ -507,42 +505,6 @@ namespace SoapCore.Meta
 			}
 
 			writer.WriteEndElement(); // schema
-
-			if (_buildDateTimeOffset)
-			{
-				writer.WriteStartElement("schema", Namespaces.XMLNS_XSD);
-				writer.WriteXmlnsAttribute("tns", Namespaces.SYSTEM_NS);
-				writer.WriteAttributeString("elementFormDefault", "qualified");
-				writer.WriteAttributeString("targetNamespace", Namespaces.SYSTEM_NS);
-
-				writer.WriteStartElement("import", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("namespace", Namespaces.SERIALIZATION_NS);
-				writer.WriteEndElement();
-
-				writer.WriteStartElement("complexType", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("name", "DateTimeOffset");
-				writer.WriteStartElement("annotation", Namespaces.XMLNS_XSD);
-				writer.WriteStartElement("appinfo", Namespaces.XMLNS_XSD);
-
-				writer.WriteElementString("IsValueType", Namespaces.SERIALIZATION_NS, "true");
-				writer.WriteEndElement(); // appinfo
-				writer.WriteEndElement(); // annotation
-
-				writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
-				AddSchemaType(writer, typeof(DateTime), "DateTime", false);
-				AddSchemaType(writer, typeof(short), "OffsetMinutes", false);
-				writer.WriteEndElement(); // sequence
-
-				writer.WriteEndElement(); // complexType
-
-				writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("name", "DateTimeOffset");
-				writer.WriteAttributeString("nillable", "true");
-				writer.WriteAttributeString("type", "tns:DateTimeOffset");
-				writer.WriteEndElement();
-
-				writer.WriteEndElement(); // schema
-			}
 
 			if (_buildMicrosoftGuid)
 			{
@@ -1059,16 +1021,8 @@ namespace SoapCore.Meta
 				}
 				else if (typeof(DateTimeOffset).IsAssignableFrom(type))
 				{
-					if (string.IsNullOrEmpty(name))
-					{
-						name = typeName;
-					}
-
-					ns = $"q{_namespaceCounter++}";
-					writer.WriteXmlnsAttribute(ns, Namespaces.SYSTEM_NS);
-					xsTypename = new XmlQualifiedName(typeName, Namespaces.SYSTEM_NS);
-
-					_buildDateTimeOffset = true;
+					// XmlSerializer serializes a DateTimeOffset simply as a string, such as 2024-02-08T09:55:41.2527621+01:00
+					xsTypename = ResolveType(typeof(string));
 				}
 				else if (typeInfo.IsEnum)
 				{
