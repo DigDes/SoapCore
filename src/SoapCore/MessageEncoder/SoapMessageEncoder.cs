@@ -181,41 +181,36 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			//Custom string writer with custom encoding support
-			using (var stringWriter = new CustomStringWriter(_writeEncoding))
+			using var memoryStream = new MemoryStream();
+			using (var xmlTextWriter = XmlWriter.Create(memoryStream, new XmlWriterSettings
 			{
-				using (var xmlTextWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings
-				{
-					OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
-					Indent = indentXml,
-					Encoding = _writeEncoding,
-					CloseOutput = true,
-					CheckCharacters = _checkXmlCharacters
-				}))
-				{
-					using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-					message.WriteMessage(xmlWriter);
-					xmlWriter.WriteEndDocument();
-					xmlWriter.Flush();
-				}
-
-				var data = stringWriter.ToString();
-				var soapMessage = _writeEncoding.GetBytes(data);
-
-				//Set Content-length in Response
-				httpContext.Response.ContentLength = soapMessage.Length;
-
-				if (_overwriteResponseContentType)
-				{
-					httpContext.Response.ContentType = ContentType;
-				}
-
-				await pipeWriter.WriteAsync(soapMessage);
-				await pipeWriter.FlushAsync();
+				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
+				Indent = indentXml,
+				Encoding = _writeEncoding,
+				CloseOutput = false,
+				CheckCharacters = _checkXmlCharacters
+			}))
+			{
+				using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+				message.WriteMessage(xmlWriter);
+				xmlWriter.WriteEndDocument();
+				xmlWriter.Flush();
 			}
+
+			//Set Content-length in Response
+			httpContext.Response.ContentLength = memoryStream.Length;
+
+			if (_overwriteResponseContentType)
+			{
+				httpContext.Response.ContentType = ContentType;
+			}
+
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			await memoryStream.CopyToAsync(pipeWriter);
+			await pipeWriter.FlushAsync();
 		}
 
-		public virtual Task WriteMessageAsync(Message message, Stream stream, bool indentXml)
+		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, Stream stream, bool indentXml)
 		{
 			if (message == null)
 			{
@@ -229,21 +224,31 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			using var xmlTextWriter = XmlWriter.Create(stream, new XmlWriterSettings
+			using var memoryStream = new MemoryStream();
+			using (var xmlTextWriter = XmlWriter.Create(memoryStream, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
 				Indent = indentXml,
 				Encoding = _writeEncoding,
 				CloseOutput = false,
 				CheckCharacters = _checkXmlCharacters
-			});
+			}))
+			{
+				using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+				message.WriteMessage(xmlWriter);
+				xmlWriter.WriteEndDocument();
+				xmlWriter.Flush();
+			}
 
-			using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-			message.WriteMessage(xmlWriter);
-			xmlWriter.WriteEndDocument();
-			xmlWriter.Flush();
+			if (httpContext != null) // HttpContext is null in unit tests
+			{
+				// Set Content-Length in response. This will disable chunked transfer-encoding.
+				httpContext.Response.ContentLength = memoryStream.Length;
+			}
 
-			return Task.CompletedTask;
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			await memoryStream.CopyToAsync(stream);
+			await stream.FlushAsync();
 		}
 
 		internal static string GetMediaType(MessageVersion version)

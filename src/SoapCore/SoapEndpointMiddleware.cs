@@ -173,7 +173,7 @@ namespace SoapCore
 #if !NETCOREAPP3_0_OR_GREATER
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext, bool indentXml)
 		{
-			return messageEncoder.WriteMessageAsync(responseMessage, httpContext.Response.Body, indentXml);
+			return messageEncoder.WriteMessageAsync(responseMessage, httpContext, httpContext.Response.Body, indentXml);
 		}
 #else
 		private static Task WriteMessageAsync(SoapMessageEncoder messageEncoder, Message responseMessage, HttpContext httpContext, bool indentXml)
@@ -257,7 +257,7 @@ namespace SoapCore
 				httpContext.Response.ContentType = "text/html;charset=UTF-8";
 
 				using var ms = new MemoryStream();
-				await messageEncoder.WriteMessageAsync(responseMessage, ms, _options.IndentWsdl);
+				await messageEncoder.WriteMessageAsync(responseMessage, httpContext, ms, _options.IndentWsdl);
 				ms.Position = 0;
 				using var sr = new StreamReader(ms);
 				var wsdl = await sr.ReadToEndAsync();

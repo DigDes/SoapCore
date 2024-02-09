@@ -1169,7 +1169,7 @@ namespace SoapCore.Tests.Wsdl
 
 			using (var memoryStream = new MemoryStream())
 			{
-				await encoder.WriteMessageAsync(responseMessage, memoryStream, true);
+				await encoder.WriteMessageAsync(responseMessage, null, memoryStream, true);
 				memoryStream.Position = 0;
 
 				using (var streamReader = new StreamReader(memoryStream))
