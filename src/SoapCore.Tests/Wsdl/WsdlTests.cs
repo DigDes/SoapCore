@@ -1156,7 +1156,7 @@ namespace SoapCore.Tests.Wsdl
 
 		private async Task<string> GetWsdlFromMetaBodyWriter<T>(SoapSerializer serializer, string bindingName = null, string portName = null, bool useMicrosoftGuid = false)
 		{
-			var service = new ServiceDescription(typeof(T));
+			var service = new ServiceDescription(typeof(T), false);
 			var baseUrl = "http://tempuri.org/";
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(useMicrosoftGuid);
 			var defaultBindingName = !string.IsNullOrWhiteSpace(bindingName) ? bindingName : "BasicHttpBinding";

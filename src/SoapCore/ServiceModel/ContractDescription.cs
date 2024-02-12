@@ -7,7 +7,7 @@ namespace SoapCore.ServiceModel
 {
 	public class ContractDescription
 	{
-		public ContractDescription(ServiceDescription service, Type contractType, ServiceContractAttribute attribute)
+		public ContractDescription(ServiceDescription service, Type contractType, ServiceContractAttribute attribute, bool generateSoapActionWithoutContractName)
 		{
 			Service = service;
 			ContractType = contractType;
@@ -20,7 +20,7 @@ namespace SoapCore.ServiceModel
 			{
 				foreach (var operationContract in operationMethodInfo.GetCustomAttributes<OperationContractAttribute>())
 				{
-					operations.Add(new OperationDescription(this, operationMethodInfo, operationContract));
+					operations.Add(new OperationDescription(this, operationMethodInfo, operationContract, generateSoapActionWithoutContractName));
 				}
 			}
 

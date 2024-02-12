@@ -70,6 +70,8 @@ namespace SoapCore
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
 
+		public bool GenerateSoapActionWithoutContractName { get; set; } = false;
+
 		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
@@ -99,7 +101,8 @@ namespace SoapCore
 				WsdlFileOptions = opt.WsdlFileOptions,
 				AdditionalEnvelopeXmlnsAttributes = opt.AdditionalEnvelopeXmlnsAttributes,
 				CheckXmlCharacters = opt.CheckXmlCharacters,
-				UseMicrosoftGuid = opt.UseMicrosoftGuid
+				UseMicrosoftGuid = opt.UseMicrosoftGuid,
+				GenerateSoapActionWithoutContractName = opt.GenerateSoapActionWithoutContractName,
 			};
 
 #pragma warning disable CS0612 // Type or member is obsolete

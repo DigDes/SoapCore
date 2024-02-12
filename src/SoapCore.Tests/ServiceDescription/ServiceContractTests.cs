@@ -11,7 +11,7 @@ namespace SoapCore.Tests
 		[Fact]
 		public void TestFallbackOfServiceNameToTypeName()
 		{
-			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithoutName));
+			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithoutName), false);
 
 			Assert.Equal("IServiceWithoutName", serviceDescription.ServiceName);
 		}
@@ -19,7 +19,7 @@ namespace SoapCore.Tests
 		[Fact]
 		public void TestExplicitlySetServiceName()
 		{
-			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithName));
+			ServiceDescription serviceDescription = new ServiceDescription(typeof(IServiceWithName), false);
 
 			Assert.Equal("MyServiceWithName", serviceDescription.ServiceName);
 		}
