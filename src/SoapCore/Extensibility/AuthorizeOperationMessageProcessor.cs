@@ -25,12 +25,19 @@ namespace SoapCore.Extensibility
 		private readonly Dictionary<string, Type> _pathTypes;
 
 		/// <summary>
+		/// Whether to generate the soapAction without the contract name. This is also specified in the SoapOptions.
+		/// </summary>
+		private readonly bool _generateSoapActionWithoutContractName;
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="AuthorizeOperationMessageProcessor"/> class.
 		/// </summary>
 		/// <param name="pathAndTypes">A dictionary that has the path of the endpoint as Key and the corresponding type as Value. Similar to using the UseSoapEndpoint extension function.</param>
-		public AuthorizeOperationMessageProcessor(Dictionary<string, Type> pathAndTypes)
+		/// <param name="generateSoapActionWithoutContractName">Whether to generate the soapAction without the contract name. Default is false.</param>
+		public AuthorizeOperationMessageProcessor(Dictionary<string, Type> pathAndTypes, bool generateSoapActionWithoutContractName = false)
 		{
 			_pathTypes = pathAndTypes;
+			_generateSoapActionWithoutContractName = generateSoapActionWithoutContractName;
 		}
 
 		public async Task<Message> ProcessMessage(Message requestMessage, HttpContext httpContext, Func<Message, Task<Message>> next)
@@ -43,7 +50,7 @@ namespace SoapCore.Extensibility
 				throw new ArgumentException("Unable to handle request without a valid action parameter. Please supply a valid soap action.");
 			}
 
-			if (!_pathTypes.TryGetValue(httpContext.Request.Path.Value.ToLowerInvariant(), out Type serviceType) || !TryGetOperation(soapAction, serviceType, out var operation))
+			if (!_pathTypes.TryGetValue(httpContext.Request.Path.Value.ToLowerInvariant(), out Type serviceType) || !TryGetOperation(soapAction, serviceType, _generateSoapActionWithoutContractName, out var operation))
 			{
 				throw new InvalidOperationException($"No operation found for specified action: {soapAction}");
 			}
@@ -141,9 +148,9 @@ namespace SoapCore.Extensibility
 			}
 		}
 
-		private static bool TryGetOperation(string methodName, Type serviceType, out OperationDescription operation)
+		private static bool TryGetOperation(string methodName, Type serviceType, bool generateSoapActionWithoutContractName, out OperationDescription operation)
 		{
-			var service = new ServiceDescription(serviceType);
+			var service = new ServiceDescription(serviceType, generateSoapActionWithoutContractName);
 			operation = service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.Ordinal)
 							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.Ordinal)
 							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));

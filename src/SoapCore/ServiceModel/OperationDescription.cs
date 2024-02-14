@@ -12,11 +12,24 @@ namespace SoapCore.ServiceModel
 {
 	public class OperationDescription
 	{
-		public OperationDescription(ContractDescription contract, MethodInfo operationMethod, OperationContractAttribute contractAttribute)
+		public OperationDescription(ContractDescription contract, MethodInfo operationMethod, OperationContractAttribute contractAttribute, bool generateSoapActionWithoutContractName)
 		{
 			Contract = contract;
 			Name = contractAttribute.Name ?? GetNameByAction(contractAttribute.Action) ?? GetNameByMethod(operationMethod);
-			SoapAction = contractAttribute.Action ?? $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
+
+			if (contractAttribute.Action != null)
+			{
+				SoapAction = contractAttribute.Action;
+			}
+			else if (generateSoapActionWithoutContractName)
+			{
+				SoapAction = $"{contract.Namespace.TrimEnd('/')}/{Name}";
+			}
+			else
+			{
+				SoapAction = $"{contract.Namespace.TrimEnd('/')}/{contract.Name}/{Name}";
+			}
+
 			IsOneWay = contractAttribute.IsOneWay;
 			DispatchMethod = operationMethod;
 

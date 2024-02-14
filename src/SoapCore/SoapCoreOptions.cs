@@ -136,5 +136,12 @@ namespace SoapCore
 		/// Sets additional namespace declaration attributes in envelope
 		/// </summary>
 		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
+
+		/// <summary>
+		/// By default, the soapAction that is generated if not explicitely specified is
+		/// {namespace}/{contractName}/{methodName}. If set to true, the service name will
+		/// be omitted, so that the soapAction will be {namespace}/{methodName}.
+		/// </summary>
+		public bool GenerateSoapActionWithoutContractName { get; set; } = false;
 	}
 }

@@ -65,7 +65,7 @@ namespace SoapCore
 
 			_serializerHelper = new SerializerHelper(options.SoapSerializer);
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-			_service = new ServiceDescription(options.ServiceType);
+			_service = new ServiceDescription(options.ServiceType, options.GenerateSoapActionWithoutContractName);
 
 			if (options.EncoderOptions is null)
 			{
