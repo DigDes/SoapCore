@@ -138,7 +138,7 @@ namespace SoapCore.Tests
 			}
 		}
 
-		public class DenialOfServiceProofOfConceptRequestSerializer : ISoapCoreSerializer
+		public class DenialOfServiceProofOfConceptRequestSerializer : IXmlSerializationHandler
 		{
 			public object DeserializeInputParameter(XmlDictionaryReader xmlReader, Type parameterType, string parameterName, string parameterNs, ICustomAttributeProvider customAttributeProvider, IEnumerable<Type> knownTypes = null)
 			{

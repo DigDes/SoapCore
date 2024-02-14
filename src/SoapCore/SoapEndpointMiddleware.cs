@@ -40,7 +40,7 @@ namespace SoapCore
 		private readonly ServiceDescription _service;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly SoapMessageEncoder[] _messageEncoders;
-		private readonly ISoapCoreSerializer _serializerHelper;
+		private readonly IXmlSerializationHandler _serializerHandler;
 
 		[Obsolete]
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, IServiceProvider serviceProvider, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
@@ -74,14 +74,14 @@ namespace SoapCore
 			_options = options;
 			_serviceProvider = serviceProvider;
 
-			var serializerResolver = _serviceProvider.GetService<ISoapCoreSerializerResolver>();
+			var serializerResolver = _serviceProvider.GetService<IXmlSerializationHandlerResolver>();
 			if (serializerResolver != null && _options.SerializerIdentifier != null)
 			{
-				_serializerHelper = serializerResolver(_options.SerializerIdentifier);
-				_ = _serializerHelper ?? throw new InvalidOperationException("custom serializer implementation not found.");
+				_serializerHandler = serializerResolver(_options.SerializerIdentifier);
+				_ = _serializerHandler ?? throw new InvalidOperationException("custom serializer implementation not found.");
 			}
 
-			_serializerHelper ??= new SerializerHelper(options.SoapSerializer);
+			_serializerHandler ??= new SerializerHelper(options.SoapSerializer);
 
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType);
@@ -711,7 +711,7 @@ namespace SoapCore
 
 						lastParameterIndex = parameterInfo.Index;
 
-						var argumentValue = _serializerHelper.DeserializeInputParameter(
+						var argumentValue = _serializerHandler.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
 							parameterInfo.Name,
@@ -722,7 +722,7 @@ namespace SoapCore
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
+							argumentValue = _serializerHandler.DeserializeInputParameter(
 								xmlReader,
 								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
@@ -734,7 +734,7 @@ namespace SoapCore
 						// sometimes there's no namespace for the parameter (ex. MS SOAP SDK)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
+							argumentValue = _serializerHandler.DeserializeInputParameter(
 								xmlReader,
 								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
@@ -782,7 +782,7 @@ namespace SoapCore
 					else
 					{
 						// It's wrapped so either the wrapper name or the name of the wrapper type
-						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(
+						arguments[parameterInfo.Index] = _serializerHandler.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
 							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
@@ -854,7 +854,7 @@ namespace SoapCore
 				{
 					var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-					var value = _serializerHelper.DeserializeInputParameter(
+					var value = _serializerHandler.DeserializeInputParameter(
 						reader,
 						member.MemberInfo.GetPropertyOrFieldType(),
 						member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
@@ -887,7 +887,7 @@ namespace SoapCore
 				var innerParameterNs = messageBodyMemberAttribute.Namespace ?? @namespace;
 				var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
 
-				var innerParameter = _serializerHelper.DeserializeInputParameter(
+				var innerParameter = _serializerHandler.DeserializeInputParameter(
 					xmlReader,
 					innerParameterType,
 					innerParameterName,

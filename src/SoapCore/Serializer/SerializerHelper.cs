@@ -12,7 +12,7 @@ using Microsoft.CSharp;
 
 namespace SoapCore.Serializer
 {
-	internal class SerializerHelper : ISoapCoreSerializer
+	internal class SerializerHelper : IXmlSerializationHandler
 	{
 		private readonly SoapSerializer _serializer;
 

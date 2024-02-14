@@ -365,9 +365,9 @@ namespace SoapCore
 			serviceCollection.TryAddSingleton<IOperationInvoker, DefaultOperationInvoker>();
 			serviceCollection.TryAddSingleton<IFaultExceptionTransformer, DefaultFaultExceptionTransformer<T_MESSAGE>>();
 
-			serviceCollection.AddSingleton<ISoapCoreSerializerResolver>(serviceProvider => serviceType =>
+			serviceCollection.AddSingleton<IXmlSerializationHandlerResolver>(serviceProvider => serviceType =>
 			{
-				var serrailizes = serviceProvider.GetServices<ISoapCoreSerializer>();
+				var serrailizes = serviceProvider.GetServices<IXmlSerializationHandler>();
 				var serializer = serrailizes.FirstOrDefault(x => x.GetType() == serviceType);
 				return serializer;
 			});
@@ -456,16 +456,16 @@ namespace SoapCore
 		}
 
 
-		public static IServiceCollection AddCustomSoapMessageSerializer(this IServiceCollection serviceCollection, ISoapCoreSerializer messageSerializer)
+		public static IServiceCollection AddCustomSoapMessageSerializer(this IServiceCollection serviceCollection, IXmlSerializationHandler messageSerializer)
 		{
 			serviceCollection.AddSingleton(messageSerializer);
 			return serviceCollection;
 		}
 
 		public static IServiceCollection AddCustomSoapMessageSerializer<TProcessor>(this IServiceCollection serviceCollection, ServiceLifetime lifetime = ServiceLifetime.Singleton)
-			where TProcessor : class, ISoapCoreSerializer
+			where TProcessor : class, IXmlSerializationHandler
 		{
-			serviceCollection.Add(new ServiceDescriptor(typeof(ISoapCoreSerializer), typeof(TProcessor), lifetime));
+			serviceCollection.Add(new ServiceDescriptor(typeof(IXmlSerializationHandler), typeof(TProcessor), lifetime));
 			return serviceCollection;
 		}
 	}

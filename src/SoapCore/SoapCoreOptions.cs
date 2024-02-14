@@ -136,7 +136,7 @@ namespace SoapCore
 		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
 
 		public void UseCustomSerializer<TCustomSerializer>()
-			where TCustomSerializer : class, ISoapCoreSerializer
+			where TCustomSerializer : class, IXmlSerializationHandler
 		{
 			SerializerIdentifier = typeof(TCustomSerializer);
 		}
