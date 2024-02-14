@@ -6,11 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +25,7 @@ using SoapCore.DocumentationWriter;
 using SoapCore.Extensibility;
 using SoapCore.MessageEncoder;
 using SoapCore.Meta;
+using SoapCore.Serializer;
 using SoapCore.ServiceModel;
 
 namespace SoapCore
@@ -35,42 +36,57 @@ namespace SoapCore
 		private readonly ILogger<SoapEndpointMiddleware<T_MESSAGE>> _logger;
 		private readonly RequestDelegate _next;
 		private readonly SoapOptions _options;
+		private readonly IServiceProvider _serviceProvider;
 		private readonly ServiceDescription _service;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly SoapMessageEncoder[] _messageEncoders;
-		private readonly SerializerHelper _serializerHelper;
+		private readonly IXmlSerializationHandler _serializerHandler;
 
 		[Obsolete]
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
-			: this(logger, next, new SoapOptions()
-			{
-				ServiceType = serviceType,
-				Path = path,
-				EncoderOptions = encoderOptions ?? binding?.ToEncoderOptions(),
-				SoapSerializer = serializer,
-				CaseInsensitivePath = caseInsensitivePath,
-				SoapModelBounder = soapModelBounder,
-				UseBasicAuthentication = binding.HasBasicAuth(),
-				HttpGetEnabled = httpGetEnabled,
-				HttpsGetEnabled = httpsGetEnabled
-			})
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, IServiceProvider serviceProvider, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
+			: this(
+				  logger,
+				  next,
+				  new SoapOptions()
+				  {
+					  ServiceType = serviceType,
+					  Path = path,
+					  EncoderOptions = encoderOptions ?? binding?.ToEncoderOptions(),
+					  SoapSerializer = serializer,
+					  CaseInsensitivePath = caseInsensitivePath,
+					  SoapModelBounder = soapModelBounder,
+					  UseBasicAuthentication = binding.HasBasicAuth(),
+					  HttpGetEnabled = httpGetEnabled,
+					  HttpsGetEnabled = httpsGetEnabled
+				  },
+				  serviceProvider)
 		{
 		}
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, SoapOptions options)
+		public SoapEndpointMiddleware(
+			ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger,
+			RequestDelegate next,
+			SoapOptions options,
+			IServiceProvider serviceProvider)
 		{
 			_logger = logger;
 			_next = next;
 			_options = options;
+			_serviceProvider = serviceProvider;
 
-			_serializerHelper = new SerializerHelper(options.SoapSerializer);
+			var serializerResolver = _serviceProvider.GetService<IXmlSerializationHandlerResolver>();
+			if (serializerResolver != null && _options.SerializerIdentifier != null)
+			{
+				_serializerHandler = serializerResolver(_options.SerializerIdentifier);
+				_ = _serializerHandler ?? throw new InvalidOperationException("custom serializer implementation not found.");
+			}
+
+			_serializerHandler ??= new SerializerHelper(options.SoapSerializer);
+
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType);
 
-			if (options.EncoderOptions is null)
-			{
-				options.EncoderOptions = new[] { new SoapEncoderOptions() };
-			}
+			options.EncoderOptions ??= new[] { new SoapEncoderOptions() };
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
@@ -81,9 +97,9 @@ namespace SoapCore
 			}
 		}
 
-		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
+		public async Task Invoke(HttpContext httpContext)
 		{
-			var trailPathTuner = serviceProvider.GetService<TrailingServicePathTuner>();
+			var trailPathTuner = _serviceProvider.GetService<TrailingServicePathTuner>();
 
 			trailPathTuner?.ConvertPath(httpContext);
 
@@ -116,7 +132,7 @@ namespace SoapCore
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
-							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
+							await ProcessHttpOperation(httpContext, _serviceProvider, remainingPath.Value.Trim('/'));
 						}
 						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
 						{
@@ -147,11 +163,11 @@ namespace SoapCore
 								return;
 							}
 
-							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
+							await ProcessHttpOperation(httpContext, _serviceProvider, remainingPath.Value.Trim('/'));
 						}
 						else
 						{
-							await ProcessOperation(httpContext, serviceProvider);
+							await ProcessOperation(httpContext, _serviceProvider);
 						}
 					}
 				}
@@ -587,6 +603,7 @@ namespace SoapCore
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager
 				};
+
 				responseMessage.Headers.Action = operation.ReplyAction;
 				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
 				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
@@ -694,7 +711,7 @@ namespace SoapCore
 
 						lastParameterIndex = parameterInfo.Index;
 
-						var argumentValue = _serializerHelper.DeserializeInputParameter(
+						var argumentValue = _serializerHandler.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
 							parameterInfo.Name,
@@ -705,7 +722,7 @@ namespace SoapCore
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
+							argumentValue = _serializerHandler.DeserializeInputParameter(
 								xmlReader,
 								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
@@ -717,7 +734,7 @@ namespace SoapCore
 						// sometimes there's no namespace for the parameter (ex. MS SOAP SDK)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
+							argumentValue = _serializerHandler.DeserializeInputParameter(
 								xmlReader,
 								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
@@ -765,7 +782,7 @@ namespace SoapCore
 					else
 					{
 						// It's wrapped so either the wrapper name or the name of the wrapper type
-						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(
+						arguments[parameterInfo.Index] = _serializerHandler.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
 							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
@@ -837,7 +854,7 @@ namespace SoapCore
 				{
 					var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-					var value = _serializerHelper.DeserializeInputParameter(
+					var value = _serializerHandler.DeserializeInputParameter(
 						reader,
 						member.MemberInfo.GetPropertyOrFieldType(),
 						member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
@@ -870,7 +887,7 @@ namespace SoapCore
 				var innerParameterNs = messageBodyMemberAttribute.Namespace ?? @namespace;
 				var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
 
-				var innerParameter = _serializerHelper.DeserializeInputParameter(
+				var innerParameter = _serializerHandler.DeserializeInputParameter(
 					xmlReader,
 					innerParameterType,
 					innerParameterName,
