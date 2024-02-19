@@ -74,8 +74,10 @@ namespace SoapCore.Meta
 
 		public string ModifyWSDLAddRightSchemaPath(string xmlString)
 		{
-			var xmlDoc = new XmlDocument();
-			xmlDoc.LoadXml(xmlString);
+			var xmlDoc = new XmlDocument() { XmlResolver = null };
+			var sr = new StringReader(xmlString);
+			var reader = XmlReader.Create(sr, new XmlReaderSettings() { XmlResolver = null });
+			xmlDoc.Load(reader);
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{
@@ -148,8 +150,10 @@ namespace SoapCore.Meta
 
 		public string ModifyXSDAddRightSchemaPath(string xmlString)
 		{
-			var xmlDoc = new XmlDocument();
-			xmlDoc.LoadXml(xmlString);
+			var xmlDoc = new XmlDocument() { XmlResolver = null };
+			var sr = new StringReader(xmlString);
+			var reader = XmlReader.Create(sr, new XmlReaderSettings() { XmlResolver = null });
+			xmlDoc.Load(reader);
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{

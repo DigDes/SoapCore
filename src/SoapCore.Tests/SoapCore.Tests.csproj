@@ -61,6 +61,18 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="WsdlFromFile\WSDLInclude\echoWsdlInclude.wsdl">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="WsdlFromFile\WSDLInclude\ServiceDefinitions.xml">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="WsdlFromFile\WSDLInclude\xsd00.xml">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="WsdlFromFile\WSDLInclude\xsd02.xml">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Update="WsdlFromFile\WSDL\DATEXII_3_Common.xsd">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
