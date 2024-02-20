@@ -91,14 +91,15 @@ namespace SoapCore
 
 			if (httpContext.Request.Path.StartsWithSegments(_options.Path, _pathComparisonStrategy, out var remainingPath))
 			{
-				if (requestMethod?.ToLower() == "head")
+				requestMethod = requestMethod?.ToLower();
+				if (requestMethod == "head")
 				{
 					// Since there's no information about what you should do with HEAD requests for SOAP APIs, we just silently return "200 OK"
 					httpContext.Response.StatusCode = (int)HttpStatusCode.OK;
 					return;
 				}
 
-				if (requestMethod?.ToLower() == "get")
+				if (requestMethod == "get")
 				{
 					// If GET is not enabled, either for HTTP or HTTPS, return a 403 instead of the WSDL
 					if ((httpContext.Request.IsHttps && !_options.HttpsGetEnabled) || (!httpContext.Request.IsHttps && !_options.HttpGetEnabled))
@@ -112,7 +113,7 @@ namespace SoapCore
 				{
 					_logger.LogDebug("Received SOAP Request for {0} ({1} bytes)", httpContext.Request.Path, httpContext.Request.ContentLength ?? 0);
 
-					if (requestMethod?.ToLower() == "get")
+					if (requestMethod == "get")
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
@@ -121,6 +122,10 @@ namespace SoapCore
 						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
 						{
 							await ProcessXSD(httpContext);
+						}
+						else if (httpContext.Request.Query.ContainsKey("import") && _options.WsdlFileOptions != null)
+						{
+							await ProcessWsdlImport(httpContext);
 						}
 						else if (string.IsNullOrEmpty(httpContext.Request.ContentType) || httpContext.Request.Query.ContainsKey("wsdl"))
 						{
@@ -964,49 +969,83 @@ namespace SoapCore
 			}
 		}
 
-		private async Task ProcessXSD(HttpContext httpContext)
+		private MetaFromFile GetMeta(HttpContext httpContext)
 		{
+			var options = _options.WsdlFileOptions;
 			var meta = new MetaFromFile();
-			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
+			if (!string.IsNullOrEmpty(options.VirtualPath))
 			{
-				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
+				meta.CurrentWebServer = options.VirtualPath + "/";
 			}
 
 			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
-			var mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[meta.CurrentWebService];
+			var mapping = options.WebServiceWSDLMapping[meta.CurrentWebService];
 
+			meta.WSDLFolder = mapping.WSDLFolder;
 			meta.XsdFolder = mapping.SchemaFolder;
 
-			if (_options.WsdlFileOptions.UrlOverride != string.Empty)
+			if (options.UrlOverride != string.Empty)
 			{
-				meta.ServerUrl = _options.WsdlFileOptions.UrlOverride;
+				meta.ServerUrl = options.UrlOverride;
 			}
 			else
 			{
 				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
 			}
 
-			string xsdfile = httpContext.Request.Query["name"];
+			return meta;
+		}
+
+		private async Task ProcessXSD(HttpContext httpContext)
+		{
+			var meta = GetMeta(httpContext);
+			string xsdFile = httpContext.Request.Query["name"];
 
 			//Check to prevent path traversal
-			if (string.IsNullOrEmpty(xsdfile) || Path.GetFileName(xsdfile) != xsdfile)
+			if (string.IsNullOrEmpty(xsdFile) || Path.GetFileName(xsdFile) != xsdFile)
 			{
 				throw new ArgumentNullException("xsd parameter contains illegal values");
 			}
 
-			if (!xsdfile.Contains(".xsd"))
+			if (!xsdFile.Contains(".xsd") && !xsdFile.Contains(".xml"))
 			{
-				throw new Exception("xsd request must contain .xsd");
+				throw new Exception("xsd request must contain .xsd or .xml");
 			}
 
 			string path = _options.WsdlFileOptions.AppPath;
-			string safePath = path + Path.AltDirectorySeparatorChar + meta.XsdFolder + Path.AltDirectorySeparatorChar + xsdfile;
+			string safePath = path + Path.AltDirectorySeparatorChar + meta.XsdFolder + Path.AltDirectorySeparatorChar + xsdFile;
 			string xsd = await meta.ReadLocalFileAsync(safePath);
-			string modifiedxsd = meta.ModifyXSDAddRightSchemaPath(xsd);
+			string modifiedXsd = meta.ModifyXSDAddRightSchemaPath(xsd);
 
 			//we should use text/xml in wsdl page for browser compability.
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
-			await httpContext.Response.WriteAsync(modifiedxsd);
+			await httpContext.Response.WriteAsync(modifiedXsd);
+		}
+
+		private async Task ProcessWsdlImport(HttpContext httpContext)
+		{
+			var meta = GetMeta(httpContext);
+			string wsdlFile = httpContext.Request.Query["name"];
+
+			//Check to prevent path traversal
+			if (string.IsNullOrEmpty(wsdlFile) || Path.GetFileName(wsdlFile) != wsdlFile)
+			{
+				throw new ArgumentNullException("xsd parameter contains illegal values");
+			}
+
+			if (!wsdlFile.Contains(".wsdl") && !wsdlFile.Contains(".xml"))
+			{
+				throw new Exception("import request must contain .wsdl or .xml");
+			}
+
+			string path = _options.WsdlFileOptions.AppPath;
+			string safePath = path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlFile;
+			string wsdl = await meta.ReadLocalFileAsync(safePath);
+			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
+
+			//we should use text/xml in wsdl page for browser compability.
+			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
+			await httpContext.Response.WriteAsync(modifiedWsdl);
 		}
 
 		private async Task ProcessMetaFromFile(HttpContext httpContext, bool showDocumentation)
@@ -1015,11 +1054,12 @@ namespace SoapCore
 
 			var url = httpContext.Request.Path.Value.Replace("/", string.Empty);
 
-			WebServiceWSDLMapping mapping = _options.WsdlFileOptions.WebServiceWSDLMapping[url];
+			var options = _options.WsdlFileOptions;
+			var mapping = options.WebServiceWSDLMapping[url];
 
-			if (!string.IsNullOrEmpty(_options.WsdlFileOptions.VirtualPath))
+			if (!string.IsNullOrEmpty(options.VirtualPath))
 			{
-				meta.CurrentWebServer = _options.WsdlFileOptions.VirtualPath + "/";
+				meta.CurrentWebServer = options.VirtualPath + "/";
 			}
 
 			if (string.IsNullOrEmpty(mapping.UrlOverride))
@@ -1033,9 +1073,9 @@ namespace SoapCore
 
 			meta.XsdFolder = mapping.SchemaFolder;
 			meta.WSDLFolder = mapping.WSDLFolder;
-			if (_options.WsdlFileOptions.UrlOverride != string.Empty)
+			if (options.UrlOverride != string.Empty)
 			{
-				meta.ServerUrl = _options.WsdlFileOptions.UrlOverride;
+				meta.ServerUrl = options.UrlOverride;
 			}
 			else
 			{
@@ -1044,7 +1084,7 @@ namespace SoapCore
 
 			string wsdlfile = mapping.WsdlFile;
 
-			string path = _options.WsdlFileOptions.AppPath;
+			string path = options.AppPath;
 			string wsdl = await meta.ReadLocalFileAsync(path + Path.AltDirectorySeparatorChar + meta.WSDLFolder + Path.AltDirectorySeparatorChar + wsdlfile);
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
 
