@@ -143,5 +143,12 @@ namespace SoapCore
 		/// be omitted, so that the soapAction will be {namespace}/{methodName}.
 		/// </summary>
 		public bool GenerateSoapActionWithoutContractName { get; set; } = false;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether newlines in the SOAP XML responses
+		/// should be normalized to the system's default newline character (CRLF on Windows).
+		/// Default is true.
+		/// </summary>
+		public bool NormalizeNewLines { get; set; } = true;
 	}
 }

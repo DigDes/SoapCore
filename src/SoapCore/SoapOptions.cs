@@ -72,6 +72,8 @@ namespace SoapCore
 
 		public bool GenerateSoapActionWithoutContractName { get; set; } = false;
 
+		public bool NormalizeNewLines { get; set; } = true;
+
 		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
@@ -103,6 +105,7 @@ namespace SoapCore
 				CheckXmlCharacters = opt.CheckXmlCharacters,
 				UseMicrosoftGuid = opt.UseMicrosoftGuid,
 				GenerateSoapActionWithoutContractName = opt.GenerateSoapActionWithoutContractName,
+				NormalizeNewLines = opt.NormalizeNewLines,
 			};
 
 #pragma warning disable CS0612 // Type or member is obsolete
