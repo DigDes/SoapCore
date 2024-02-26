@@ -297,9 +297,6 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("elementFormDefault", "qualified");
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 
-			writer.WriteStartElement("import", Namespaces.XMLNS_XSD);
-			writer.WriteEndElement();
-
 			foreach (var operation in _service.Operations)
 			{
 				bool hasWrittenOutParameters = false;
