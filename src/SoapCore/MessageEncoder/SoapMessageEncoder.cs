@@ -137,7 +137,7 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			using var memoryStream = new MemoryStream();
+			var memoryStream = new MemoryStream();
 			await stream.CopyToAsync(memoryStream);
 			memoryStream.Position = 0;
 
