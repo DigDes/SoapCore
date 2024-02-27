@@ -130,16 +130,12 @@ namespace SoapCore.MessageEncoder
 			return await ReadMessageAsync(stream, maxSizeOfHeaders, contentType);
 		}
 
-		public async Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType)
+		public Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType)
 		{
 			if (stream == null)
 			{
 				throw new ArgumentNullException(nameof(stream));
 			}
-
-			using var memoryStream = new MemoryStream();
-			await stream.CopyToAsync(memoryStream);
-			memoryStream.Position = 0;
 
 			XmlReader reader;
 
@@ -155,18 +151,18 @@ namespace SoapCore.MessageEncoder
 
 			if (supportXmlDictionaryReader)
 			{
-				reader = XmlDictionaryReader.CreateTextReader(memoryStream, readEncoding, ReaderQuotas, dictionaryReader => { });
+				reader = XmlDictionaryReader.CreateTextReader(stream, readEncoding, ReaderQuotas, dictionaryReader => { });
 			}
 			else
 			{
-				var streamReaderWithEncoding = new StreamReader(memoryStream, readEncoding);
+				var streamReaderWithEncoding = new StreamReader(stream, readEncoding);
 				var xmlReaderSettings = new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
 				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
 			}
 
 			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 
-			return message;
+			return Task.FromResult(message);
 		}
 
 		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter, bool indentXml)
