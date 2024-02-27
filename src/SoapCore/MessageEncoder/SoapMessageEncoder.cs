@@ -119,7 +119,7 @@ namespace SoapCore.MessageEncoder
 			return false;
 		}
 
-		public async Task<Message> ReadMessageAsync(PipeReader pipeReader, int maxSizeOfHeaders, string contentType, MemoryStream memoryStream)
+		public async Task<Message> ReadMessageAsync(PipeReader pipeReader, int maxSizeOfHeaders, string contentType)
 		{
 			if (pipeReader == null)
 			{
@@ -127,17 +127,17 @@ namespace SoapCore.MessageEncoder
 			}
 
 			using var stream = pipeReader.AsStream(true);
-			return await ReadMessageAsync(stream, maxSizeOfHeaders, contentType, memoryStream);
+			return await ReadMessageAsync(stream, maxSizeOfHeaders, contentType);
 		}
 
-		public async Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType, MemoryStream memoryStream)
+		public async Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType)
 		{
 			if (stream == null)
 			{
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			memoryStream = new MemoryStream();
+			var memoryStream = new MemoryStream();
 			await stream.CopyToAsync(memoryStream);
 			memoryStream.Position = 0;
 
