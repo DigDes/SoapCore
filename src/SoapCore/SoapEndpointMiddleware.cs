@@ -323,6 +323,10 @@ namespace SoapCore
 				{
 					status = StatusCodes.Status403Forbidden;
 				}
+				else if (ex is XmlException)
+				{
+					status = StatusCodes.Status400BadRequest;
+				}
 
 				responseMessage = CreateErrorResponseMessage(ex, status, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
