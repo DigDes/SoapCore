@@ -207,7 +207,7 @@ namespace SoapCore
 			return boundaryValue.Trim('"');
 		}
 
-		private async Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder, MemoryStream memoryStream)
+		private async Task<Message> ReadMessageAsync(HttpContext httpContext, SoapMessageEncoder messageEncoder)
 		{
 			var boundary = TryGetMultipartBoundary(httpContext.Request);
 
@@ -227,14 +227,14 @@ namespace SoapCore
 					if (messageEncoder.IsContentTypeSupported(multipartSection.ContentType, true)
 						|| messageEncoder.IsContentTypeSupported(multipartSection.ContentType, false))
 					{
-						return await messageEncoder.ReadMessageAsync(multipartSection.Body, messageEncoder.MaxSoapHeaderSize, multipartSection.ContentType, memoryStream);
+						return await messageEncoder.ReadMessageAsync(multipartSection.Body, messageEncoder.MaxSoapHeaderSize, multipartSection.ContentType);
 					}
 				}
 			}
 #if !NETCOREAPP3_0_OR_GREATER
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType, memoryStream);
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.Body, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType);
 #else
-			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType, memoryStream);
+			return await messageEncoder.ReadMessageAsync(httpContext.Request.BodyReader, messageEncoder.MaxSoapHeaderSize, httpContext.Request.ContentType);
 #endif
 		}
 
@@ -289,11 +289,11 @@ namespace SoapCore
 
 			Message requestMessage = null;
 			Message responseMessage = null;
-			MemoryStream memoryStream = null;
+
 			try
 			{
 				//Get the message
-				requestMessage = await ReadMessageAsync(httpContext, messageEncoder, memoryStream);
+				requestMessage = await ReadMessageAsync(httpContext, messageEncoder);
 
 				var asyncMessageFilters = serviceProvider.GetServices<IAsyncMessageFilter>().ToArray();
 
@@ -330,16 +330,11 @@ namespace SoapCore
 
 				responseMessage = CreateErrorResponseMessage(ex, status, serviceProvider, requestMessage, messageEncoder, httpContext);
 			}
-			finally
-			{
-				memoryStream?.Dispose();
-			}
 
 			if (responseMessage != null)
 			{
 				await WriteMessageAsync(messageEncoder, responseMessage, httpContext, _options.IndentXml);
 			}
-
 		}
 
 		private async Task ProcessHttpOperation(HttpContext context, IServiceProvider serviceProvider, string methodName)
