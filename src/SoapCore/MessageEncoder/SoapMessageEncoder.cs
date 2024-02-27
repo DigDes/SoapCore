@@ -29,8 +29,9 @@ namespace SoapCore.MessageEncoder
 		private readonly bool _optimizeWriteForUtf8;
 		private readonly bool _omitXmlDeclaration;
 		private readonly bool _checkXmlCharacters;
+		private readonly bool _normalizeNewLines;
 
-		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
+		public SoapMessageEncoder(MessageVersion version, Encoding writeEncoding, bool overwriteResponseContentType, XmlDictionaryReaderQuotas quotas, bool omitXmlDeclaration, bool checkXmlCharacters, XmlNamespaceManager xmlNamespaceOverrides, string bindingName, string portName, bool normalizeNewLines, int maxSoapHeaderSize = SoapMessageEncoderDefaults.MaxSoapHeaderSizeDefault)
 		{
 			_omitXmlDeclaration = omitXmlDeclaration;
 			_checkXmlCharacters = checkXmlCharacters;
@@ -41,6 +42,8 @@ namespace SoapCore.MessageEncoder
 			_optimizeWriteForUtf8 = IsUtf8Encoding(writeEncoding);
 
 			_overwriteResponseContentType = overwriteResponseContentType;
+
+			_normalizeNewLines = normalizeNewLines;
 
 			MessageVersion = version ?? throw new ArgumentNullException(nameof(version));
 
@@ -188,7 +191,8 @@ namespace SoapCore.MessageEncoder
 				Indent = indentXml,
 				Encoding = _writeEncoding,
 				CloseOutput = false,
-				CheckCharacters = _checkXmlCharacters
+				CheckCharacters = _checkXmlCharacters,
+				NewLineHandling = _normalizeNewLines ? NewLineHandling.Replace : NewLineHandling.None,
 			}))
 			{
 				using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
@@ -231,7 +235,8 @@ namespace SoapCore.MessageEncoder
 				Indent = indentXml,
 				Encoding = _writeEncoding,
 				CloseOutput = false,
-				CheckCharacters = _checkXmlCharacters
+				CheckCharacters = _checkXmlCharacters,
+				NewLineHandling = _normalizeNewLines ? NewLineHandling.Replace : NewLineHandling.None,
 			}))
 			{
 				using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
