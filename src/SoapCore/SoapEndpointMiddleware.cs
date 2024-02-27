@@ -479,6 +479,10 @@ namespace SoapCore
 			XmlDictionaryReader reader = null;
 			if (!requestMessage.IsEmpty)
 			{
+				MessageBuffer mb = requestMessage.CreateBufferedCopy(int.MaxValue);
+				Message responseMsg = mb.CreateMessage();
+				requestMessage = mb.CreateMessage();
+
 				reader = requestMessage.GetReaderAtBodyContents();
 			}
 
