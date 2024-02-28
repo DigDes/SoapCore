@@ -130,39 +130,46 @@ namespace SoapCore.MessageEncoder
 			return await ReadMessageAsync(stream, maxSizeOfHeaders, contentType);
 		}
 
-		public Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType)
+		public async Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType)
 		{
 			if (stream == null)
 			{
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			XmlReader reader;
+			Message message;
 
-			var readEncoding = SoapMessageEncoderDefaults.ContentTypeToEncoding(contentType);
-
-			if (readEncoding == null)
+			using (var ms = new MemoryStream())
 			{
-				// Fallback to default or writeEncoding
-				readEncoding = _writeEncoding;
+				await stream.CopyToAsync(ms);
+				ms.Seek(0, SeekOrigin.Begin);
+				XmlReader reader;
+
+				var readEncoding = SoapMessageEncoderDefaults.ContentTypeToEncoding(contentType);
+
+				if (readEncoding == null)
+				{
+					// Fallback to default or writeEncoding
+					readEncoding = _writeEncoding;
+				}
+
+				var supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
+
+				if (supportXmlDictionaryReader)
+				{
+					reader = XmlDictionaryReader.CreateTextReader(ms, readEncoding, ReaderQuotas, dictionaryReader => { });
+				}
+				else
+				{
+					var streamReaderWithEncoding = new StreamReader(ms, readEncoding);
+					var xmlReaderSettings = new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
+					reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
+				}
+
+				message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion).CreateBufferedCopy(int.MaxValue).CreateMessage();
 			}
 
-			var supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
-
-			if (supportXmlDictionaryReader)
-			{
-				reader = XmlDictionaryReader.CreateTextReader(stream, readEncoding, ReaderQuotas, dictionaryReader => { });
-			}
-			else
-			{
-				var streamReaderWithEncoding = new StreamReader(stream, readEncoding);
-				var xmlReaderSettings = new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
-				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
-			}
-
-			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
-
-			return Task.FromResult(message);
+			return message;
 		}
 
 		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter, bool indentXml)
