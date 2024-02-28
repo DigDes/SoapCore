@@ -160,7 +160,7 @@ namespace SoapCore.MessageEncoder
 				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
 			}
 
-			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
+			Message message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion).CreateBufferedCopy(int.MaxValue).CreateMessage();
 
 			return Task.FromResult(message);
 		}
