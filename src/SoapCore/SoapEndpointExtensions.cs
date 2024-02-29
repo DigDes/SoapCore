@@ -161,7 +161,7 @@ namespace SoapCore
 		public static IApplicationBuilder UseSoapEndpoint<T_MESSAGE>(this IApplicationBuilder builder, Type serviceType, Action<SoapCoreOptions> options)
 			where T_MESSAGE : CustomMessage, new()
 		{
-			var opt = new SoapCoreOptions();
+			var opt = new SoapCoreOptions() { Path = string.Empty };
 			options(opt);
 
 			var soapOptions = SoapOptions.FromSoapCoreOptions(opt, serviceType);
@@ -328,7 +328,7 @@ namespace SoapCore
 		public static IEndpointConventionBuilder UseSoapEndpoint<T_MESSAGE>(this IEndpointRouteBuilder routes, Type serviceType, Action<SoapCoreOptions> options)
 			where T_MESSAGE : CustomMessage, new()
 		{
-			var opt = new SoapCoreOptions();
+			var opt = new SoapCoreOptions() { Path = string.Empty };
 			options(opt);
 
 			var soapOptions = SoapOptions.FromSoapCoreOptions(opt, serviceType);

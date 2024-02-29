@@ -10,11 +10,17 @@ namespace SoapCore
 	{
 		private bool? _indentWsdl = null;
 
+#if NET8_0_OR_GREATER
+		/// <summary>
+		/// Gets or sets the Path of the Service
+		/// </summary>
+		required public string Path { get; set; }
+#else
 		/// <summary>
 		/// Gets or sets the Path of the Service
 		/// </summary>
 		public string Path { get; set; }
-
+#endif
 		/// <summary>
 		/// Gets or sets encoders
 		/// </summary>
