@@ -49,6 +49,15 @@ namespace SoapCore.DocumentationWriter
 			return (SoapDefinition)xs.Deserialize(sr);
 		}
 
+		public static SoapDefinition DeserializeFromStream(Stream xml)
+		{
+			XmlSerializer xs = new XmlSerializer(typeof(SoapDefinition));
+
+			xs.UnknownElement += _unknownElementHandler;
+
+			return (SoapDefinition)xs.Deserialize(xml);
+		}
+
 		public string GenerateDocumentation()
 		{
 #if NETCOREAPP3_1_OR_GREATER
