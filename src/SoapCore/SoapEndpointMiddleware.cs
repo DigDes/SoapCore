@@ -261,7 +261,7 @@ namespace SoapCore
 			{
 				httpContext.Response.ContentType = "text/html;charset=UTF-8";
 
-				using var ms = new MemoryStream();
+				var ms = new MemoryStream();
 				await messageEncoder.WriteMessageAsync(responseMessage, httpContext, ms, _options.IndentWsdl);
 				ms.Position = 0;
 				using var sr = new StreamReader(ms);
@@ -432,7 +432,7 @@ namespace SoapCore
 
 			context.Response.ContentType = "text/xml";
 
-			using var ms = new MemoryStream();
+			var ms = new MemoryStream();
 			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = DefaultEncodings.UTF8 });
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 

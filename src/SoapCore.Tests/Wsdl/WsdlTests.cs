@@ -1167,16 +1167,14 @@ namespace SoapCore.Tests.Wsdl
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, defaultBindingName, false);
 
-			using (var memoryStream = new MemoryStream())
-			{
-				await encoder.WriteMessageAsync(responseMessage, null, memoryStream, true);
-				memoryStream.Position = 0;
+			var memoryStream = new MemoryStream();
+			await encoder.WriteMessageAsync(responseMessage, null, memoryStream, true);
+			memoryStream.Position = 0;
 
-				using (var streamReader = new StreamReader(memoryStream))
-				{
-					var result = streamReader.ReadToEnd();
-					return result;
-				}
+			using (var streamReader = new StreamReader(memoryStream))
+			{
+				var result = streamReader.ReadToEnd();
+				return result;
 			}
 		}
 
