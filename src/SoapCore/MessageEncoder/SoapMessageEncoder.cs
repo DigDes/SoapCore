@@ -137,8 +137,6 @@ namespace SoapCore.MessageEncoder
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			Message message;
-
 			var ms = new MemoryStream();
 			await stream.CopyToAsync(ms);
 			ms.Seek(0, SeekOrigin.Begin);
@@ -161,13 +159,12 @@ namespace SoapCore.MessageEncoder
 			else
 			{
 				var streamReaderWithEncoding = new StreamReader(ms, readEncoding);
+
 				var xmlReaderSettings = new XmlReaderSettings() { XmlResolver = null, IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
 				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
 			}
 
-			message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
-
-			return message;
+			return Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 		}
 
 		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter, bool indentXml)
@@ -189,7 +186,7 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			using var memoryStream = new MemoryStream();
+			var memoryStream = new MemoryStream();
 			using (var xmlTextWriter = XmlWriter.Create(memoryStream, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8
@@ -233,7 +230,7 @@ namespace SoapCore.MessageEncoder
 
 			ThrowIfMismatchedMessageVersion(message);
 
-			using var memoryStream = new MemoryStream();
+			var memoryStream = new MemoryStream();
 			using (var xmlTextWriter = XmlWriter.Create(memoryStream, new XmlWriterSettings
 			{
 				OmitXmlDeclaration = _optimizeWriteForUtf8 && _omitXmlDeclaration, //can only omit if utf-8,
