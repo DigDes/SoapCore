@@ -4,7 +4,7 @@
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
 		<Version>1.1.0.46</Version>
 		<Authors>Digital Design</Authors>
-		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net8.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net7.0;net8.0</TargetFrameworks>
 		<PackageId>SoapCore</PackageId>
 		<PackageTags>SOAP;ASP.NET Core</PackageTags>
 		<PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
@@ -42,6 +42,11 @@
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 		<PackageReference Include="System.CodeDom" Version="4.7.0" />
 		<PackageReference Include="System.ServiceModel.Http" Version="4.8.1" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetFramework) == 'net7.0'">
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="System.CodeDom" Version="7.0.0" />
+		<PackageReference Include="System.ServiceModel.Http" Version="6.2.0" />
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetFramework) == 'net8.0'">
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />

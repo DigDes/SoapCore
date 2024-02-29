@@ -1,8 +1,8 @@
-using SoapCore.Extensibility;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
+using SoapCore.Extensibility;
 
 namespace SoapCore
 {
