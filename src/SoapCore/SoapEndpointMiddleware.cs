@@ -264,10 +264,7 @@ namespace SoapCore
 				var ms = new MemoryStream();
 				await messageEncoder.WriteMessageAsync(responseMessage, httpContext, ms, _options.IndentWsdl);
 				ms.Position = 0;
-				using var sr = new StreamReader(ms);
-				var wsdl = await sr.ReadToEndAsync();
-
-				var documentation = SoapDefinition.DeserializeFromString(wsdl).GenerateDocumentation();
+				var documentation = SoapDefinition.DeserializeFromStream(ms).GenerateDocumentation();
 
 				await httpContext.Response.WriteAsync(documentation);
 
@@ -438,7 +435,7 @@ namespace SoapCore
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
 			dictionaryWriter.Flush();
-			await context.Response.WriteAsync(DefaultEncodings.UTF8.GetString(ms.ToArray()));
+			await ms.CopyToAsync(context.Response.Body);
 		}
 
 		private Func<Message, Task<Message>> MakeProcessorPipe(ISoapMessageProcessor[] soapMessageProcessors, HttpContext httpContext, Func<Message, Task<Message>> processMessageFunc)

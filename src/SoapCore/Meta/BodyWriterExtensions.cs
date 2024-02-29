@@ -40,11 +40,8 @@ namespace SoapCore.Meta
 
 				memoryStream.Position = 0;
 
-				var streamReader = new StreamReader(memoryStream);
-				var result = streamReader.ReadToEnd();
-
 				var doc = new XmlDocument();
-				doc.LoadXml(result);
+				doc.Load(memoryStream);
 				doc.DocumentElement.WriteContentTo(writer);
 
 				return true;
@@ -130,11 +127,8 @@ namespace SoapCore.Meta
 				schema.Write(memoryStream);
 				memoryStream.Position = 0;
 
-				var streamReader = new StreamReader(memoryStream);
-				var result = streamReader.ReadToEnd();
-
 				var doc = new XmlDocument();
-				doc.LoadXml(result);
+				doc.Load(memoryStream);
 				doc.DocumentElement.WriteContentTo(writer);
 
 				return true;

@@ -159,13 +159,12 @@ namespace SoapCore.MessageEncoder
 			else
 			{
 				var streamReaderWithEncoding = new StreamReader(ms, readEncoding);
-				var xmlReaderSettings = new XmlReaderSettings() { IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
+
+				var xmlReaderSettings = new XmlReaderSettings() { XmlResolver = null, IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
 				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
 			}
 
-			var message = Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion).CreateBufferedCopy(int.MaxValue).CreateMessage();
-
-			return message;
+			return Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
 		}
 
 		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter, bool indentXml)
