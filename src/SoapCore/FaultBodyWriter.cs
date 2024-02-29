@@ -158,15 +158,13 @@ namespace SoapCore
 				return null;
 			}
 
-			using (var ms = new MemoryStream())
-			{
-				var serializer = new DataContractSerializer(detailObject.GetType());
-				serializer.WriteObject(ms, detailObject);
-				ms.Position = 0;
-				var doc = new XmlDocument();
-				doc.Load(ms);
-				return doc.DocumentElement;
-			}
+			var ms = new MemoryStream();
+			var serializer = new DataContractSerializer(detailObject.GetType());
+			serializer.WriteObject(ms, detailObject);
+			ms.Position = 0;
+			var doc = new XmlDocument();
+			doc.Load(ms);
+			return doc.DocumentElement;
 		}
 
 		/// <summary>

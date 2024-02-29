@@ -9,10 +9,6 @@ namespace SoapCore.Meta
 {
 	public class MetaFromFile
 	{
-		public MetaFromFile()
-		{
-		}
-
 		/// <summary>
 		/// Gets or sets the CurrentWebService
 		/// </summary>
@@ -72,6 +68,18 @@ namespace SoapCore.Meta
 		}
 #endif
 
+		private XmlAttribute EnsureAttribute(XmlDocument xmlDoc, XmlNode node, string attributeName)
+		{
+			var attribute = node.Attributes[attributeName];
+			if (attribute == null)
+			{
+				attribute = xmlDoc.CreateAttribute(attributeName);
+				node.Attributes.Append(attribute);
+			}
+
+			return attribute;
+		}
+
 		public string ModifyWSDLAddRightSchemaPath(string xmlString)
 		{
 			var xmlDoc = new XmlDocument() { XmlResolver = null };
@@ -81,21 +89,14 @@ namespace SoapCore.Meta
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{
-				if (node.Prefix == xmlDoc.DocumentElement.Prefix && node.LocalName == "import")
+				if (WSDLFolder != null && node.Prefix == xmlDoc.DocumentElement.Prefix && node.LocalName == "import")
 				{
-					if (WSDLFolder != null)
-					{
-						if (node.Attributes["location"] == null)
-						{
-							node.Attributes.Append(xmlDoc.CreateAttribute("location"));
-						}
-
-						string name = node.Attributes["location"].InnerText;
-						node.Attributes["location"].InnerText = WebServiceLocation() + "?import&name=" + name.Replace("./", string.Empty);
-					}
+					var attribute = EnsureAttribute(xmlDoc, node, "location");
+					string name = attribute.InnerText.Replace("./", string.Empty);
+					attribute.InnerText = WebServiceLocation() + "?import&name=" + name;
 				}
 
-				if (node.Prefix == xmlDoc.DocumentElement.Prefix && node.LocalName == "types")
+				if (XsdFolder != null && node.Prefix == xmlDoc.DocumentElement.Prefix && node.LocalName == "types")
 				{
 					foreach (XmlNode schemaNode in node.ChildNodes)
 					{
@@ -105,16 +106,9 @@ namespace SoapCore.Meta
 							{
 								if (importOrIncludeNode.LocalName == "import" || importOrIncludeNode.LocalName == "include")
 								{
-									if (XsdFolder != null)
-									{
-										if (importOrIncludeNode.Attributes["schemaLocation"] == null)
-										{
-											importOrIncludeNode.Attributes.Append(xmlDoc.CreateAttribute("schemaLocation"));
-										}
-
-										string name = importOrIncludeNode.Attributes["schemaLocation"].InnerText;
-										importOrIncludeNode.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
-									}
+									var attribute = EnsureAttribute(xmlDoc, importOrIncludeNode, "schemaLocation");
+									string name = attribute.InnerText.Replace("./", string.Empty);
+									attribute.InnerText = SchemaLocation() + "&name=" + name;
 								}
 							}
 						}
@@ -131,12 +125,8 @@ namespace SoapCore.Meta
 							{
 								if (portNode.LocalName == "address")
 								{
-									if (portNode.Attributes["location"] == null)
-									{
-										portNode.Attributes.Append(xmlDoc.CreateAttribute("location"));
-									}
-
-									portNode.Attributes["location"].InnerText = WebServiceLocation();
+									var attribute = EnsureAttribute(xmlDoc, portNode, "location");
+									attribute.InnerText = WebServiceLocation();
 									break;
 								}
 							}
@@ -159,8 +149,9 @@ namespace SoapCore.Meta
 			{
 				if (node.LocalName == "import" || node.LocalName == "include")
 				{
-					string name = node.Attributes["schemaLocation"].InnerText;
-					node.Attributes["schemaLocation"].InnerText = SchemaLocation() + "&name=" + name.Replace("./", string.Empty);
+					var attribute = EnsureAttribute(xmlDoc, node, "schemaLocation");
+					string name = attribute.InnerText.Replace("./", string.Empty);
+					attribute.InnerText = SchemaLocation() + "&name=" + name;
 				}
 			}
 
