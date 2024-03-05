@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -321,6 +322,10 @@ namespace SoapCore
 					status = StatusCodes.Status403Forbidden;
 				}
 				else if (ex is XmlException)
+				{
+					status = StatusCodes.Status400BadRequest;
+				}
+				else if ((ex is COMException) && (ex?.Message == "The client has disconnected"))
 				{
 					status = StatusCodes.Status400BadRequest;
 				}
