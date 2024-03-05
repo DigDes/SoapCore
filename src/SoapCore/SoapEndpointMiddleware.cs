@@ -14,7 +14,6 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -326,7 +325,7 @@ namespace SoapCore
 				{
 					status = StatusCodes.Status400BadRequest;
 				}
-				else if ((ex is ConnectionResetException) && (ex?.Message == "The client has disconnected"))
+				else if (ex?.Message == "The client has disconnected")
 				{
 					status = StatusCodes.Status400BadRequest;
 				}
