@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -21,7 +20,6 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using SoapCore.DocumentationWriter;
 using SoapCore.Extensibility;
@@ -986,7 +984,16 @@ namespace SoapCore
 
 			meta.WSDLFolder = mapping.WSDLFolder;
 			meta.XsdFolder = mapping.SchemaFolder;
-			meta.ServerUrl = options.GetServerUrl(httpContext);
+
+			if (options.UrlOverride != string.Empty)
+			{
+				meta.ServerUrl = options.UrlOverride;
+			}
+			else
+			{
+				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
+			}
+
 			return meta;
 		}
 
@@ -1065,9 +1072,16 @@ namespace SoapCore
 				meta.CurrentWebService = mapping.UrlOverride;
 			}
 
-			meta.WSDLFolder = mapping.WSDLFolder;
 			meta.XsdFolder = mapping.SchemaFolder;
-			meta.ServerUrl = options.GetServerUrl(httpContext);
+			meta.WSDLFolder = mapping.WSDLFolder;
+			if (options.UrlOverride != string.Empty)
+			{
+				meta.ServerUrl = options.UrlOverride;
+			}
+			else
+			{
+				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
+			}
 
 			string wsdlfile = mapping.WsdlFile;
 
