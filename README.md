@@ -80,7 +80,6 @@ To use it, add a setting like this to appsettings
 ```json
 "FileWSDL": {
   "UrlOverride": "",
-  "SchemeOverride": "",
   "VirtualPath": "",
   "WebServiceWSDLMapping": {
     "Service.asmx": {
@@ -94,7 +93,6 @@ To use it, add a setting like this to appsettings
 ```
 
 * UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
-* SchemeOverride - can be used to override the HTTP Scheme in the service description. This can be useful if you are behind a firewall and the firewall sets the X-Forwarded-Host header, but the internal HTTP scheme is not the same as the external.
 * VirualPath - can be used if you like to add a path between the base URL and service. 
 * WebServiceWSDLMapping
   * UrlOverride - can be used to override the URL for a specific WSDL mapping. This can be useful if you want to host different services under different folder.
