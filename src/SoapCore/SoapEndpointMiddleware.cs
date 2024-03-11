@@ -10,9 +10,9 @@ using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -321,6 +321,10 @@ namespace SoapCore
 					status = StatusCodes.Status403Forbidden;
 				}
 				else if (ex is XmlException)
+				{
+					status = StatusCodes.Status400BadRequest;
+				}
+				else if (ex is ConnectionResetException)
 				{
 					status = StatusCodes.Status400BadRequest;
 				}
@@ -970,6 +974,29 @@ namespace SoapCore
 			}
 		}
 
+		private string GetServerUrl(WsdlFileOptions options, HttpContext httpContext)
+		{
+			if (!string.IsNullOrEmpty(options.UrlOverride))
+			{
+				return options.UrlOverride;
+			}
+
+			if (options.UrlOverrideFunc != null)
+			{
+				return options.UrlOverrideFunc(options, httpContext);
+			}
+
+			string scheme = string.IsNullOrEmpty(options.SchemeOverride) ? httpContext.Request.Scheme : options.SchemeOverride;
+			string host = httpContext.Request.Host.ToString();
+			var forwardedHost = httpContext.Request.Headers["X-Forwarded-Host"];
+			if (forwardedHost.Count != 0)
+			{
+				host = forwardedHost[0];
+			}
+
+			return scheme + "://" + host + "/";
+		}
+
 		private MetaFromFile GetMeta(HttpContext httpContext)
 		{
 			var options = _options.WsdlFileOptions;
@@ -984,16 +1011,7 @@ namespace SoapCore
 
 			meta.WSDLFolder = mapping.WSDLFolder;
 			meta.XsdFolder = mapping.SchemaFolder;
-
-			if (options.UrlOverride != string.Empty)
-			{
-				meta.ServerUrl = options.UrlOverride;
-			}
-			else
-			{
-				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
-			}
-
+			meta.ServerUrl = GetServerUrl(options, httpContext);
 			return meta;
 		}
 
@@ -1072,16 +1090,9 @@ namespace SoapCore
 				meta.CurrentWebService = mapping.UrlOverride;
 			}
 
-			meta.XsdFolder = mapping.SchemaFolder;
 			meta.WSDLFolder = mapping.WSDLFolder;
-			if (options.UrlOverride != string.Empty)
-			{
-				meta.ServerUrl = options.UrlOverride;
-			}
-			else
-			{
-				meta.ServerUrl = httpContext.Request.Scheme + "://" + httpContext.Request.Host + "/";
-			}
+			meta.XsdFolder = mapping.SchemaFolder;
+			meta.ServerUrl = GetServerUrl(options, httpContext);
 
 			string wsdlfile = mapping.WsdlFile;
 

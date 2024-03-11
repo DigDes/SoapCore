@@ -45,7 +45,11 @@ namespace SoapCore.MessageEncoder
 
 		public static Encoding ContentTypeToEncoding(string contentType)
 		{
-			var charSet = MediaTypeHeaderValue.Parse(contentType).CharSet;
+			string charSetFromContentType = null;
+			if (MediaTypeHeaderValue.TryParse(contentType, out var mediaTypeHeaderValue))
+			{
+				charSetFromContentType = mediaTypeHeaderValue.CharSet;
+			}
 
 			foreach (var charSetEncoding in CharSetEncodings)
 			{
@@ -54,7 +58,7 @@ namespace SoapCore.MessageEncoder
 					continue;
 				}
 
-				if (charSetEncoding.CharSet == charSet)
+				if (charSetEncoding.CharSet == charSetFromContentType)
 				{
 					return charSetEncoding.Encoding;
 				}

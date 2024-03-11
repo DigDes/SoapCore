@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<Description>SOAP protocol middleware for ASP.NET Core</Description>
-		<Version>1.1.0.46</Version>
+		<Version>1.1.0.48</Version>
 		<Authors>Digital Design</Authors>
 		<TargetFrameworks>netstandard2.0;netstandard2.1;net7.0;net8.0</TargetFrameworks>
 		<PackageId>SoapCore</PackageId>
@@ -36,14 +36,17 @@
 		<PackageReference Include="System.IO.Pipelines" Version="4.7.0" />
 		<PackageReference Include="System.CodeDom" Version="4.7.0" />
 		<PackageReference Include="System.ServiceModel.Http" Version="4.8.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Connections.Abstractions" Version="2.1.3" />
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetFramework) == 'net7.0'">
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Microsoft.AspNetCore.Connections.Abstractions" Version="3.1.32" />
 		<PackageReference Include="System.CodeDom" Version="7.0.0" />
 		<PackageReference Include="System.ServiceModel.Http" Version="6.2.0" />
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetFramework) == 'net8.0'">
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Connections.Abstractions" Version="5.0.17" />
 		<PackageReference Include="System.CodeDom" Version="8.0.0" />
 		<PackageReference Include="System.ServiceModel.Http" Version="8.0.0" />
 	</ItemGroup>
