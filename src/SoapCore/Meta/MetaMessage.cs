@@ -13,12 +13,6 @@ namespace SoapCore.Meta
 		private readonly string _bindingName;
 		private readonly bool _hasBasicAuthentication;
 
-		[Obsolete]
-		public MetaMessage(Message message, ServiceDescription service, Binding binding, XmlNamespaceManager xmlNamespaceManager)
-			: this(message, service, xmlNamespaceManager, binding?.Name, binding.HasBasicAuth())
-		{
-		}
-
 		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication)
 		{
 			_xmlNamespaceManager = xmlNamespaceManager;

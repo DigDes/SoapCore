@@ -35,19 +35,6 @@ namespace SoapCore.Meta
 
 		private bool _buildMicrosoftGuid = false;
 
-		[Obsolete]
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null)
-			: this(
-				service,
-				baseUrl,
-				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
-				binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
-				new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) },
-				false)
-
-		{
-		}
-
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid) : base(isBuffered: true)
 		{
 			_service = service;

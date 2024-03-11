@@ -45,13 +45,6 @@ namespace SoapCore
 		public ISoapModelBounder SoapModelBounder { get; set; } = null;
 
 		/// <summary>
-		/// Gets or sets a value indicating the binding to use
-		/// <para>Defaults to null</para>
-		/// </summary>
-		[Obsolete]
-		public Binding Binding { get; set; }
-
-		/// <summary>
 		/// Gets or sets a value whether to use basic authentication
 		/// <para>Defaults to false</para>
 		/// </summary>
@@ -80,20 +73,6 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpsPostEnabled { get; set; } = true;
-
-		/// <summary>
-		/// The maximum size in bytes of the in-memory <see cref="System.Buffers.ArrayPool{Byte}"/> used to buffer the
-		/// stream. Larger request bodies are written to disk.
-		/// </summary>
-		[Obsolete]
-		public int BufferThreshold { get; set; } = 1024 * 30;
-
-		/// <summary>
-		/// The maximum size in bytes of the request body. An attempt to read beyond this limit will cause an
-		/// <see cref="System.IO.IOException"/>.
-		/// </summary>
-		[Obsolete]
-		public long BufferLimit { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to omit the Xml declaration (&lt;?xml version="1.0" encoding="utf-8"?&gt;) in responses
