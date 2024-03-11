@@ -375,12 +375,6 @@ namespace SoapCore
 			return serviceCollection;
 		}
 
-		[Obsolete]
-		public static IServiceCollection AddSoapMessageInspector(this IServiceCollection serviceCollection, IMessageInspector messageInspector)
-		{
-			return serviceCollection.AddSoapMessageInspector(new ObsoleteMessageInspector(messageInspector));
-		}
-
 		public static IServiceCollection AddSoapMessageInspector<TService>(this IServiceCollection serviceCollection)
 			where TService : class, IMessageInspector2
 		{
@@ -392,12 +386,6 @@ namespace SoapCore
 		{
 			serviceCollection.AddSingleton(messageInspector);
 			return serviceCollection;
-		}
-
-		[Obsolete]
-		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IMessageFilter messageFilter)
-		{
-			return serviceCollection.AddSoapMessageFilter(new ObsoleteMessageFilter(messageFilter));
 		}
 
 		public static IServiceCollection AddSoapMessageFilter(this IServiceCollection serviceCollection, IAsyncMessageFilter messageFilter)

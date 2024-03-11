@@ -19,7 +19,6 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 					.UseKestrel()
 					.UseUrls("http://localhost:7051")
 					.UseStartup<Startup>()
-					.UseSetting("InspectorStyle", InspectorStyle.MessageInspector2.ToString())
 					.Build();
 
 				host.Run();
