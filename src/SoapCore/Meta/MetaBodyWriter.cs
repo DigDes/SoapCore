@@ -1029,6 +1029,7 @@ namespace SoapCore.Meta
 				else if (underlyingType?.IsEnum == true)
 				{
 					xsTypename = new XmlQualifiedName(underlyingType.GetSerializedTypeName(), _xmlNamespaceManager.LookupNamespace("tns"));
+					writer.WriteAttributeString("nillable", "true");
 					_enumToBuild.Enqueue(underlyingType);
 				}
 				else
