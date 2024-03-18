@@ -422,6 +422,7 @@ namespace SoapCore
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
 			dictionaryWriter.Flush();
+			ms.Seek(0, SeekOrigin.Begin);
 			await ms.CopyToAsync(context.Response.Body);
 		}
 
