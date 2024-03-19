@@ -491,7 +491,7 @@ namespace SoapCore
 					throw new InvalidOperationException($"No operation found for specified action: {soapAction}");
 				}
 
-				_logger.LogInformation("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
+				_logger.LogDebug("Request for operation {0}.{1} received", operation.Contract.Name, operation.Name);
 
 				//Create an instance of the service class
 				var serviceInstance = serviceProvider.GetRequiredService(_service.ServiceType);
