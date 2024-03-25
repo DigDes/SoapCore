@@ -66,17 +66,6 @@ namespace SoapCore.Meta
 		private bool _buildDataTable;
 		private string _schemaNamespace;
 
-		[Obsolete]
-		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, Binding binding)
-			: this(
-				  service,
-				  baseUrl,
-				  binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
-				  binding.HasBasicAuth(),
-				  new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) })
-		{
-		}
-
 		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, string bindingName, bool hasBasicAuthentication, SoapBindingInfo[] soapBindings) : base(isBuffered: true)
 		{
 			_service = service;

@@ -102,21 +102,6 @@ namespace SoapCore.Tests.WsdlFromFile.Services
 		{
 		}
 
-		public IncludePortTypeClient(string endpointConfigurationName) :
-				base(endpointConfigurationName)
-		{
-		}
-
-		public IncludePortTypeClient(string endpointConfigurationName, string remoteAddress) :
-				base(endpointConfigurationName, remoteAddress)
-		{
-		}
-
-		public IncludePortTypeClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) :
-				base(endpointConfigurationName, remoteAddress)
-		{
-		}
-
 		public IncludePortTypeClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) :
 				base(binding, remoteAddress)
 		{

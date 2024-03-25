@@ -34,17 +34,6 @@ namespace SoapCore.Meta
 		/// </summary>
 		public string ServerUrl { get; set; }
 
-		[Obsolete]
-		public string ReadLocalFile(string path)
-		{
-			if (!File.Exists(path))
-			{
-				return string.Empty;
-			}
-
-			return File.ReadAllText(path);
-		}
-
 #if NETSTANDARD
 		public async Task<string> ReadLocalFileAsync(string path)
 		{
