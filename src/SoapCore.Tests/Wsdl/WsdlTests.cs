@@ -1027,6 +1027,27 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(propAnonAttribute);
 		}
 
+		[TestMethod]
+		public void CheckXmlArrayAttributeTypeServiceWsdl()
+		{
+			StartService(typeof(XmlArrayAttributeService));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
+
+			var typeWithXmlArrayAttribute = root.XPathSelectElement("//xsd:complexType[@name='TypeWithXmlArrayAttribute']/xsd:sequence/xsd:element[@name='AvlRoomTypeItems' and @type='tns:ArrayOfAvlRoomTypeItem' and @nillable='true' and @minOccurs='0' and @maxOccurs='1']", nm);
+			Assert.IsNotNull(typeWithXmlArrayAttribute);
+
+			var array = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfAvlRoomTypeItem']/xsd:sequence/xsd:element[@name='AvlRoomTypeItem' and @type='tns:AvlRoomTypeItem' and @nillable='true' and @minOccurs='0' and @maxOccurs='unbounded']", nm);
+			Assert.IsNotNull(array);
+
+			var arrayItem = root.XPathSelectElement("//xsd:complexType[@name='AvlRoomTypeItem']/xsd:sequence/xsd:element[@name='RoomTypeCode' and @type='xsd:string' and not(@nillable) and @minOccurs='0' and @maxOccurs='1']", nm);
+			Assert.IsNotNull(arrayItem);
+		}
+
 		[DataTestMethod]
 		public async Task CheckXmlAnnotatedChoiceReturnServiceWsdl()
 		{

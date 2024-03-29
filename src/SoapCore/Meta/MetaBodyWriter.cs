@@ -886,14 +886,27 @@ namespace SoapCore.Meta
 				toBuild.ChildElementName = arrayItem.ElementName;
 			}
 
-			var elementItem = member.GetCustomAttribute<XmlElementAttribute>();
-			bool isUnqualified = elementItem?.Form == XmlSchemaForm.Unqualified;
+			bool isUnqualified = false;
 			string elementNameFromAttribute = null;
-			if (elementItem != null && !string.IsNullOrWhiteSpace(elementItem.ElementName))
+			var elementItem = member.GetCustomAttribute<XmlElementAttribute>();
+			var arrayAttribute = member.GetCustomAttribute<XmlArrayAttribute>();
+			if (elementItem != null)
 			{
-				elementNameFromAttribute = elementItem.ElementName;
-				toBuild.ChildElementName = elementNameFromAttribute;
-				createListWithoutProxyType = toBuild.Type.IsEnumerableType() && toBuild.Type.Name != "String" && toBuild.Type.Name != "Byte[]";
+				isUnqualified = elementItem.Form == XmlSchemaForm.Unqualified;
+				if (!string.IsNullOrWhiteSpace(elementItem.ElementName))
+				{
+					elementNameFromAttribute = elementItem.ElementName;
+					toBuild.ChildElementName = elementNameFromAttribute;
+					createListWithoutProxyType = toBuild.Type.IsEnumerableType() && toBuild.Type.Name != "String" && toBuild.Type.Name != "Byte[]";
+				}
+			}
+			else if (arrayAttribute != null)
+			{
+				isUnqualified = arrayAttribute.Form == XmlSchemaForm.Unqualified;
+				if (!string.IsNullOrWhiteSpace(arrayAttribute.ElementName))
+				{
+					elementNameFromAttribute = arrayAttribute.ElementName;
+				}
 			}
 
 			var attributeItem = member.GetCustomAttribute<XmlAttributeAttribute>();
