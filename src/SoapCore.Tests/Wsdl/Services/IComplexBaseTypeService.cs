@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ServiceModel;
 
 namespace SoapCore.Tests.Wsdl.Services;
@@ -6,14 +7,14 @@ namespace SoapCore.Tests.Wsdl.Services;
 public interface IComplexBaseTypeService
 {
 	[OperationContract]
-	DerivedType Method(DerivedType argument);
+	DerivedTypeList Method(DerivedTypeList argument);
 }
 
 public class ComplexBaseTypeService : IComplexBaseTypeService
 {
-	public DerivedType Method(DerivedType argument)
+	public DerivedTypeList Method(DerivedTypeList argument)
 	{
-		return new DerivedType();
+		return new DerivedTypeList();
 	}
 }
 
@@ -25,4 +26,8 @@ public class BaseType
 public class DerivedType : BaseType
 {
 	public string DerivedName { get; set; }
+}
+
+public class DerivedTypeList : List<DerivedType>
+{
 }

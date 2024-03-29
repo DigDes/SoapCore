@@ -1151,6 +1151,12 @@ namespace SoapCore.Tests.Wsdl
 
 			var baseTypeContent = root.XPathSelectElement("//xsd:complexType[@name='BaseType']/xsd:sequence/xsd:element[@name='BaseName' and @type='xsd:string' and not(@nillable)]", nm);
 			Assert.IsNotNull(baseTypeContent);
+
+			var listDerivedTypeMethodResponse = root.XPathSelectElement("//xsd:element[@name='MethodResponse']/xsd:complexType/xsd:sequence/xsd:element[@name='MethodResult' and @type='tns:ArrayOfDerivedType' and @nillable='true']", nm);
+			Assert.IsNotNull(listDerivedTypeMethodResponse);
+
+			var listDerivedType = root.XPathSelectElement("//xsd:complexType[@name='ArrayOfDerivedType']/xsd:sequence/xsd:element[@name='DerivedType' and @type='tns:DerivedType' and @nillable='true' and @minOccurs='0' and @maxOccurs='unbounded']", nm);
+			Assert.IsNotNull(listDerivedType);
 		}
 
 		[TestCleanup]
