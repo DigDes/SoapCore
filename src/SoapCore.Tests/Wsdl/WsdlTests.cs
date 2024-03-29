@@ -1135,6 +1135,24 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(schemaElement.XPathSelectElement("//xsd:element[@name='ComplexInheritanceModelInputB' and @type='tns:ComplexInheritanceModelInputB']", nm));
 		}
 
+		[TestMethod]
+		public void CheckComplexBaseTypeServiceWsdl()
+		{
+			StartService(typeof(ComplexBaseTypeService));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
+
+			var derivedTypeContent = root.XPathSelectElement("//xsd:complexType[@name='DerivedType']/xsd:complexContent[@mixed='false']/xsd:extension[@base='tns:BaseType']/xsd:sequence/xsd:element[@name='DerivedName' and @type='xsd:string' and not(@nillable)]", nm);
+			Assert.IsNotNull(derivedTypeContent);
+
+			var baseTypeContent = root.XPathSelectElement("//xsd:complexType[@name='BaseType']/xsd:sequence/xsd:element[@name='BaseName' and @type='xsd:string' and not(@nillable)]", nm);
+			Assert.IsNotNull(baseTypeContent);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{

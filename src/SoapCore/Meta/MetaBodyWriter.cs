@@ -744,6 +744,15 @@ namespace SoapCore.Meta
 			}
 		}
 
+		private bool HasBaseType(Type type)
+		{
+			var isArrayType = type.IsArray || typeof(IEnumerable).IsAssignableFrom(type);
+
+			var baseType = type.GetTypeInfo().BaseType;
+
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !type.IsValueType && baseType != null && !baseType.Name.Equals("Object");
+		}
+
 		private void AddSchemaComplexType(XmlDictionaryWriter writer, TypeToBuild toBuild)
 		{
 			var toBuildType = toBuild.Type;
@@ -758,6 +767,21 @@ namespace SoapCore.Meta
 				if (!toBuild.IsAnonumous)
 				{
 					writer.WriteAttributeString("name", toBuildName);
+				}
+
+				var hasBaseType = HasBaseType(toBuildType);
+				if (hasBaseType)
+				{
+					writer.WriteStartElement("complexContent", Namespaces.XMLNS_XSD);
+
+					writer.WriteAttributeString("mixed", "false");
+
+					writer.WriteStartElement("extension", Namespaces.XMLNS_XSD);
+
+					var typeName = toBuildType.BaseType.GetSerializedTypeName();
+					writer.WriteAttributeString("base", $"tns:{typeName}");
+
+					_complexTypeToBuild.Enqueue(new TypeToBuild(toBuildType.BaseType));
 				}
 
 				if (toBuildType.IsArray)
@@ -777,7 +801,7 @@ namespace SoapCore.Meta
 					if (!isWrappedBodyType)
 					{
 						var propertyOrFieldMembers = toBuildBodyType.GetPropertyOrFieldMembers()
-							.Where(mi => !mi.IsIgnored()).ToList();
+							.Where(mi => !mi.IsIgnored() && mi.DeclaringType == toBuildType).ToList();
 
 						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute()).ToList();
 						if (elements.Any())
@@ -834,6 +858,12 @@ namespace SoapCore.Meta
 							AddSchemaType(writer, field.FieldType, fieldName);
 						}
 					}
+				}
+
+				if (hasBaseType)
+				{
+					writer.WriteEndElement(); // xs:extension
+					writer.WriteEndElement(); // xs:complexContent
 				}
 
 				writer.WriteEndElement(); // complexType
