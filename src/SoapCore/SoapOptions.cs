@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
+using SoapCore.ServiceModel;
 
 namespace SoapCore
 {
@@ -73,6 +74,7 @@ namespace SoapCore
 		public bool GenerateSoapActionWithoutContractName { get; set; } = false;
 
 		public bool NormalizeNewLines { get; set; } = true;
+		public IWsdlOperationNameGenerator WsdlOperationNameGenerator { get; set; } = new DefaultWsdlOperationNameGenerator();
 
 		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
