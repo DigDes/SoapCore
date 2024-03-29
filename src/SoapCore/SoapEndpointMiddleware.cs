@@ -249,13 +249,15 @@ namespace SoapCore
 
 			//assumption that you want soap12 if your service supports that
 			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.MessageVersion == MessageVersion.Soap12WSAddressing10 || me.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004) ?? _messageEncoders[0];
+			var soapVersions = _messageEncoders.Select(me => me.MessageVersion).Distinct().ToArray();
 
 			using var responseMessage = new MetaMessage(
 				Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter),
 				_service,
 				GetXmlNamespaceManager(messageEncoder),
 				bindingName,
-				_options.UseBasicAuthentication);
+				_options.UseBasicAuthentication,
+				soapVersions);
 
 			if (showDocumentation)
 			{
