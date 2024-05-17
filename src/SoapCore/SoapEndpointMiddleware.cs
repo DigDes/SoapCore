@@ -1,17 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security.Authentication;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -26,6 +12,20 @@ using SoapCore.Extensibility;
 using SoapCore.MessageEncoder;
 using SoapCore.Meta;
 using SoapCore.ServiceModel;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Security.Authentication;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
+using System.Threading.Tasks;
+using System.Xml;
 
 namespace SoapCore
 {
@@ -265,7 +265,10 @@ namespace SoapCore
 				await messageEncoder.WriteMessageAsync(responseMessage, httpContext, ms, _options.IndentWsdl);
 				ms.Position = 0;
 				var documentation = SoapDefinition.DeserializeFromStream(ms).GenerateDocumentation();
-
+				if (httpContext?.Response.ContentLength <= documentation.Length)
+				{
+					httpContext.Response.ContentLength = documentation.Length;
+				}
 				await httpContext.Response.WriteAsync(documentation);
 
 				return;
@@ -956,7 +959,7 @@ namespace SoapCore
 		private void SetHttpResponse(HttpContext httpContext, Message message)
 		{
 			if (!message.Properties.TryGetValue(HttpResponseMessageProperty.Name, out var value)
-				|| !(value is HttpResponseMessageProperty httpProperty))
+				|| value is not HttpResponseMessageProperty httpProperty)
 			{
 				return;
 			}
