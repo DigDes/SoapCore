@@ -679,6 +679,7 @@ namespace SoapCore
 		private object[] GetRequestArguments(Message requestMessage, XmlDictionaryReader xmlReader, OperationDescription operation, HttpContext httpContext)
 		{
 			var arguments = new object[operation.AllParameters.Length];
+			var alreadyProcessedParameters = new bool[operation.AllParameters.Length];
 
 			IEnumerable<Type> serviceKnownTypes = operation
 				.GetServiceKnownTypesHierarchy()
@@ -694,7 +695,7 @@ namespace SoapCore
 					while (!xmlReader.EOF)
 					{
 						var parameterInfo = operation.InParameters.FirstOrDefault(p => p.Name == xmlReader.LocalName);
-						if (parameterInfo == null)
+						if (parameterInfo == null || alreadyProcessedParameters[parameterInfo.Index])
 						{
 							xmlReader.Skip();
 							continue;
@@ -707,6 +708,7 @@ namespace SoapCore
 						}
 
 						lastParameterIndex = parameterInfo.Index;
+						alreadyProcessedParameters[lastParameterIndex] = true;
 
 						var argumentValue = _serializerHelper.DeserializeInputParameter(
 							xmlReader,
