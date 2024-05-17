@@ -121,7 +121,8 @@ namespace SoapCore.Meta
 		{
 			if (!TryGetMessageContractBodyType(type, out var bodyType))
 			{
-				throw new InvalidOperationException(nameof(type));
+				throw new InvalidOperationException(
+					$"Could not get {nameof(PropertyInfo)} or {nameof(FieldInfo)} of custom {nameof(MessageBodyMemberAttribute)} from custom {nameof(MessageContractAttribute)} of type: {type}");
 			}
 
 			return bodyType;
@@ -131,7 +132,8 @@ namespace SoapCore.Meta
 		{
 			if (!TryGetMessageContractBodyMemberInfo(type, out var memberInfo))
 			{
-				throw new InvalidOperationException(nameof(type));
+				throw new InvalidOperationException(
+					$"Could not get {nameof(MemberInfo)} of custom {nameof(MessageBodyMemberAttribute)} from custom {nameof(MessageContractAttribute)} of type: {type}");
 			}
 
 			return memberInfo.Name;
