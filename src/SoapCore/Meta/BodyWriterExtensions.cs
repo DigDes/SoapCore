@@ -197,6 +197,9 @@ namespace SoapCore.Meta
 		{
 			var namedType = type;
 			bool isNullableArray = false;
+			var isGenericType = type.IsGenericType;
+			var isBaseTypeGeneric = type.BaseType is { IsGenericType: true };
+
 			if (type.IsArray)
 			{
 				namedType = type.GetElementType();
@@ -207,9 +210,9 @@ namespace SoapCore.Meta
 					isNullableArray = true;
 				}
 			}
-			else if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
+			else if (typeof(IEnumerable).IsAssignableFrom(type) && (isGenericType || isBaseTypeGeneric))
 			{
-				namedType = GetGenericType(type);
+				namedType = isGenericType ? GetGenericType(type) : GetGenericType(type.BaseType);
 				var underlyingType = Nullable.GetUnderlyingType(namedType);
 				if (underlyingType != null)
 				{
@@ -225,9 +228,9 @@ namespace SoapCore.Meta
 				typeName = xmlTypeAttribute.TypeName;
 			}
 
-			if (type.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType))
+			if (type.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && (isGenericType || isBaseTypeGeneric)))
 			{
-				if (namedType.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType))
+				if (namedType.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && (isGenericType || isBaseTypeGeneric)))
 				{
 					typeName = GetSerializedTypeName(namedType);
 				}
