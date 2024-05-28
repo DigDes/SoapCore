@@ -944,6 +944,24 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckEnumSpecifiedBoolWsdl()
+		{
+			StartService(typeof(SpecifiedBoolService));
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
+
+			var enumWithSpecifiedBool = root.XPathSelectElement("//xsd:complexType[@name='TypeWithSpecifiedEnum']/xsd:sequence/xsd:element[@name='Enum' and @type='tns:NulEnum' and not(@nillable) and @minOccurs='0' and @maxOccurs='1']", nm);
+			Assert.IsNotNull(enumWithSpecifiedBool);
+
+			var normalEnum = root.XPathSelectElement("//xsd:complexType[@name='TypeWithSpecifiedEnum']/xsd:sequence/xsd:element[@name='NormalEnum' and @type='tns:NulEnum' and not(@nillable) and @minOccurs='1' and @maxOccurs='1']", nm);
+			Assert.IsNotNull(normalEnum);
+		}
+
+		[TestMethod]
 		public void CheckFieldMembers()
 		{
 			StartService(typeof(OperationContractFieldMembersService));
