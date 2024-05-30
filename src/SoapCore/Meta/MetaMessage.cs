@@ -48,7 +48,6 @@ namespace SoapCore.Meta
 
 			var wroteSoapNamespace = false;
 			if (_soapVersions.Contains(MessageVersion.Soap11) ||
-			    _soapVersions.Contains(MessageVersion.Soap11WSAddressingAugust2004) ||
 			    _soapVersions.Contains(MessageVersion.Soap11WSAddressingAugust2004))
 			{
 				WriteXmlnsAttribute(writer, Namespaces.SOAP11_NS);
