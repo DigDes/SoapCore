@@ -1246,7 +1246,13 @@ namespace SoapCore.Tests.Wsdl
 				: new MetaBodyWriter(service, baseUrl, xmlNamespaceManager, defaultBindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }, useMicrosoftGuid) as BodyWriter;
 			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, Encoding.UTF8, false, XmlDictionaryReaderQuotas.Max, false, false, null, bindingName, portName, true);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
-			responseMessage = new MetaMessage(responseMessage, service, xmlNamespaceManager, defaultBindingName, false);
+			responseMessage = new MetaMessage(
+				responseMessage,
+				service,
+				xmlNamespaceManager,
+				defaultBindingName,
+				false,
+				[responseMessage.Version]);
 
 			var memoryStream = new MemoryStream();
 			await encoder.WriteMessageAsync(responseMessage, null, memoryStream, true);
