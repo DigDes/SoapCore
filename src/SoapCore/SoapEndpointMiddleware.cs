@@ -439,7 +439,11 @@ namespace SoapCore
 			context.Response.ContentType = "text/xml";
 
 			var ms = new MemoryStream();
-			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = DefaultEncodings.UTF8 });
+			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings
+			{
+				Encoding = DefaultEncodings.UTF8,
+
+			});
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
@@ -566,15 +570,15 @@ namespace SoapCore
 
 		private bool TryGetOperation(string methodName, out OperationDescription operation)
 		{
-			operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.Ordinal)
-							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.Ordinal)
-							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));
+			operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.OrdinalIgnoreCase)
+							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.OrdinalIgnoreCase)
+							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.OrdinalIgnoreCase));
 
 			if (operation == null)
 			{
 				operation = _service.Operations.FirstOrDefault(o =>
-							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal)
-							|| methodName.Contains(HeadersHelper.GetTrimmedSoapAction(o.Name)));
+							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.OrdinalIgnoreCase)
+							|| methodName.IndexOf(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.OrdinalIgnoreCase) >= 0);
 			}
 
 			return operation != null;
