@@ -808,6 +808,32 @@ namespace SoapCore.Tests.Wsdl
 
 		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckSoapHeaderTypes(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ServiceWithSoapHeaders>(soapSerializer);
+			Trace.TraceInformation(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
+
+			var headerComplexType = root.XPathSelectElements("//xsd:complexType[@name='AuthenticationContextSoapHeader']", nm);
+			Assert.IsNotNull(headerComplexType);
+
+			var headerComplexTypePassword = root.XPathSelectElements("//xsd:complexType[@name='AuthenticationContextSoapHeader']/xsd:sequence/xsd:element[@name='OperatorCode' and @type='xsd:string' and not(@nillable) and @minOccurs=0 and @maxOccurs=1]", nm);
+			Assert.IsNotNull(headerComplexTypePassword);
+
+			var headerComplexTypeOperatorCode = root.XPathSelectElements("//xsd:complexType[@name='AuthenticationContextSoapHeader']/xsd:sequence/xsd:element[@name='Password' and @type='xsd:string' and not(@nillable) and @minOccurs=0 and @maxOccurs=1]", nm);
+			Assert.IsNotNull(headerComplexTypeOperatorCode);
+
+			var anyAttribute = root.XPathSelectElement("//xsd:complexType[@name='AuthenticationContextSoapHeader']/xsd:anyAttribute", nm);
+			Assert.IsNotNull(anyAttribute);
+
+			var headerElementOnOperation = root.XPathSelectElement("//wsdl:operation[@name='Method']/wsdl:input/soap:header[@message='tns:MethodAuthenticationContextSoapHeader' and @part='AuthenticationContextSoapHeader' and @use='literal']", nm);
+			Assert.IsNotNull(headerElementOnOperation);
+		}
+
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
 		[DataRow(SoapSerializer.DataContractSerializer)]
 		public async Task CheckUnqualifiedMembersService(SoapSerializer soapSerializer)
 		{
