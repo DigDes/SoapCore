@@ -65,6 +65,7 @@ namespace SoapCore.Meta
 		private bool _buildDateTimeOffset;
 		private bool _buildDataTable;
 		private string _schemaNamespace;
+		private IWsdlOperationNameGenerator _wsdlOperationNameGenerator;
 
 		[Obsolete]
 		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, Binding binding)
@@ -73,14 +74,21 @@ namespace SoapCore.Meta
 				  baseUrl,
 				  binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
 				  binding.HasBasicAuth(),
-				  new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) })
+				  new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) },
+				  new DefaultWsdlOperationNameGenerator())
 		{
 		}
 
-		public MetaWCFBodyWriter(ServiceDescription service, string baseUrl, string bindingName, bool hasBasicAuthentication, SoapBindingInfo[] soapBindings) : base(isBuffered: true)
+		public MetaWCFBodyWriter(ServiceDescription service,
+			string baseUrl,
+			string bindingName,
+			bool hasBasicAuthentication,
+			SoapBindingInfo[] soapBindings,
+			IWsdlOperationNameGenerator wsdlOperationNameGenerator) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
+			_wsdlOperationNameGenerator = wsdlOperationNameGenerator;
 
 			_arrayToBuild = new Queue<Type>();
 			_builtEnumTypes = new HashSet<string>();
@@ -993,7 +1001,7 @@ namespace SoapCore.Meta
 			{
 				// input
 				writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
-				writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_InputMessage");
+				writer.WriteAttributeString("name", _wsdlOperationNameGenerator.GenerateWsdlInputMessageName(operation, _service));
 				writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("name", "parameters");
 
@@ -1014,7 +1022,7 @@ namespace SoapCore.Meta
 				if (!operation.IsOneWay)
 				{
 					writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
-					writer.WriteAttributeString("name", $"{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteAttributeString("name", _wsdlOperationNameGenerator.GenerateWsdlOutputMessageName(operation, _service));
 					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
 					writer.WriteAttributeString("name", "parameters");
 
@@ -1062,14 +1070,14 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("name", operation.Name);
 				writer.WriteStartElement("wsdl", "input", Namespaces.WSDL_NS);
 				writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction);
-				writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_InputMessage");
+				writer.WriteAttributeString("message", $"tns:{_wsdlOperationNameGenerator.GenerateWsdlInputMessageName(operation, _service)}");
 				writer.WriteEndElement(); // wsdl:input
 
 				if (!operation.IsOneWay)
 				{
 					writer.WriteStartElement("wsdl", "output", Namespaces.WSDL_NS);
 					writer.WriteAttributeString("wsam", "Action", Namespaces.WSAM_NS, operation.SoapAction + "Response");
-					writer.WriteAttributeString("message", $"tns:{BindingType}_{operation.Name}_OutputMessage");
+					writer.WriteAttributeString("message", $"tns:{_wsdlOperationNameGenerator.GenerateWsdlOutputMessageName(operation, _service)}");
 					writer.WriteEndElement(); // wsdl:output
 				}
 
