@@ -1554,14 +1554,34 @@ namespace SoapCore.Meta
 
 		private string GetTypeName(Type type)
 		{
+			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
+
 			if (type.IsGenericType && !type.IsArray && !typeof(IEnumerable).IsAssignableFrom(type))
 			{
-				var genericTypes = GetGenericTypes(type);
-				var genericTypeNames = genericTypes.Select(a => GetTypeName(a));
+				if (dataContractAttribute != null && dataContractAttribute.IsNameSetExplicitly)
+				{
+					var typeName = dataContractAttribute.Name;
+					var genericTypes = GetGenericTypes(type);
+					var genericTypeNames = genericTypes
+						.Select(genericType =>
+						{
+							var (name, _) = ResolveSystemType(genericType);
+							return string.IsNullOrEmpty(name) ? GetTypeName(genericType) : name;
+						})
+						.ToArray();
 
-				var typeName = ReplaceGenericNames(type.Name);
-				typeName = typeName + "Of" + string.Concat(genericTypeNames);
-				return typeName;
+					typeName = string.Format(typeName, genericTypeNames);
+					return typeName;
+				}
+				else
+				{
+					var genericTypes = GetGenericTypes(type);
+					var genericTypeNames = genericTypes.Select(a => GetTypeName(a));
+
+					var typeName = ReplaceGenericNames(type.Name);
+					typeName = typeName + "Of" + string.Concat(genericTypeNames);
+					return typeName;
+				}
 			}
 
 			if (type.IsArray)
@@ -1598,7 +1618,6 @@ namespace SoapCore.Meta
 			}
 
 			// Make use of DataContract attribute, if set, as it may contain a Name override
-			var dataContractAttribute = type.GetCustomAttribute<DataContractAttribute>();
 			if (dataContractAttribute != null && dataContractAttribute.IsNameSetExplicitly)
 			{
 				return dataContractAttribute.Name;
