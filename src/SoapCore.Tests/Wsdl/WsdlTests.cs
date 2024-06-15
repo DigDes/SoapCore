@@ -427,6 +427,26 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckGenericDataContract()
+		{
+			StartService(typeof(GenericDataContractService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = XElement.Parse(wsdl);
+
+			var stringResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("TestStringResult") == true);
+			Assert.IsNotNull(stringResult);
+			Assert.AreEqual("http://testnamespace.org", stringResult.Attribute(XNamespace.Xmlns + "q1").Value);
+			Assert.AreEqual("q1:MystringType", stringResult.Attribute("type").Value);
+
+			var myTypeResult = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value.Equals("TestMyArgResult") == true);
+			Assert.IsNotNull(myTypeResult);
+			Assert.AreEqual("http://testnamespace.org", myTypeResult.Attribute(XNamespace.Xmlns + "q2").Value);
+			Assert.AreEqual("q2:MyMyArgType", myTypeResult.Attribute("type").Value);
+		}
+
+		[TestMethod]
 		public void CheckDictionaryTypeDataContract()
 		{
 			StartService(typeof(DictionaryTypeListService));
