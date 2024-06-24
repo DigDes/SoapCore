@@ -264,6 +264,12 @@ instead of:
     </d3p1:StringList>
 ...
 ```
+### Not implemented
+WCF and legacy WebService supports many scenarios and lots of attributes. SoapCore only supports the most common patterns.
+Stuff that are not supported includes:
+* XmlIncludeAttribute/SoapIncludeAttribute
+* SoapDocumentMethodAttribute
+* 
 
 ### Contributing
 
