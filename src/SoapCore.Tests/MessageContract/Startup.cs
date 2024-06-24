@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,33 @@ namespace SoapCore.Tests.MessageContract
 			{
 				x.UseSoapEndpoint(_serviceType, "/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
 				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
+
+				x.UseSoapEndpoint(_serviceType, opt =>
+				{
+					opt.Path = "/Service11And12.asmx";
+					opt.SoapSerializer = SoapSerializer.XmlSerializer;
+					opt.CaseInsensitivePath = true;
+
+					opt.EncoderOptions =
+					[
+						new SoapEncoderOptions
+						{
+							BindingName = "Soap11",
+							PortName = "Soap11",
+							WriteEncoding = Encoding.UTF8,
+							MessageVersion = MessageVersion.Soap11WSAddressingAugust2004,
+						},
+						new SoapEncoderOptions
+						{
+							BindingName = "Soap12",
+							PortName = "Soap12",
+							WriteEncoding = Encoding.UTF8,
+							MessageVersion = MessageVersion.Soap12WSAddressingAugust2004,
+						}
+
+					];
+				});
+
 				x.UseSoapEndpoint(_serviceType, opt =>
 				{
 					opt.Path = "/ServiceWithAdditionalEnvelopeXmlnsAttributes.asmx";

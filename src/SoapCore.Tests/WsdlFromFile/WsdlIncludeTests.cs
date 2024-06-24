@@ -22,10 +22,36 @@ namespace SoapCore.Tests.WsdlFromFile
 		private IWebHost _host;
 
 		[TestMethod]
+		public void CheckWsdlInclude()
+		{
+			StartService2(typeof(EchoIncludeService));
+			var wsdl = GetWsdlFromAsmx("Service2.asmx");
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
+
+			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:import[1]", nsmgr);
+
+			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
+			var address = addresses.Addresses.Single();
+
+			string url = address + "/Management/Service2.asmx?import&name=ServiceDefinitions.xml";
+
+			Assert.IsNotNull(element);
+			Assert.AreEqual(url, element.Attributes["location"]?.Value);
+		}
+
+		[TestMethod]
 		public void CheckXSDInclude()
 		{
 			StartService(typeof(EchoIncludeService));
-			var wsdl = GetWsdlFromAsmx();
+			var wsdl = GetWsdlFromAsmx("Service.asmx");
 			StopServer();
 
 			var root = new XmlDocument();
@@ -96,10 +122,8 @@ namespace SoapCore.Tests.WsdlFromFile
 			_host?.StopAsync();
 		}
 
-		private string GetWsdlFromAsmx()
+		private string GetWsdlFromAsmx(string serviceName)
 		{
-			var serviceName = "Service.asmx";
-
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
@@ -124,10 +148,20 @@ namespace SoapCore.Tests.WsdlFromFile
 
 		private void StartService(Type serviceType)
 		{
+			StartService("Service", serviceType, "WSDL", "echoInclude.wsdl");
+		}
+
+		private void StartService2(Type serviceType)
+		{
+			StartService("Service2", serviceType, "WSDLInclude", "echoWsdlInclude.wsdl");
+		}
+
+		private void StartService(string serviceName, Type serviceType, string testFileFolder, string wsdlFile)
+		{
 			_host = new WebHostBuilder()
 					.UseKestrel()
 					.UseUrls("http://127.0.0.1:0")
-					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType, "echoInclude.wsdl")))
+					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceName, serviceType, testFileFolder, wsdlFile)))
 					.UseStartup<Startup>()
 					.Build();
 

@@ -8,7 +8,7 @@ namespace SoapCore.ServiceModel
 {
 	public class ServiceDescription
 	{
-		public ServiceDescription(Type serviceType)
+		public ServiceDescription(Type serviceType, bool generateSoapActionWithoutContractName)
 		{
 			ServiceType = serviceType;
 			ServiceKnownTypes = serviceType.GetCustomAttributes<ServiceKnownTypeAttribute>(inherit: false);
@@ -21,7 +21,7 @@ namespace SoapCore.ServiceModel
 			{
 				foreach (var serviceContract in contractType.GetTypeInfo().GetCustomAttributes<ServiceContractAttribute>())
 				{
-					var contractDescription = new ContractDescription(this, contractType, serviceContract);
+					var contractDescription = new ContractDescription(this, contractType, serviceContract, generateSoapActionWithoutContractName);
 
 					contracts.Add(contractDescription);
 

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.ServiceModel;
@@ -12,20 +13,23 @@ namespace SoapCore.Meta
 		private readonly XmlNamespaceManager _xmlNamespaceManager;
 		private readonly string _bindingName;
 		private readonly bool _hasBasicAuthentication;
+		private readonly MessageVersion[] _soapVersions;
 
 		[Obsolete]
 		public MetaMessage(Message message, ServiceDescription service, Binding binding, XmlNamespaceManager xmlNamespaceManager)
-			: this(message, service, xmlNamespaceManager, binding?.Name, binding.HasBasicAuth())
+			: this(message, service, xmlNamespaceManager, binding?.Name, binding.HasBasicAuth(), [message.Version])
 		{
 		}
 
-		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication)
+		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager,
+			string bindingName, bool hasBasicAuthentication, MessageVersion[] soapVersions)
 		{
 			_xmlNamespaceManager = xmlNamespaceManager;
 			_message = message;
 			_service = service;
 			_bindingName = bindingName;
 			_hasBasicAuthentication = hasBasicAuthentication;
+			_soapVersions = soapVersions;
 		}
 
 		public override MessageHeaders Headers => _message.Headers;
@@ -42,18 +46,22 @@ namespace SoapCore.Meta
 		{
 			writer.WriteStartElement(_xmlNamespaceManager.LookupPrefix(Namespaces.WSDL_NS), "definitions", Namespaces.WSDL_NS);
 
-			// Soap11
-			if (Version == MessageVersion.Soap11 || Version == MessageVersion.Soap11WSAddressingAugust2004 || Version == MessageVersion.Soap11WSAddressingAugust2004)
+			var wroteSoapNamespace = false;
+			if (_soapVersions.Contains(MessageVersion.Soap11) ||
+			    _soapVersions.Contains(MessageVersion.Soap11WSAddressingAugust2004))
 			{
 				WriteXmlnsAttribute(writer, Namespaces.SOAP11_NS);
+				wroteSoapNamespace = true;
 			}
 
-			// Soap12
-			else if (Version == MessageVersion.Soap12WSAddressing10 || Version == MessageVersion.Soap12WSAddressingAugust2004)
+			if (_soapVersions.Contains(MessageVersion.Soap12WSAddressing10) ||
+			    _soapVersions.Contains(MessageVersion.Soap12WSAddressingAugust2004))
 			{
 				WriteXmlnsAttribute(writer, Namespaces.SOAP12_NS);
+				wroteSoapNamespace = true;
 			}
-			else
+
+			if(!wroteSoapNamespace)
 			{
 				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
 			}

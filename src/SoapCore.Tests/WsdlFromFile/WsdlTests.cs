@@ -162,7 +162,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			_host = new WebHostBuilder()
 					.UseKestrel()
 					.UseUrls("http://127.0.0.1:0")
-					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType, "SnapshotPull.wsdl")))
+					.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration("Service", serviceType, "WSDL", "SnapshotPull.wsdl")))
 					.UseStartup<Startup>()
 					.Build();
 

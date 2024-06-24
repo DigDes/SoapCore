@@ -39,9 +39,13 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
     app.UseRouting();
 
     app.UseEndpoints(endpoints => {
-        endpoints.UseSoapEndpoint<ServiceContractImpl>("/ServicePath.asmx", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+        endpoints.UseSoapEndpoint<ServiceContractImpl>(opt =>
+	{
+		opt.Path = "/ServicePath.asmx",
+		opt.SoapSerializer = SoapSerializer.DataContractSerializer
+	});
     });
-
+    
 }
 ```
 
@@ -103,28 +107,32 @@ There is an optional feature included where you can instead of generating servic
 
 To use it, add a setting like this to appsettings
 
-```csharp
- "FileWSDL": {
-    "UrlOverride": "",
-    "VirtualPath": "",
-    "WebServiceWSDLMapping": {
-      "Service.asmx": { ,
-        "UrlOverride": "Management/Service.asmx",
-        "WsdlFile": "snapshotpull.wsdl",
-        "SchemaFolder": "Schemas",
-        "WsdlFolder": "Schemas"
-      }
+```json
+"FileWSDL": {
+  "UrlOverride": "",
+  "SchemeOverride": "",
+  "VirtualPath": "",
+  "WebServiceWSDLMapping": {
+    "Service.asmx": {
+      "UrlOverride": "Management/Service.asmx",
+      "WsdlFile": "snapshotpull.wsdl",
+      "SchemaFolder": "Schemas",
+      "WsdlFolder": "Schemas"
     }
+  }
+}
 ```
 
-- UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
-- VirualPath - can be used if you like to add a path between the base URL and service.
-- WebServiceWSDLMapping
-  - UrlOverride - can be used to override the URL for a specific WSDL mapping. This can be useful if you want to host different services under different folder.
-  - Service.asmx - is the endpoint of the service you expose. You can have more than one.
-  - WsdlFile - is the name of the WSDL on disc.
-  - SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
-  - WsdlFolder - is the folder that the WSDL file is stored on disc.
+* UrlOverride - can be used to override the URL in the service description. This can be useful if you are behind a firewall.
+* SchemeOverride - can be used to override the HTTP Scheme in the service description. This can be useful if you are behind a firewall and the firewall sets the X-Forwarded-Host header, but the internal HTTP scheme is not the same as the external.
+* VirualPath - can be used if you like to add a path between the base URL and service. 
+* WebServiceWSDLMapping
+  * UrlOverride - can be used to override the URL for a specific WSDL mapping. This can be useful if you want to host different services under different folder.
+  * Service.asmx - is the endpoint of the service you expose. You can have more than one.
+  * WsdlFile - is the name of the WSDL on disc.
+  * SchemaFolder - if you import XSD from WSDL, this is the folder where the Schemas are stored on disc.
+  * WsdlFolder - is the folder that the WSDL file is stored on disc.
+
 
 To read the setting you can do the following
 
@@ -295,6 +303,12 @@ instead of:
     </d3p1:StringList>
 ...
 ```
+### Not implemented
+WCF and legacy WebService supports many scenarios and lots of attributes. SoapCore only supports the most common patterns.
+Stuff that are not supported includes:
+* XmlIncludeAttribute/SoapIncludeAttribute
+* SoapDocumentMethodAttribute
+* 
 
 ### Contributing
 

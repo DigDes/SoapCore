@@ -13,12 +13,16 @@ namespace SoapCore.Tests.WsdlFromFile
 {
 	public class Startup
 	{
+		private readonly string _serviceName;
 		private readonly Type _serviceType;
+		private readonly string _testFileFolder;
 		private readonly string _wsdlFile;
 
 		public Startup(IStartupConfiguration configuration)
 		{
+			_serviceName = configuration.ServiceName;
 			_serviceType = configuration.ServiceType;
+			_testFileFolder = configuration.TestFileFolder;
 			_wsdlFile = configuration.WsdlFile;
 		}
 
@@ -39,20 +43,20 @@ namespace SoapCore.Tests.WsdlFromFile
 				WebServiceWSDLMapping = new Dictionary<string, WebServiceWSDLMapping>
 				{
 					{
-						"Service.asmx", new WebServiceWSDLMapping
+						_serviceName + ".asmx", new WebServiceWSDLMapping
 						{
-							SchemaFolder = "/WsdlFromFile/WSDL",
+							SchemaFolder = "/WsdlFromFile/" + _testFileFolder,
 							WsdlFile = _wsdlFile,
-							WSDLFolder = "/WsdlFromFile/WSDL",
-							UrlOverride = "Management/Service.asmx"
+							WSDLFolder = "/WsdlFromFile/" + _testFileFolder,
+							UrlOverride = "Management/" + _serviceName + ".asmx"
 						}
 					}
 				},
 				AppPath = env.ContentRootPath
 			};
 
-			app.UseSoapEndpoint(_serviceType, "/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
-			app.UseSoapEndpoint(_serviceType, "/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer, false, null, options);
+			app.UseSoapEndpoint(_serviceType, "/" + _serviceName + ".svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+			app.UseSoapEndpoint(_serviceType, "/" + _serviceName + ".asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer, false, null, options);
 
 			app.UseMvc();
 		}
@@ -66,12 +70,12 @@ namespace SoapCore.Tests.WsdlFromFile
 				WebServiceWSDLMapping = new Dictionary<string, WebServiceWSDLMapping>
 				{
 					{
-						"Service.asmx", new WebServiceWSDLMapping
+						_serviceName + ".asmx", new WebServiceWSDLMapping
 						{
-							SchemaFolder = "/WsdlFromFile/WSDL",
+							SchemaFolder = "/WsdlFromFile/" + _testFileFolder,
 							WsdlFile = _wsdlFile,
-							WSDLFolder = "/WsdlFromFile/WSDL",
-							UrlOverride = "Management/Service.asmx"
+							WSDLFolder = "/WsdlFromFile/" + _testFileFolder,
+							UrlOverride = "Management/" + _serviceName + ".asmx"
 						}
 					}
 				},
@@ -82,8 +86,8 @@ namespace SoapCore.Tests.WsdlFromFile
 
 			app.UseEndpoints(x =>
 			{
-				x.UseSoapEndpoint(_serviceType, "/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
-				x.UseSoapEndpoint(_serviceType, "/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer, false, null, options);
+				x.UseSoapEndpoint(_serviceType, "/" + _serviceName + ".svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+				x.UseSoapEndpoint(_serviceType, "/" + _serviceName + ".asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer, false, null, options);
 			});
 		}
 #endif

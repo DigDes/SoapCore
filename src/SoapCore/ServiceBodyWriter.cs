@@ -256,23 +256,22 @@ namespace SoapCore
 				else
 				{
 					//for complex types
-					using (var stream = new MemoryStream())
-					{
-						// write element with name as outResult.Key and type information as outResultType
-						// i.e. <outResult.Key xsi:type="outResultType" ... />
-						var outResultType = outResult.Value.GetType();
-						var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
-						serializer.Serialize(stream, outResult.Value);
+					var stream = new MemoryStream();
 
-						//add outResultType. ugly, but working
-						stream.Position = 0;
-						XmlDocument xdoc = new XmlDocument();
-						xdoc.Load(stream);
-						var attr = xdoc.CreateAttribute("xsi", "type", Namespaces.XMLNS_XSI);
-						attr.Value = outResultType.Name;
-						xdoc.DocumentElement.Attributes.Prepend(attr);
-						writer.WriteRaw(xdoc.DocumentElement.OuterXml);
-					}
+					// write element with name as outResult.Key and type information as outResultType
+					// i.e. <outResult.Key xsi:type="outResultType" ... />
+					var outResultType = outResult.Value.GetType();
+					var serializer = CachedXmlSerializer.GetXmlSerializer(outResultType, outResult.Key, _serviceNamespace);
+					serializer.Serialize(stream, outResult.Value);
+
+					//add outResultType. ugly, but working
+					stream.Position = 0;
+					XmlDocument xdoc = new XmlDocument();
+					xdoc.Load(stream);
+					var attr = xdoc.CreateAttribute("xsi", "type", Namespaces.XMLNS_XSI);
+					attr.Value = outResultType.Name;
+					xdoc.DocumentElement.Attributes.Prepend(attr);
+					writer.WriteRaw(xdoc.DocumentElement.OuterXml);
 				}
 
 				if (value != null)
@@ -357,22 +356,20 @@ namespace SoapCore
 				else
 				{
 					//for complex types
-					using (var stream = new MemoryStream())
+					var stream = new MemoryStream();
+					Type outResultType = outResult.Value.GetType();
+					IEnumerable<Type> serviceKnownTypes = _operation
+						.GetServiceKnownTypesHierarchy()
+						.Select(x => x.Type);
+
+					var serializer = new DataContractSerializer(outResultType, serviceKnownTypes);
+					serializer.WriteObject(stream, outResult.Value);
+
+					stream.Position = 0;
+					using (var reader = XmlReader.Create(stream))
 					{
-						Type outResultType = outResult.Value.GetType();
-						IEnumerable<Type> serviceKnownTypes = _operation
-							.GetServiceKnownTypesHierarchy()
-							.Select(x => x.Type);
-
-						var serializer = new DataContractSerializer(outResultType, serviceKnownTypes);
-						serializer.WriteObject(stream, outResult.Value);
-
-						stream.Position = 0;
-						using (var reader = XmlReader.Create(stream))
-						{
-							reader.MoveToContent();
-							value = reader.ReadInnerXml();
-						}
+						reader.MoveToContent();
+						value = reader.ReadInnerXml();
 					}
 				}
 

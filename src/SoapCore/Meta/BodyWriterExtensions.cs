@@ -32,7 +32,7 @@ namespace SoapCore.Meta
 				exporter.ExportTypeMapping(xmlTypeMapping);
 				schemas.Compile(null, true);
 
-				using var memoryStream = new MemoryStream();
+				var memoryStream = new MemoryStream();
 				foreach (XmlSchema schema in schemas)
 				{
 					schema.Write(memoryStream);
@@ -40,11 +40,8 @@ namespace SoapCore.Meta
 
 				memoryStream.Position = 0;
 
-				var streamReader = new StreamReader(memoryStream);
-				var result = streamReader.ReadToEnd();
-
 				var doc = new XmlDocument();
-				doc.LoadXml(result);
+				doc.Load(memoryStream);
 				doc.DocumentElement.WriteContentTo(writer);
 
 				return true;
@@ -126,15 +123,12 @@ namespace SoapCore.Meta
 					schema.Items.Add(element);
 				}
 
-				using var memoryStream = new MemoryStream();
+				var memoryStream = new MemoryStream();
 				schema.Write(memoryStream);
 				memoryStream.Position = 0;
 
-				var streamReader = new StreamReader(memoryStream);
-				var result = streamReader.ReadToEnd();
-
 				var doc = new XmlDocument();
-				doc.LoadXml(result);
+				doc.Load(memoryStream);
 				doc.DocumentElement.WriteContentTo(writer);
 
 				return true;
@@ -162,6 +156,17 @@ namespace SoapCore.Meta
 				.Any(attr =>
 					attr.AttributeType == typeof(IgnoreDataMemberAttribute) ||
 					attr.AttributeType == typeof(XmlIgnoreAttribute));
+		}
+
+		/// <summary>
+		/// Checks if the parent has a ShouldSerialize*() method defined for a specific member.
+		/// </summary>
+		/// <param name="member">The member to check</param>
+		/// <param name="parent">Parent of the member</param>
+		/// <returns>True if a ShouldSerialize*() method exists</returns>
+		public static bool HasShouldSerializeMethod(this MemberInfo member, TypeToBuild parent)
+		{
+			return parent.Type.GetMethod($"ShouldSerialize{member.Name}", Array.Empty<Type>()) != null;
 		}
 
 		public static bool IsEnumerableType(this Type collectionType)
@@ -192,6 +197,9 @@ namespace SoapCore.Meta
 		{
 			var namedType = type;
 			bool isNullableArray = false;
+			var isGenericType = type.IsGenericType;
+			var isBaseTypeGeneric = type.BaseType is { IsGenericType: true };
+
 			if (type.IsArray)
 			{
 				namedType = type.GetElementType();
@@ -202,9 +210,9 @@ namespace SoapCore.Meta
 					isNullableArray = true;
 				}
 			}
-			else if (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType)
+			else if (typeof(IEnumerable).IsAssignableFrom(type) && (isGenericType || isBaseTypeGeneric))
 			{
-				namedType = GetGenericType(type);
+				namedType = isGenericType ? GetGenericType(type) : GetGenericType(type.BaseType);
 				var underlyingType = Nullable.GetUnderlyingType(namedType);
 				if (underlyingType != null)
 				{
@@ -220,9 +228,9 @@ namespace SoapCore.Meta
 				typeName = xmlTypeAttribute.TypeName;
 			}
 
-			if (type.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType))
+			if (type.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && (isGenericType || isBaseTypeGeneric)))
 			{
-				if (namedType.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && type.IsGenericType))
+				if (namedType.IsArray || (typeof(IEnumerable).IsAssignableFrom(type) && (isGenericType || isBaseTypeGeneric)))
 				{
 					typeName = GetSerializedTypeName(namedType);
 				}
@@ -235,7 +243,7 @@ namespace SoapCore.Meta
 
 		private static string GetArrayTypeName(string typeName, bool isNullable)
 		{
-			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName).FirstCharToUpperOrDefault() ?? typeName);
+			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName) ?? typeName).FirstCharToUpperOrDefault();
 		}
 
 		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)

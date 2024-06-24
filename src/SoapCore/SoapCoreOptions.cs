@@ -9,6 +9,8 @@ namespace SoapCore
 {
 	public class SoapCoreOptions
 	{
+		private bool? _indentWsdl = null;
+
 		/// <summary>
 		/// Gets or sets the Path of the Service
 		/// </summary>
@@ -107,6 +109,12 @@ namespace SoapCore
 		public bool IndentXml { get; set; } = true;
 
 		/// <summary>
+		/// Gets or sets a value indicating whether to indent the generated WSDL.
+		/// <para>Defaults to the value of <see cref="IndentXml"/></para>
+		/// </summary>
+		public bool IndentWsdl { get => _indentWsdl ?? IndentXml; set => _indentWsdl = value; }
+
+		/// <summary>
 		/// Gets or sets a value indicating whether to check to make sure that the XmlOutput doesn't contain invalid characters
 		/// <para>Defaults to true</para>
 		/// </summary>
@@ -134,6 +142,20 @@ namespace SoapCore
 		/// Sets additional namespace declaration attributes in envelope
 		/// </summary>
 		public Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; set; }
+
+		/// <summary>
+		/// By default, the soapAction that is generated if not explicitely specified is
+		/// {namespace}/{contractName}/{methodName}. If set to true, the service name will
+		/// be omitted, so that the soapAction will be {namespace}/{methodName}.
+		/// </summary>
+		public bool GenerateSoapActionWithoutContractName { get; set; } = false;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether newlines in the SOAP XML responses
+		/// should be normalized to the system's default newline character (CRLF on Windows).
+		/// Default is true.
+		/// </summary>
+		public bool NormalizeNewLines { get; set; } = true;
 
 		public void UseCustomSerializer<TCustomSerializer>()
 			where TCustomSerializer : class, IXmlSerializationHandler
