@@ -98,6 +98,12 @@ namespace SoapCore
 					}
 				}
 
+				if (soapAction != null &&
+				    (string.IsNullOrEmpty(GetTrimmedSoapAction(soapAction)) || string.IsNullOrEmpty(GetTrimmedClearedSoapAction(soapAction))))
+				{
+					soapAction = string.Empty;
+				}
+
 				if (string.IsNullOrEmpty(soapAction))
 				{
 					if (!string.IsNullOrEmpty(message.Headers.Action))
