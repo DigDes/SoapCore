@@ -164,7 +164,7 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.XmlSerializer
 			};
 
-			var soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, _ => Task.CompletedTask, options);
+			var soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, _ => Task.CompletedTask, options, serviceCollection.BuildServiceProvider());
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/Service.asmx");
@@ -184,7 +184,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = contentType;
 
-			await soapCore.Invoke(context, serviceCollection.BuildServiceProvider());
+			await soapCore.Invoke(context);
 
 			// Assert
 			context.Response.Body.Seek(0, SeekOrigin.Begin);
