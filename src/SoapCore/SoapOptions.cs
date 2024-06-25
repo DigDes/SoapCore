@@ -1,10 +1,10 @@
-using SoapCore.Extensibility;
-using SoapCore.Meta;
 using System;
 using System.Collections.Generic;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.ServiceModel;
+using SoapCore.Extensibility;
+using SoapCore.Meta;
 
 namespace SoapCore
 {
@@ -50,6 +50,8 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpsPostEnabled { get; set; } = true;
+
+		public Type SerializerIdentifier { get; set; }
 
 		public bool OmitXmlDeclaration { get; set; } = true;
 
@@ -97,6 +99,7 @@ namespace SoapCore
 				HttpGetEnabled = opt.HttpGetEnabled,
 				HttpPostEnabled = opt.HttpPostEnabled,
 				HttpsPostEnabled = opt.HttpsPostEnabled,
+				SerializerIdentifier = opt.SerializerIdentifier,
 				OmitXmlDeclaration = opt.OmitXmlDeclaration,
 				StandAloneAttribute = opt.StandAloneAttribute,
 				IndentXml = opt.IndentXml,
