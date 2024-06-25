@@ -11,6 +11,7 @@ using SoapCore.DocumentationWriter;
 using SoapCore.Extensibility;
 using SoapCore.MessageEncoder;
 using SoapCore.Meta;
+using SoapCore.Serializer;
 using SoapCore.ServiceModel;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.ServiceModel;
@@ -35,42 +37,57 @@ namespace SoapCore
 		private readonly ILogger<SoapEndpointMiddleware<T_MESSAGE>> _logger;
 		private readonly RequestDelegate _next;
 		private readonly SoapOptions _options;
+		private readonly IServiceProvider _serviceProvider;
 		private readonly ServiceDescription _service;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly SoapMessageEncoder[] _messageEncoders;
-		private readonly SerializerHelper _serializerHelper;
+		private readonly IXmlSerializationHandler _serializerHandler;
 
 		[Obsolete]
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
-			: this(logger, next, new SoapOptions()
-			{
-				ServiceType = serviceType,
-				Path = path,
-				EncoderOptions = encoderOptions ?? binding?.ToEncoderOptions(),
-				SoapSerializer = serializer,
-				CaseInsensitivePath = caseInsensitivePath,
-				SoapModelBounder = soapModelBounder,
-				UseBasicAuthentication = binding.HasBasicAuth(),
-				HttpGetEnabled = httpGetEnabled,
-				HttpsGetEnabled = httpsGetEnabled
-			})
+		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, IServiceProvider serviceProvider, Type serviceType, string path, SoapEncoderOptions[] encoderOptions, SoapSerializer serializer, bool caseInsensitivePath, ISoapModelBounder soapModelBounder, Binding binding, bool httpGetEnabled, bool httpsGetEnabled)
+			: this(
+				  logger,
+				  next,
+				  new SoapOptions()
+				  {
+					  ServiceType = serviceType,
+					  Path = path,
+					  EncoderOptions = encoderOptions ?? binding?.ToEncoderOptions(),
+					  SoapSerializer = serializer,
+					  CaseInsensitivePath = caseInsensitivePath,
+					  SoapModelBounder = soapModelBounder,
+					  UseBasicAuthentication = binding.HasBasicAuth(),
+					  HttpGetEnabled = httpGetEnabled,
+					  HttpsGetEnabled = httpsGetEnabled
+				  },
+				  serviceProvider)
 		{
 		}
 
-		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, SoapOptions options)
+		public SoapEndpointMiddleware(
+			ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger,
+			RequestDelegate next,
+			SoapOptions options,
+			IServiceProvider serviceProvider)
 		{
 			_logger = logger;
 			_next = next;
 			_options = options;
+			_serviceProvider = serviceProvider;
 
-			_serializerHelper = new SerializerHelper(options.SoapSerializer);
+			var serializerResolver = _serviceProvider.GetService<IXmlSerializationHandlerResolver>();
+			if (serializerResolver != null && _options.SerializerIdentifier != null)
+			{
+				_serializerHandler = serializerResolver(_options.SerializerIdentifier);
+				_ = _serializerHandler ?? throw new InvalidOperationException("custom serializer implementation not found.");
+			}
+
+			_serializerHandler ??= new SerializerHelper(options.SoapSerializer);
+
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType, options.GenerateSoapActionWithoutContractName);
 
-			if (options.EncoderOptions is null)
-			{
-				options.EncoderOptions = new[] { new SoapEncoderOptions() };
-			}
+			options.EncoderOptions ??= new[] { new SoapEncoderOptions() };
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
@@ -81,9 +98,9 @@ namespace SoapCore
 			}
 		}
 
-		public async Task Invoke(HttpContext httpContext, IServiceProvider serviceProvider)
+		public async Task Invoke(HttpContext httpContext)
 		{
-			var trailPathTuner = serviceProvider.GetService<TrailingServicePathTuner>();
+			var trailPathTuner = _serviceProvider.GetService<TrailingServicePathTuner>();
 
 			trailPathTuner?.ConvertPath(httpContext);
 
@@ -117,7 +134,7 @@ namespace SoapCore
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
-							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
+							await ProcessHttpOperation(httpContext, _serviceProvider, remainingPath.Value.Trim('/'));
 						}
 						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
 						{
@@ -152,11 +169,11 @@ namespace SoapCore
 								return;
 							}
 
-							await ProcessHttpOperation(httpContext, serviceProvider, remainingPath.Value.Trim('/'));
+							await ProcessHttpOperation(httpContext, _serviceProvider, remainingPath.Value.Trim('/'));
 						}
 						else
 						{
-							await ProcessOperation(httpContext, serviceProvider);
+							await ProcessOperation(httpContext, _serviceProvider);
 						}
 					}
 				}
@@ -439,7 +456,11 @@ namespace SoapCore
 			context.Response.ContentType = "text/xml";
 
 			var ms = new MemoryStream();
-			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings() { Encoding = DefaultEncodings.UTF8 });
+			XmlWriter writer = XmlWriter.Create(ms, new XmlWriterSettings
+			{
+				Encoding = DefaultEncodings.UTF8,
+
+			});
 			XmlDictionaryWriter dictionaryWriter = XmlDictionaryWriter.CreateDictionaryWriter(writer);
 
 			bodyWriter.WriteBodyContents(dictionaryWriter);
@@ -476,10 +497,14 @@ namespace SoapCore
 				throw new ArgumentException($"Unable to handle request without a valid action parameter. Please supply a valid soap action.");
 			}
 
-			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
-
-			correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
+			using (IServiceScope scope = serviceProvider.CreateScope())
+			{
+				var messageInspector2s = scope.ServiceProvider.GetServices<IMessageInspector2>();
+				correlationObjects2 = messageInspector2s.Select(mi =>
+					(inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service)))
+					.ToList();
+			}
 
 			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
@@ -566,15 +591,15 @@ namespace SoapCore
 
 		private bool TryGetOperation(string methodName, out OperationDescription operation)
 		{
-			operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.Ordinal)
-							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.Ordinal)
-							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));
+			operation = _service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.OrdinalIgnoreCase)
+							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.OrdinalIgnoreCase)
+							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.OrdinalIgnoreCase));
 
 			if (operation == null)
 			{
 				operation = _service.Operations.FirstOrDefault(o =>
-							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal)
-							|| methodName.Contains(HeadersHelper.GetTrimmedSoapAction(o.Name)));
+							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.OrdinalIgnoreCase)
+							|| methodName.IndexOf(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.OrdinalIgnoreCase) >= 0);
 			}
 
 			return operation != null;
@@ -603,6 +628,7 @@ namespace SoapCore
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
 					NamespaceManager = xmlNamespaceManager
 				};
+
 				responseMessage.Headers.Action = operation.ReplyAction;
 				responseMessage.Headers.RelatesTo = requestMessage.Headers.MessageId;
 				responseMessage.Headers.To = requestMessage.Headers.ReplyTo?.Uri;
@@ -712,7 +738,7 @@ namespace SoapCore
 						lastParameterIndex = parameterInfo.Index;
 						alreadyProcessedParameters[lastParameterIndex] = true;
 
-						var argumentValue = _serializerHelper.DeserializeInputParameter(
+						var argumentValue = _serializerHandler.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
 							parameterInfo.Name,
@@ -723,7 +749,7 @@ namespace SoapCore
 						//fix https://github.com/DigDes/SoapCore/issues/379 (hack, need research)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
+							argumentValue = _serializerHandler.DeserializeInputParameter(
 								xmlReader,
 								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
@@ -735,7 +761,7 @@ namespace SoapCore
 						// sometimes there's no namespace for the parameter (ex. MS SOAP SDK)
 						if (argumentValue == null)
 						{
-							argumentValue = _serializerHelper.DeserializeInputParameter(
+							argumentValue = _serializerHandler.DeserializeInputParameter(
 								xmlReader,
 								parameterInfo.Parameter.ParameterType,
 								parameterInfo.Name,
@@ -783,7 +809,7 @@ namespace SoapCore
 					else
 					{
 						// It's wrapped so either the wrapper name or the name of the wrapper type
-						arguments[parameterInfo.Index] = _serializerHelper.DeserializeInputParameter(
+						arguments[parameterInfo.Index] = _serializerHandler.DeserializeInputParameter(
 							xmlReader,
 							parameterInfo.Parameter.ParameterType,
 							messageContractAttribute.WrapperName ?? parameterInfo.Parameter.ParameterType.Name,
@@ -855,7 +881,7 @@ namespace SoapCore
 				{
 					var reader = requestMessage.Headers.GetReaderAtHeader(i);
 
-					var value = _serializerHelper.DeserializeInputParameter(
+					var value = _serializerHandler.DeserializeInputParameter(
 						reader,
 						member.MemberInfo.GetPropertyOrFieldType(),
 						member.MessageHeaderMemberAttribute.Name ?? member.MemberInfo.Name,
@@ -888,7 +914,7 @@ namespace SoapCore
 				var innerParameterNs = messageBodyMemberAttribute.Namespace ?? @namespace;
 				var innerParameterType = messageBodyMemberInfo.GetPropertyOrFieldType();
 
-				var innerParameter = _serializerHelper.DeserializeInputParameter(
+				var innerParameter = _serializerHandler.DeserializeInputParameter(
 					xmlReader,
 					innerParameterType,
 					innerParameterName,
