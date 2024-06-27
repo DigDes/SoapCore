@@ -307,6 +307,12 @@ namespace SoapCore.Meta
 			{
 				bool hasWrittenOutParameters = false;
 
+				Type[] additionalTypesForOperation = GetKnownTypesFromMethod(operation.DispatchMethod);
+				foreach (Type additionalTypeForOperation in additionalTypesForOperation)
+				{
+					_complexTypeToBuild.Enqueue(new TypeToBuild(additionalTypeForOperation));
+				}
+
 				// input parameters of operation
 				writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("name", GetOuterInputElementName(operation));
@@ -533,6 +539,22 @@ namespace SoapCore.Meta
 			}
 
 			writer.WriteEndElement(); // wsdl:types
+		}
+
+		private Type[] GetKnownTypesFromMethod(MethodInfo methodInfo)
+		{
+			List<Type> includeTypes = new();
+
+			if (methodInfo != null)
+			{
+				object[] customAttributes = methodInfo.GetCustomAttributes(typeof(XmlIncludeAttribute), true);
+				foreach (XmlIncludeAttribute attribute in customAttributes)
+				{
+					includeTypes.Add(attribute.Type);
+				}
+			}
+
+			return includeTypes.ToArray();
 		}
 
 		private void AddMessage(XmlDictionaryWriter writer)

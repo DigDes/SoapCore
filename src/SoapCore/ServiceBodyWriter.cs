@@ -189,8 +189,6 @@ namespace SoapCore
 					}
 					else
 					{
-						var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, xmlName, xmlNs);
-
 						if (_result is Stream)
 						{
 							writer.WriteStartElement(_resultName, _serviceNamespace);
@@ -222,6 +220,7 @@ namespace SoapCore
 							}
 							else
 							{
+								var serializer = CachedXmlSerializer.GetXmlSerializer(resultType, xmlName, xmlNs);
 								//https://github.com/DigDes/SoapCore/issues/719
 								serializer.Serialize(writer, _result);
 							}
