@@ -345,6 +345,56 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[TestMethod]
+		public void CheckSystemAndArraysImport()
+		{
+			StartService(typeof(SystemImportService));
+			var wsdl = GetWsdl();
+			StopServer();
+
+			var root = new XmlDocument();
+			root.LoadXml(wsdl);
+
+			var nsmgr = new XmlNamespaceManager(root.NameTable);
+			nsmgr.AddNamespace("wsdl", "http://schemas.xmlsoap.org/wsdl/");
+			nsmgr.AddNamespace("xs", "http://www.w3.org/2001/XMLSchema");
+
+			var customNamespace = "http://schemas.datacontract.org/2004/07/SoapCore.Tests.Wsdl.Services";
+			var systemNamespace = "http://schemas.datacontract.org/2004/07/System";
+			var arraysNamespace = "http://schemas.microsoft.com/2003/10/Serialization/Arrays";
+
+			// Schema with custom target namespace
+			var schemaPath = $"/wsdl:definitions/wsdl:types/xs:schema[@targetNamespace='{customNamespace}']";
+			var schemaElement = root.SelectSingleNode(schemaPath, nsmgr);
+			var systemImportElement = schemaElement.SelectSingleNode($"xs:import[@namespace='{systemNamespace}']", nsmgr);
+			var arraysImportElement = schemaElement.SelectSingleNode($"xs:import[@namespace='{arraysNamespace}']", nsmgr);
+
+			Assert.IsNotNull(schemaElement);
+			Assert.IsNotNull(systemImportElement);
+			Assert.IsNotNull(arraysImportElement);
+
+			// Schema with system target namespace
+			schemaPath =
+				$"/wsdl:definitions/wsdl:types" +
+				$"/xs:schema[@targetNamespace='{systemNamespace}']" +
+				$"/xs:complexType[@name='ArrayOfByte']" +
+				$"/..";
+
+			schemaElement = root.SelectSingleNode(schemaPath, nsmgr);
+			systemImportElement = schemaElement.SelectSingleNode($"xs:import[@namespace='{systemNamespace}']", nsmgr);
+			arraysImportElement = schemaElement.SelectSingleNode($"xs:import[@namespace='{arraysNamespace}']", nsmgr);
+
+			Assert.IsNull(systemImportElement);
+			Assert.IsNotNull(arraysImportElement);
+
+			// Schema with arrays target namespace
+			schemaPath = $"/wsdl:definitions/wsdl:types/xs:schema[@targetNamespace='{arraysNamespace}']";
+			schemaElement = root.SelectSingleNode(schemaPath, nsmgr);
+			arraysImportElement = schemaElement.SelectSingleNode($"xs:import[@namespace='{arraysNamespace}']", nsmgr);
+
+			Assert.IsNull(arraysImportElement);
+		}
+
+		[TestMethod]
 		public void CheckStreamDeclaration()
 		{
 			StartService(typeof(StreamService));
