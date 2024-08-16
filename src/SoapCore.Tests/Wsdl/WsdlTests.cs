@@ -1239,6 +1239,52 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(listDerivedType);
 		}
 
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckComplexAnonymousTypeListWsdl(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexAnonymousListService>(soapSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			// Check complexType exists for xmlserializer meta
+			var testResultElement = GetElements(root, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("type") != null && a.Attribute("name")?.Value.Equals("TestResult") == true);
+			Assert.IsNotNull(testResultElement);
+
+			// Now check if we can match the array type up with it's declaration
+			var split = testResultElement.Attribute("type").Value.Split(':');
+			var typeNamespace = testResultElement.GetNamespaceOfPrefix(split[0]);
+
+			var matchingSchema = GetElements(root, _xmlSchema + "schema").Where(schema => schema.Attribute("targetNamespace")?.Value.Equals(typeNamespace.NamespaceName) == true);
+			Assert.IsTrue(matchingSchema.Count() > 0);
+
+			var matched = false;
+			XElement matchingComplexType = null;
+			foreach (var schema in matchingSchema)
+			{
+				matchingComplexType = GetElements(schema, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value.Equals(split[1]) == true);
+				if (matchingComplexType != null)
+				{
+					matched = true;
+				}
+			}
+
+			Assert.IsTrue(matched);
+
+			// The complex type is an array with a single element, which is an anonymous complex type
+			var arrayElement = matchingComplexType.Element(_xmlSchema + "sequence")?.Element(_xmlSchema + "element");
+			Assert.IsNotNull(arrayElement);
+
+			// The element needs a name and a complex type
+			var nameAttribute = arrayElement.Attribute("name");
+			Assert.IsFalse(string.IsNullOrEmpty(nameAttribute.Value));
+
+			var arrayElementType = arrayElement.Element(_xmlSchema + "complexType");
+			Assert.IsNotNull(arrayElementType);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
@@ -1281,6 +1327,7 @@ namespace SoapCore.Tests.Wsdl
 			var service = new ServiceDescription(typeof(T), false);
 			var baseUrl = "http://tempuri.org/";
 			var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(useMicrosoftGuid);
+			xmlNamespaceManager.AddNamespace("tns", service.GeneralContract.Namespace);
 			var defaultBindingName = !string.IsNullOrWhiteSpace(bindingName) ? bindingName : "BasicHttpBinding";
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
 				? new MetaWCFBodyWriter(service, baseUrl, defaultBindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }, new DefaultWsdlOperationNameGenerator()) as BodyWriter
