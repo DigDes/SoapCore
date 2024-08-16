@@ -1240,6 +1240,11 @@ namespace SoapCore.Meta
 				}
 				else if (toBuild.IsAnonumous)
 				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = typeName;
+					}
+
 					writer.WriteAttributeString("name", name);
 					WriteQualification(writer, isUnqualified);
 					AddSchemaComplexType(writer, newTypeToBuild);
