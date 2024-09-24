@@ -34,6 +34,19 @@ namespace SoapCore.Tests.MessageFilter
 		}
 
 		[TestMethod]
+		[ExpectedException(typeof(InvalidCredentialException))]
+		public async Task IncorrectCredentialsWithTimestampNotAuthrorized()
+		{
+			var usernameToken = new XElement(
+				_wsse + "UsernameToken",
+				new XElement(_wsse + "Username", "INVALID_USERNAME"),
+				new XElement(_wsse + "Password", "INAVLID_PASSWORD"));
+
+			var filter = new WsMessageFilter("yourusername", "yourpassword");
+			await filter.OnRequestExecuting(CreateMessageWithTimestamp(usernameToken));
+		}
+
+		[TestMethod]
 		public async Task PasswordIsOptional()
 		{
 			var usernameToken = new XElement(
@@ -156,6 +169,28 @@ namespace SoapCore.Tests.MessageFilter
 					_soapenv11 + "Header",
 					new XElement(
 						_wsse + "Security",
+						usernameToken)),
+				new XElement(
+					_soapenv11 + "Body",
+					new XElement(
+						XName.Get("Ping", "http://tempuri.org/"),
+						"abc")));
+
+			var doc = new XDocument(envelope);
+			return Message.CreateMessage(doc.CreateReader(), int.MaxValue, MessageVersion.Soap11);
+		}
+
+		private static Message CreateMessageWithTimestamp(XNode usernameToken)
+		{
+			var envelope = new XElement(
+				_soapenv11 + "Envelope",
+				new XAttribute(XNamespace.Xmlns + "wsse", _wsse.NamespaceName),
+				new XAttribute(XNamespace.Xmlns + "soap", _soapenv11.NamespaceName),
+				new XElement(
+					_soapenv11 + "Header",
+					new XElement(
+						_wsse + "Security",
+						new XElement(_wsse + "Timestamp", new XElement(_wsse + "Created"), new XElement(_wsse + "Expires")),
 						usernameToken)),
 				new XElement(
 					_soapenv11 + "Body",
