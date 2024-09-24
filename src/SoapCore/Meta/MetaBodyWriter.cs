@@ -303,6 +303,8 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("elementFormDefault", "qualified");
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 
+			HashSet<Type> headerTypesWritten = new();
+
 			foreach (var operation in _service.Operations)
 			{
 				bool hasWrittenOutParameters = false;
@@ -451,6 +453,22 @@ namespace SoapCore.Meta
 					writer.WriteAttributeString("nillable", "true");
 					writer.WriteAttributeString("type", "tns:" + faultTypeToBuild.TypeName);
 					writer.WriteEndElement(); // element
+				}
+
+				if (operation.HeaderType != null && !headerTypesWritten.Contains(operation.HeaderType))
+				{
+					var headerTypeToBuild = new TypeToBuild(operation.HeaderType);
+
+					//enqueue the complex type itself
+					_complexTypeToBuild.Enqueue(headerTypeToBuild);
+
+					//write element pendant for the header type
+					writer.WriteStartElement("element", Namespaces.XMLNS_XSD);
+					writer.WriteAttributeString("name", headerTypeToBuild.TypeName);
+					writer.WriteAttributeString("type", "tns:" + headerTypeToBuild.TypeName);
+					writer.WriteEndElement(); // element
+
+					headerTypesWritten.Add(operation.HeaderType);
 				}
 			}
 
@@ -621,6 +639,18 @@ namespace SoapCore.Meta
 					writer.WriteEndElement(); // wsdl:message
 				}
 
+				if (operation.HeaderType is not null)
+				{
+					var name = operation.HeaderType.Name;
+					writer.WriteStartElement("wsdl", "message", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", $"{operation.Name}{name}");
+					writer.WriteStartElement("wsdl", "part", Namespaces.WSDL_NS);
+					writer.WriteAttributeString("name", name);
+					writer.WriteAttributeString("element", "tns:" + name);
+					writer.WriteEndElement(); // wsdl:part
+					writer.WriteEndElement(); // wsdl:message
+				}
+
 				AddMessageFaults(writer, operation);
 			}
 		}
@@ -714,7 +744,18 @@ namespace SoapCore.Meta
 					writer.WriteStartElement(soap, "body", soapNamespace);
 					writer.WriteAttributeString("use", "literal");
 					writer.WriteEndElement(); // soap:body
+
+					if (operation.HeaderType != null)
+					{
+						writer.WriteStartElement(soap, "header", soapNamespace);
+						writer.WriteAttributeString("message", $"tns:{operation.Name}{operation.HeaderType.Name}");
+						writer.WriteAttributeString("part", operation.HeaderType.Name);
+						writer.WriteAttributeString("use", "literal");
+						writer.WriteEndElement();
+					}
+
 					writer.WriteEndElement(); // wsdl:input
+
 
 					if (!operation.IsOneWay)
 					{
@@ -778,7 +819,9 @@ namespace SoapCore.Meta
 
 			var baseType = type.GetTypeInfo().BaseType;
 
-			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !type.IsValueType && baseType != null && !baseType.Name.Equals("Object");
+			return !isArrayType && !type.IsEnum && !type.IsPrimitive && !type.IsValueType && baseType != null
+			       && !baseType.Name.Equals("Object")
+			       && type.BaseType?.BaseType?.FullName?.Equals("System.Attribute") != true;
 		}
 
 		private void AddSchemaComplexType(XmlDictionaryWriter writer, TypeToBuild toBuild)
@@ -829,9 +872,10 @@ namespace SoapCore.Meta
 					if (!isWrappedBodyType)
 					{
 						var propertyOrFieldMembers = toBuildBodyType.GetPropertyOrFieldMembers()
-							.Where(mi => !mi.IsIgnored() && mi.DeclaringType == toBuildType).ToList();
+							.Where(mi => !mi.IsIgnored() && mi.DeclaringType == toBuildType)
+							.ToList();
 
-						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute()).ToList();
+						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute() && t.GetCustomAttribute<XmlAnyAttributeAttribute>() == null).ToList();
 						if (elements.Any())
 						{
 							writer.WriteStartElement("sequence", Namespaces.XMLNS_XSD);
@@ -843,10 +887,17 @@ namespace SoapCore.Meta
 							writer.WriteEndElement(); // sequence
 						}
 
-						var attributes = propertyOrFieldMembers.Where(t => t.IsAttribute());
+						var attributes = propertyOrFieldMembers.Where(t => t.IsAttribute() && t.GetCustomAttribute<XmlAnyAttributeAttribute>() == null);
 						foreach (var attribute in attributes)
 						{
 							AddSchemaTypePropertyOrField(writer, attribute, toBuild);
+						}
+
+						var anyAttribute = propertyOrFieldMembers.FirstOrDefault(t => t.GetCustomAttribute<XmlAnyAttributeAttribute>() != null);
+						if (anyAttribute != null)
+						{
+							writer.WriteStartElement("anyAttribute", Namespaces.XMLNS_XSD);
+							writer.WriteEndElement();
 						}
 					}
 					else
@@ -1240,6 +1291,11 @@ namespace SoapCore.Meta
 				}
 				else if (toBuild.IsAnonumous)
 				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = typeName;
+					}
+
 					writer.WriteAttributeString("name", name);
 					WriteQualification(writer, isUnqualified);
 					AddSchemaComplexType(writer, newTypeToBuild);
