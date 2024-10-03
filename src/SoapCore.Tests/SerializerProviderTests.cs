@@ -67,7 +67,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = "text/xml; charset=utf-8";
 
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceCollection.BuildServiceProvider().CreateScope().ServiceProvider);
 
 			// Assert
 			Assert.IsTrue(context.Response.Body.Length > 0);
@@ -122,7 +122,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = "text/xml; charset=utf-8";
 
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceCollection.BuildServiceProvider().CreateScope().ServiceProvider);
 
 			// Assert
 			Assert.IsTrue(context.Response.Body.Length > 0);
