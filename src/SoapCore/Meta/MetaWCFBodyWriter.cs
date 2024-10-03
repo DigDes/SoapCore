@@ -661,23 +661,30 @@ namespace SoapCore.Meta
 
 			foreach (var types in groupedByNamespace.Distinct())
 			{
+				var targetNamespace = GetModelNamespace(types.Key);
 				writer.WriteStartElement("xs", "schema", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("elementFormDefault", "qualified");
-				writer.WriteAttributeString("targetNamespace", GetModelNamespace(types.Key));
+				writer.WriteAttributeString("targetNamespace", targetNamespace);
 				writer.WriteXmlnsAttribute("xs", Namespaces.XMLNS_XSD);
-				writer.WriteXmlnsAttribute("tns", GetModelNamespace(types.Key));
+				writer.WriteXmlnsAttribute("tns", targetNamespace);
 				writer.WriteXmlnsAttribute("ser", Namespaces.SERIALIZATION_NS);
 
 				_namespaceCounter = 1;
-				_schemaNamespace = GetModelNamespace(types.Key);
+				_schemaNamespace = targetNamespace;
 
-				writer.WriteStartElement("xs", "import", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("namespace", Namespaces.SYSTEM_NS);
-				writer.WriteEndElement();
+				if (targetNamespace != Namespaces.SYSTEM_NS)
+				{
+					writer.WriteStartElement("xs", "import", Namespaces.XMLNS_XSD);
+					writer.WriteAttributeString("namespace", Namespaces.SYSTEM_NS);
+					writer.WriteEndElement();
+				}
 
-				writer.WriteStartElement("xs", "import", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("namespace", Namespaces.ARRAYS_NS);
-				writer.WriteEndElement();
+				if (targetNamespace != Namespaces.ARRAYS_NS)
+				{
+					writer.WriteStartElement("xs", "import", Namespaces.XMLNS_XSD);
+					writer.WriteAttributeString("namespace", Namespaces.ARRAYS_NS);
+					writer.WriteEndElement();
+				}
 
 				foreach (var type in types.Value.Distinct(new TypesComparer(GetTypeName)))
 				{
