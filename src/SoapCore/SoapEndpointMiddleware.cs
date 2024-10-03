@@ -37,7 +37,6 @@ namespace SoapCore
 		private readonly ILogger<SoapEndpointMiddleware<T_MESSAGE>> _logger;
 		private readonly RequestDelegate _next;
 		private readonly SoapOptions _options;
-		private readonly IServiceProvider _serviceProvider;
 		private readonly ServiceDescription _service;
 		private readonly StringComparison _pathComparisonStrategy;
 		private readonly SoapMessageEncoder[] _messageEncoders;
@@ -73,9 +72,8 @@ namespace SoapCore
 			_logger = logger;
 			_next = next;
 			_options = options;
-			_serviceProvider = serviceProvider;
 
-			var serializerResolver = _serviceProvider.GetService<IXmlSerializationHandlerResolver>();
+			var serializerResolver = serviceProvider.GetService<IXmlSerializationHandlerResolver>();
 			if (serializerResolver != null && _options.SerializerIdentifier != null)
 			{
 				_serializerHandler = serializerResolver(_options.SerializerIdentifier);
@@ -98,9 +96,9 @@ namespace SoapCore
 			}
 		}
 
-		public async Task Invoke(HttpContext httpContext)
+		public async Task Invoke(HttpContext httpContext, IServiceProvider scopedServiceProvider)
 		{
-			var trailPathTuner = _serviceProvider.GetService<TrailingServicePathTuner>();
+			var trailPathTuner = scopedServiceProvider.GetService<TrailingServicePathTuner>();
 
 			trailPathTuner?.ConvertPath(httpContext);
 
@@ -134,7 +132,7 @@ namespace SoapCore
 					{
 						if (!string.IsNullOrWhiteSpace(remainingPath))
 						{
-							await ProcessHttpOperation(httpContext, _serviceProvider, remainingPath.Value.Trim('/'));
+							await ProcessHttpOperation(httpContext, scopedServiceProvider, remainingPath.Value.Trim('/'));
 						}
 						else if (httpContext.Request.Query.ContainsKey("xsd") && _options.WsdlFileOptions != null)
 						{
@@ -169,11 +167,11 @@ namespace SoapCore
 								return;
 							}
 
-							await ProcessHttpOperation(httpContext, _serviceProvider, remainingPath.Value.Trim('/'));
+							await ProcessHttpOperation(httpContext, scopedServiceProvider, remainingPath.Value.Trim('/'));
 						}
 						else
 						{
-							await ProcessOperation(httpContext, _serviceProvider);
+							await ProcessOperation(httpContext, scopedServiceProvider);
 						}
 					}
 				}
@@ -498,6 +496,8 @@ namespace SoapCore
 			}
 
 			var correlationObjects2 = default(List<(IMessageInspector2 inspector, object correlationObject)>);
+
+			//Not sure that this extra scope is needed...
 			using (IServiceScope scope = serviceProvider.CreateScope())
 			{
 				var messageInspector2s = scope.ServiceProvider.GetServices<IMessageInspector2>();

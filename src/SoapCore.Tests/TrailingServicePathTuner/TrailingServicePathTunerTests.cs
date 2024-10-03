@@ -41,7 +41,9 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, new MockServiceProvider(true));
+			var serviceProvider = new MockServiceProvider(true);
+
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, serviceProvider);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/DynamicPath/Service.svc");
@@ -50,7 +52,7 @@ namespace SoapCore.Tests
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceProvider);
 
 			// Assert
 			Assert.IsTrue(context.Response.Body.Length > 0);
@@ -92,7 +94,7 @@ namespace SoapCore.Tests
 
 			// Act
 			// MockServiceProvider(false) simulates registering the TrailingServicePathTuner in app startup
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, new MockServiceProvider(true));
 
 			// Assert
 			Assert.IsFalse(context.Response.Body.Length > 0);
@@ -126,7 +128,9 @@ namespace SoapCore.Tests
 				SoapSerializer = SoapSerializer.DataContractSerializer
 			};
 
-			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, new MockServiceProvider(false));
+			var serviceProvider = new MockServiceProvider(false);
+
+			SoapEndpointMiddleware<CustomMessage> soapCore = new SoapEndpointMiddleware<CustomMessage>(logger, (innerContext) => Task.CompletedTask, options, serviceProvider);
 
 			var context = new DefaultHttpContext();
 			context.Request.Path = new PathString("/v1/Service.svc");
@@ -135,7 +139,7 @@ namespace SoapCore.Tests
 
 			// Act
 			// MockServiceProvider(false) simulates not registering the TrailingServicePathTuner in app startup
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceProvider);
 
 			// Assert
 			Assert.IsTrue(context.Response.Body.Length > 0);

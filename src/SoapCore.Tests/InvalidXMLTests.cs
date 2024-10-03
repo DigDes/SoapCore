@@ -25,6 +25,9 @@ namespace SoapCore.Tests
 
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<DenialOfServiceProofOfConcept>();
+			serviceCollection.AddSoapCore();
+
+			var serviceProvider = serviceCollection.BuildServiceProvider();
 
 			var options = new SoapOptions()
 			{
@@ -63,7 +66,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = "text/xml; charset=utf-8";
 
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceProvider.CreateScope().ServiceProvider);
 
 			// Assert
 			Assert.IsTrue(context.Response.Body.Length > 0);
@@ -119,7 +122,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = "text/xml; charset=utf-8";
 
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceProvider.CreateScope().ServiceProvider);
 
 			// Assert
 			context.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -146,6 +149,8 @@ namespace SoapCore.Tests
 			var serviceCollection = new ServiceCollection();
 			serviceCollection.AddSingleton<DuplicatedElementService>();
 			serviceCollection.AddSoapCore();
+
+			var serviceProvider = serviceCollection.BuildServiceProvider();
 
 			var options = new SoapOptions()
 			{
@@ -184,7 +189,7 @@ namespace SoapCore.Tests
 			context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(request), false);
 			context.Request.ContentType = contentType;
 
-			await soapCore.Invoke(context);
+			await soapCore.Invoke(context, serviceProvider.CreateScope().ServiceProvider);
 
 			// Assert
 			context.Response.Body.Seek(0, SeekOrigin.Begin);
