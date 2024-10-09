@@ -6,16 +6,17 @@
 		This wsdl document is the reference with which each DATEX II Web Service has to be built
 		Refer http://datex2.eu
 	</documentation>
-	
+
 	<types>
 		<xs:schema targetNamespace="http://datex2.eu/wsdl/snapshotPull/2020">
 			<xs:import namespace="http://datex2.eu/schema/3/messageContainer" schemaLocation="./DATEXII_3_MessageContainer.xsd"/>
 			<xs:import namespace="http://datex2.eu/schema/3/exchangeInformation" schemaLocation="./DATEXII_3_ExchangeInformation.xsd"/>
+			<xs:import namespace="http://datex2.eu/schema/3/commonExtension"/>
 			<!-- Here, the "namespace" MUST be the same as the used DATEXII schema targetNamespace -->
 			<!-- Here, the "schemaLocation" depends on each implementation and MUST be filled  by each developer, for instance  "file:///C:/DATEXII/MessageContainer.xsd"-->
 <!--	for snapshot pull no elelement definition for input message is needed
 		<xs:element name="pullSnapshotDataInput" type="ex:ExchangeInformation" /> -->
-			<xs:element name="pullSnapshotDataOutput" type="con:MessageContainer" />	
+			<xs:element name="pullSnapshotDataOutput" type="con:MessageContainer" />
 		</xs:schema>
 	</types>
 
@@ -23,7 +24,7 @@
 	<message name="pullSnapshotDataOutputMessage">
 		<part name="return" element="tns:pullSnapshotDataOutput"/>
 	</message>
-	
+
 	<portType name="snapshotPullInterface">
 		<operation name="pullSnapshotData">
 			<input message="tns:pullSnapshotDataInputMessage"/>
@@ -31,7 +32,7 @@
 			<output message="tns:pullSnapshotDataOutputMessage"/>
 		</operation>
 	</portType>
-	
+
 	<binding name="snapshotPullSoapBinding" type="tns:snapshotPullInterface">
 		<soapbind:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
 		<operation name="pullSnapshotData">
@@ -44,7 +45,7 @@
 			</output>
 		</operation>
 	</binding>
-	
+
 	<service name="snapshotPull">
 		<port name="snapshotPullSoapEndPoint" binding="tns:snapshotPullSoapBinding">
 			<soapbind:documentation>The service endpoint</soapbind:documentation>

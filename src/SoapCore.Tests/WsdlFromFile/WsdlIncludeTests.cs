@@ -41,7 +41,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
-			string url = address + "/Management/Service2.asmx?import&name=ServiceDefinitions.xml";
+			string url = address + "/Management/Service2.asmx?import&amp;name=ServiceDefinitions.xml";
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(url, element.Attributes["location"]?.Value);
@@ -67,7 +67,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
-			string url = address + "/Management/Service.asmx?xsd&name=echoInclude.xsd";
+			string url = address + "/Management/Service.asmx?xsd&amp;name=echoInclude.xsd";
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(url, element.Attributes["schemaLocation"]?.Value);
@@ -110,7 +110,7 @@ namespace SoapCore.Tests.WsdlFromFile
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
-			string url = address + "/Service.asmx?xsd&name=echoIncluded.xsd";
+			string url = address + "/Service.asmx?xsd&amp;name=echoIncluded.xsd";
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(url, element.Attributes["schemaLocation"]?.Value);

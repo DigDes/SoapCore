@@ -96,15 +96,19 @@ namespace SoapCore.Tests.WsdlFromFile
 			nsmgr.AddNamespace("soapbind", "http://schemas.xmlsoap.org/wsdl/soap/");
 
 			var element = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:import[1]", nsmgr);
+			var importWithoutSchemaLocation = root.SelectSingleNode("/wsdl:definitions/wsdl:types/xs:schema/xs:import[3]", nsmgr);
 
 			var addresses = _host.ServerFeatures.Get<IServerAddressesFeature>();
 			var address = addresses.Addresses.Single();
 
-			string url = address + "/Management/Service.asmx?xsd&name=DATEXII_3_MessageContainer.xsd";
+			string url = address + "/Management/Service.asmx?xsd&amp;name=DATEXII_3_MessageContainer.xsd";
 
 			Assert.IsNotNull(element);
 			Assert.AreEqual(element.Attributes["namespace"]?.Value, "http://datex2.eu/schema/3/messageContainer");
 			Assert.AreEqual(element.Attributes["schemaLocation"]?.Value, url);
+			Assert.IsNotNull(importWithoutSchemaLocation);
+			Assert.IsNull(importWithoutSchemaLocation.Attributes["schemaLocation"]?.Value);
+			Assert.AreEqual(importWithoutSchemaLocation.Attributes["namespace"]?.Value, "http://datex2.eu/schema/3/commonExtension");
 		}
 
 		[TestCleanup]

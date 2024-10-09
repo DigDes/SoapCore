@@ -93,7 +93,7 @@ namespace SoapCore.Meta
 				{
 					var attribute = EnsureAttribute(xmlDoc, node, "location");
 					string name = attribute.InnerText.Replace("./", string.Empty);
-					attribute.InnerText = WebServiceLocation() + "?import&name=" + name;
+					attribute.InnerText = WebServiceLocation() + "?import&amp;name=" + name;
 				}
 
 				if (XsdFolder != null && node.Prefix == xmlDoc.DocumentElement.Prefix && node.LocalName == "types")
@@ -104,11 +104,12 @@ namespace SoapCore.Meta
 						{
 							foreach (XmlNode importOrIncludeNode in schemaNode.ChildNodes)
 							{
-								if (importOrIncludeNode.LocalName == "import" || importOrIncludeNode.LocalName == "include")
+								if ((importOrIncludeNode.LocalName == "import" && importOrIncludeNode.Attributes["schemaLocation"] != null)
+								    || importOrIncludeNode.LocalName == "include")
 								{
 									var attribute = EnsureAttribute(xmlDoc, importOrIncludeNode, "schemaLocation");
 									string name = attribute.InnerText.Replace("./", string.Empty);
-									attribute.InnerText = SchemaLocation() + "&name=" + name;
+									attribute.InnerText = SchemaLocation() + "&amp;name=" + name;
 								}
 							}
 						}
@@ -147,11 +148,12 @@ namespace SoapCore.Meta
 
 			foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
 			{
-				if (node.LocalName == "import" || node.LocalName == "include")
+				if ((node.LocalName == "import" && node.Attributes["schemaLocation"] != null)
+				    || node.LocalName == "include")
 				{
 					var attribute = EnsureAttribute(xmlDoc, node, "schemaLocation");
 					string name = attribute.InnerText.Replace("./", string.Empty);
-					attribute.InnerText = SchemaLocation() + "&name=" + name;
+					attribute.InnerText = SchemaLocation() + "&amp;name=" + name;
 				}
 			}
 
