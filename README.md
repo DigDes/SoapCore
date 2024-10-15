@@ -180,7 +180,7 @@ services.AddSoapMessageProcessor(async (message, httpcontext, next) =>
 
 	//now you can inspect and modify the content at will.
 	//if you want to pass on the original message, use bufferedMessage.CreateMessage(); otherwise use one of the overloads of Message.CreateMessage() to create a new message
-	var message = bufferedMessage.CreateMessage();
+	var originalMessage = bufferedMessage.CreateMessage();
 
 	//pass the modified message on to the rest of the pipe.
 	var responseMessage = await next(message);
