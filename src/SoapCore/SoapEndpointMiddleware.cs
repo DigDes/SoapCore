@@ -1130,7 +1130,7 @@ namespace SoapCore
 
 			string wsdlfile = mapping.WsdlFile;
 
-			string path = options.AppPath ? "";
+			string path = options.AppPath ?? "";
 			string wsdl = await meta.ReadLocalFileAsync(Path.Combine(path, meta.WSDLFolder, wsdlfile));
 			string modifiedWsdl = meta.ModifyWSDLAddRightSchemaPath(wsdl);
 
