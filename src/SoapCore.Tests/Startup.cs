@@ -47,13 +47,13 @@ namespace SoapCore.Tests
 
 			services.AddSoapMessageProcessor(new AuthorizeOperationMessageProcessor(new Dictionary<string, Type>
 			{
-				{ "/Service.svc".ToLowerInvariant(), typeof(TestService) },
-				{ "/ServiceCI.svc".ToLowerInvariant(), typeof(TestService) },
-				{ "/Service.asmx".ToLowerInvariant(), typeof(TestService) },
-				{ "/WSA10Service.svc".ToLowerInvariant(), typeof(TestService) },
-				{ "/WSA11ISO88591Service.svc".ToLowerInvariant(), typeof(TestService) },
-				{ "/ServiceWithDifferentEncodings.asmx".ToLowerInvariant(), typeof(TestService) },
-				{ "/ServiceWithOverwrittenContentType.asmx".ToLowerInvariant(), typeof(TestService) },
+				{ "/Service.svc", typeof(TestService) },
+				{ "/ServiceCI.svc", typeof(TestService) },
+				{ "/Service.asmx", typeof(TestService) },
+				{ "/WSA10Service.svc", typeof(TestService) },
+				{ "/WSA11ISO88591Service.svc", typeof(TestService) },
+				{ "/ServiceWithDifferentEncodings.asmx", typeof(TestService) },
+				{ "/ServiceWithOverwrittenContentType.asmx", typeof(TestService) },
 			}));
 			services.AddAuthorization(options =>
 			{
