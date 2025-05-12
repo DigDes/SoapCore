@@ -36,7 +36,12 @@ namespace SoapCore.Extensibility
 		/// <param name="generateSoapActionWithoutContractName">Whether to generate the soapAction without the contract name. Default is false.</param>
 		public AuthorizeOperationMessageProcessor(Dictionary<string, Type> pathAndTypes, bool generateSoapActionWithoutContractName = false)
 		{
-			_pathTypes = pathAndTypes;
+			_pathTypes = new Dictionary<string, Type>();
+			foreach (var kvp in pathAndTypes)
+			{
+				_pathTypes[kvp.Key.ToLowerInvariant()] = kvp.Value;
+			}
+
 			_generateSoapActionWithoutContractName = generateSoapActionWithoutContractName;
 		}
 
