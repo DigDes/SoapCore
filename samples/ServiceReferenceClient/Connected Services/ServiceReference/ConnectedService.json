@@ -1,0 +1,45 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "http://localhost:5050/Service.svc"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "namespaceMappings": [
+      "*, ServiceReference"
+    ],
+    "references": [
+      "Microsoft.Extensions.ObjectPool, {Microsoft.Extensions.ObjectPool, 6.0.16}",
+      "Microsoft.IdentityModel.Logging, {Microsoft.IdentityModel.Logging, 6.8.0}",
+      "Microsoft.IdentityModel.Protocols.WsTrust, {Microsoft.IdentityModel.Protocols.WsTrust, 6.8.0}",
+      "Microsoft.IdentityModel.Tokens, {Microsoft.IdentityModel.Tokens, 6.8.0}",
+      "Microsoft.IdentityModel.Tokens.Saml, {Microsoft.IdentityModel.Tokens.Saml, 6.8.0}",
+      "Microsoft.IdentityModel.Xml, {Microsoft.IdentityModel.Xml, 6.8.0}",
+      "System.Formats.Asn1, {System.Formats.Asn1, 6.0.0}",
+      "System.IO, {System.IO, 4.3.0}",
+      "System.Reflection.DispatchProxy, {System.Reflection.DispatchProxy, 4.7.1}",
+      "System.Runtime, {System.Runtime, 4.3.0}",
+      "System.Security.AccessControl, {System.Security.AccessControl, 6.0.0}",
+      "System.Security.Cryptography.Cng, {System.Security.Cryptography.Cng, 4.5.0}",
+      "System.Security.Cryptography.Pkcs, {System.Security.Cryptography.Pkcs, 6.0.1}",
+      "System.Security.Cryptography.Xml, {System.Security.Cryptography.Xml, 6.0.1}",
+      "System.Security.Principal.Windows, {System.Security.Principal.Windows, 5.0.0}",
+      "System.ServiceModel.Duplex, {System.ServiceModel.Duplex, 6.0.0}",
+      "System.ServiceModel.Federation, {System.ServiceModel.Federation, 6.0.0}",
+      "System.ServiceModel.Http, {System.ServiceModel.Http, 6.0.0}",
+      "System.ServiceModel.NetFramingBase, {System.ServiceModel.NetFramingBase, 6.0.0}",
+      "System.ServiceModel.NetTcp, {System.ServiceModel.NetTcp, 6.0.0}",
+      "System.ServiceModel.Primitives, {System.ServiceModel.Primitives, 6.0.0}",
+      "System.ServiceModel.Security, {System.ServiceModel.Security, 6.0.0}",
+      "System.Text.Encoding, {System.Text.Encoding, 4.3.0}",
+      "System.Threading.Tasks, {System.Threading.Tasks, 4.3.0}",
+      "System.Xml.ReaderWriter, {System.Xml.ReaderWriter, 4.3.0}",
+      "System.Xml.XmlDocument, {System.Xml.XmlDocument, 4.3.0}"
+    ],
+    "sync": true,
+    "targetFramework": "net8.0",
+    "typeReuseMode": "All"
+  }
+}

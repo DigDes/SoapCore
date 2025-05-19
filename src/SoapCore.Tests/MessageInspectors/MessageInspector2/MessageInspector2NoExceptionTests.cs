@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 {
 	[TestClass]
-	public class MessageInspector2Tests
+	public class MessageInspector2NoExceptionTests
 	{
 		[ClassInitialize]
 		public static void StartServer(TestContext testContext)
@@ -17,8 +17,9 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 			{
 				var host = new WebHostBuilder()
 					.UseKestrel()
-					.UseUrls("http://localhost:7051")
+					.UseUrls("http://localhost:7052")
 					.UseStartup<Startup>()
+					.UseSetting("InspectorStyle", InspectorStyle.MessageInspector2NoException.ToString())
 					.Build();
 
 				host.Run();
@@ -34,14 +35,13 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 		public ITestService CreateClient()
 		{
 			var binding = new BasicHttpBinding();
-			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:7051/Service.svc", "localhost")));
+			var endpoint = new EndpointAddress(new Uri(string.Format("http://{0}:7052/Service.svc", "localhost")));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
 		}
 
 		[TestMethod]
-		[ExpectedException(typeof(FaultException))]
 		public void AfterReceivedRequestCalled()
 		{
 			Assert.IsFalse(MessageInspector2Mock.AfterReceivedRequestCalled);
@@ -51,20 +51,21 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 		}
 
 		[TestMethod]
-		[ExpectedException(typeof(FaultException))]
-		public void BeforeSendReplyShouldNotBeCalled()
+		public void BeforeSendReplyCalled()
 		{
 			Assert.IsFalse(MessageInspector2Mock.BeforeSendReplyCalled);
 			var client = CreateClient();
 			var result = client.Ping("Hello World");
-			Assert.IsFalse(MessageInspector2Mock.BeforeSendReplyCalled);
+			Assert.IsTrue(MessageInspector2Mock.BeforeSendReplyCalled);
 		}
 
 		[TestMethod]
-		public void AfterReceivedThrowsException()
+		public void BeforeSendReplyCalledEvenIfServiceThrowsException()
 		{
+			Assert.IsFalse(MessageInspector2Mock.BeforeSendReplyCalled);
 			var client = CreateClient();
-			Assert.ThrowsException<FaultException>(() => client.Ping("Hello World"));
+			Assert.ThrowsException<FaultException>(client.ThrowException);
+			Assert.IsTrue(MessageInspector2Mock.BeforeSendReplyCalled);
 		}
 	}
 }

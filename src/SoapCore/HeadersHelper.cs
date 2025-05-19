@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -12,152 +13,195 @@ namespace SoapCore
 	{
 		private static readonly char[] ContentTypeSeparators = new[] { ';' };
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static string GetSoapAction(HttpContext httpContext, ref Message message)
 		{
-			XmlDictionaryReader reader = null;
-			if (!message.IsEmpty)
+			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault().AsSpan();
+			if (soapAction.Length == 2 && soapAction[0] == '"' && soapAction[1] == '"')
 			{
-				MessageBuffer mb = message.CreateBufferedCopy(int.MaxValue);
-				Message responseMsg = mb.CreateMessage();
-				message = mb.CreateMessage();
-
-				reader = responseMsg.GetReaderAtBodyContents();
+				soapAction = ReadOnlySpan<char>.Empty;
 			}
 
-			var soapAction = httpContext.Request.Headers["SOAPAction"].FirstOrDefault();
-			if (soapAction == "\"\"")
+			if (soapAction.IsEmpty)
 			{
-				soapAction = string.Empty;
-			}
+#if NET8_0_OR_GREATER
 
-			if (string.IsNullOrEmpty(soapAction))
-			{
-				var contentTypes = GetContentTypes(httpContext);
-				foreach (string headerItem in contentTypes)
+				foreach (var item in httpContext.Request.Headers["Content-Type"])
 				{
-					// I want to avoid allocation as possible as I can(I hope to use Span<T> or Utf8String)
-					// soap1.2: action name is in Content-Type(like 'action="[action url]"') or body
-					int i = 0;
-
-					// skip whitespace
-					while (i < headerItem.Length && headerItem[i] == ' ')
-					{
-						i++;
-					}
-
-					if (headerItem.Length - i < 6)
+					if (string.IsNullOrWhiteSpace(item))
 					{
 						continue;
 					}
 
-					// find 'action'
-					if (headerItem[i + 0] == 'a'
-						&& headerItem[i + 1] == 'c'
-						&& headerItem[i + 2] == 't'
-						&& headerItem[i + 3] == 'i'
-						&& headerItem[i + 4] == 'o'
-						&& headerItem[i + 5] == 'n')
+					var itemSpan = item.AsSpan();
+					var nInstances = 1;
+
+					for (int ci = 0; ci < itemSpan.Length; ci++)
 					{
-						i += 6;
-
-						// skip white space
-						while (i < headerItem.Length && headerItem[i] == ' ')
+						for (int cti = 0; cti < ContentTypeSeparators.Length; cti++)
 						{
-							i++;
-						}
-
-						if (headerItem[i] == '=')
-						{
-							i++;
-
-							// skip whitespace
-							while (i < headerItem.Length && headerItem[i] == ' ')
+							if (itemSpan[ci] == ContentTypeSeparators[cti])
 							{
-								i++;
-							}
-
-							// action value should be surrounded by '"'
-							if (headerItem[i] == '"')
-							{
-								i++;
-								int offset = i;
-								while (i < headerItem.Length && headerItem[i] != '"')
-								{
-									i++;
-								}
-
-								if (i < headerItem.Length && headerItem[i] == '"')
-								{
-									var charray = headerItem.ToCharArray();
-									soapAction = new string(charray, offset, i - offset);
-									break;
-								}
+								nInstances++;
 							}
 						}
 					}
+
+					var buff = ArrayPool<Range>.Shared.Rent(nInstances);
+					var rangeSpan = new Span<Range>(buff);
+					var nItems = itemSpan.Split(rangeSpan, ContentTypeSeparators, StringSplitOptions.RemoveEmptyEntries);
+
+					for (int i = 0; i < nItems; i++)
+					{
+						var headerItem = itemSpan[rangeSpan[i]].TrimStart();
+						if (headerItem.Length < 6)
+						{
+							continue;
+						}
+
+						if (!headerItem.StartsWith("action".AsSpan(), StringComparison.OrdinalIgnoreCase))
+						{
+							continue;
+						}
+
+						headerItem = headerItem.Slice(6).TrimStart();
+
+						if (headerItem[0] != '=')
+						{
+							continue;
+						}
+
+						headerItem = headerItem.Slice(1).TrimStart();
+
+						if (headerItem[0] != '"')
+						{
+							continue;
+						}
+
+						headerItem = headerItem.Slice(1).TrimStart();
+
+						var quoteIndex = headerItem.IndexOf('"');
+						if (quoteIndex < 0)
+						{
+							continue;
+						}
+
+						ArrayPool<Range>.Shared.Return(buff);
+						soapAction = headerItem.Slice(0, quoteIndex);
+					}
+
+					ArrayPool<Range>.Shared.Return(buff);
 				}
+
+#else
+				var contentTypes = GetContentTypes(httpContext);
+				foreach (string headerItemStr in contentTypes)
+				{
+					var headerItem = headerItemStr.AsSpan();
+					if (headerItem.Length < 6)
+					{
+						continue;
+					}
+
+					if (!headerItem.StartsWith("action".AsSpan(), StringComparison.OrdinalIgnoreCase))
+					{
+						continue;
+					}
+
+					headerItem = headerItem.Slice(6).TrimStart();
+
+					if (headerItem[0] != '=')
+					{
+						continue;
+					}
+
+					headerItem = headerItem.Slice(1).TrimStart();
+
+					if (headerItem[0] != '"')
+					{
+						continue;
+					}
+
+					headerItem = headerItem.Slice(1).TrimStart();
+
+					var quoteIndex = headerItem.IndexOf('"');
+					if (quoteIndex < 0)
+					{
+						continue;
+					}
+
+					soapAction = headerItem.Slice(0, quoteIndex);
+				}
+#endif
 
 				if (soapAction != null &&
-				    (string.IsNullOrEmpty(GetTrimmedSoapAction(soapAction)) || string.IsNullOrEmpty(GetTrimmedClearedSoapAction(soapAction))))
+				    (GetTrimmedSoapAction(soapAction).Length == 0 || GetTrimmedClearedSoapAction(soapAction).Length == 0))
 				{
-					soapAction = string.Empty;
+					soapAction = ReadOnlySpan<char>.Empty;
 				}
 
-				if (string.IsNullOrEmpty(soapAction))
+				if (soapAction.IsEmpty)
 				{
 					if (!string.IsNullOrEmpty(message.Headers.Action))
 					{
-						soapAction = message.Headers.Action;
+						soapAction = message.Headers.Action.AsSpan();
 					}
 
-					if (string.IsNullOrEmpty(soapAction))
+					if (soapAction.IsEmpty)
 					{
-						var headerInfo = message.Headers.FirstOrDefault(h => h.Name.ToLowerInvariant() == "action");
+						var headerInfo = message.Headers.FirstOrDefault(h => h.Name.Equals("action", StringComparison.OrdinalIgnoreCase));
 
 						if (headerInfo != null)
 						{
-							soapAction = message.Headers.GetHeader<string>(headerInfo.Name, headerInfo.Namespace);
+							soapAction = message.Headers.GetHeader<string>(headerInfo.Name, headerInfo.Namespace).AsSpan();
 						}
 					}
 				}
 
-				if (string.IsNullOrEmpty(soapAction) && reader != null)
+				if (soapAction.IsEmpty)
 				{
-					soapAction = reader.LocalName;
+					XmlDictionaryReader reader = null;
+					if (!message.IsEmpty)
+					{
+						MessageBuffer mb = message.CreateBufferedCopy(int.MaxValue);
+						Message responseMsg = mb.CreateMessage();
+						message = mb.CreateMessage();
+
+						reader = responseMsg.GetReaderAtBodyContents();
+						soapAction = reader.LocalName.AsSpan();
+					}
 				}
 			}
 
-			if (!string.IsNullOrEmpty(soapAction))
+			if (!soapAction.IsEmpty)
 			{
 				// soapAction may have '"' in some cases.
 				soapAction = soapAction.Trim('"');
 			}
 
-			return soapAction;
+			return soapAction.ToString();
 		}
 
-		public static string GetTrimmedClearedSoapAction(string inSoapAction)
+		public static ReadOnlySpan<char> GetTrimmedClearedSoapAction(ReadOnlySpan<char> inSoapAction)
 		{
-			string trimmedAction = GetTrimmedSoapAction(inSoapAction);
+			ReadOnlySpan<char> trimmedAction = GetTrimmedSoapAction(inSoapAction);
 
-			if (trimmedAction.EndsWith("Request"))
+			if (trimmedAction.EndsWith("Request".AsSpan()))
 			{
-				int endIndex = trimmedAction.LastIndexOf('R');
-				string clearedAction = trimmedAction.Substring(0, endIndex);
+				var clearedAction = trimmedAction.Slice(0, trimmedAction.Length - 7);
 				return clearedAction;
 			}
 
 			return trimmedAction;
 		}
 
-		public static string GetTrimmedSoapAction(string inSoapAction)
+		public static ReadOnlySpan<char> GetTrimmedSoapAction(ReadOnlySpan<char> inSoapAction)
 		{
-			string soapAction = inSoapAction;
-			if (soapAction.Contains('/'))
+			ReadOnlySpan<char> soapAction = inSoapAction;
+			var lastIndexOfSlash = soapAction.LastIndexOf('/');
+			if (lastIndexOfSlash >= 0)
 			{
 				// soapAction may be a path. Therefore must take the action from the path provided.
-				soapAction = soapAction.Split('/').Last();
+				soapAction = soapAction.Slice(lastIndexOfSlash + 1);
 			}
 
 			return soapAction;

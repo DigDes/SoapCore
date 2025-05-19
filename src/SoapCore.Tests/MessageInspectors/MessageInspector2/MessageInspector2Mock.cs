@@ -34,7 +34,7 @@ namespace SoapCore.Tests.MessageInspectors.MessageInspector2
 			BeforeSendReplyCalled = true;
 		}
 
-		private void ValidateMessage(ref Message message)
+		protected virtual void ValidateMessage(ref Message message)
 		{
 			throw new FaultException(new FaultReason("Message is invalid."), new FaultCode("Sender"), null);
 		}

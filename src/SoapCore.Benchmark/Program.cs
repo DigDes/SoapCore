@@ -11,11 +11,14 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Diagnosers;
 using Microsoft.Extensions.Logging;
+using BenchmarkDotNet.Jobs;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SoapCore.Benchmark
 {
 	[MemoryDiagnoser]
-	[SimpleJob(targetCount: 5)]
+	[SimpleJob(RuntimeMoniker.Net80, baseline: true, iterationCount: 20)]
+	//[SimpleJob(RuntimeMoniker.NetCoreApp31, iterationCount: 20)]
 	public class EchoBench
 	{
 		// 0 measures overhead of creating host
@@ -79,9 +82,26 @@ namespace SoapCore.Benchmark
 	}
 	class Program
 	{
-		static void Main()
+		static async Task Main()
 		{
 			BenchmarkRunner.Run<EchoBench>();
+
+			//var eb = new EchoBench();
+			//eb.Setup();
+			//eb.LoopNum = 100_000;
+
+			//Console.WriteLine("Klicka");
+			//Console.ReadKey();
+
+
+			//Console.WriteLine("Running...");
+
+			//await eb.Echo();
+
+
+			//Console.WriteLine("Klicka igen");
+			//Console.ReadKey();
+			//eb.Cleanup();
 		}
 	}
 }

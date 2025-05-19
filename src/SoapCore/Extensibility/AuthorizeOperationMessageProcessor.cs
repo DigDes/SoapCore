@@ -43,7 +43,6 @@ namespace SoapCore.Extensibility
 		public async Task<Message> ProcessMessage(Message requestMessage, HttpContext httpContext, Func<Message, Task<Message>> next)
 		{
 			var soapAction = HeadersHelper.GetSoapAction(httpContext, ref requestMessage);
-			requestMessage.Headers.Action = soapAction;
 
 			if (string.IsNullOrEmpty(soapAction))
 			{
@@ -52,7 +51,7 @@ namespace SoapCore.Extensibility
 
 			if (!_pathTypes.TryGetValue(httpContext.Request.Path.Value.ToLowerInvariant(), out Type serviceType) || !TryGetOperation(soapAction, serviceType, _generateSoapActionWithoutContractName, out var operation))
 			{
-				throw new InvalidOperationException($"No operation found for specified action: {soapAction}");
+				throw new InvalidOperationException($"No operation found for specified action: {soapAction.ToString()}");
 			}
 
 			MethodInfo methodInfo = operation!.DispatchMethod;
@@ -148,16 +147,35 @@ namespace SoapCore.Extensibility
 			}
 		}
 
-		private static bool TryGetOperation(string methodName, Type serviceType, bool generateSoapActionWithoutContractName, out OperationDescription operation)
+		private static bool TryGetOperation(string methodNameStr, Type serviceType, bool generateSoapActionWithoutContractName, out OperationDescription operation)
 		{
-			var service = new ServiceDescription(serviceType, generateSoapActionWithoutContractName);
-			operation = service.Operations.FirstOrDefault(o => o.SoapAction.Equals(methodName, StringComparison.Ordinal)
-							|| o.Name.Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.Ordinal)
-							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name), StringComparison.Ordinal));
+			ReadOnlySpan<char> methodName = methodNameStr.AsSpan();
 
-			operation ??= service.Operations.FirstOrDefault(o =>
-							methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction), StringComparison.Ordinal)
-							|| methodName.Contains(HeadersHelper.GetTrimmedSoapAction(o.Name)));
+			var service = new ServiceDescription(serviceType, generateSoapActionWithoutContractName);
+			operation = null;
+			foreach (var o in service.Operations)
+			{
+				if (o.SoapAction.AsSpan().Equals(methodName, StringComparison.OrdinalIgnoreCase)
+							|| o.Name.AsSpan().Equals(HeadersHelper.GetTrimmedSoapAction(methodName), StringComparison.OrdinalIgnoreCase)
+							|| methodName.Equals(HeadersHelper.GetTrimmedSoapAction(o.Name.AsSpan()), StringComparison.OrdinalIgnoreCase))
+				{
+					operation = o;
+					break;
+				}
+			}
+
+			if (operation == null)
+			{
+				foreach (var o in service.Operations)
+				{
+					if (methodName.Equals(HeadersHelper.GetTrimmedClearedSoapAction(o.SoapAction.AsSpan()), StringComparison.OrdinalIgnoreCase)
+							|| methodName.IndexOf(HeadersHelper.GetTrimmedSoapAction(o.Name.AsSpan()), StringComparison.OrdinalIgnoreCase) >= 0)
+					{
+						operation = o;
+						break;
+					}
+				}
+			}
 
 			return operation != null;
 		}

@@ -29,26 +29,6 @@ namespace SoapCore
 		public const string MICROSOFT_TYPES = "http://microsoft.com/wsdl/types/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
-		public static void AddDefaultNamespaces(XmlNamespaceManager xmlNamespaceManager, bool addMicrosoftTypesNamespace)
-		{
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "xsd", Namespaces.XMLNS_XSD);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsdl", Namespaces.WSDL_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "msc", Namespaces.MSC_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsp", Namespaces.WSP_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsu", Namespaces.WSU_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "http", Namespaces.HTTP_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "http", Namespaces.TRANSPORT_SCHEMA);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "soap", Namespaces.SOAP11_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "soap12", Namespaces.SOAP12_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "ser", Namespaces.SERIALIZATION_NS);
-			AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "wsam", Namespaces.WSAM_NS);
-
-			if (addMicrosoftTypesNamespace)
-			{
-				AddNamespaceIfNotAlreadyPresentAndGetPrefix(xmlNamespaceManager, "mst", Namespaces.MICROSOFT_TYPES);
-			}
-		}
-
 		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceManager xmlNamespaceManager, string preferredPrefix, string uri)
 		{
 			var existingPrefix = xmlNamespaceManager.LookupPrefix(uri);
@@ -63,7 +43,7 @@ namespace SoapCore
 						break;
 					}
 
-					localPrefix = $"prefix{i}";
+					localPrefix = $"{preferredPrefix}{i}";
 				}
 
 				xmlNamespaceManager.AddNamespace(localPrefix, uri);
@@ -76,7 +56,23 @@ namespace SoapCore
 		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager(bool addMicrosoftTypesNamespace)
 		{
 			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
-			AddDefaultNamespaces(xmlNamespaceManager, addMicrosoftTypesNamespace);
+
+			xmlNamespaceManager.AddNamespace("xsd", Namespaces.XMLNS_XSD);
+			xmlNamespaceManager.AddNamespace("wsdl", Namespaces.WSDL_NS);
+			xmlNamespaceManager.AddNamespace("msc", Namespaces.MSC_NS);
+			xmlNamespaceManager.AddNamespace("wsp", Namespaces.WSP_NS);
+			xmlNamespaceManager.AddNamespace("wsu", Namespaces.WSU_NS);
+			xmlNamespaceManager.AddNamespace("http", Namespaces.HTTP_NS);
+			xmlNamespaceManager.AddNamespace("http1", Namespaces.TRANSPORT_SCHEMA);
+			xmlNamespaceManager.AddNamespace("soap", Namespaces.SOAP11_NS);
+			xmlNamespaceManager.AddNamespace("soap12", Namespaces.SOAP12_NS);
+			xmlNamespaceManager.AddNamespace("ser", Namespaces.SERIALIZATION_NS);
+			xmlNamespaceManager.AddNamespace("wsam", Namespaces.WSAM_NS);
+
+			if (addMicrosoftTypesNamespace)
+			{
+				xmlNamespaceManager.AddNamespace("mst", Namespaces.MICROSOFT_TYPES);
+			}
 
 			return xmlNamespaceManager;
 		}

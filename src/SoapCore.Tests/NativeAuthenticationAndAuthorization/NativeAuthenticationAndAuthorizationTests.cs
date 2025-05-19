@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.ServiceModel;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -89,6 +91,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		[TestMethod]
 		public void CheckNoAuthenticationProvidedAndAuthenticationRequired()
 		{
+			UseEnglishUICulture();
 			var inputModel = new ComplexModelInput
 			{
 				StringProperty = "string property test value",
@@ -132,6 +135,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		[TestMethod]
 		public void CheckNoAuthenticationProvidedAndRoleAuthorizationRequired()
 		{
+			UseEnglishUICulture();
 			var inputModel = new ComplexModelInput
 			{
 				StringProperty = "string property test value",
@@ -154,6 +158,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		[TestMethod]
 		public void CheckWrongRoleProvidedAndRoleAuthorizationRequired()
 		{
+			UseEnglishUICulture();
 			var inputModel = new ComplexModelInput
 			{
 				StringProperty = "string property test value",
@@ -202,6 +207,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		[TestMethod]
 		public void CheckNoAuthenticationProvidedAndPolicyAuthorizationRequired()
 		{
+			UseEnglishUICulture();
 			var inputModel = new ComplexModelInput
 			{
 				StringProperty = "string property test value",
@@ -224,6 +230,7 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 		[TestMethod]
 		public void CheckWrongClaimsProvidedAndPolicyAuthorizationRequired()
 		{
+			UseEnglishUICulture();
 			var inputModel = new ComplexModelInput
 			{
 				StringProperty = "string property test value",
@@ -373,6 +380,11 @@ namespace SoapCore.Tests.NativeAuthenticationAndAuthorization
 			var result = client.JwtAuthenticationAndAuthorizationComplexGenericActionResult(inputModel);
 			Assert.IsNotNull(result);
 			Assert.AreEqual(result.StringProperty, "Number is even.");
+		}
+
+		private static void UseEnglishUICulture()
+		{
+			Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
 		}
 
 		private string GenerateToken(List<Claim> claims)

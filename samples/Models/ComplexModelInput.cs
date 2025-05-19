@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.ServiceModel;
 
 namespace Models
 {
@@ -21,6 +22,19 @@ namespace Models
 
         [DataMember]
         public List<ComplexObject> ComplexListProperty { get; set; }
+
+        [DataMember]
+        public List<BaseObject> DerivedObjects { get; set; }
+
+        [DataContract]
+        [ServiceKnownType(typeof(DerivedObject))]
+        public class DerivedObject : BaseObject
+        {
+            public DerivedObject()
+            {
+                Name = nameof(DerivedObject); 
+            }
+        }
     }
 
     [DataContract]
@@ -31,5 +45,11 @@ namespace Models
 
         [DataMember]
         public int IntProperty { get; set; }
+    }
+
+    [DataContract]
+    public class BaseObject
+    {
+        public string Name { get; set; } = nameof(BaseObject);
     }
 }

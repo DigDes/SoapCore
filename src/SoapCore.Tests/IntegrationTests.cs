@@ -321,6 +321,20 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void ThrowsMessageFaultWithActor()
+		{
+			var client = CreateClient();
+			var e = Assert.ThrowsException<FaultException>(() =>
+			{
+				client.ThrowMessageFaultWithActor("actor");
+			});
+
+			var messageFault = e.CreateMessageFault();
+			Assert.IsNotNull(messageFault);
+			Assert.AreEqual("actor", messageFault.Actor);
+		}
+
+		[TestMethod]
 		public void EmptyBody()
 		{
 			var client = CreateClientASMX();

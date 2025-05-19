@@ -8,7 +8,7 @@
 
 	<ItemGroup>
 		<!-- https://github.com/dotnet/reproducible-builds -->
-		<PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1" PrivateAssets="All"/>
+		<PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All"/>
 	</ItemGroup>
 
 </Project>

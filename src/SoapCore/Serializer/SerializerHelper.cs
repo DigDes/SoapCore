@@ -118,8 +118,8 @@ namespace SoapCore.Serializer
 			}
 
 			var serializer = knownTypes is null
-				? new DataContractSerializer(elementType, parameterName, parameterNs)
-				: new DataContractSerializer(elementType, parameterName, parameterNs, knownTypes);
+				? CachedDataContractSerializer.GetDataContractSerializer(elementType, parameterName, parameterNs)
+				: CachedDataContractSerializer.GetDataContractSerializer(elementType, parameterName, parameterNs, knownTypes);
 
 			return serializer.ReadObject(xmlReader, verifyObjectName: true);
 		}

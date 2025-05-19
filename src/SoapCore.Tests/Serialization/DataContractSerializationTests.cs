@@ -199,67 +199,6 @@ namespace SoapCore.Tests.Serialization
 			pingComplexModelResult_client.ShouldDeepEqual(ComplexModel2.CreateSample2());
 		}
 
-		[Theory(Skip = "incompatible with all serializers")]
-		[MemberData(nameof(ServiceFixture<ISampleService>.SoapSerializersList), MemberType = typeof(ServiceFixture<ISampleService>))]
-		public void TestPingComplexModelOutAndRefSerialization(SoapSerializer soapSerializer)
-		{
-			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-
-			_fixture.ServiceMock
-				.Setup(x => x.PingComplexModelOutAndRef(
-					It.IsAny<ComplexModel1>(),
-					ref It.Ref<ComplexModel2>.IsAny,
-					It.IsAny<ComplexObject>(),
-					ref It.Ref<ComplexModel1>.IsAny,
-					It.IsAny<ComplexObject>(),
-					out It.Ref<ComplexModel2>.IsAny,
-					out It.Ref<ComplexModel1>.IsAny))
-				.Callback(new PingComplexModelOutAndRefCallback(
-					(
-						ComplexModel1 inputModel_service,
-						ref ComplexModel2 responseModelRef1_service,
-						ComplexObject data1_service,
-						ref ComplexModel1 responseModelRef2_service,
-						ComplexObject data2_service,
-						out ComplexModel2 responseModelOut1_service,
-						out ComplexModel1 responseModelOut2_service) =>
-					{
-						// check input paremeters serialization
-						inputModel_service.ShouldDeepEqual(ComplexModel1.CreateSample2());
-						responseModelRef1_service.ShouldDeepEqual(ComplexModel2.CreateSample1());
-						responseModelRef2_service.ShouldDeepEqual(ComplexModel1.CreateSample2());
-						data1_service.ShouldDeepEqual(ComplexObject.CreateSample1());
-						data2_service.ShouldDeepEqual(ComplexObject.CreateSample2());
-
-						//sample response
-						responseModelRef1_service = ComplexModel2.CreateSample2();
-						responseModelRef2_service = ComplexModel1.CreateSample1();
-						responseModelOut1_service = ComplexModel2.CreateSample3();
-						responseModelOut2_service = ComplexModel1.CreateSample1();
-					}))
-				.Returns(true);
-
-			var responseModelRef1_client = ComplexModel2.CreateSample1();
-			var responseModelRef2_client = ComplexModel1.CreateSample2();
-
-			var pingComplexModelOutAndRefResult_client =
-				sampleServiceClient.PingComplexModelOutAndRef(
-					ComplexModel1.CreateSample2(),
-					ref responseModelRef1_client,
-					ComplexObject.CreateSample1(),
-					ref responseModelRef2_client,
-					ComplexObject.CreateSample2(),
-					out var responseModelOut1_client,
-					out var responseModelOut2_client);
-
-			// check output paremeters serialization
-			pingComplexModelOutAndRefResult_client.ShouldBeTrue();
-			responseModelRef1_client.ShouldDeepEqual(ComplexModel2.CreateSample2());
-			responseModelRef2_client.ShouldDeepEqual(ComplexModel1.CreateSample1());
-			responseModelOut1_client.ShouldDeepEqual(ComplexModel2.CreateSample3());
-			responseModelOut2_client.ShouldDeepEqual(ComplexModel1.CreateSample1());
-		}
-
 		// not compatible with XmlSerializer
 		[Theory]
 		[InlineData(SoapSerializer.DataContractSerializer)]

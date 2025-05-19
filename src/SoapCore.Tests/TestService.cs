@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -61,6 +62,12 @@ namespace SoapCore.Tests
 		public void ThrowDetailedFault(string detailMessage)
 		{
 			throw new FaultException<FaultDetail>(new FaultDetail { ExceptionProperty = detailMessage }, new FaultReason("test"), new FaultCode("test"), "test");
+		}
+
+		public void ThrowMessageFaultWithActor(string actor)
+		{
+			var messageFault = new CustomMessageFault("reason", actor);
+			throw new FaultException(messageFault, "action");
 		}
 
 		public string Overload(double d)
@@ -139,19 +146,19 @@ namespace SoapCore.Tests
 			switch (input)
 			{
 				case ComplexInheritanceModelInputB _:
-					{
-						return new ComplexInheritanceModelInputB();
-					}
+				{
+					return new ComplexInheritanceModelInputB();
+				}
 
 				case ComplexInheritanceModelInputA _:
-					{
-						return new ComplexInheritanceModelInputA();
-					}
+				{
+					return new ComplexInheritanceModelInputA();
+				}
 
 				default:
-					{
-						throw new NotImplementedException();
-					}
+				{
+					throw new NotImplementedException();
+				}
 			}
 		}
 

@@ -34,17 +34,6 @@ namespace SoapCore.Meta
 		/// </summary>
 		public string ServerUrl { get; set; }
 
-		[Obsolete]
-		public string ReadLocalFile(string path)
-		{
-			if (!File.Exists(path))
-			{
-				return string.Empty;
-			}
-
-			return File.ReadAllText(path);
-		}
-
 #if NETSTANDARD
 		public async Task<string> ReadLocalFileAsync(string path)
 		{
@@ -93,7 +82,7 @@ namespace SoapCore.Meta
 				{
 					var attribute = EnsureAttribute(xmlDoc, node, "location");
 					string name = attribute.InnerText.Replace("./", string.Empty);
-					attribute.InnerText = WebServiceLocation() + "?import&amp;name=" + name;
+					attribute.InnerText = WebServiceLocation() + "?import&name=" + name;
 				}
 
 				if (XsdFolder != null && node.Prefix == xmlDoc.DocumentElement.Prefix && node.LocalName == "types")
@@ -109,7 +98,7 @@ namespace SoapCore.Meta
 								{
 									var attribute = EnsureAttribute(xmlDoc, importOrIncludeNode, "schemaLocation");
 									string name = attribute.InnerText.Replace("./", string.Empty);
-									attribute.InnerText = SchemaLocation() + "&amp;name=" + name;
+									attribute.InnerText = SchemaLocation() + "&name=" + name;
 								}
 							}
 						}
@@ -153,7 +142,7 @@ namespace SoapCore.Meta
 				{
 					var attribute = EnsureAttribute(xmlDoc, node, "schemaLocation");
 					string name = attribute.InnerText.Replace("./", string.Empty);
-					attribute.InnerText = SchemaLocation() + "&amp;name=" + name;
+					attribute.InnerText = SchemaLocation() + "&name=" + name;
 				}
 			}
 

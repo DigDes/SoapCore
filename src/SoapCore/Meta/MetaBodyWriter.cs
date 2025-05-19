@@ -20,8 +20,8 @@ namespace SoapCore.Meta
 	public class MetaBodyWriter : BodyWriter
 	{
 		private const string FaultSuffix = "Fault";
-		private static int _namespaceCounter = 1;
 
+		//private static int _namespaceCounter = 1;
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
 		private readonly XmlNamespaceManager _xmlNamespaceManager;
@@ -35,21 +35,6 @@ namespace SoapCore.Meta
 
 		private readonly bool _buildMicrosoftGuid = false;
 		private IWsdlOperationNameGenerator _wsdlOperationNameGenerator;
-
-
-		[Obsolete]
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, Binding binding, XmlNamespaceManager xmlNamespaceManager = null)
-			: this(
-				service,
-				baseUrl,
-				xmlNamespaceManager ?? new XmlNamespaceManager(new NameTable()),
-				binding?.Name ?? "BasicHttpBinding_" + service.GeneralContract.Name,
-				new[] { new SoapBindingInfo(binding.MessageVersion ?? MessageVersion.None, null, null) },
-				false,
-				new DefaultWsdlOperationNameGenerator())
-
-		{
-		}
 
 		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator) : base(isBuffered: true)
 		{
@@ -303,7 +288,7 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("elementFormDefault", "qualified");
 			writer.WriteAttributeString("targetNamespace", TargetNameSpace);
 
-			HashSet<Type> headerTypesWritten = new();
+			HashSet<Type> headerTypesWritten = new ();
 
 			foreach (var operation in _service.Operations)
 			{
@@ -561,7 +546,7 @@ namespace SoapCore.Meta
 
 		private Type[] GetKnownTypesFromMethod(MethodInfo methodInfo)
 		{
-			List<Type> includeTypes = new();
+			List<Type> includeTypes = new ();
 
 			if (methodInfo != null)
 			{
@@ -755,7 +740,6 @@ namespace SoapCore.Meta
 					}
 
 					writer.WriteEndElement(); // wsdl:input
-
 
 					if (!operation.IsOneWay)
 					{

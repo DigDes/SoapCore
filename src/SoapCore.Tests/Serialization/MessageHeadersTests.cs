@@ -35,7 +35,9 @@ namespace SoapCore.Tests.Serialization
 				Body2 = Guid.NewGuid().ToString()
 			};
 
-			_fixture.ServiceMock.Setup(x => x.GetWithBody(It.IsAny<MessageHeadersModelWithBody>())).Callback((MessageHeadersModelWithBody m) =>
+			_fixture.ServiceMock.Setup(x =>
+			x.GetWithBody(It.IsAny<MessageHeadersModelWithBody>()))
+				.Callback((MessageHeadersModelWithBody m) =>
 			{
 				m.ShouldDeepEqual(model);
 			}).Returns(new MessageHeadersModelWithBody()

@@ -10,6 +10,7 @@ using System.Net.Http.Headers;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.AspNetCore.Http;
@@ -74,6 +75,16 @@ namespace SoapCore.MessageEncoder
 
 		public XmlNamespaceManager XmlNamespaceOverrides { get; }
 
+		public override int GetHashCode()
+		{
+			return $"{MessageVersion.ToString()},{BindingName},{PortName}".GetHashCode();
+		}
+
+		public override string ToString()
+		{
+			return $"{MessageVersion.ToString()},{BindingName},{PortName}";
+		}
+
 		public bool IsContentTypeSupported(string contentType, bool checkCharset)
 		{
 			if (contentType == null)
@@ -118,37 +129,14 @@ namespace SoapCore.MessageEncoder
 			return false;
 		}
 
-		public async Task<Message> ReadMessageAsync(PipeReader pipeReader, int maxSizeOfHeaders, string contentType)
-		{
-			if (pipeReader == null)
-			{
-				throw new ArgumentNullException(nameof(pipeReader));
-			}
-
-			using var stream = pipeReader.AsStream(true);
-			return await ReadMessageAsync(stream, maxSizeOfHeaders, contentType);
-		}
-
-		public async Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType)
+		public async Task<Message> ReadMessageAsync(Stream stream, int maxSizeOfHeaders, string contentType, CancellationToken ct)
 		{
 			if (stream == null)
 			{
 				throw new ArgumentNullException(nameof(stream));
 			}
 
-			Stream ms;
-			if (stream is FileBufferingReadStream)
-			{
-				ms = stream;
-			}
-			else
-			{
-				ms = new MemoryStream();
-				await stream.CopyToAsync(ms);
-				ms.Seek(0, SeekOrigin.Begin);
-			}
-
-			XmlReader reader;
+			Message message;
 
 			var readEncoding = SoapMessageEncoderDefaults.ContentTypeToEncoding(contentType);
 
@@ -158,21 +146,9 @@ namespace SoapCore.MessageEncoder
 				readEncoding = _writeEncoding;
 			}
 
-			var supportXmlDictionaryReader = SoapMessageEncoderDefaults.TryValidateEncoding(readEncoding, out _);
+			message = await ParsedMessage.FromStreamAsync(stream, readEncoding, MessageVersion, ct);
 
-			if (supportXmlDictionaryReader)
-			{
-				reader = XmlDictionaryReader.CreateTextReader(ms, readEncoding, ReaderQuotas, dictionaryReader => { });
-			}
-			else
-			{
-				var streamReaderWithEncoding = new StreamReader(ms, readEncoding);
-
-				var xmlReaderSettings = new XmlReaderSettings() { XmlResolver = null, IgnoreWhitespace = true, DtdProcessing = DtdProcessing.Prohibit, CloseInput = true };
-				reader = XmlReader.Create(streamReaderWithEncoding, xmlReaderSettings);
-			}
-
-			return Message.CreateMessage(reader, maxSizeOfHeaders, MessageVersion);
+			return message;
 		}
 
 		public virtual async Task WriteMessageAsync(Message message, HttpContext httpContext, PipeWriter pipeWriter, bool indentXml)
@@ -205,10 +181,13 @@ namespace SoapCore.MessageEncoder
 				NewLineHandling = _normalizeNewLines ? NewLineHandling.Replace : NewLineHandling.None,
 			}))
 			{
-				using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
-				message.WriteMessage(xmlWriter);
-				xmlWriter.WriteEndDocument();
-				xmlWriter.Flush();
+				message.WriteMessage(xmlTextWriter);
+				xmlTextWriter.WriteEndDocument();
+				xmlTextWriter.Flush();
+				//using var xmlWriter = XmlDictionaryWriter.CreateDictionaryWriter(xmlTextWriter);
+				//message.WriteMessage(xmlWriter);
+				//xmlWriter.WriteEndDocument();
+				//xmlWriter.Flush();
 			}
 
 			//Set Content-length in Response

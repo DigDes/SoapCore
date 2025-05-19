@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net8.0;</TargetFrameworks>
 		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
 		<IsPackable>false</IsPackable>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -16,38 +16,46 @@
 	<ItemGroup>
 		<AdditionalFiles Include="stylecop.json" />
 	</ItemGroup>
-	<ItemGroup Condition="$(TargetFramework) == 'net7.0'">
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.14" />
-	</ItemGroup>
 	<ItemGroup Condition="$(TargetFramework) == 'net8.0'">
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.32" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.32" />
+		<PackageReference Include="Microsoft.Identitymodel.JsonWebTokens" Version="8.6.0" />
+		<PackageReference Include="System.Identitymodel.Tokens.Jwt" Version="8.6.0" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="DeepEqual.SuperJMN" Version="2.0.0" />
-		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-		<PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Moq" Version="4.20.70" />
-		<PackageReference Include="Shouldly" Version="4.2.1" />
-		<PackageReference Include="xunit" Version="2.6.4" />
-		<PackageReference Include="xunit.runner.console" Version="2.6.4">
+		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="Shouldly" Version="4.3.0" />
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="xunit.runner.console" Version="2.9.3">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
+		<PackageReference Include="System.Formats.Asn1" Version="9.0.2"/>
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

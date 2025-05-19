@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using SoapCore.Tests.MessageInspectors.MessageInspector;
 using SoapCore.Tests.MessageInspectors.MessageInspector2;
 
 namespace SoapCore.Tests.MessageInspectors
@@ -28,13 +27,11 @@ namespace SoapCore.Tests.MessageInspectors
 
 			switch (InspectorStyle)
 			{
-				case InspectorStyle.MessageInspector:
-#pragma warning disable CS0612 // Type or member is obsolete
-					services.AddSoapMessageInspector(new MessageInspectorMock());
-#pragma warning restore CS0612 // Type or member is obsolete
-					break;
 				case InspectorStyle.MessageInspector2:
 					services.AddSoapMessageInspector(new MessageInspector2Mock());
+					break;
+				case InspectorStyle.MessageInspector2NoException:
+					services.AddSoapMessageInspector(new MessageInspector2MockNoException());
 					break;
 			}
 

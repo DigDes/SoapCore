@@ -275,24 +275,6 @@ namespace SoapCore.Tests.Serialization
 			result.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
 		}
 
-		[Theory(Skip = "test not correct")]
-		[InlineData(SoapSerializer.XmlSerializer)]
-		public void TestPingComplexArrayModelWithXmlArray(SoapSerializer soapSerializer)
-		{
-			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-
-			_fixture.ServiceMock
-				.Setup(x => x.PingComplexModelArray(It.IsAny<ComplexModel1[]>(), It.IsAny<ComplexModel2[]>()))
-				.Callback((ComplexModel1[] input, ComplexModel2[] input2) =>
-				{
-					input.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
-					input2.ShouldDeepEqual(new[] { ComplexModel2.CreateSample1() });
-				})
-				.Returns(new[] { ComplexModel1.CreateSample1() });
-			var result = sampleServiceClient.PingComplexModelArrayWithXmlArray(new[] { ComplexModel1.CreateSample1() }, new[] { ComplexModel2.CreateSample1() });
-			result.ShouldDeepEqual(new[] { ComplexModel1.CreateSample1() });
-		}
-
 		[Theory]
 		[InlineData(SoapSerializer.XmlSerializer)]
 		public void TestPingStringArray(SoapSerializer soapSerializer)
@@ -322,22 +304,6 @@ namespace SoapCore.Tests.Serialization
 				.Callback((byte[] input) => { input.ShouldDeepEqual(data); })
 				.Returns(data);
 			var result = sampleServiceClient.PingByteArray(data);
-			result.ShouldDeepEqual(data);
-		}
-
-		[Theory(Skip = "test not correct")]
-		[InlineData(SoapSerializer.XmlSerializer)]
-		public void TestPingStringArrayWithXmlArray(SoapSerializer soapSerializer)
-		{
-			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-
-			var data = new[] { "string", "string1" };
-
-			_fixture.ServiceMock
-				.Setup(x => x.PingStringArray(It.IsAny<string[]>()))
-				.Callback((string[] input) => { input.ShouldDeepEqual(data); })
-				.Returns(data);
-			var result = sampleServiceClient.PingStringArrayWithXmlArray(data);
 			result.ShouldDeepEqual(data);
 		}
 
@@ -816,29 +782,6 @@ namespace SoapCore.Tests.Serialization
 			Assert.NotNull(actual);
 			Assert.Equal(new[] { expected }, actual.QualifiedItems);
 			Assert.Equal(new[] { expected }, actual.UnqualifiedItems);
-		}
-
-		//https://github.com/DigDes/SoapCore/issues/379
-		[Theory(Skip = "not reproducible")]
-		[InlineData(SoapSerializer.XmlSerializer)]
-		public void TestParameterWithXmlElementNamespace(SoapSerializer soapSerializer)
-		{
-			var sampleServiceClient = _fixture.GetSampleServiceClient(soapSerializer);
-			var obj = new DataContractWithoutNamespace
-			{
-				IntProperty = 1234,
-				StringProperty = "2222"
-			};
-
-			_fixture.ServiceMock.Setup(x => x.GetComplexObjectWithXmlElement(obj)).Returns(obj);
-			_fixture.ServiceMock.Setup(x => x.GetComplexObjectWithXmlElement(It.IsAny<DataContractWithoutNamespace>())).Callback(
-				(DataContractWithoutNamespace o) =>
-				{
-					Assert.Equal(obj.IntProperty, o.IntProperty);
-					Assert.Equal(obj.StringProperty, o.StringProperty);
-				});
-
-			sampleServiceClient.GetComplexObjectWithXmlElement(obj);
 		}
 
 		[Theory]

@@ -15,14 +15,7 @@ namespace SoapCore.Meta
 		private readonly bool _hasBasicAuthentication;
 		private readonly MessageVersion[] _soapVersions;
 
-		[Obsolete]
-		public MetaMessage(Message message, ServiceDescription service, Binding binding, XmlNamespaceManager xmlNamespaceManager)
-			: this(message, service, xmlNamespaceManager, binding?.Name, binding.HasBasicAuth(), [message.Version])
-		{
-		}
-
-		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager,
-			string bindingName, bool hasBasicAuthentication, MessageVersion[] soapVersions)
+		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication, MessageVersion[] soapVersions)
 		{
 			_xmlNamespaceManager = xmlNamespaceManager;
 			_message = message;

@@ -11,11 +11,17 @@ namespace SoapCore
 	{
 		private bool? _indentWsdl = null;
 
+#if NET8_0_OR_GREATER
+		/// <summary>
+		/// Gets or sets the Path of the Service
+		/// </summary>
+		required public string Path { get; set; }
+#else
 		/// <summary>
 		/// Gets or sets the Path of the Service
 		/// </summary>
 		public string Path { get; set; }
-
+#endif
 		/// <summary>
 		/// Gets or sets encoders
 		/// </summary>
@@ -38,13 +44,6 @@ namespace SoapCore
 		/// <para>Defaults to null</para>
 		/// </summary>
 		public ISoapModelBounder SoapModelBounder { get; set; } = null;
-
-		/// <summary>
-		/// Gets or sets a value indicating the binding to use
-		/// <para>Defaults to null</para>
-		/// </summary>
-		[Obsolete]
-		public Binding Binding { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value whether to use basic authentication
@@ -75,20 +74,6 @@ namespace SoapCore
 		/// <para>Defaults to true</para>
 		/// </summary>
 		public bool HttpsPostEnabled { get; set; } = true;
-
-		/// <summary>
-		/// The maximum size in bytes of the in-memory <see cref="System.Buffers.ArrayPool{Byte}"/> used to buffer the
-		/// stream. Larger request bodies are written to disk.
-		/// </summary>
-		[Obsolete]
-		public int BufferThreshold { get; set; } = 1024 * 30;
-
-		/// <summary>
-		/// The maximum size in bytes of the request body. An attempt to read beyond this limit will cause an
-		/// <see cref="System.IO.IOException"/>.
-		/// </summary>
-		[Obsolete]
-		public long BufferLimit { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether to omit the Xml declaration (&lt;?xml version="1.0" encoding="utf-8"?&gt;) in responses
@@ -132,7 +117,6 @@ namespace SoapCore
 
 		public WsdlFileOptions WsdlFileOptions { get; set; }
 
-
 		/// <summary>
 		/// Get or sets a value indicating the use of custom serializer, use for if multiple custom serializer used to services
 		/// </summary>
@@ -156,6 +140,13 @@ namespace SoapCore
 		/// Default is true.
 		/// </summary>
 		public bool NormalizeNewLines { get; set; } = true;
+
+		/// <summary>
+		/// Can be used to override the HTTP Scheme in the generated service description. This can be useful
+		/// if you are behind a firewall and the firewall sets the X-Forwarded-Host header, but the
+		/// internal HTTP scheme is not the same as the external.
+		/// </summary>
+		public string SchemeOverride { get; set; }
 
 		public void UseCustomSerializer<TCustomSerializer>()
 			where TCustomSerializer : class, IXmlSerializationHandler

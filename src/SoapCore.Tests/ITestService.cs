@@ -64,6 +64,9 @@ namespace SoapCore.Tests
 		void ThrowDetailedFault(string detailMessage);
 
 		[OperationContract]
+		void ThrowMessageFaultWithActor(string actor);
+
+		[OperationContract]
 		[ServiceFilter(typeof(ActionFilter.TestActionFilter))]
 		ComplexModelInput ComplexParamWithActionFilter(ComplexModelInput test);
 

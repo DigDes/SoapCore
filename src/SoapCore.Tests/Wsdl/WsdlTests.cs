@@ -1361,6 +1361,21 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(arrayElementType);
 		}
 
+		[TestMethod]
+		public void CheckSchemeOverride()
+		{
+			StartService(typeof(TestService), schemeOverride: "https");
+			var wsdl = GetWsdlFromAsmx();
+			StopServer();
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+			var nm = Namespaces.CreateDefaultXmlNamespaceManager(false);
+
+			var addressElement = GetElements(root, _soapSchema + "address").SingleOrDefault(a => a.Attribute("location")?.Value.StartsWith("https") == true);
+			Assert.IsNotNull(addressElement);
+		}
+
 		[TestCleanup]
 		public void StopServer()
 		{
@@ -1429,12 +1444,12 @@ namespace SoapCore.Tests.Wsdl
 			}
 		}
 
-		private void StartService(Type serviceType)
+		private void StartService(Type serviceType, string schemeOverride = null)
 		{
 			_host = new WebHostBuilder()
 				.UseKestrel()
 				.UseUrls("http://127.0.0.1:0")
-				.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType)))
+				.ConfigureServices(services => services.AddSingleton<IStartupConfiguration>(new StartupConfiguration(serviceType, schemeOverride)))
 				.UseStartup<Startup>()
 				.Build();
 
