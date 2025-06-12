@@ -8,10 +8,14 @@ jobs:
     container:
       image: docker://alpine
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: prepare deps
         run: apk add bash icu-libs krb5-libs libgcc libintl libssl3 libstdc++ zlib curl
       - name: install sdks
-        run: cd /tmp && curl -L https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && chmod +x dotnet-install.sh && ./dotnet-install.sh -c 3.1 && ./dotnet-install.sh -c 8.0 && ln -s /github/home/.dotnet/dotnet /usr/bin/dotnet 
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            3.1.x
+            8.0.x
       - name: build && test
         run: dotnet test src/SoapCore.Tests
