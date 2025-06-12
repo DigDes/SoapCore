@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            3.1.x
-            8.0.x
+            3.1.426
+            8.0.411
       - name: build && test
         run: dotnet test src/SoapCore.Tests
