@@ -35,9 +35,21 @@ namespace SoapCore.Extensibility
 		/// <param name="pathAndTypes">A dictionary that has the path of the endpoint as Key and the corresponding type as Value. Similar to using the UseSoapEndpoint extension function.</param>
 		/// <param name="generateSoapActionWithoutContractName">Whether to generate the soapAction without the contract name. Default is false.</param>
 		public AuthorizeOperationMessageProcessor(Dictionary<string, Type> pathAndTypes, bool generateSoapActionWithoutContractName = false)
+			: this(pathAndTypes, options => options.GenerateSoapActionWithoutContractName = generateSoapActionWithoutContractName)
 		{
-			_pathTypes = new Dictionary<string, Type>(pathAndTypes, StringComparer.OrdinalIgnoreCase);
-			_generateSoapActionWithoutContractName = generateSoapActionWithoutContractName;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="AuthorizeOperationMessageProcessor"/> class.
+		/// </summary>
+		/// <param name="pathAndTypes">A dictionary that has the path of the endpoint as Key and the corresponding type as Value. Similar to using the UseSoapEndpoint extension function.</param>
+		/// <param name="options">Action that returns the configured options.</param>
+		public AuthorizeOperationMessageProcessor(Dictionary<string, Type> pathAndTypes, Action<SoapCoreOptions> options)
+		{
+			var configuredOptions = new SoapCoreOptions() { Path = string.Empty };
+			options?.Invoke(configuredOptions);
+			_pathTypes = new Dictionary<string, Type>(pathAndTypes, configuredOptions.CaseInsensitivePath ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			_generateSoapActionWithoutContractName = configuredOptions.GenerateSoapActionWithoutContractName;
 		}
 
 		public async Task<Message> ProcessMessage(Message requestMessage, HttpContext httpContext, Func<Message, Task<Message>> next)
