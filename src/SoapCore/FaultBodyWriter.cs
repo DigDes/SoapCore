@@ -82,7 +82,7 @@ namespace SoapCore
 		{
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
-			var faultCodePrefix = _xmlNamespaceManager.LookupPrefix(Namespaces.SOAP11_ENVELOPE_NS);
+			var faultCodePrefix = _xmlNamespaceManager.LookupPrefix(Namespaces.SOAP11_ENVELOPE_NS) ?? "s";
 
 			writer.WriteStartElement("Fault", Namespaces.SOAP11_ENVELOPE_NS);
 
