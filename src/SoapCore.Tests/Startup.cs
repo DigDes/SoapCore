@@ -54,6 +54,7 @@ namespace SoapCore.Tests
 				{ "/WSA11ISO88591Service.svc".ToLowerInvariant(), typeof(TestService) },
 				{ "/ServiceWithDifferentEncodings.asmx".ToLowerInvariant(), typeof(TestService) },
 				{ "/ServiceWithOverwrittenContentType.asmx".ToLowerInvariant(), typeof(TestService) },
+				{ "/ServiceWithOverwrittenNamespace.asmx".ToLowerInvariant(), typeof(TestService) },
 			}));
 			services.AddAuthorization(options =>
 			{
@@ -204,6 +205,21 @@ namespace SoapCore.Tests
 				};
 
 				app2.UseSoapEndpoint<TestService>("/ServiceWithOverwrittenContentType.asmx", soapEncodingOptions, SoapSerializer.XmlSerializer);
+			});
+
+			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/ServiceWithOverwrittenNamespace.asmx"), app2 =>
+			{
+				app2.UseRouting();
+				var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(false);
+				xmlNamespaceManager.AddNamespace("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+				var soapEncodingOptions = new SoapEncoderOptions
+				{
+					MessageVersion = MessageVersion.Soap11,
+					XmlNamespaceOverrides = xmlNamespaceManager
+				};
+
+				app2.UseSoapEndpoint<TestService>("/ServiceWithOverwrittenNamespace.asmx", soapEncodingOptions, SoapSerializer.XmlSerializer);
 			});
 		}
 #endif
