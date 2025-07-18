@@ -10,14 +10,14 @@ namespace SoapCore.Meta
 	{
 		private readonly Message _message;
 		private readonly ServiceDescription _service;
-		private readonly XmlNamespaceManager _xmlNamespaceManager;
+		private readonly ConcurrentXmlNamespaceLookup _xmlNamespaceLookup;
 		private readonly string _bindingName;
 		private readonly bool _hasBasicAuthentication;
 		private readonly MessageVersion[] _soapVersions;
 
-		public MetaMessage(Message message, ServiceDescription service, XmlNamespaceManager xmlNamespaceManager, string bindingName, bool hasBasicAuthentication, MessageVersion[] soapVersions)
+		public MetaMessage(Message message, ServiceDescription service, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, bool hasBasicAuthentication, MessageVersion[] soapVersions)
 		{
-			_xmlNamespaceManager = xmlNamespaceManager;
+			_xmlNamespaceLookup = xmlNamespaceLookup;
 			_message = message;
 			_service = service;
 			_bindingName = bindingName;
@@ -37,7 +37,7 @@ namespace SoapCore.Meta
 
 		protected override void OnWriteStartEnvelope(XmlDictionaryWriter writer)
 		{
-			writer.WriteStartElement(_xmlNamespaceManager.LookupPrefix(Namespaces.WSDL_NS), "definitions", Namespaces.WSDL_NS);
+			writer.WriteStartElement(_xmlNamespaceLookup.LookupPrefix(Namespaces.WSDL_NS), "definitions", Namespaces.WSDL_NS);
 
 			var wroteSoapNamespace = false;
 			if (_soapVersions.Contains(MessageVersion.Soap11) ||
@@ -70,7 +70,7 @@ namespace SoapCore.Meta
 			writer.WriteAttributeString("name", _service.ServiceName);
 			WriteXmlnsAttribute(writer, Namespaces.WSDL_NS);
 
-			if (!string.IsNullOrEmpty(_xmlNamespaceManager.LookupPrefix(Namespaces.MICROSOFT_TYPES)))
+			if (!string.IsNullOrEmpty(_xmlNamespaceLookup.LookupPrefix(Namespaces.MICROSOFT_TYPES)))
 			{
 				WriteXmlnsAttribute(writer, Namespaces.MICROSOFT_TYPES);
 			}
@@ -78,7 +78,7 @@ namespace SoapCore.Meta
 			if (_hasBasicAuthentication)
 			{
 				writer.WriteStartElement("Policy", Namespaces.WSP_NS);
-				writer.WriteAttributeString("Id", _xmlNamespaceManager.LookupPrefix(Namespaces.WSU_NS), $"{_bindingName}_{_service.GeneralContract.Name}_policy");
+				writer.WriteAttributeString("Id", _xmlNamespaceLookup.LookupPrefix(Namespaces.WSU_NS), $"{_bindingName}_{_service.GeneralContract.Name}_policy");
 				writer.WriteStartElement("ExactlyOne", Namespaces.WSP_NS);
 				writer.WriteStartElement("All", Namespaces.WSP_NS);
 				writer.WriteStartElement("BasicAuthentication", Namespaces.HTTP_NS);
@@ -108,7 +108,7 @@ namespace SoapCore.Meta
 
 		private void WriteXmlnsAttribute(XmlDictionaryWriter writer, string namespaceUri)
 		{
-			var prefix = string.IsNullOrEmpty(namespaceUri) ? null : _xmlNamespaceManager.LookupPrefix(namespaceUri);
+			var prefix = string.IsNullOrEmpty(namespaceUri) ? null : _xmlNamespaceLookup.LookupPrefix(namespaceUri);
 			writer.WriteXmlnsAttribute(prefix, namespaceUri);
 		}
 	}

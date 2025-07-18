@@ -16,7 +16,7 @@ namespace SoapCore
 
 		public Message Message { get; internal set; }
 
-		public XmlNamespaceManager NamespaceManager { get; internal set; }
+		public ConcurrentXmlNamespaceLookup XmlNamespaceLookup { get; internal set; }
 
 		public System.Collections.Generic.Dictionary<string, string> AdditionalEnvelopeXmlnsAttributes { get; internal set; }
 
@@ -43,14 +43,14 @@ namespace SoapCore
 				writer.WriteStartDocument();
 			}
 
-			var prefix = Version.Envelope.NamespacePrefix(NamespaceManager);
+			var prefix = Version.Envelope.NamespacePrefix(XmlNamespaceLookup);
 			writer.WriteStartElement(prefix, "Envelope", Version.Envelope.Namespace());
 			writer.WriteXmlnsAttribute(prefix, Version.Envelope.Namespace());
 
-			var xsdPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(NamespaceManager, "xsd", Namespaces.XMLNS_XSD);
+			var xsdPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceLookup, "xsd", Namespaces.XMLNS_XSD);
 			writer.WriteXmlnsAttribute(xsdPrefix, Namespaces.XMLNS_XSD);
 
-			var xsiPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(NamespaceManager, "xsi", Namespaces.XMLNS_XSI);
+			var xsiPrefix = Namespaces.AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceLookup, "xsi", Namespaces.XMLNS_XSI);
 			writer.WriteXmlnsAttribute(xsiPrefix, Namespaces.XMLNS_XSI);
 
 			if (AdditionalEnvelopeXmlnsAttributes != null)
@@ -64,12 +64,12 @@ namespace SoapCore
 
 		protected override void OnWriteStartHeaders(XmlDictionaryWriter writer)
 		{
-			writer.WriteStartElement(Version.Envelope.NamespacePrefix(NamespaceManager), "Header", Version.Envelope.Namespace());
+			writer.WriteStartElement(Version.Envelope.NamespacePrefix(XmlNamespaceLookup), "Header", Version.Envelope.Namespace());
 		}
 
 		protected override void OnWriteStartBody(XmlDictionaryWriter writer)
 		{
-			writer.WriteStartElement(Version.Envelope.NamespacePrefix(NamespaceManager), "Body", Version.Envelope.Namespace());
+			writer.WriteStartElement(Version.Envelope.NamespacePrefix(XmlNamespaceLookup), "Body", Version.Envelope.Namespace());
 		}
 
 		protected override void OnWriteBodyContents(XmlDictionaryWriter writer)

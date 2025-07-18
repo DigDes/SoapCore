@@ -47,6 +47,7 @@ namespace SoapCore
 		private readonly IXmlSerializationHandler _serializerHandler;
 		private static IOperationInvoker _operationInvoker;
 
+		private readonly ConcurrentDictionary<string, ConcurrentXmlNamespaceLookup> _xmlNamespaceLookupsByMessageEncoder = new ConcurrentDictionary<string, ConcurrentXmlNamespaceLookup>();
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, SoapOptions options, IServiceProvider serviceProvider)
 		{
 			_logger = logger;
@@ -235,10 +236,10 @@ namespace SoapCore
 		{
 			var scheme = string.IsNullOrEmpty(_options.SchemeOverride) ? httpContext.Request.Scheme : _options.SchemeOverride;
 			var baseUrl = scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
-			var xmlNamespaceManager = GetXmlNamespaceManager(null);
+			var xmlNamespaceLookup = GetXmlNamespaceLookup(null);
 			var bindingName = !string.IsNullOrWhiteSpace(_options.EncoderOptions[0].BindingName) ? _options.EncoderOptions[0].BindingName : "BasicHttpBinding_" + _service.GeneralContract.Name;
 			var bodyWriter = _options.SoapSerializer == SoapSerializer.XmlSerializer
-				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceManager, bindingName, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray(), _options.UseMicrosoftGuid, _options.WsdlOperationNameGenerator)
+				? new MetaBodyWriter(_service, baseUrl, xmlNamespaceLookup, bindingName, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray(), _options.UseMicrosoftGuid, _options.WsdlOperationNameGenerator)
 				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray(), _options.WsdlOperationNameGenerator);
 
 			//assumption that you want soap12 if your service supports that
@@ -248,7 +249,7 @@ namespace SoapCore
 			using var responseMessage = new MetaMessage(
 				Message.CreateMessage(messageEncoder.MessageVersion, null, bodyWriter),
 				_service,
-				GetXmlNamespaceManager(messageEncoder),
+				GetXmlNamespaceLookup(messageEncoder),
 				bindingName,
 				_options.UseBasicAuthentication,
 				soapVersions);
@@ -590,7 +591,7 @@ namespace SoapCore
 
 			// Create response message
 			var bodyWriter = new ServiceBodyWriter(_options.SoapSerializer, operation, responseObject, resultOutDictionary);
-			var xmlNamespaceManager = GetXmlNamespaceManager(soapMessageEncoder);
+			var xmlNamespaceLookup = GetXmlNamespaceLookup(soapMessageEncoder);
 
 			if (soapMessageEncoder.MessageVersion.Addressing == AddressingVersion.WSAddressing10)
 			{
@@ -599,7 +600,7 @@ namespace SoapCore
 					StandAloneAttribute = _options.StandAloneAttribute,
 					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, soapAction, bodyWriter),
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
-					NamespaceManager = xmlNamespaceManager
+					XmlNamespaceLookup = xmlNamespaceLookup
 				};
 
 				responseMessage.Headers.Action = operation.ReplyAction;
@@ -613,7 +614,7 @@ namespace SoapCore
 					StandAloneAttribute = _options.StandAloneAttribute,
 					Message = Message.CreateMessage(soapMessageEncoder.MessageVersion, null, bodyWriter),
 					AdditionalEnvelopeXmlnsAttributes = _options.AdditionalEnvelopeXmlnsAttributes,
-					NamespaceManager = xmlNamespaceManager
+					XmlNamespaceLookup = xmlNamespaceLookup
 				};
 			}
 
@@ -837,13 +838,13 @@ namespace SoapCore
 		{
 
 			var messageHeadersMembers = (from p in parameterType.GetPropertyOrFieldMembers()
-					   let attr = p.GetCustomAttribute<MessageHeaderAttribute>()
-					   where attr != null
-					   select new
-					   {
-						   MemberInfo = p,
-						   MessageHeaderMemberAttribute = attr
-					   }).ToArray();
+										 let attr = p.GetCustomAttribute<MessageHeaderAttribute>()
+										 where attr != null
+										 select new
+										 {
+											 MemberInfo = p,
+											 MessageHeaderMemberAttribute = attr
+										 }).ToArray();
 
 			var wrapperObject = Activator.CreateInstance(parameterInfo.Parameter.ParameterType);
 
@@ -981,9 +982,9 @@ namespace SoapCore
 		{
 			_logger.LogError(exception, "An error occurred processing the message");
 
-			var xmlNamespaceManager = GetXmlNamespaceManager(messageEncoder);
+			var xmlNamespaceLookup = GetXmlNamespaceLookup(messageEncoder);
 			var faultExceptionTransformer = serviceProvider.GetRequiredService<IFaultExceptionTransformer>();
-			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, xmlNamespaceManager);
+			var faultMessage = faultExceptionTransformer.ProvideFault(exception, messageEncoder.MessageVersion, requestMessage, xmlNamespaceLookup);
 
 			if (!httpContext.Response.HasStarted)
 			{
@@ -1170,22 +1171,22 @@ namespace SoapCore
 			httpContext.Response.ContentType = "text/xml;charset=UTF-8";
 			await httpContext.Response.WriteAsync(modifiedWsdl);
 		}
-			
-		private XmlNamespaceManager GetXmlNamespaceManager(SoapMessageEncoder messageEncoder)
+
+		private ConcurrentXmlNamespaceLookup GetXmlNamespaceLookup(SoapMessageEncoder messageEncoder)
 		{
-			return CreateDefaultNamespaceManager(messageEncoder);
+			return _xmlNamespaceLookupsByMessageEncoder.GetOrAdd(messageEncoder?.ToString() ?? "no_encoder", _ => CreateDefaultNamespaceManager(messageEncoder));
 
-			XmlNamespaceManager CreateDefaultNamespaceManager(SoapMessageEncoder messageEncoder)
+			ConcurrentXmlNamespaceLookup CreateDefaultNamespaceManager(SoapMessageEncoder messageEncoder)
 			{
-				var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(_options.UseMicrosoftGuid);
+				var xmlNamespaceLookup = Namespaces.CreateXmlNamespaceLookup(_options.UseMicrosoftGuid);
 
-				xmlNamespaceManager.AddNamespace("tns", _service.GeneralContract.Namespace);
+				xmlNamespaceLookup.AddNamespace("tns", _service.GeneralContract.Namespace);
 
 				if (_options.XmlNamespacePrefixOverrides != null)
 				{
 					foreach (var ns in _options.XmlNamespacePrefixOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
 					{
-						xmlNamespaceManager.AddNamespace(ns.Key, ns.Value);
+						xmlNamespaceLookup.AddNamespace(ns.Key, ns.Value);
 					}
 				}
 
@@ -1193,11 +1194,11 @@ namespace SoapCore
 				{
 					foreach (var ns in messageEncoder.XmlNamespaceOverrides.GetNamespacesInScope(XmlNamespaceScope.Local))
 					{
-						xmlNamespaceManager.AddNamespace(ns.Key, ns.Value);
+						xmlNamespaceLookup.AddNamespace(ns.Key, ns.Value);
 					}
 				}
 
-				return xmlNamespaceManager;
+				return xmlNamespaceLookup;
 			}
 		}
 	}

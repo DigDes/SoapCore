@@ -24,7 +24,7 @@ namespace SoapCore.Meta
 		//private static int _namespaceCounter = 1;
 		private readonly ServiceDescription _service;
 		private readonly string _baseUrl;
-		private readonly XmlNamespaceManager _xmlNamespaceManager;
+		private readonly ConcurrentXmlNamespaceLookup _xmlNamespaceLookup;
 
 		private readonly Queue<Type> _enumToBuild;
 		private readonly Queue<TypeToBuild> _complexTypeToBuild;
@@ -36,11 +36,11 @@ namespace SoapCore.Meta
 		private readonly bool _buildMicrosoftGuid = false;
 		private IWsdlOperationNameGenerator _wsdlOperationNameGenerator;
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, XmlNamespaceManager xmlNamespaceManager, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
-			_xmlNamespaceManager = xmlNamespaceManager;
+			_xmlNamespaceLookup = xmlNamespaceLookup;
 
 			_enumToBuild = new Queue<Type>();
 			_complexTypeToBuild = new Queue<TypeToBuild>();
@@ -478,7 +478,7 @@ namespace SoapCore.Meta
 					writer.WriteStartElement("simpleType", Namespaces.XMLNS_XSD);
 					writer.WriteAttributeString("name", typeName);
 					writer.WriteStartElement("restriction", Namespaces.XMLNS_XSD);
-					writer.WriteAttributeString("base", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
+					writer.WriteAttributeString("base", $"{_xmlNamespaceLookup.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
 
 					// enum values are ordered by the order in which they are specified in the source code.
 					var orderedNames = toBuild.GetFields().Where(fi => fi.IsStatic).OrderBy(fi => fi.MetadataToken).Select(fi => fi.Name);
@@ -528,7 +528,7 @@ namespace SoapCore.Meta
 				writer.WriteAttributeString("name", "guid");
 
 				writer.WriteStartElement("restriction", Namespaces.XMLNS_XSD);
-				writer.WriteAttributeString("base", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
+				writer.WriteAttributeString("base", $"{_xmlNamespaceLookup.LookupPrefix(Namespaces.XMLNS_XSD)}:string");
 
 				writer.WriteStartElement("pattern", Namespaces.XMLNS_XSD);
 				writer.WriteAttributeString("value", "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
@@ -1093,7 +1093,7 @@ namespace SoapCore.Meta
 			var typeInfo = type.GetTypeInfo();
 			var typeName = type.GetSerializedTypeName();
 
-			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer, _xmlNamespaceManager, isUnqualified))
+			if (writer.TryAddSchemaTypeFromXmlSchemaProviderAttribute(type, name, SoapSerializer.XmlSerializer, _xmlNamespaceLookup, isUnqualified))
 			{
 				return;
 			}
@@ -1132,12 +1132,12 @@ namespace SoapCore.Meta
 				}
 				else if (typeInfo.IsEnum)
 				{
-					xsTypename = new XmlQualifiedName(typeName, _xmlNamespaceManager.LookupNamespace("tns"));
+					xsTypename = new XmlQualifiedName(typeName, _xmlNamespaceLookup.LookupNamespace("tns"));
 					_enumToBuild.Enqueue(type);
 				}
 				else if (underlyingType?.IsEnum == true)
 				{
-					xsTypename = new XmlQualifiedName(underlyingType.GetSerializedTypeName(), _xmlNamespaceManager.LookupNamespace("tns"));
+					xsTypename = new XmlQualifiedName(underlyingType.GetSerializedTypeName(), _xmlNamespaceLookup.LookupNamespace("tns"));
 					writer.WriteAttributeString("nillable", "true");
 					_enumToBuild.Enqueue(underlyingType);
 				}
@@ -1186,7 +1186,7 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
+					writer.WriteAttributeString("type", $"{_xmlNamespaceLookup.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
 				}
 
 				if (isAttribute && typeInfo.IsValueType && !isOptionalAttribute)
@@ -1221,7 +1221,7 @@ namespace SoapCore.Meta
 
 					writer.WriteAttributeString("name", name);
 					WriteQualification(writer, isUnqualified);
-					writer.WriteAttributeString("type", $"{_xmlNamespaceManager.LookupPrefix(Namespaces.XMLNS_XSD)}:base64Binary");
+					writer.WriteAttributeString("type", $"{_xmlNamespaceLookup.LookupPrefix(Namespaces.XMLNS_XSD)}:base64Binary");
 				}
 				else if (type.IsArray)
 				{

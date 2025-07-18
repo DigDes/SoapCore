@@ -19,9 +19,9 @@ namespace SoapCore.Extensibility
 		/// <param name="exception">Exception to transform</param>
 		/// <param name="messageVersion">SOAP message version</param>
 		/// <param name="requestMessage">SOAP requestMessage</param>
-		/// <param name="xmlNamespaceManager">Namespace manager</param>
+		/// <param name="xmlNamespaceLookup">Namespace manager</param>
 		/// <returns>Fully formatted SOAP Message</returns>
 		/// <seealso cref="MessageFaultBodyWriter"/>
-		Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, XmlNamespaceManager xmlNamespaceManager);
+		Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, ConcurrentXmlNamespaceLookup xmlNamespaceLookup);
 	}
 }

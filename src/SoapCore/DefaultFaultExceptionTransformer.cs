@@ -25,7 +25,7 @@ namespace SoapCore
 			_exceptionTransformer = exceptionTransformer;
 		}
 
-		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, XmlNamespaceManager xmlNamespaceManager)
+		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, ConcurrentXmlNamespaceLookup xmlNamespaceLookup)
 		{
 			var bodyWriter = _exceptionTransformer == null ?
 				new FaultBodyWriter(exception, messageVersion) :
@@ -36,7 +36,7 @@ namespace SoapCore
 			T_MESSAGE customMessage = new T_MESSAGE
 			{
 				Message = soapCoreFaultMessage,
-				NamespaceManager = xmlNamespaceManager
+				XmlNamespaceLookup = xmlNamespaceLookup
 			};
 
 			return customMessage;
