@@ -343,6 +343,22 @@ namespace SoapCore.Tests
 			Assert.AreEqual("OK", result);
 		}
 
+		/// <summary>
+		/// Test that reproduces issue. This is a flaky test that can fail randomly.
+		/// https://github.com/DigDes/SoapCore/issues/743
+		/// </summary>
+		/// <returns>Task</returns>
+		[TestMethod]
+		public async Task ReproduceStateCorruptionIssue()
+		{
+			var client = CreateClient();
+
+			var r = await Task.WhenAll(client.AsyncMethod(), client.AsyncMethod());
+
+			Assert.AreEqual("hello, async", r[0]);
+			Assert.AreEqual("hello, async", r[1]);
+		}
+
 		private ITestService CreateClient(bool caseInsensitivePath = false)
 		{
 			var binding = new BasicHttpBinding();

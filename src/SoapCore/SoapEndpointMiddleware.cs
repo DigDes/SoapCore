@@ -47,7 +47,6 @@ namespace SoapCore
 		private readonly IXmlSerializationHandler _serializerHandler;
 		private static IOperationInvoker _operationInvoker;
 
-		private readonly ConcurrentDictionary<string, XmlNamespaceManager> _xmlNamespaceManagersByMessageEncoder = new ConcurrentDictionary<string, XmlNamespaceManager>();
 		public SoapEndpointMiddleware(ILogger<SoapEndpointMiddleware<T_MESSAGE>> logger, RequestDelegate next, SoapOptions options, IServiceProvider serviceProvider)
 		{
 			_logger = logger;
@@ -1174,7 +1173,7 @@ namespace SoapCore
 			
 		private XmlNamespaceManager GetXmlNamespaceManager(SoapMessageEncoder messageEncoder)
 		{
-			return _xmlNamespaceManagersByMessageEncoder.GetOrAdd(messageEncoder?.ToString() ?? "no_encoder", _ => CreateDefaultNamespaceManager(messageEncoder));
+			return CreateDefaultNamespaceManager(messageEncoder);
 
 			XmlNamespaceManager CreateDefaultNamespaceManager(SoapMessageEncoder messageEncoder)
 			{
