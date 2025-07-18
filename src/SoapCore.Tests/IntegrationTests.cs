@@ -344,12 +344,12 @@ namespace SoapCore.Tests
 		}
 
 		/// <summary>
-		/// Test that reproduces issue. This is a flaky test that can fail randomly.
-		/// https://github.com/DigDes/SoapCore/issues/743
+		/// Handles concurrent calls correctly.
+		/// Test that reproduces (flaky, not with all runs) issue https://github.com/DigDes/SoapCore/issues/743
 		/// </summary>
 		/// <returns>Task</returns>
 		[TestMethod]
-		public async Task ReproduceStateCorruptionIssue()
+		public async Task HandleConcurrentCallsCorrectly()
 		{
 			var client = CreateClient();
 
