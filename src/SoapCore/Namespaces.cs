@@ -53,7 +53,7 @@ namespace SoapCore
 			return existingPrefix;
 		}
 
-		public static ConcurrentXmlNamespaceLookup CreateXmlNamespaceLookup(bool addMicrosoftTypesNamespace)
+		public static ConcurrentXmlNamespaceLookup CreateDefaultXmlNamespaceLookup(bool addMicrosoftTypesNamespace)
 		{
 			var xmlNamespaceLookup = new ConcurrentXmlNamespaceLookup();
 

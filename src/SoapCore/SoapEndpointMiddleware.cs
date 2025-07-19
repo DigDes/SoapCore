@@ -1178,7 +1178,7 @@ namespace SoapCore
 
 			ConcurrentXmlNamespaceLookup CreateDefaultNamespaceManager(SoapMessageEncoder messageEncoder)
 			{
-				var xmlNamespaceLookup = Namespaces.CreateXmlNamespaceLookup(_options.UseMicrosoftGuid);
+				var xmlNamespaceLookup = Namespaces.CreateDefaultXmlNamespaceLookup(_options.UseMicrosoftGuid);
 
 				xmlNamespaceLookup.AddNamespace("tns", _service.GeneralContract.Namespace);
 
