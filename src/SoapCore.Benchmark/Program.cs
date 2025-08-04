@@ -17,7 +17,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace SoapCore.Benchmark
 {
 	[MemoryDiagnoser]
-	[SimpleJob(RuntimeMoniker.Net80, baseline: true, iterationCount: 20)]
+	[SimpleJob(RuntimeMoniker.Net90, baseline: true, iterationCount: 20)]
 	//[SimpleJob(RuntimeMoniker.NetCoreApp31, iterationCount: 20)]
 	public class EchoBench
 	{
