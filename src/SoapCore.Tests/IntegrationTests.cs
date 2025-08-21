@@ -343,6 +343,22 @@ namespace SoapCore.Tests
 			Assert.AreEqual("OK", result);
 		}
 
+		/// <summary>
+		/// Handles concurrent calls correctly.
+		/// Test that reproduces (flaky, not with all runs) issue https://github.com/DigDes/SoapCore/issues/743
+		/// </summary>
+		/// <returns>Task</returns>
+		[TestMethod]
+		public async Task HandleConcurrentCallsCorrectly()
+		{
+			var client = CreateClient();
+
+			var r = await Task.WhenAll(client.AsyncMethod(), client.AsyncMethod());
+
+			Assert.AreEqual("hello, async", r[0]);
+			Assert.AreEqual("hello, async", r[1]);
+		}
+
 		private ITestService CreateClient(bool caseInsensitivePath = false)
 		{
 			var binding = new BasicHttpBinding();

@@ -29,15 +29,15 @@ namespace SoapCore
 		public const string MICROSOFT_TYPES = "http://microsoft.com/wsdl/types/";
 #pragma warning restore SA1310 // Field names must not contain underscore
 
-		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(XmlNamespaceManager xmlNamespaceManager, string preferredPrefix, string uri)
+		public static string AddNamespaceIfNotAlreadyPresentAndGetPrefix(ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string preferredPrefix, string uri)
 		{
-			var existingPrefix = xmlNamespaceManager.LookupPrefix(uri);
+			var existingPrefix = xmlNamespaceLookup.LookupPrefix(uri);
 			if (existingPrefix == null)
 			{
 				var localPrefix = preferredPrefix;
 				for (int i = 1; ; i++)
 				{
-					var existingNamespace = xmlNamespaceManager.LookupNamespace(localPrefix);
+					var existingNamespace = xmlNamespaceLookup.LookupNamespace(localPrefix);
 					if (existingNamespace == null)
 					{
 						break;
@@ -46,35 +46,35 @@ namespace SoapCore
 					localPrefix = $"{preferredPrefix}{i}";
 				}
 
-				xmlNamespaceManager.AddNamespace(localPrefix, uri);
+				xmlNamespaceLookup.AddNamespace(localPrefix, uri);
 				return localPrefix;
 			}
 
 			return existingPrefix;
 		}
 
-		public static XmlNamespaceManager CreateDefaultXmlNamespaceManager(bool addMicrosoftTypesNamespace)
+		public static ConcurrentXmlNamespaceLookup CreateDefaultXmlNamespaceLookup(bool addMicrosoftTypesNamespace)
 		{
-			var xmlNamespaceManager = new XmlNamespaceManager(new NameTable());
+			var xmlNamespaceLookup = new ConcurrentXmlNamespaceLookup();
 
-			xmlNamespaceManager.AddNamespace("xsd", Namespaces.XMLNS_XSD);
-			xmlNamespaceManager.AddNamespace("wsdl", Namespaces.WSDL_NS);
-			xmlNamespaceManager.AddNamespace("msc", Namespaces.MSC_NS);
-			xmlNamespaceManager.AddNamespace("wsp", Namespaces.WSP_NS);
-			xmlNamespaceManager.AddNamespace("wsu", Namespaces.WSU_NS);
-			xmlNamespaceManager.AddNamespace("http", Namespaces.HTTP_NS);
-			xmlNamespaceManager.AddNamespace("http1", Namespaces.TRANSPORT_SCHEMA);
-			xmlNamespaceManager.AddNamespace("soap", Namespaces.SOAP11_NS);
-			xmlNamespaceManager.AddNamespace("soap12", Namespaces.SOAP12_NS);
-			xmlNamespaceManager.AddNamespace("ser", Namespaces.SERIALIZATION_NS);
-			xmlNamespaceManager.AddNamespace("wsam", Namespaces.WSAM_NS);
+			xmlNamespaceLookup.AddNamespace("xsd", Namespaces.XMLNS_XSD);
+			xmlNamespaceLookup.AddNamespace("wsdl", Namespaces.WSDL_NS);
+			xmlNamespaceLookup.AddNamespace("msc", Namespaces.MSC_NS);
+			xmlNamespaceLookup.AddNamespace("wsp", Namespaces.WSP_NS);
+			xmlNamespaceLookup.AddNamespace("wsu", Namespaces.WSU_NS);
+			xmlNamespaceLookup.AddNamespace("http", Namespaces.HTTP_NS);
+			xmlNamespaceLookup.AddNamespace("http1", Namespaces.TRANSPORT_SCHEMA);
+			xmlNamespaceLookup.AddNamespace("soap", Namespaces.SOAP11_NS);
+			xmlNamespaceLookup.AddNamespace("soap12", Namespaces.SOAP12_NS);
+			xmlNamespaceLookup.AddNamespace("ser", Namespaces.SERIALIZATION_NS);
+			xmlNamespaceLookup.AddNamespace("wsam", Namespaces.WSAM_NS);
 
 			if (addMicrosoftTypesNamespace)
 			{
-				xmlNamespaceManager.AddNamespace("mst", Namespaces.MICROSOFT_TYPES);
+				xmlNamespaceLookup.AddNamespace("mst", Namespaces.MICROSOFT_TYPES);
 			}
 
-			return xmlNamespaceManager;
+			return xmlNamespaceLookup;
 		}
 	}
 }

@@ -15,7 +15,7 @@ namespace SoapCore.Meta
 		//switches to easily revert to previous behaviour if there is a problem
 		private static readonly bool UseXmlSchemaProvider = true;
 		private static readonly bool UseXmlReflectionImporter = false;
-		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, XmlNamespaceManager xmlNamespaceManager = null, bool isUnqualified = false)
+		public static bool TryAddSchemaTypeFromXmlSchemaProviderAttribute(this XmlDictionaryWriter writer, Type type, string name, SoapSerializer serializer, ConcurrentXmlNamespaceLookup xmlNamespaceLookup = null, bool isUnqualified = false)
 		{
 			if (!UseXmlSchemaProvider && !UseXmlReflectionImporter)
 			{
@@ -47,14 +47,14 @@ namespace SoapCore.Meta
 				return true;
 			}
 
-			var xmlSchemaSet = xmlNamespaceManager == null ? new XmlSchemaSet() : new XmlSchemaSet(xmlNamespaceManager.NameTable);
+			var xmlSchemaSet = xmlNamespaceLookup == null ? new XmlSchemaSet() : new XmlSchemaSet(xmlNamespaceLookup.ToXmlNamespaceManager().NameTable);
 			var xmlSchemaProviderAttribute = type.GetCustomAttribute<XmlSchemaProviderAttribute>(true);
 			if (xmlSchemaProviderAttribute != null && true)
 			{
 				XmlSchema schema = new XmlSchema();
-				if (xmlNamespaceManager != null)
+				if (xmlNamespaceLookup != null)
 				{
-					schema.Namespaces = xmlNamespaceManager.Convert();
+					schema.Namespaces = xmlNamespaceLookup.Convert();
 				}
 
 				if (xmlSchemaProviderAttribute.IsAny)
@@ -246,10 +246,10 @@ namespace SoapCore.Meta
 			return "ArrayOf" + (isNullable ? "Nullable" : null) + (ClrTypeResolver.ResolveOrDefault(typeName) ?? typeName).FirstCharToUpperOrDefault();
 		}
 
-		private static XmlSerializerNamespaces Convert(this XmlNamespaceManager xmlNamespaceManager)
+		private static XmlSerializerNamespaces Convert(this ConcurrentXmlNamespaceLookup xmlNamespaceLookup)
 		{
 			XmlSerializerNamespaces xmlSerializerNamespaces = new XmlSerializerNamespaces();
-			foreach (var ns in xmlNamespaceManager.GetNamespacesInScope(XmlNamespaceScope.Local))
+			foreach (var ns in xmlNamespaceLookup.GetNamespacesInScope(XmlNamespaceScope.Local))
 			{
 				xmlSerializerNamespaces.Add(ns.Key, ns.Value);
 			}
