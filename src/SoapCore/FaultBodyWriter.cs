@@ -11,11 +11,11 @@ namespace SoapCore
 	public class FaultBodyWriter : BodyWriter
 	{
 		private readonly MessageVersion _version;
-		private readonly XmlNamespaceManager _xmlNamespaceManager;
+		private readonly ConcurrentXmlNamespaceLookup _xmlNamespaceManager;
 		private readonly Exception _exception;
 		private readonly string _faultStringOverride;
 
-		public FaultBodyWriter(Exception exception, MessageVersion version, XmlNamespaceManager xmlNamespaceManager, bool isBuffered = true, string faultStringOverride = null) : base(isBuffered)
+		public FaultBodyWriter(Exception exception, MessageVersion version, ConcurrentXmlNamespaceLookup xmlNamespaceManager, bool isBuffered = true, string faultStringOverride = null) : base(isBuffered)
 		{
 			_version = version;
 			_xmlNamespaceManager = xmlNamespaceManager;
