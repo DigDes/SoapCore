@@ -211,13 +211,13 @@ namespace SoapCore.Tests
 			app.UseWhen(ctx => ctx.Request.Path.Value.Contains("/ServiceWithOverwrittenNamespace.asmx"), app2 =>
 			{
 				app2.UseRouting();
-				var xmlNamespaceManager = Namespaces.CreateDefaultXmlNamespaceManager(false);
-				xmlNamespaceManager.AddNamespace("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+				var xmlNamespaceLookup = Namespaces.CreateDefaultXmlNamespaceLookup(false);
+				xmlNamespaceLookup.AddNamespace("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
 
 				var soapEncodingOptions = new SoapEncoderOptions
 				{
 					MessageVersion = MessageVersion.Soap11,
-					XmlNamespaceOverrides = xmlNamespaceManager
+					XmlNamespaceOverrides = xmlNamespaceLookup.ToXmlNamespaceManager()
 				};
 
 				app2.UseSoapEndpoint<TestService>("/ServiceWithOverwrittenNamespace.asmx", soapEncodingOptions, SoapSerializer.XmlSerializer);

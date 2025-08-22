@@ -28,8 +28,8 @@ namespace SoapCore
 		public Message ProvideFault(Exception exception, MessageVersion messageVersion, Message requestMessage, ConcurrentXmlNamespaceLookup xmlNamespaceLookup)
 		{
 			var bodyWriter = _exceptionTransformer == null ?
-				new FaultBodyWriter(exception, messageVersion, xmlNamespaceManager) :
-				new FaultBodyWriter(exception, messageVersion, xmlNamespaceManager, faultStringOverride: _exceptionTransformer.Transform(exception));
+				new FaultBodyWriter(exception, messageVersion, xmlNamespaceLookup) :
+				new FaultBodyWriter(exception, messageVersion, xmlNamespaceLookup, faultStringOverride: _exceptionTransformer.Transform(exception));
 
 			var soapCoreFaultMessage = Message.CreateMessage(messageVersion, null, bodyWriter);
 
