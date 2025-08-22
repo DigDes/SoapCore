@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -173,6 +174,93 @@ namespace SoapCore.Tests
 					Assert.IsTrue(response.Contains(pingValue));
 					Assert.AreNotEqual(requestContentType, responseContentType);
 				}
+			}
+		}
+
+		[TestMethod]
+		public async Task Soap11FaultWithDefaultNamespacePrefix()
+		{
+			var messageFault = "Test fault message";
+			var body = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soapenv:Body>
+    <ThrowExceptionWithMessage xmlns=""http://tempuri.org/"">
+      <message>{messageFault}</message>
+    </ThrowExceptionWithMessage>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = host.CreateRequest("/Service.svc").AddHeader("SOAPAction", @"""ThrowExceptionWithMessage""").And(msg => msg.Content = content).PostAsync().Result)
+			{
+				Assert.AreEqual(HttpStatusCode.InternalServerError, res.StatusCode);
+
+				var response = await res.Content.ReadAsStringAsync();
+
+				Assert.IsTrue(response.Contains(messageFault));
+				Assert.IsTrue(response.Contains("xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\""), "Should contain default namespace");
+				Assert.IsTrue(response.Contains("s:Envelope"), "Should use default prefix");
+				Assert.IsTrue(response.Contains("s:Client"), "Should use default prefix");
+			}
+		}
+
+		[TestMethod]
+		public async Task Soap11FaultWithNamespacePrefixOverride()
+		{
+			var messageFault = "Test fault message";
+			var body = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soapenv:Body>
+    <ThrowExceptionWithMessage xmlns=""http://tempuri.org/"">
+      <message>{messageFault}</message>
+    </ThrowExceptionWithMessage>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = host.CreateRequest("/ServiceWithOverwrittenNamespace.asmx").AddHeader("SOAPAction", @"""ThrowExceptionWithMessage""").And(msg => msg.Content = content).PostAsync().Result)
+			{
+				Assert.AreEqual(HttpStatusCode.InternalServerError, res.StatusCode);
+
+				var response = await res.Content.ReadAsStringAsync();
+
+				Assert.IsTrue(response.Contains(messageFault));
+				Assert.IsTrue(response.Contains("xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\""), "Should contain override namespace");
+				Assert.IsTrue(response.Contains("soapenv:Envelope"), "Should use override prefix");
+				Assert.IsTrue(response.Contains("soapenv:Client"), "Should use override prefix");
+			}
+		}
+
+		[TestMethod]
+		public async Task Soap11PingWithNamespacePrefixOverride()
+		{
+			var pingValue = "abc";
+			var body = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soapenv:Body>
+    <Ping xmlns=""http://tempuri.org/"">
+      <s>{pingValue}</s>
+    </Ping>
+  </soapenv:Body>
+</soapenv:Envelope>
+";
+
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "text/xml"))
+			using (var res = host.CreateRequest("/ServiceWithOverwrittenNamespace.asmx").AddHeader("SOAPAction", @"""Ping""").And(msg => msg.Content = content).PostAsync().Result)
+			{
+				res.EnsureSuccessStatusCode();
+
+				var response = await res.Content.ReadAsStringAsync();
+
+				Assert.IsTrue(response.Contains(pingValue));
+				Assert.IsTrue(response.Contains("xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\""), "Should contain override namespace");
+				Assert.IsTrue(response.Contains("soapenv:Envelope"), "Should use override prefix");
+				Assert.IsTrue(response.Contains("soapenv:Body"), "Should use override prefix");
 			}
 		}
 

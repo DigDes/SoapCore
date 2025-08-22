@@ -11,12 +11,14 @@ namespace SoapCore
 	public class FaultBodyWriter : BodyWriter
 	{
 		private readonly MessageVersion _version;
+		private readonly XmlNamespaceManager _xmlNamespaceManager;
 		private readonly Exception _exception;
 		private readonly string _faultStringOverride;
 
-		public FaultBodyWriter(Exception exception, MessageVersion version, bool isBuffered = true, string faultStringOverride = null) : base(isBuffered)
+		public FaultBodyWriter(Exception exception, MessageVersion version, XmlNamespaceManager xmlNamespaceManager, bool isBuffered = true, string faultStringOverride = null) : base(isBuffered)
 		{
 			_version = version;
+			_xmlNamespaceManager = xmlNamespaceManager;
 			_exception = exception;
 			_faultStringOverride = faultStringOverride;
 		}
@@ -47,7 +49,7 @@ namespace SoapCore
 
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
-			var prefix = writer.LookupPrefix(Namespaces.SOAP12_ENVELOPE_NS) ?? "s";
+			var prefix = _xmlNamespaceManager.LookupPrefix(Namespaces.SOAP12_ENVELOPE_NS) ?? "s";
 
 			writer.WriteStartElement(prefix, "Fault", Namespaces.SOAP12_ENVELOPE_NS);
 
@@ -80,6 +82,7 @@ namespace SoapCore
 		{
 			var faultString = _faultStringOverride ?? (_exception.InnerException != null ? _exception.InnerException.Message : _exception.Message);
 			var faultDetail = ExtractFaultDetailsAsXmlElement(_exception);
+			var faultCodePrefix = _xmlNamespaceManager.LookupPrefix(Namespaces.SOAP11_ENVELOPE_NS) ?? "s";
 
 			writer.WriteStartElement("Fault", Namespaces.SOAP11_ENVELOPE_NS);
 
@@ -119,19 +122,19 @@ namespace SoapCore
 					}
 					else
 					{
-						writer.WriteElementString("faultcode", "s:" + faultException.Code.Name);
+						writer.WriteElementString("faultcode", $"{faultCodePrefix}:{faultException.Code.Name}");
 					}
 				}
 				else
 				{
-					writer.WriteElementString("faultcode", "s:Client");
+					writer.WriteElementString("faultcode", $"{faultCodePrefix}:Client");
 				}
 
 				actor = faultException.CreateMessageFault()?.Actor;
 			}
 			else
 			{
-				writer.WriteElementString("faultcode", "s:Client");
+				writer.WriteElementString("faultcode", $"{faultCodePrefix}:Client");
 			}
 
 			writer.WriteElementString("faultstring", faultString);
