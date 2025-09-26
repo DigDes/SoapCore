@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
@@ -237,8 +239,30 @@ namespace SoapCore.Meta
 
 				typeName = GetArrayTypeName(typeName.Replace("[]", string.Empty), isNullableArray);
 			}
+			else if (isGenericType)
+			{
+				typeName = namedType.GetGenericTypeName();
+			}
 
 			return typeName;
+		}
+
+		/// <summary>
+		/// Returns the name of the type without the generic arity.
+		/// <example>
+		/// <c>typeof(List&lt;int&gt;).Name</c> is <c>List`1</c>.
+		/// <br/>
+		/// <c>typeof(List&lt;int&gt;).GetNameWithoutGenericArity()</c> is <c>List</c>.
+		/// </example>
+		/// </summary>
+		/// <param name="type">Type</param>
+		/// <returns>Type name without the generic arity</returns>
+		public static string GetNameWithoutGenericArity(this Type type)
+		{
+			var arityIndex = type.Name.IndexOf('`');
+			return arityIndex == -1
+				? type.Name
+				: type.Name.Substring(0, arityIndex);
 		}
 
 		private static string GetArrayTypeName(string typeName, bool isNullable)
@@ -265,6 +289,24 @@ namespace SoapCore.Meta
 			}
 
 			return input.First().ToString().ToUpper() + input.Substring(1);
+		}
+
+		private static string GetGenericTypeName(this Type type)
+		{
+			var clearName = type.GetNameWithoutGenericArity();
+
+			var genericArguments = type.GetGenericArguments();
+
+			var sb = new StringBuilder(clearName);
+
+			sb.Append("Of");
+
+			foreach (var arg in genericArguments)
+			{
+				sb.Append(arg.GetNameWithoutGenericArity());
+			}
+
+			return sb.ToString();
 		}
 	}
 }
