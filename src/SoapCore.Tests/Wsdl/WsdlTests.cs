@@ -1361,6 +1361,52 @@ namespace SoapCore.Tests.Wsdl
 			Assert.IsNotNull(arrayElementType);
 		}
 
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckComplexGenericTypeWithSingleArgumentWsdl(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexGenericTypeService>(soapSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			var endpointInnerObjectTypeArgument = GetElements(root, _xmlSchema + "element")
+				.SingleOrDefault(a => a.Attribute("name")?.Value.Equals(nameof(ComplexTypeWithGeneric.SingleGenericArgument)) == true);
+
+			Assert.IsNotNull(endpointInnerObjectTypeArgument);
+
+			var typeName = endpointInnerObjectTypeArgument.Attribute("type")?.Value;
+
+			const string genericTypeName = "InnerGenericTypeWithSingleArgument";
+			const string genericTypeArgumentName = "InnerType";
+
+			Assert.AreEqual($"tns:{genericTypeName}Of{genericTypeArgumentName}", typeName);
+		}
+
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckComplexGenericTypeWithMultipleArgumentsWsdl(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexGenericTypeService>(soapSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			var endpointInnerObjectTypeArgument = GetElements(root, _xmlSchema + "element")
+				.SingleOrDefault(a => a.Attribute("name")?.Value.Equals(nameof(ComplexTypeWithGeneric.MultipleGenericArguments)) == true);
+
+			Assert.IsNotNull(endpointInnerObjectTypeArgument);
+
+			var typeName = endpointInnerObjectTypeArgument.Attribute("type")?.Value;
+
+			const string genericTypeName = "InnerGenericTypeWithMultipleArguments";
+			const string genericTypeArgumentName = "InnerType";
+
+			Assert.AreEqual($"tns:{genericTypeName}Of{genericTypeArgumentName}{genericTypeArgumentName}", typeName);
+		}
+
 		[TestMethod]
 		public void CheckSchemeOverride()
 		{
