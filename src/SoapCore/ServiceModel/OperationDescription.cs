@@ -189,7 +189,7 @@ namespace SoapCore.ServiceModel
 
 		private static string GetNameByAction(string action)
 		{
-			var index = action?.LastIndexOf("/");
+			var index = action?.LastIndexOf('/');
 			return (index ?? -1) > -1
 				? action.Substring(index.Value + 1, action.Length - index.Value - 1)
 				: null;
