@@ -1,0 +1,13 @@
+is_global = true
+
+# CA1865: Use char overload
+# https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1865
+dotnet_diagnostic.CA1865.severity = warning
+
+# CA1866: Use char overload
+# https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1866
+dotnet_diagnostic.CA1866.severity = warning
+
+# CA1867: Use char overload
+# https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1867
+dotnet_diagnostic.CA1867.severity = warning
