@@ -332,7 +332,7 @@ namespace SoapCore
 
 			bool TryGetRequestValue(string key, out StringValues value)
 			{
-				if (context.Request.Method?.ToLower() == "get")
+				if (context.Request.Method?.ToUpperInvariant() == "GET")
 				{
 					return context.Request.Query.TryGetValue(key, out value);
 				}

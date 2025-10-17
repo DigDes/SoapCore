@@ -288,7 +288,7 @@ namespace SoapCore.Meta
 				return input;
 			}
 
-			return input.First().ToString().ToUpper() + input.Substring(1);
+			return char.ToUpperInvariant(input[0]).ToString() + input.Substring(1);
 		}
 
 		private static string GetGenericTypeName(this Type type)
