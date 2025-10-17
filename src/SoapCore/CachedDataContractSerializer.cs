@@ -6,7 +6,6 @@ using System.Xml.Serialization;
 
 namespace SoapCore
 {
-
 	public static class CachedDataContractSerializer
 	{
 		private static readonly ConcurrentDictionary<string, DataContractSerializer> CachedSerializers = new ConcurrentDictionary<string, DataContractSerializer>();

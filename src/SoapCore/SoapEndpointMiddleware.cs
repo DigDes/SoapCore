@@ -836,7 +836,6 @@ namespace SoapCore
 			MessageContractAttribute messageContractAttribute,
 			object[] arguments)
 		{
-
 			var messageHeadersMembers = (from p in parameterType.GetPropertyOrFieldMembers()
 										 let attr = p.GetCustomAttribute<MessageHeaderAttribute>()
 										 where attr != null
