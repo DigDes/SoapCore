@@ -7,7 +7,6 @@ using System.Runtime.Serialization;
 
 namespace SoapCore
 {
-
 	public class MemberWithAttribute<TAttribute>(MemberInfo member, TAttribute attribute)
 		where TAttribute : Attribute
 	{
