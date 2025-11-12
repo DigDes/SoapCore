@@ -237,7 +237,7 @@ namespace SoapCore
 				}
 				else if (outResult.Value is bool)
 				{
-					value = outResult.Value.ToString().ToLower();
+					value = (bool)outResult.Value ? "true" : "false";
 				}
 				else if (outResult.Value is string)
 				{
@@ -337,7 +337,7 @@ namespace SoapCore
 				}
 				else if (outResult.Value is bool)
 				{
-					value = outResult.Value.ToString().ToLower();
+					value = (bool)outResult.Value ? "true" : "false";
 				}
 				else if (outResult.Value is string)
 				{

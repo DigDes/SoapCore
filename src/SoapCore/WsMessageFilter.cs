@@ -67,7 +67,7 @@ namespace SoapCore
 			WsUsernameToken wsUsernameToken = null;
 			for (var i = 0; i < message.Headers.Count; i++)
 			{
-				if (message.Headers[i].Name.ToLower() == "security")
+				if (message.Headers[i].Name.ToLowerInvariant() == "security")
 				{
 					using var reader = message.Headers.GetReaderAtHeader(i);
 					while (!reader.EOF && reader.LocalName != "UsernameToken")

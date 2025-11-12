@@ -1,5 +1,9 @@
 is_global = true
 
+# CA1304: Specify CultureInfo
+# https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1304
+dotnet_diagnostic.CA1304.severity = warning
+
 # CA1865: Use char overload
 # https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1865
 dotnet_diagnostic.CA1865.severity = warning
