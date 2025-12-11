@@ -248,6 +248,20 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void MessageWithDuplicateNamespace()
+		{
+			var client = CreateClient();
+			var output = client.GetWithDuplicateNamespaces(new ()
+			{
+				BodyMessage = "test",
+				Header = new () { From = "test" }
+			});
+
+			Assert.AreEqual("test", output.BodyMessage);
+			Assert.AreEqual("test", output.Header.From);
+		}
+
+		[TestMethod]
 		public void ThrowsFaultException()
 		{
 			var client = CreateClient();

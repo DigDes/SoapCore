@@ -1,0 +1,46 @@
+@SoapCore_Issue_1161_HostAddress = http://localhost:5220
+
+### Get WSDL
+GET {{SoapCore_Issue_1161_HostAddress}}/myService
+Accept: application/json
+
+
+### Test SOAP ProcessUser (passes)
+POST {{SoapCore_Issue_1161_HostAddress}}/myService
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "http://tempuri.org/IMySoapService/Process"
+
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+  <s:Header>
+    <MessageHeader xmlns="http://www.ebxml.org/namespaces/messageHeader" >
+      <From>SomeSender</From>
+    </MessageHeader>
+  </s:Header>
+  <s:Body>
+   <MyMessage xmlns="http://tempuri.org/">
+      <BodyMessage>someBody</BodyMessage>
+    </MyMessage>
+  </s:Body>
+ </s:Envelope>
+
+### Test SOAP ProcessUser (fails with SoapCore 1.2.1)
+POST {{SoapCore_Issue_1161_HostAddress}}/myService
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "http://tempuri.org/IMySoapService/Process"
+
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+  <s:Header>
+    <h:MessageHeader xmlns:h="http://www.ebxml.org/namespaces/messageHeader"
+      xmlns="http://www.ebxml.org/namespaces/messageHeader" >
+      <From>SomeSender</From>
+    </h:MessageHeader>
+  </s:Header>
+  <s:Body>
+   <MyMessage xmlns="http://tempuri.org/">
+      <BodyMessage>someBody</BodyMessage>
+    </MyMessage>
+  </s:Body>
+ </s:Envelope>
+

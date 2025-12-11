@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.AspNetCore.Mvc;
 using SoapCore.Tests.Model;
+using SoapCore.Tests.Serialization.Models.DataContract;
 
 namespace SoapCore.Tests
 {
@@ -365,6 +366,11 @@ namespace SoapCore.Tests
 					StatusCode = 500
 				};
 			}
+		}
+
+		public MessageHeadersModelWithDuplicateNamespaces GetWithDuplicateNamespaces(MessageHeadersModelWithDuplicateNamespaces input)
+		{
+			return input;
 		}
 	}
 }
