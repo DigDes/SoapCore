@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace SoapCore
 {
-	internal static class HeadersHelper
+	public static class HeadersHelper
 	{
 		private static readonly char[] ContentTypeSeparators = new[] { ';' };
 
@@ -47,49 +47,61 @@ namespace SoapCore
 					}
 
 					var buff = ArrayPool<Range>.Shared.Rent(nInstances);
-					var rangeSpan = new Span<Range>(buff);
-					var nItems = itemSpan.Split(rangeSpan, ContentTypeSeparators, StringSplitOptions.RemoveEmptyEntries);
-
-					for (int i = 0; i < nItems; i++)
+					try
 					{
-						var headerItem = itemSpan[rangeSpan[i]].TrimStart();
-						if (headerItem.Length < 6)
+						var rangeSpan = new Span<Range>(buff);
+						var nItems = itemSpan.Split(rangeSpan, ContentTypeSeparators, StringSplitOptions.RemoveEmptyEntries);
+						bool found = false;
+
+						for (int i = 0; i < nItems; i++)
 						{
-							continue;
+							var headerItem = itemSpan[rangeSpan[i]].TrimStart();
+							if (headerItem.Length < 6)
+							{
+								continue;
+							}
+
+							if (!headerItem.StartsWith("action".AsSpan(), StringComparison.OrdinalIgnoreCase))
+							{
+								continue;
+							}
+
+							headerItem = headerItem.Slice(6).TrimStart();
+
+							if (headerItem.Length == 0 || headerItem[0] != '=')
+							{
+								continue;
+							}
+
+							headerItem = headerItem.Slice(1).TrimStart();
+
+							if (headerItem.Length == 0 || headerItem[0] != '"')
+							{
+								continue;
+							}
+
+							headerItem = headerItem.Slice(1).TrimStart();
+
+							var quoteIndex = headerItem.IndexOf('"');
+							if (quoteIndex < 0)
+							{
+								continue;
+							}
+
+							soapAction = headerItem.Slice(0, quoteIndex);
+							found = true;
+							break;
 						}
 
-						if (!headerItem.StartsWith("action".AsSpan(), StringComparison.OrdinalIgnoreCase))
+						if (found)
 						{
-							continue;
+							break;
 						}
-
-						headerItem = headerItem.Slice(6).TrimStart();
-
-						if (headerItem[0] != '=')
-						{
-							continue;
-						}
-
-						headerItem = headerItem.Slice(1).TrimStart();
-
-						if (headerItem[0] != '"')
-						{
-							continue;
-						}
-
-						headerItem = headerItem.Slice(1).TrimStart();
-
-						var quoteIndex = headerItem.IndexOf('"');
-						if (quoteIndex < 0)
-						{
-							continue;
-						}
-
-						ArrayPool<Range>.Shared.Return(buff);
-						soapAction = headerItem.Slice(0, quoteIndex);
 					}
-
-					ArrayPool<Range>.Shared.Return(buff);
+					finally
+					{
+						ArrayPool<Range>.Shared.Return(buff);
+					}
 				}
 
 #else

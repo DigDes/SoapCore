@@ -537,10 +537,9 @@ namespace SoapCore
 				reader?.Dispose();
 			}
 
-			// Execute response message filters
-			foreach (var messageFilter in asyncMessageFilters.Reverse())
+			for (var i = asyncMessageFilters.Length - 1; i >= 0; i--)
 			{
-				await messageFilter.OnResponseExecuting(responseMessage);
+				await asyncMessageFilters[i].OnResponseExecuting(responseMessage);
 			}
 
 			SetHttpResponse(httpContext, responseMessage);
