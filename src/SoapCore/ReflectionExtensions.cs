@@ -141,7 +141,7 @@ namespace SoapCore
 		}
 
 		internal static IEnumerable<MemberWithAttribute<TAttribute>> GetMembersWithAttribute<TAttribute>(this Type type)
-	where TAttribute : Attribute
+			where TAttribute : Attribute
 		{
 			// return from p in GetPropertyOrFieldMembers(type)
 			//     let attr = p.GetCustomAttribute<TAttribute>()
@@ -151,7 +151,7 @@ namespace SoapCore
 		}
 
 		private static MemberWithAttribute<TAttribute>[] ComputeMembersWithAttribute<TAttribute>(Type type)
-		   where TAttribute : Attribute
+			where TAttribute : Attribute
 		{
 			var res = from p in GetPropertyOrFieldMembers(type)
 					  let attr = p.GetCustomAttribute<TAttribute>()

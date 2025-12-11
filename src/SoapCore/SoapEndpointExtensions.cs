@@ -145,7 +145,7 @@ namespace SoapCore
 		}
 
 		public static IEndpointConventionBuilder UseSoapEndpoint<T, T_MESSAGE>(this IEndpointRouteBuilder routes, string path, SoapEncoderOptions[] encoders, SoapSerializer serializer = SoapSerializer.DataContractSerializer, bool caseInsensitivePath = false, ISoapModelBounder soapModelBounder = null, WsdlFileOptions wsdlFileOptions = null, bool indentXml = true, bool omitXmlDeclaration = true, string schemeOverride = null)
-		where T_MESSAGE : CustomMessage, new()
+			where T_MESSAGE : CustomMessage, new()
 		{
 			return routes.UseSoapEndpoint<T, T_MESSAGE>(opt =>
 			{
