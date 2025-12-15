@@ -1273,6 +1273,11 @@ namespace SoapCore.Meta
 						_complexTypeToBuild.Enqueue(newTypeToBuild);
 					}
 				}
+				else if (type == typeof(object))
+				{
+					writer.WriteAttributeString("name", name);
+					WriteQualification(writer, isUnqualified);
+				}
 				else if (toBuild.IsAnonumous)
 				{
 					if (string.IsNullOrEmpty(name))
