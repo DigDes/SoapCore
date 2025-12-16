@@ -1407,6 +1407,25 @@ namespace SoapCore.Tests.Wsdl
 			Assert.AreEqual($"tns:{genericTypeName}Of{genericTypeArgumentName}{genericTypeArgumentName}", typeName);
 		}
 
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckComplexTypeWithSystemObjectWsdl(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ComplexTypeWithSystemObjectService>(soapSerializer);
+			Trace.TraceInformation(wsdl);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			var systemObjectElement = GetElements(root, _xmlSchema + "element")
+				.SingleOrDefault(a => a.Attribute("name")?.Value.Equals(nameof(ComplexTypeWithSystemObject.SystemObject)) == true);
+
+			Assert.IsNotNull(systemObjectElement);
+
+			var typeAttribute = systemObjectElement.Attribute("type");
+			Assert.IsNull(typeAttribute);
+		}
+
 		[TestMethod]
 		public void CheckSchemeOverride()
 		{
