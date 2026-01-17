@@ -1656,7 +1656,7 @@ namespace SoapCore.Meta
 		private (string soapPrefix, string ns, string qualifiedBindingName, string qualifiedPortName) GetSoapMetaParameters(SoapBindingInfo bindingInfo)
 		{
 			int soapVersion = 11;
-			if (bindingInfo.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004 || bindingInfo.MessageVersion == MessageVersion.Soap12WSAddressing10)
+			if (bindingInfo.MessageVersion.Envelope == EnvelopeVersion.Soap12)
 			{
 				soapVersion = 12;
 			}

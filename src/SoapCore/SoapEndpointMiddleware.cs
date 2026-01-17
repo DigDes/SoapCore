@@ -243,7 +243,7 @@ namespace SoapCore
 				: (BodyWriter)new MetaWCFBodyWriter(_service, baseUrl, bindingName, _options.UseBasicAuthentication, _messageEncoders.Select(me => new SoapBindingInfo(me.MessageVersion, me.BindingName, me.PortName)).ToArray(), _options.WsdlOperationNameGenerator);
 
 			//assumption that you want soap12 if your service supports that
-			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.MessageVersion == MessageVersion.Soap12WSAddressing10 || me.MessageVersion == MessageVersion.Soap12WSAddressingAugust2004) ?? _messageEncoders[0];
+			var messageEncoder = _messageEncoders.FirstOrDefault(me => me.MessageVersion.Envelope == EnvelopeVersion.Soap12) ?? _messageEncoders[0];
 			var soapVersions = _messageEncoders.Select(me => me.MessageVersion).Distinct().ToArray();
 
 			using var responseMessage = new MetaMessage(
