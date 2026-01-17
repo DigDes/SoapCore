@@ -1060,9 +1060,9 @@ namespace SoapCore
 				meta.CurrentWebServer = options.VirtualPath + "/";
 			}
 
-			meta.CurrentWebService = httpContext.Request.Path.Value.Replace("/", string.Empty);
-			var mapping = options.WebServiceWSDLMapping[meta.CurrentWebService];
-
+			string url = httpContext.Request.Path.Value.Replace("/", string.Empty);
+			var mapping = options.WebServiceWSDLMapping[url];
+			meta.CurrentWebService = string.IsNullOrEmpty(mapping.UrlOverride) ? url : mapping.UrlOverride;
 			meta.WSDLFolder = mapping.WSDLFolder;
 			meta.XsdFolder = mapping.SchemaFolder;
 			meta.ServerUrl = GetServerUrl(options, httpContext);
@@ -1135,15 +1135,7 @@ namespace SoapCore
 				meta.CurrentWebServer = options.VirtualPath + "/";
 			}
 
-			if (string.IsNullOrEmpty(mapping.UrlOverride))
-			{
-				meta.CurrentWebService = url;
-			}
-			else
-			{
-				meta.CurrentWebService = mapping.UrlOverride;
-			}
-
+			meta.CurrentWebService = string.IsNullOrEmpty(mapping.UrlOverride) ? url : mapping.UrlOverride;
 			meta.WSDLFolder = mapping.WSDLFolder;
 			meta.XsdFolder = mapping.SchemaFolder;
 			meta.ServerUrl = GetServerUrl(options, httpContext);
