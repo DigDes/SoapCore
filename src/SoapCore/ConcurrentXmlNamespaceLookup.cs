@@ -17,6 +17,7 @@ public class ConcurrentXmlNamespaceLookup
 		_uriToPrefix.AddOrUpdate(uri, _ => prefix, (_, _) => prefix);
 		_prefixToUri.AddOrUpdate(prefix, _ => uri, (_, _) => uri);
 	}
+
 	public XmlNamespaceManager ToXmlNamespaceManager()
 	{
 		var r = new XmlNamespaceManager(new NameTable());
@@ -24,6 +25,7 @@ public class ConcurrentXmlNamespaceLookup
 		{
 			r.AddNamespace(e.Key, e.Value);
 		}
+
 		return r;
 	}
 }

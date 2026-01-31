@@ -81,6 +81,7 @@ namespace SoapCore
 					block = ArrayPool<byte>.Shared.Rent(blockSize);
 				}
 			}
+
 			ArrayPool<byte>.Shared.Return(block);
 		}
 
@@ -208,6 +209,7 @@ namespace SoapCore
 								xElement.WriteTo(writer);
 								writer.WriteEndElement();
 							}
+
 							//https://github.com/DigDes/SoapCore/issues/385
 							else if (_operation.DispatchMethod.GetCustomAttribute<XmlSerializerFormatAttribute>()?.Style == OperationFormatStyle.Rpc)
 							{
