@@ -1,7 +1,16 @@
+using System;
+
 namespace SoapCore.Meta
 {
 	public class ClrTypeResolver
 	{
+		/// <summary>
+		/// When true, Guid types are resolved as "guid" (for Microsoft WSDL types namespace)
+		/// instead of "string". This affects array naming (List&lt;Guid&gt; becomes ArrayOfGuid).
+		/// </summary>
+		[ThreadStatic]
+		public static bool UseMicrosoftGuid;
+
 		public static string ResolveOrDefault(string typeName)
 		{
 			switch (typeName)
@@ -33,7 +42,9 @@ namespace SoapCore.Meta
 				case "DateTime":
 					return "dateTime";
 				case "Guid":
-					return "string";
+					// When UseMicrosoftGuid is true, return null so callers fall back to original type name "Guid"
+					// This ensures ArrayOfGuid naming while avoiding invalid "s:guid" type references
+					return UseMicrosoftGuid ? null : "string";
 				case "Char":
 					return "string";
 				case "TimeSpan":

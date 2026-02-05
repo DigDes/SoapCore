@@ -215,6 +215,13 @@ namespace SoapCore.Meta
 		private XmlQualifiedName ResolveType(Type type)
 		{
 			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
+
+			// Handle Guid specially when UseMicrosoftGuid is enabled
+			if (typeName == "Guid" && _buildMicrosoftGuid)
+			{
+				return new XmlQualifiedName("guid", Namespaces.MICROSOFT_TYPES);
+			}
+
 			string resolvedType = ClrTypeResolver.ResolveOrDefault(typeName);
 
 			if (string.IsNullOrEmpty(resolvedType))

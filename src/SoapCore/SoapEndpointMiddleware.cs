@@ -234,6 +234,9 @@ namespace SoapCore
 
 		private async Task ProcessMeta(HttpContext httpContext, bool showDocumentation)
 		{
+			// Set the flag for ClrTypeResolver so that List<Guid> becomes ArrayOfGuid
+			Meta.ClrTypeResolver.UseMicrosoftGuid = _options.UseMicrosoftGuid;
+
 			var scheme = string.IsNullOrEmpty(_options.SchemeOverride) ? httpContext.Request.Scheme : _options.SchemeOverride;
 			var baseUrl = scheme + "://" + httpContext.Request.Host + httpContext.Request.PathBase + httpContext.Request.Path;
 			var xmlNamespaceLookup = GetXmlNamespaceLookup(null);
