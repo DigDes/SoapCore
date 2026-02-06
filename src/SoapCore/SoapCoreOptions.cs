@@ -156,6 +156,14 @@ namespace SoapCore
 		/// </summary>
 		public bool XmlIgnoreOnlyForWsdl { get; set; } = false;
 
+		/// <summary>
+		/// When true, uses legacy WCF/ASMX WSDL naming conventions:
+		/// portType name becomes {ContractName}Soap, and message names
+		/// use {OperationName}SoapIn/{OperationName}SoapOut pattern.
+		/// <para>Defaults to false</para>
+		/// </summary>
+		public bool UseLegacyWsdlNaming { get; set; } = false;
+
 		public void UseCustomSerializer<TCustomSerializer>()
 			where TCustomSerializer : class, IXmlSerializationHandler
 		{

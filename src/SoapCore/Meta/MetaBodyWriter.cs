@@ -36,8 +36,9 @@ namespace SoapCore.Meta
 		private readonly bool _buildMicrosoftGuid = false;
 		private readonly bool _xmlIgnoreOnlyForWsdl = false;
 		private IWsdlOperationNameGenerator _wsdlOperationNameGenerator;
+		private readonly string _portTypeSuffix;
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator, bool xmlIgnoreOnlyForWsdl = false) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator, bool xmlIgnoreOnlyForWsdl = false, string portTypeSuffix = "") : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -55,11 +56,12 @@ namespace SoapCore.Meta
 			_buildMicrosoftGuid = buildMicrosoftGuid;
 			_xmlIgnoreOnlyForWsdl = xmlIgnoreOnlyForWsdl;
 			_wsdlOperationNameGenerator = wsdlOperationNameGenerator;
+			_portTypeSuffix = portTypeSuffix ?? "";
 		}
 
 		private SoapBindingInfo[] SoapBindings { get; }
 		private string BindingName { get; }
-		private string BindingType => _service.GeneralContract.Name;
+		private string BindingType => _service.GeneralContract.Name + _portTypeSuffix;
 		private string PortName { get; }
 
 		private string TargetNameSpace => _service.GeneralContract.Namespace;

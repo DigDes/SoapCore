@@ -73,6 +73,8 @@ namespace SoapCore
 
 		public bool XmlIgnoreOnlyForWsdl { get; set; } = false;
 
+		public bool UseLegacyWsdlNaming { get; set; } = false;
+
 		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
@@ -108,6 +110,7 @@ namespace SoapCore
 				NormalizeNewLines = opt.NormalizeNewLines,
 				SchemeOverride = opt.SchemeOverride,
 				XmlIgnoreOnlyForWsdl = opt.XmlIgnoreOnlyForWsdl,
+				UseLegacyWsdlNaming = opt.UseLegacyWsdlNaming,
 			};
 
 			return options;
