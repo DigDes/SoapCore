@@ -34,9 +34,10 @@ namespace SoapCore.Meta
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
 		private readonly bool _buildMicrosoftGuid = false;
+		private readonly bool _xmlIgnoreOnlyForWsdl = false;
 		private IWsdlOperationNameGenerator _wsdlOperationNameGenerator;
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator, bool xmlIgnoreOnlyForWsdl = false) : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -52,6 +53,7 @@ namespace SoapCore.Meta
 			PortName = bindingName;
 			SoapBindings = soapBindings;
 			_buildMicrosoftGuid = buildMicrosoftGuid;
+			_xmlIgnoreOnlyForWsdl = xmlIgnoreOnlyForWsdl;
 			_wsdlOperationNameGenerator = wsdlOperationNameGenerator;
 		}
 
@@ -863,7 +865,7 @@ namespace SoapCore.Meta
 					if (!isWrappedBodyType)
 					{
 						var propertyOrFieldMembers = toBuildBodyType.GetPropertyOrFieldMembers()
-							.Where(mi => !mi.IsIgnored() && mi.DeclaringType == toBuildType)
+							.Where(mi => !mi.IsIgnored(_xmlIgnoreOnlyForWsdl) && mi.DeclaringType == toBuildType)
 							.ToList();
 
 						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute() && t.GetCustomAttribute<XmlAnyAttributeAttribute>() == null).ToList();
@@ -894,7 +896,7 @@ namespace SoapCore.Meta
 					else
 					{
 						// TODO: should this also be changed to GetPropertyOrFieldMembers?
-						var properties = toBuildType.GetProperties().Where(prop => !prop.IsIgnored())
+						var properties = toBuildType.GetProperties().Where(prop => !prop.IsIgnored(_xmlIgnoreOnlyForWsdl))
 							.ToList();
 
 						var elements = properties.Where(t => !t.IsAttribute()).ToList();

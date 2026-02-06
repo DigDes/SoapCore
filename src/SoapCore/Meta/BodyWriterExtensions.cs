@@ -160,6 +160,18 @@ namespace SoapCore.Meta
 					attr.AttributeType == typeof(XmlIgnoreAttribute));
 		}
 
+		public static bool IsIgnored(this MemberInfo member, bool xmlIgnoreOnly)
+		{
+			if (xmlIgnoreOnly)
+			{
+				return member
+					.CustomAttributes
+					.Any(attr => attr.AttributeType == typeof(XmlIgnoreAttribute));
+			}
+
+			return member.IsIgnored();
+		}
+
 		/// <summary>
 		/// Checks if the parent has a ShouldSerialize*() method defined for a specific member.
 		/// </summary>

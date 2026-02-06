@@ -148,6 +148,14 @@ namespace SoapCore
 		/// </summary>
 		public string SchemeOverride { get; set; }
 
+		/// <summary>
+		/// When true, only [XmlIgnore] is used to exclude properties from WSDL generation,
+		/// ignoring [IgnoreDataMember]. This matches legacy WCF/ASMX XmlSerializer behavior
+		/// where [IgnoreDataMember] had no effect on XmlSerializer.
+		/// <para>Defaults to false</para>
+		/// </summary>
+		public bool XmlIgnoreOnlyForWsdl { get; set; } = false;
+
 		public void UseCustomSerializer<TCustomSerializer>()
 			where TCustomSerializer : class, IXmlSerializationHandler
 		{
