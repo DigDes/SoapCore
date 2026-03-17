@@ -8,7 +8,7 @@ namespace SoapCore
 		private static class MembersWithAttributeCache<TAttribute>
 			where TAttribute : Attribute
 		{
-			public static ConcurrentDictionary<Type, MemberWithAttribute<TAttribute>[]> CacheEntries = new();
+			public static ConcurrentDictionary<Type, MemberWithAttribute<TAttribute>[]> CacheEntries = new ();
 		}
 	}
 }

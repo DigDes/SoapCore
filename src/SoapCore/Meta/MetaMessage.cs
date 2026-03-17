@@ -54,7 +54,7 @@ namespace SoapCore.Meta
 				wroteSoapNamespace = true;
 			}
 
-			if(!wroteSoapNamespace)
+			if (!wroteSoapNamespace)
 			{
 				throw new ArgumentOutOfRangeException(nameof(Version), "Unsupported MessageVersion encountered while writing envelope.");
 			}
