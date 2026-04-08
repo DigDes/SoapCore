@@ -74,5 +74,57 @@ namespace SoapCore.Tests
 			pm.WriteBodyContents(dw);
 			pm.WriteBodyContents(dw);
 		}
+
+		//Test for https://github.com/DigDes/SoapCore/issues/1183
+		[TestMethod]
+		public async Task TestIssue1183()
+		{
+			var request =
+@$"<?xml version=""1.0"" encoding=""UTF-8""?>
+<SOAP-ENV:Envelope
+	xmlns:SOAP-ENV=""http://schemas.xmlsoap.org/soap/envelope/""
+	xmlns:SOAP-ENC=""http://schemas.xmlsoap.org/soap/encoding/""
+	xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
+	xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
+	xmlns:tal-server=""urn:tal_server""
+	xmlns:tal-client=""urn:tal_client""
+	xmlns:tal=""urn:tal"">
+	<SOAP-ENV:Body>
+		<tal-server:request>
+			<request xsi:type=""tal:CreateSession"">
+				<sessionId></sessionId>
+				<requestId>2982441</requestId>
+				<version>2.5</version>
+				<clientUrl>http://192.168.1.2:7000</clientUrl>
+				<properties>
+					<name>xxx</name>
+					<value>false</value>
+				</properties>
+			</request>
+		</tal-server:request>
+	</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>";
+
+			var expectedBody =
+@"<SOAP-ENV:Body xmlns:SOAP-ENV=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:SOAP-ENC=""http://schemas.xmlsoap.org/soap/encoding/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:tal-server=""urn:tal_server"" xmlns:tal-client=""urn:tal_client"" xmlns:tal=""urn:tal"">
+  <tal-server:request>
+    <request xsi:type=""tal:CreateSession"">
+      <sessionId></sessionId>
+      <requestId>2982441</requestId>
+      <version>2.5</version>
+      <clientUrl>http://192.168.1.2:7000</clientUrl>
+      <properties>
+        <name>xxx</name>
+        <value>false</value>
+      </properties>
+    </request>
+  </tal-server:request>
+</SOAP-ENV:Body>";
+
+			ParsedMessage pm = await ParsedMessage.FromStreamAsync(new MemoryStream(Encoding.Default.GetBytes(request)), Encoding.Default, MessageVersion.Soap11, CancellationToken.None);
+			var parsedBody = pm.ToString();
+			Assert.IsFalse(pm.IsEmpty);
+			Assert.AreEqual(expectedBody, parsedBody);
+		}
 	}
 }
