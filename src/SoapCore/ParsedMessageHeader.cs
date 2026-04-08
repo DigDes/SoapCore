@@ -29,6 +29,17 @@ namespace SoapCore
 			// Write custom attributes
 			foreach (var attr in _attributes)
 			{
+				// If the attribute is an xmlns declaration and its value is different
+				// from the header's namespace, skip it to avoid conflicts.
+
+				// This should not really be necessary, but it is a safeguard against malformed
+				// SOAP messages that might include redundant or conflicting
+				// namespace declarations in the header
+				if (attr.Name.LocalName == "xmlns" && attr.Value != Namespace)
+				{
+					continue;
+				}
+
 				writer.WriteAttributeString(attr.Name.LocalName, attr.Value);
 			}
 

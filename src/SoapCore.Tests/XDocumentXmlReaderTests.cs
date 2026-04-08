@@ -126,5 +126,68 @@ namespace SoapCore.Tests
 			Assert.IsFalse(pm.IsEmpty);
 			Assert.AreEqual(expectedBody, parsedBody);
 		}
+
+		[TestMethod]
+		public async Task TestIncorrectRequestToIneraPuServiceFromClientWhoShouldNotBeNamed()
+		{
+			var request =
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+    <soap:Header>
+        <ns3:LogicalAddress xmlns:ns3=""urn:riv:itintegration:registry:1""
+            xmlns=""urn:riv:strategicresourcemanagement:persons:person:4""
+            xmlns:ns2=""urn:riv:strategicresourcemanagement:persons:person:GetPersonsForProfileResponder:4"">SOME_ADDRESS</ns3:LogicalAddress>
+        <Action soap:mustUnderstand=""1""
+            xmlns=""http://schemas.microsoft.com/ws/2005/05/addressing/none"">urn:riv:strategicresourcemanagement:persons:person:GetPersonsForProfileResponder:4:GetPersonsForProfile</Action>
+    </soap:Header>
+    <soap:Body>
+        <ns2:GetPersonsForProfile xmlns:ns2=""urn:riv:strategicresourcemanagement:persons:person:GetPersonsForProfileResponder:4""
+            xmlns=""urn:riv:strategicresourcemanagement:persons:person:4""
+            xmlns:ns3=""urn:riv:itintegration:registry:1"">
+            <ns2:personId>
+                <root>SOME_ROOT</root>
+                <extension>SOME_EXTENSION</extension>
+            </ns2:personId>
+            <ns2:profile>P4</ns2:profile>
+            <ns2:ignoreReferredIdentity>true</ns2:ignoreReferredIdentity>
+        </ns2:GetPersonsForProfile>
+    </soap:Body>
+</soap:Envelope>";
+			ParsedMessage pm = await ParsedMessage.FromStreamAsync(new MemoryStream(Encoding.Default.GetBytes(request)), Encoding.Default, MessageVersion.Soap11, CancellationToken.None);
+
+			// This whould throw in the original implementation due to some incorrect namespaces in the request
+			var header = pm.Headers.GetHeader<string>(0);
+			Assert.AreEqual("SOME_ADDRESS", header);
+		}
+
+		[TestMethod]
+		public async Task TestRequestToIneraPuService()
+		{
+			var request =
+@"<?xml version=""1.0"" encoding=""utf-8""?>
+<s:Envelope xmlns:s=""http://schemas.xmlsoap.org/soap/envelope/"">
+    <s:Header>
+        <LogicalAddress ns3=""urn:riv:itintegration:registry:1"" ns2=""urn:riv:strategicresourcemanagement:persons:person:GetPersonsForProfileResponder:4""
+            xmlns=""urn:riv:itintegration:registry:1"">SOME_ADDRESS</LogicalAddress>
+        <Action s:mustUnderstand=""1""
+            xmlns=""http://schemas.microsoft.com/ws/2005/05/addressing/none"">GetPersonsForProfile</Action>
+    </s:Header>
+    <s:Body>
+        <ns2:GetPersonsForProfile xmlns:ns2=""urn:riv:strategicresourcemanagement:persons:person:GetPersonsForProfileResponder:4""
+            xmlns=""urn:riv:strategicresourcemanagement:persons:person:4""
+            xmlns:ns3=""urn:riv:itintegration:registry:1"">
+            <ns2:personId>
+                <root>SOME_ROOT</root>
+                <extension>SOME_EXTENSION</extension>
+            </ns2:personId>
+            <ns2:profile>P4</ns2:profile>
+            <ns2:ignoreReferredIdentity>true</ns2:ignoreReferredIdentity>
+        </ns2:GetPersonsForProfile>
+    </s:Body>
+</s:Envelope>";
+			ParsedMessage pm = await ParsedMessage.FromStreamAsync(new MemoryStream(Encoding.Default.GetBytes(request)), Encoding.Default, MessageVersion.Soap11, CancellationToken.None);
+			var header = pm.Headers.GetHeader<string>(0);
+			Assert.AreEqual("SOME_ADDRESS", header);
+		}
 	}
 }
