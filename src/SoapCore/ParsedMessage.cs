@@ -188,6 +188,11 @@ namespace SoapCore
 				return (new XDocument(), true);
 			}
 
+			var rootAttributes = root.Attributes();
+			var bodyAttributes = bodyNode.Attributes();
+			var allAttributes = bodyAttributes.Union(rootAttributes);
+			bodyNode.ReplaceAttributes(allAttributes);
+
 			//return new XDocument(bodyNode.Elements().FirstOrDefault());
 			return (new XDocument(bodyNode), bodyNode.IsEmpty);
 		}
