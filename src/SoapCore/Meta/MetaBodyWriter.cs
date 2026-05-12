@@ -1275,6 +1275,11 @@ namespace SoapCore.Meta
 				}
 				else if (type == typeof(object))
 				{
+					if (string.IsNullOrEmpty(name))
+					{
+						name = typeName;
+					}
+
 					writer.WriteAttributeString("name", name);
 					WriteQualification(writer, isUnqualified);
 				}
