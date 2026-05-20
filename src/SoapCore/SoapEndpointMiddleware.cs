@@ -623,7 +623,27 @@ namespace SoapCore
 				foreach (var messageHeaderMember in messageHeaderMembers)
 				{
 					var messageHeaderAttribute = messageHeaderMember.Attribute;
-					responseMessage.Headers.Add(MessageHeader.CreateHeader(messageHeaderAttribute.Name ?? messageHeaderMember.Member.Name, messageHeaderAttribute.Namespace ?? operation.Contract.Namespace, messageHeaderMember.Member.GetPropertyOrFieldValue(responseObject), messageHeaderAttribute.MustUnderstand));
+					var headerName = messageHeaderAttribute.Name ?? messageHeaderMember.Member.Name;
+					var headerNamespace = messageHeaderAttribute.Namespace ?? operation.Contract.Namespace;
+					var headerValue = messageHeaderMember.Member.GetPropertyOrFieldValue(responseObject);
+
+					// When the endpoint is configured to use XmlSerializer, MessageHeader.CreateHeader
+					// (which always wraps with DataContractSerializer) produces wrong-shaped XML and
+					// throws InvalidDataContractException on values containing XmlAttribute[] members
+					// (e.g. [XmlAnyAttribute]). See issue #1161.
+					if (_options.SoapSerializer == SoapSerializer.XmlSerializer)
+					{
+						responseMessage.Headers.Add(new XmlSerializerMessageHeader(
+							headerName,
+							headerNamespace,
+							headerValue,
+							messageHeaderMember.Member.GetPropertyOrFieldType(),
+							messageHeaderAttribute.MustUnderstand));
+					}
+					else
+					{
+						responseMessage.Headers.Add(MessageHeader.CreateHeader(headerName, headerNamespace, headerValue, messageHeaderAttribute.MustUnderstand));
+					}
 				}
 			}
 
