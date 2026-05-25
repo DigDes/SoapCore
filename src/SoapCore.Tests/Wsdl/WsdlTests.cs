@@ -899,6 +899,29 @@ namespace SoapCore.Tests.Wsdl
 
 		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer)]
+		public async Task CheckShouldSerializeMemberSerialization(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<ShouldSerializeTypeMemberService>(soapSerializer);
+			Assert.IsNotNull(wsdl);
+
+			var root = XElement.Parse(wsdl);
+
+			var shouldSerializeType = GetElements(root, _xmlSchema + "complexType").SingleOrDefault(a => a.Attribute("name")?.Value == "TypeWithShouldSerializeMember");
+			Assert.IsNotNull(shouldSerializeType);
+
+			// verify that value types (such as int) have use="required" attribute
+			var intElement = GetElements(shouldSerializeType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "IntProperty");
+			Assert.IsTrue(intElement.Attribute("minOccurs").Value == "1");
+			Assert.IsTrue(intElement.Attribute("maxOccurs").Value == "1");
+
+			// verify that if a value type has a ShouldSerialize*() method, it is not marked as required
+			var optionalIntAttribute = GetElements(shouldSerializeType, _xmlSchema + "element").SingleOrDefault(a => a.Attribute("name")?.Value == "OptionalIntProperty");
+			Assert.IsTrue(optionalIntAttribute.Attribute("minOccurs").Value == "0");
+			Assert.IsTrue(optionalIntAttribute.Attribute("maxOccurs").Value == "1");
+		}
+
+		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
 		public async Task CheckSoapHeaderTypes(SoapSerializer soapSerializer)
 		{
 			var wsdl = await GetWsdlFromMetaBodyWriter<ServiceWithSoapHeaders>(soapSerializer);
