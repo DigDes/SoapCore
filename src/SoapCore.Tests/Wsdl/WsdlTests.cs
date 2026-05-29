@@ -50,6 +50,22 @@ namespace SoapCore.Tests.Wsdl
 		}
 
 		[DataTestMethod]
+		[DataRow(SoapSerializer.XmlSerializer)]
+		[DataRow(SoapSerializer.DataContractSerializer)]
+		public async Task CheckBindingAndPortNameSoap12(SoapSerializer soapSerializer)
+		{
+			var wsdl = await GetWsdlFromMetaBodyWriter<TaskNoReturnService>(soapSerializer, "BindingName", "PortName", messageVersion: MessageVersion.Soap12);
+			var root = XElement.Parse(wsdl);
+
+			// We should have in the wsdl the definition of a complex type representing the nullable enum
+			var bindingElements = GetElements(root, _wsdlSchema + "binding").Where(a => a.Attribute("name")?.Value.Equals("BindingName") == true).ToArray();
+			bindingElements.ShouldNotBeEmpty();
+
+			var portElements = GetElements(root, _wsdlSchema + "port").Where(a => a.Attribute("name")?.Value.Equals("PortName") == true).ToArray();
+			portElements.ShouldNotBeEmpty();
+		}
+
+		[DataTestMethod]
 		[DataRow(SoapSerializer.XmlSerializer, "_soap")]
 		[DataRow(SoapSerializer.DataContractSerializer, "")]
 		public async Task CheckDefaultBindingAndPortName(SoapSerializer soapSerializer, string bindingSuffix)
@@ -1501,7 +1517,7 @@ namespace SoapCore.Tests.Wsdl
 			}
 		}
 
-		private async Task<string> GetWsdlFromMetaBodyWriter<T>(SoapSerializer serializer, string bindingName = null, string portName = null, bool useMicrosoftGuid = false)
+		private async Task<string> GetWsdlFromMetaBodyWriter<T>(SoapSerializer serializer, string bindingName = null, string portName = null, bool useMicrosoftGuid = false, MessageVersion messageVersion = null)
 		{
 			var service = new ServiceDescription(typeof(T), false);
 			var baseUrl = "http://tempuri.org/";
@@ -1511,7 +1527,7 @@ namespace SoapCore.Tests.Wsdl
 			var bodyWriter = serializer == SoapSerializer.DataContractSerializer
 				? new MetaWCFBodyWriter(service, baseUrl, defaultBindingName, false, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }, new DefaultWsdlOperationNameGenerator()) as BodyWriter
 				: new MetaBodyWriter(service, baseUrl, xmlNamespaceLookup, defaultBindingName, new[] { new SoapBindingInfo(MessageVersion.None, bindingName, portName) }, useMicrosoftGuid, new DefaultWsdlOperationNameGenerator()) as BodyWriter;
-			var encoder = new SoapMessageEncoder(MessageVersion.Soap12WSAddressingAugust2004, Encoding.UTF8, false, XmlDictionaryReaderQuotas.Max, false, false, null, bindingName, portName, true);
+			var encoder = new SoapMessageEncoder(messageVersion ?? MessageVersion.Soap12WSAddressingAugust2004, Encoding.UTF8, false, XmlDictionaryReaderQuotas.Max, false, false, null, bindingName, portName, true);
 			var responseMessage = Message.CreateMessage(encoder.MessageVersion, null, bodyWriter);
 			responseMessage = new MetaMessage(
 				responseMessage,

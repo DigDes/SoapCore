@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Xml;
 using SoapCore.ServiceModel;
@@ -40,15 +41,13 @@ namespace SoapCore.Meta
 			writer.WriteStartElement(_xmlNamespaceLookup.LookupPrefix(Namespaces.WSDL_NS), "definitions", Namespaces.WSDL_NS);
 
 			var wroteSoapNamespace = false;
-			if (_soapVersions.Contains(MessageVersion.Soap11) ||
-			    _soapVersions.Contains(MessageVersion.Soap11WSAddressingAugust2004))
+			if (_soapVersions.Any(version => version.Envelope == EnvelopeVersion.Soap11))
 			{
 				WriteXmlnsAttribute(writer, Namespaces.SOAP11_NS);
 				wroteSoapNamespace = true;
 			}
 
-			if (_soapVersions.Contains(MessageVersion.Soap12WSAddressing10) ||
-			    _soapVersions.Contains(MessageVersion.Soap12WSAddressingAugust2004))
+			if (_soapVersions.Any(version => version.Envelope == EnvelopeVersion.Soap12))
 			{
 				WriteXmlnsAttribute(writer, Namespaces.SOAP12_NS);
 				wroteSoapNamespace = true;
