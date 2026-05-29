@@ -71,6 +71,10 @@ namespace SoapCore
 
 		public string SchemeOverride { get; set; }
 
+		public bool XmlIgnoreOnlyForWsdl { get; set; } = false;
+
+		public bool UseLegacyWsdlNaming { get; set; } = false;
+
 		[Obsolete]
 		public static SoapOptions FromSoapCoreOptions<T>(SoapCoreOptions opt)
 		{
@@ -105,6 +109,8 @@ namespace SoapCore
 				GenerateSoapActionWithoutContractName = opt.GenerateSoapActionWithoutContractName,
 				NormalizeNewLines = opt.NormalizeNewLines,
 				SchemeOverride = opt.SchemeOverride,
+				XmlIgnoreOnlyForWsdl = opt.XmlIgnoreOnlyForWsdl,
+				UseLegacyWsdlNaming = opt.UseLegacyWsdlNaming,
 			};
 
 			return options;

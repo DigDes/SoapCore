@@ -34,9 +34,11 @@ namespace SoapCore.Meta
 		private readonly Dictionary<string, Dictionary<string, string>> _requestedDynamicTypes;
 
 		private readonly bool _buildMicrosoftGuid = false;
+		private readonly bool _xmlIgnoreOnlyForWsdl = false;
 		private IWsdlOperationNameGenerator _wsdlOperationNameGenerator;
+		private readonly string _portTypeSuffix;
 
-		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator) : base(isBuffered: true)
+		public MetaBodyWriter(ServiceDescription service, string baseUrl, ConcurrentXmlNamespaceLookup xmlNamespaceLookup, string bindingName, SoapBindingInfo[] soapBindings, bool buildMicrosoftGuid, IWsdlOperationNameGenerator wsdlOperationNameGenerator, bool xmlIgnoreOnlyForWsdl = false, string portTypeSuffix = "") : base(isBuffered: true)
 		{
 			_service = service;
 			_baseUrl = baseUrl;
@@ -52,12 +54,14 @@ namespace SoapCore.Meta
 			PortName = bindingName;
 			SoapBindings = soapBindings;
 			_buildMicrosoftGuid = buildMicrosoftGuid;
+			_xmlIgnoreOnlyForWsdl = xmlIgnoreOnlyForWsdl;
 			_wsdlOperationNameGenerator = wsdlOperationNameGenerator;
+			_portTypeSuffix = portTypeSuffix ?? "";
 		}
 
 		private SoapBindingInfo[] SoapBindings { get; }
 		private string BindingName { get; }
-		private string BindingType => _service.GeneralContract.Name;
+		private string BindingType => _service.GeneralContract.Name + _portTypeSuffix;
 		private string PortName { get; }
 
 		private string TargetNameSpace => _service.GeneralContract.Namespace;
@@ -215,6 +219,13 @@ namespace SoapCore.Meta
 		private XmlQualifiedName ResolveType(Type type)
 		{
 			string typeName = type.IsEnum ? type.GetEnumUnderlyingType().Name : type.Name;
+
+			// Handle Guid specially when UseMicrosoftGuid is enabled
+			if (typeName == "Guid" && _buildMicrosoftGuid)
+			{
+				return new XmlQualifiedName("guid", Namespaces.MICROSOFT_TYPES);
+			}
+
 			string resolvedType = ClrTypeResolver.ResolveOrDefault(typeName);
 
 			if (string.IsNullOrEmpty(resolvedType))
@@ -856,7 +867,7 @@ namespace SoapCore.Meta
 					if (!isWrappedBodyType)
 					{
 						var propertyOrFieldMembers = toBuildBodyType.GetPropertyOrFieldMembers()
-							.Where(mi => !mi.IsIgnored() && mi.DeclaringType == toBuildType)
+							.Where(mi => !mi.IsIgnored(_xmlIgnoreOnlyForWsdl) && mi.DeclaringType == toBuildType)
 							.ToList();
 
 						var elements = propertyOrFieldMembers.Where(t => !t.IsAttribute() && t.GetCustomAttribute<XmlAnyAttributeAttribute>() == null).ToList();
@@ -887,7 +898,7 @@ namespace SoapCore.Meta
 					else
 					{
 						// TODO: should this also be changed to GetPropertyOrFieldMembers?
-						var properties = toBuildType.GetProperties().Where(prop => !prop.IsIgnored())
+						var properties = toBuildType.GetProperties().Where(prop => !prop.IsIgnored(_xmlIgnoreOnlyForWsdl))
 							.ToList();
 
 						var elements = properties.Where(t => !t.IsAttribute()).ToList();
