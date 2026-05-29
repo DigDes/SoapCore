@@ -1014,7 +1014,7 @@ namespace SoapCore.Meta
 
 				bool isOptional = member.HasShouldSerializeMethod(parentTypeToBuild);
 
-				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified, isOptionalAttribute: isOptional);
+				AddSchemaType(writer, toBuild, name, isAttribute: true, isUnqualified: isUnqualified, isOptional: isOptional);
 			}
 			else if (messageBodyMemberAttribute != null)
 			{
@@ -1045,7 +1045,9 @@ namespace SoapCore.Meta
 				var hasSpecifiedBoolean = member.DeclaringType.GetProperties()
 					.Any(p => p.Name == $"{member.Name}Specified" && p.PropertyType == typeof(bool) && p.GetCustomAttribute<XmlIgnoreAttribute>() != null);
 
-				AddSchemaType(writer, toBuild, elementNameFromAttribute ?? member.Name ?? parentTypeToBuild.ChildElementName, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue, hasSpecifiedBoolean: hasSpecifiedBoolean);
+				bool isOptional = member.HasShouldSerializeMethod(parentTypeToBuild);
+
+				AddSchemaType(writer, toBuild, elementNameFromAttribute ?? member.Name ?? parentTypeToBuild.ChildElementName, isArray: createListWithoutProxyType, isListWithoutWrapper: createListWithoutProxyType, isUnqualified: isUnqualified, defaultValue: defaultValue, hasSpecifiedBoolean: hasSpecifiedBoolean, isOptional: isOptional);
 			}
 		}
 
@@ -1065,7 +1067,7 @@ namespace SoapCore.Meta
 			AddSchemaType(writer, new TypeToBuild(type), name, isArray, @namespace, isAttribute, isUnqualified: isUnqualified);
 		}
 
-		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null, bool isOptionalAttribute = false, bool hasSpecifiedBoolean = false)
+		private void AddSchemaType(XmlDictionaryWriter writer, TypeToBuild toBuild, string name, bool isArray = false, string @namespace = null, bool isAttribute = false, bool isListWithoutWrapper = false, bool isUnqualified = false, string defaultValue = null, bool isOptional = false, bool hasSpecifiedBoolean = false)
 		{
 			var type = toBuild.Type;
 
@@ -1165,7 +1167,7 @@ namespace SoapCore.Meta
 				}
 				else
 				{
-					writer.WriteAttributeString("minOccurs", type.IsValueType && defaultValue == null && !hasSpecifiedBoolean ? "1" : "0");
+					writer.WriteAttributeString("minOccurs", type.IsValueType && defaultValue == null && !hasSpecifiedBoolean && !isOptional ? "1" : "0");
 					writer.WriteAttributeString("maxOccurs", "1");
 					if (defaultValue != null)
 					{
@@ -1189,7 +1191,7 @@ namespace SoapCore.Meta
 					writer.WriteAttributeString("type", $"{_xmlNamespaceLookup.LookupPrefix(xsTypename.Namespace)}:{xsTypename.Name}");
 				}
 
-				if (isAttribute && typeInfo.IsValueType && !isOptionalAttribute)
+				if (isAttribute && typeInfo.IsValueType && !isOptional)
 				{
 					writer.WriteAttributeString("use", "required");
 				}
