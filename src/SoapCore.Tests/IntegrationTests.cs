@@ -369,7 +369,11 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
-		public async Task ModifyingCustomMessageNamespaceManagerDoesNotAffectOtherRequestsWithCachingDisabled()
+		[DataRow(false, true)]
+
+		// This case is to document behavior. If we fix the root cause of this issue, we should be able to change this expected result to true.
+		[DataRow(true, false)]
+		public async Task ModifyingCustomMessageNamespaceManagerDoesNotAffectOtherRequestsWithNamespaceManagerReuseDisabled(bool reuseXmlNamespaceManager, bool expectEquality)
 		{
 			var namespacePrefixOverrides = new XmlNamespaceManager(new NameTable());
 			namespacePrefixOverrides.AddNamespace("s", XmlSchema.Namespace);
@@ -377,7 +381,7 @@ namespace SoapCore.Tests
 			namespacePrefixOverrides.AddNamespace("soap", Namespaces.SOAP11_ENVELOPE_NS);
 			namespacePrefixOverrides.AddNamespace("wsdl", Namespaces.WSDL_NS);
 
-			using var host = CreateNamespaceIsolationTestHost(namespacePrefixOverrides);
+			using var host = CreateNamespaceIsolationTestHost(namespacePrefixOverrides, reuseXmlNamespaceManager: reuseXmlNamespaceManager);
 			using var httpClient = host.CreateClient();
 
 			var preWsdl = await LoadWsdlAsync(httpClient);
@@ -386,10 +390,17 @@ namespace SoapCore.Tests
 			await SendSoap12AsyncMethodAsync(host);
 
 			var postWsdl = await LoadWsdlAsync(httpClient);
-			Assert.AreEqual(preWsdl, postWsdl);
+			if (expectEquality)
+			{
+				Assert.AreEqual(preWsdl, postWsdl);
+			}
+			else
+			{
+				Assert.AreNotEqual(preWsdl, postWsdl);
+			}
 		}
 
-		private static TestServer CreateNamespaceIsolationTestHost(XmlNamespaceManager namespacePrefixOverrides)
+		private static TestServer CreateNamespaceIsolationTestHost(XmlNamespaceManager namespacePrefixOverrides, bool reuseXmlNamespaceManager)
 		{
 			var webHostBuilder = new WebHostBuilder()
 				.ConfigureServices(services =>
@@ -414,6 +425,7 @@ namespace SoapCore.Tests
 								new SoapEncoderOptions { MessageVersion = MessageVersion.Soap12WSAddressing10 },
 							};
 							opt.XmlNamespacePrefixOverrides = namespacePrefixOverrides;
+							opt.ReuseXmlNamespaceManager = reuseXmlNamespaceManager;
 						});
 					});
 				});

@@ -168,7 +168,7 @@ namespace SoapCore
 		/// Gets or sets a value indicating whether to reuse the same XmlNamespaceManager for all requests using the same binding and encoding, or create a new one for each request.
 		/// Reusing the same one can improve performance, but may cause issues if you modify the namespace manager in your code. Defaults to true.
 		/// </summary>
-		public bool ReuseXmlNamespaceManager { get; set; }
+		public bool ReuseXmlNamespaceManager { get; set; } = true;
 
 		public void UseCustomSerializer<TCustomSerializer>()
 			where TCustomSerializer : class, IXmlSerializationHandler
