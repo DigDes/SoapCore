@@ -1175,6 +1175,11 @@ namespace SoapCore
 
 		private ConcurrentXmlNamespaceLookup GetXmlNamespaceLookup(SoapMessageEncoder messageEncoder)
 		{
+			if (!_options.ReuseXmlNamespaceManager)
+			{
+				return CreateDefaultNamespaceManager(messageEncoder);
+			}
+
 			return _xmlNamespaceLookupsByMessageEncoder.GetOrAdd(messageEncoder?.ToString() ?? "no_encoder", _ => CreateDefaultNamespaceManager(messageEncoder));
 
 			ConcurrentXmlNamespaceLookup CreateDefaultNamespaceManager(SoapMessageEncoder messageEncoder)

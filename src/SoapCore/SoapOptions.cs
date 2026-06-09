@@ -55,6 +55,12 @@ namespace SoapCore
 		public bool UseMicrosoftGuid { get; set; } = false;
 
 		/// <summary>
+		/// Gets or sets a value indicating whether to reuse the same XmlNamespaceManager for all requests using the same binding and encoding, or create a new one for each request.
+		/// Reusing the same one can improve performance, but may cause issues if you modify the namespace manager in your code. Defaults to true.
+		/// </summary>
+		public bool ReuseXmlNamespaceManager { get; set; } = true;
+
+		/// <summary>
 		/// Gets or sets a value indicating whether to check to make sure that the XmlOutput doesn't contain invalid characters
 		/// <para>Defaults to true</para>
 		/// </summary>
@@ -111,6 +117,7 @@ namespace SoapCore
 				SchemeOverride = opt.SchemeOverride,
 				XmlIgnoreOnlyForWsdl = opt.XmlIgnoreOnlyForWsdl,
 				UseLegacyWsdlNaming = opt.UseLegacyWsdlNaming,
+				ReuseXmlNamespaceManager = opt.ReuseXmlNamespaceManager,
 			};
 
 			return options;
