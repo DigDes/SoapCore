@@ -1,12 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Schema;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SoapCore;
+using SoapCore.Extensibility;
+using SoapCore.ServiceModel;
 using SoapCore.Tests.Model;
 using SoapCore.Tests.Utilities;
 
@@ -359,11 +368,96 @@ namespace SoapCore.Tests
 			Assert.AreEqual("hello, async", r[1]);
 		}
 
-		private ITestService CreateClient(bool caseInsensitivePath = false)
+		[TestMethod]
+		public async Task ModifyingCustomMessageNamespaceManagerDoesNotAffectOtherRequestsWithCachingDisabled()
+		{
+			var namespacePrefixOverrides = new XmlNamespaceManager(new NameTable());
+			namespacePrefixOverrides.AddNamespace("s", XmlSchema.Namespace);
+			namespacePrefixOverrides.AddNamespace("soap12", Namespaces.SOAP12_NS);
+			namespacePrefixOverrides.AddNamespace("soap", Namespaces.SOAP11_ENVELOPE_NS);
+			namespacePrefixOverrides.AddNamespace("wsdl", Namespaces.WSDL_NS);
+
+			using var host = CreateNamespaceIsolationTestHost(namespacePrefixOverrides);
+			using var httpClient = host.CreateClient();
+
+			var preWsdl = await LoadWsdlAsync(httpClient);
+			Assert.IsTrue(preWsdl.Contains("<s:schema"), "Expected the s prefix override on the root schema element.");
+
+			await SendSoap12AsyncMethodAsync(host);
+
+			var postWsdl = await LoadWsdlAsync(httpClient);
+			Assert.AreEqual(preWsdl, postWsdl);
+		}
+
+		private static TestServer CreateNamespaceIsolationTestHost(XmlNamespaceManager namespacePrefixOverrides)
+		{
+			var webHostBuilder = new WebHostBuilder()
+				.ConfigureServices(services =>
+				{
+					services.AddRouting();
+					services.AddSoapCore();
+					services.TryAddSingleton<TestService>();
+					services.AddSoapMessageInspector<TestMessageInspectorThatModifiesNamespace>();
+				})
+				.Configure(app =>
+				{
+					app.UseRouting();
+					app.UseEndpoints(endpoints =>
+					{
+						endpoints.UseSoapEndpoint<TestService>(opt =>
+						{
+							opt.Path = "/Service.asmx";
+							opt.SoapSerializer = SoapSerializer.XmlSerializer;
+							opt.EncoderOptions = new[]
+							{
+								new SoapEncoderOptions { MessageVersion = MessageVersion.Soap11 },
+								new SoapEncoderOptions { MessageVersion = MessageVersion.Soap12WSAddressing10 },
+							};
+							opt.XmlNamespacePrefixOverrides = namespacePrefixOverrides;
+						});
+					});
+				});
+
+			return new TestServer(webHostBuilder);
+		}
+
+		private static async Task SendSoap12AsyncMethodAsync(TestServer host)
+		{
+			const string body = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap:Envelope xmlns:soap=""http://www.w3.org/2003/05/soap-envelope"">
+  <soap:Body>
+    <AsyncMethod xmlns=""http://tempuri.org/"" />
+  </soap:Body>
+</soap:Envelope>";
+
+			using var content = new StringContent(body, Encoding.UTF8, "application/soap+xml");
+			using var response = await host
+				.CreateRequest("/Service.asmx")
+				.AddHeader("SOAPAction", @"""http://tempuri.org/ITestService/AsyncMethod""")
+				.And(msg => msg.Content = content)
+				.PostAsync();
+
+			response.EnsureSuccessStatusCode();
+		}
+
+		private static async Task<string> LoadWsdlAsync(HttpClient httpClient)
+		{
+			var wsdlResponse = await httpClient.GetAsync("/Service.asmx?wsdl");
+			if (wsdlResponse.IsSuccessStatusCode)
+			{
+				return await wsdlResponse.Content.ReadAsStringAsync();
+			}
+
+			var content = await wsdlResponse.Content.ReadAsStringAsync();
+			Assert.Fail($"Failed to load wsdl, status code: {wsdlResponse.StatusCode}, content: {content}");
+			throw new InvalidOperationException("Unreachable code");
+		}
+
+		private ITestService CreateClient(bool caseInsensitivePath = false, string port = "5050")
 		{
 			var binding = new BasicHttpBinding();
 			var endpoint = new EndpointAddress(new Uri(
-				string.Format("http://{0}:5050/{1}.svc", "localhost", caseInsensitivePath ? "serviceci" : "Service")));
+				$"http://localhost:{port}/{(caseInsensitivePath ? "serviceci" : "Service")}.svc"));
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
@@ -399,6 +493,22 @@ namespace SoapCore.Tests
 			var channelFactory = new ChannelFactory<ITestService>(binding, endpoint);
 			var serviceClient = channelFactory.CreateChannel();
 			return serviceClient;
+		}
+
+		private class TestMessageInspectorThatModifiesNamespace : IMessageInspector2
+		{
+			public object AfterReceiveRequest(ref Message message, ServiceDescription serviceDescription)
+			{
+				return message;
+			}
+
+			public void BeforeSendReply(ref Message reply, ServiceDescription serviceDescription, object correlationState)
+			{
+				if (reply is CustomMessage msg)
+				{
+					msg.XmlNamespaceLookup.AddNamespace("xsd", XmlSchema.Namespace);
+				}
+			}
 		}
 	}
 }
