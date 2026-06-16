@@ -13,5 +13,8 @@ namespace SoapCore.Tests.Serialization.Models.DataContract
 
 		[OperationContract]
 		MessageHeadersModelWithNamespace GetWithNamespace(MessageHeadersModelWithNamespace model);
+
+		[OperationContract]
+		MessageHeadersModelWithDuplicateNamespaces GetWithDuplicateNamespaces(MessageHeadersModelWithDuplicateNamespaces input);
 	}
 }

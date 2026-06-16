@@ -5,6 +5,7 @@ using System.Xml;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SoapCore.Tests.Model;
+using SoapCore.Tests.Serialization.Models.DataContract;
 
 namespace SoapCore.Tests
 {
@@ -105,6 +106,9 @@ namespace SoapCore.Tests
 
 		[OperationContract]
 		XmlElement XmlElementInput(XmlElement input);
+
+		[OperationContract]
+		MessageHeadersModelWithDuplicateNamespaces GetWithDuplicateNamespaces(MessageHeadersModelWithDuplicateNamespaces input);
 
 		/// <summary>
 		/// Return type is different than the one bellow due to customizations. Use SoapCore.Tests.NativeAuthenticationAndAuthorization.IActionResultContractService to access these endpoints.

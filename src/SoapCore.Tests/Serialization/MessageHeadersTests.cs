@@ -149,5 +149,37 @@ namespace SoapCore.Tests.Serialization
 			Assert.Equal(model.Prop3, result.Prop3);
 			Assert.Equal(model.Prop4, result.Prop4);
 		}
+
+		[Theory]
+		[InlineData(SoapSerializer.XmlSerializer)]
+		public void TestMessageWithDuplicateNamespace(SoapSerializer serializer)
+		{
+			var service = _fixture.GetSampleServiceClient(serializer);
+			var model = new MessageHeadersModelWithDuplicateNamespaces
+			{
+				BodyMessage = "test",
+				Header = new MessageHeadersModelWithDuplicateNamespacesHeader()
+				{
+					From = "test"
+				}
+			};
+
+			_fixture.ServiceMock.Setup(x => x.GetWithDuplicateNamespaces(It.IsAny<MessageHeadersModelWithDuplicateNamespaces>())).Callback((MessageHeadersModelWithDuplicateNamespaces m) =>
+			{
+				m.ShouldDeepEqual(model);
+			}).Returns(new MessageHeadersModelWithDuplicateNamespaces
+			{
+				BodyMessage = "test",
+				Header = new MessageHeadersModelWithDuplicateNamespacesHeader()
+				{
+					From = "test"
+				}
+			});
+
+			var result = service.GetWithDuplicateNamespaces(model);
+
+			Assert.Equal(model.BodyMessage, result.BodyMessage);
+			Assert.Equal(model.Header.From, result.Header.From);
+		}
 	}
 }
