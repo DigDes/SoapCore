@@ -145,8 +145,7 @@ namespace SoapCore
 				}
 #endif
 
-				if (soapAction != null &&
-				    (GetTrimmedSoapAction(soapAction).Length == 0 || GetTrimmedClearedSoapAction(soapAction).Length == 0))
+				if (GetTrimmedSoapAction(soapAction).Length == 0 || GetTrimmedClearedSoapAction(soapAction).Length == 0)
 				{
 					soapAction = ReadOnlySpan<char>.Empty;
 				}
