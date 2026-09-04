@@ -23,7 +23,7 @@ namespace SoapCore
 
 			if (soapAction.IsEmpty)
 			{
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
 
 				foreach (var item in httpContext.Request.Headers["Content-Type"])
 				{

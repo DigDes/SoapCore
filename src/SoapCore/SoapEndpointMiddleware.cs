@@ -958,7 +958,7 @@ namespace SoapCore
 			}
 			else if (exception is OperationCanceledException)
 			{
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
 				status = StatusCodes.Status499ClientClosedRequest;
 #else
 				status = StatusCodes.Status408RequestTimeout;

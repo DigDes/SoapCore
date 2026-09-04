@@ -39,7 +39,7 @@
       "System.Xml.XmlDocument, {System.Xml.XmlDocument, 4.3.0}"
     ],
     "sync": true,
-    "targetFramework": "net8.0",
+    "targetFramework": "net9.0",
     "typeReuseMode": "All"
   }
 }
