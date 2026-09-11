@@ -291,6 +291,8 @@ namespace SoapCore
 			Message requestMessage = null;
 			Message responseMessage = null;
 
+			var correlationObjects2 = new List<(IMessageInspector2 inspector, object correlationObject)>();
+
 			try
 			{
 				//Get the message
@@ -305,13 +307,15 @@ namespace SoapCore
 
 				var soapMessageProcessors = serviceProvider.GetServices<ISoapMessageProcessor>().ToArray();
 
-				var processorPipe = MakeProcessorPipe(soapMessageProcessors, httpContext, (requestMessage) => ProcessMessage(requestMessage, messageEncoder, asyncMessageFilters, httpContext, serviceProvider));
+				var processorPipe = MakeProcessorPipe(soapMessageProcessors, httpContext, (requestMessage) => ProcessMessage(requestMessage, messageEncoder, asyncMessageFilters, httpContext, serviceProvider, correlationObjects2));
 
 				responseMessage = await processorPipe(requestMessage);
 			}
 			catch (Exception ex)
 			{
 				responseMessage = CreateErrorResponseMessage(ex, serviceProvider, requestMessage, messageEncoder, httpContext);
+
+				correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
 			}
 
 			if (responseMessage != null)
@@ -452,7 +456,7 @@ namespace SoapCore
 			return MakeProcessorPipe();
 		}
 
-		private async Task<Message> ProcessMessage(Message requestMessage, SoapMessageEncoder messageEncoder, IAsyncMessageFilter[] asyncMessageFilters, HttpContext httpContext, IServiceProvider serviceProvider)
+		private async Task<Message> ProcessMessage(Message requestMessage, SoapMessageEncoder messageEncoder, IAsyncMessageFilter[] asyncMessageFilters, HttpContext httpContext, IServiceProvider serviceProvider, List<(IMessageInspector2 inspector, object correlationObject)> correlationObjects2)
 		{
 			Message responseMessage;
 			var soapAction = HeadersHelper.GetSoapAction(httpContext, ref requestMessage);
@@ -464,7 +468,7 @@ namespace SoapCore
 			}
 
 			var messageInspector2s = serviceProvider.GetServices<IMessageInspector2>();
-			var correlationObjects2 = messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))).ToList();
+			correlationObjects2.AddRange(messageInspector2s.Select(mi => (inspector: mi, correlationObject: mi.AfterReceiveRequest(ref requestMessage, _service))));
 
 			// for getting soapaction and parameters in (optional) body
 			// GetReaderAtBodyContents must not be called twice in one request
@@ -526,14 +530,7 @@ namespace SoapCore
 				httpContext.Response.Headers["SOAPAction"] = responseMessage.Headers.Action;
 
 				correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
-			}
-			catch (Exception ex)
-			{
-				responseMessage = CreateErrorResponseMessage(ex, serviceProvider, requestMessage, messageEncoder, httpContext);
-
-				correlationObjects2.ForEach(mi => mi.inspector.BeforeSendReply(ref responseMessage, _service, mi.correlationObject));
-
-				throw;
+				correlationObjects2.Clear();
 			}
 			finally
 			{
