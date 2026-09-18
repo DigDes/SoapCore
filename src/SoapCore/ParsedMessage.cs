@@ -188,9 +188,12 @@ namespace SoapCore
 				return (new XDocument(), true);
 			}
 
-			var rootAttributes = root.Attributes();
+			// The envelope attributes are carried onto the body so that it keeps its namespace bindings once it is
+			// detached. An attribute the body already declares has to win: XAttribute does not override equality, so
+			// Union compares by reference and a declaration present on both elements would be added twice and throw.
 			var bodyAttributes = bodyNode.Attributes();
-			var allAttributes = bodyAttributes.Union(rootAttributes);
+			var rootAttributes = root.Attributes().Where(attribute => bodyNode.Attribute(attribute.Name) == null);
+			var allAttributes = bodyAttributes.Concat(rootAttributes).ToList();
 			bodyNode.ReplaceAttributes(allAttributes);
 
 			//return new XDocument(bodyNode.Elements().FirstOrDefault());
