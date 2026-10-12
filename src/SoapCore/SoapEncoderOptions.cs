@@ -23,5 +23,10 @@ namespace SoapCore
 		{
 			return options is null ? null : new[] { options };
 		}
+
+		internal static SoapEncoderOptions[] CreateDefaults()
+		{
+			return new[] { new SoapEncoderOptions() };
+		}
 	}
 }

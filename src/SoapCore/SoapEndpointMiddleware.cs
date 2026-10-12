@@ -66,7 +66,7 @@ namespace SoapCore
 			_pathComparisonStrategy = options.CaseInsensitivePath ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 			_service = new ServiceDescription(options.ServiceType, options.GenerateSoapActionWithoutContractName);
 
-			options.EncoderOptions ??= new[] { new SoapEncoderOptions() };
+			options.EncoderOptions ??= SoapEncoderOptions.CreateDefaults();
 
 			_messageEncoders = new SoapMessageEncoder[options.EncoderOptions.Length];
 
