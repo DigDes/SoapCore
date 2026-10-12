@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<title>SoapCore Explorer</title>
+	<link rel="icon" href="data:,">
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="form-editor.css">
+	<script src="wsdl-parser.js" defer></script>
+	<script src="form-editor.js" defer></script>
+	<script src="xml-view.js" defer></script>
+	<script src="app.js" defer></script>
+</head>
+<body>
+	<a class="skip-link" href="#main">Skip to main content</a>
+	<header class="app-header">
+		<div class="app-heading">
+			<h1 id="app-title">SoapCore Explorer</h1>
+			<p id="app-subtitle" class="app-subtitle"></p>
+			<p id="catalog-summary" class="app-summary"></p>
+			<p id="app-description" class="app-description" hidden></p>
+		</div>
+		<div class="app-tools" role="group" aria-label="Explorer tools">
+			<button id="sidebar-toggle" class="btn btn-small sidebar-toggle" type="button" aria-expanded="true" aria-controls="sidebar">Services</button>
+			<button id="auth-open" class="btn btn-small" type="button" aria-haspopup="dialog" hidden>Authorize</button>
+			<button id="history-toggle" class="btn btn-small" type="button" aria-expanded="false" aria-controls="history-panel">History</button>
+			<button id="catalog-reload" class="btn btn-small" type="button" title="Request the list of services again, without reloading the page">Reload</button>
+			<span class="theme-picker">
+				<label class="tool-label" for="theme-select">Theme</label>
+				<select id="theme-select" class="input input-small">
+					<option value="system">System</option>
+					<option value="light">Light</option>
+					<option value="dark">Dark</option>
+				</select>
+			</span>
+		</div>
+	</header>
+	<div class="layout">
+		<nav id="sidebar" class="sidebar" aria-label="SOAP services">
+			<label class="lbl" for="service-search">Search services</label>
+			<input id="service-search" class="input" type="search" autocomplete="off" spellcheck="false" placeholder="Name, path or type">
+			<ul id="service-list" class="service-list"></ul>
+			<p id="service-list-empty" class="muted" hidden>No services match your search.</p>
+		</nav>
+		<main id="main" class="main" tabindex="-1">
+			<div id="status-bar" class="sbar" role="status" aria-live="polite" hidden></div>
+			<noscript><p class="sbar err">This page needs JavaScript.</p></noscript>
+			<p id="empty-state" class="sbar info" hidden>No SOAP endpoints are registered. Endpoints added with UseSoapEndpoint(...) appear here once AddSoapCoreUi() has registered the endpoint registry.</p>
+			<details id="headers-editor" class="headers-editor">
+				<summary>Custom request headers (advanced, all services)</summary>
+				<p class="muted">Kept in memory only. Never stored. Sent with every request from this page, including the WSDL request. For credentials, the Authorize button (when it is shown) is easier.</p>
+				<p id="headers-auth-note" class="muted headers-auth-note" hidden></p>
+				<div id="headers-rows"></div>
+				<button id="headers-add" class="btn" type="button">Add header</button>
+				<div class="timeout-field">
+					<label class="lbl" for="send-timeout">Request timeout (seconds)</label>
+					<input id="send-timeout" class="input input-small timeout-input" type="number" min="1" max="60" step="1" value="60" inputmode="numeric">
+					<p id="send-timeout-note" class="muted timeout-note"></p>
+				</div>
+			</details>
+			<section id="history-panel" class="history" aria-labelledby="history-title" hidden>
+				<div class="history-head">
+					<h2 id="history-title" class="history-title">Request history</h2>
+					<button id="history-clear" class="btn btn-small" type="button" disabled>Clear history</button>
+				</div>
+				<p class="muted">The last 20 requests of this page session, newest first. Kept in memory only. Load restores the envelope, the SOAPAction and the SOAP version, never the request headers or the credentials.</p>
+				<p id="history-empty" class="muted">No requests have been sent yet.</p>
+				<ol id="history-list" class="history-list"></ol>
+			</section>
+			<section id="service-view" class="service-view" aria-labelledby="service-name" hidden>
+				<header class="service-head">
+					<h2 id="service-name" tabindex="-1"></h2>
+					<p id="service-meta" class="muted"></p>
+					<div id="service-badges" class="badges"></div>
+				</header>
+				<p id="service-description" class="service-description" hidden></p>
+				<div id="service-client" class="client-block" role="group" aria-labelledby="service-client-title" hidden>
+					<h3 id="service-client-title" class="lbl">Generate a client</h3>
+					<div class="client-row">
+						<code id="service-client-command" class="code client-command" tabindex="0"></code>
+						<button id="service-client-copy" class="btn" type="button">Copy command</button>
+					</div>
+					<p class="muted">Uses the dotnet-svcutil global tool. Install it once with: dotnet tool install --global dotnet-svcutil</p>
+				</div>
+				<fieldset id="soap-version" class="version-switch" hidden>
+					<legend>SOAP version</legend>
+					<label><input type="radio" id="soap-version-11" name="soap-version" value="1.1" checked> SOAP 1.1</label>
+					<label><input type="radio" id="soap-version-12" name="soap-version" value="1.2"> SOAP 1.2</label>
+				</fieldset>
+				<div class="tabs" role="tablist" aria-label="Service views">
+					<button id="tab-operations" class="tab" role="tab" type="button" aria-selected="true" aria-controls="panel-operations">Operations</button>
+					<button id="tab-wsdl" class="tab" role="tab" type="button" aria-selected="false" aria-controls="panel-wsdl" tabindex="-1">WSDL</button>
+				</div>
+				<div id="panel-operations" class="tab-panel" role="tabpanel" aria-labelledby="tab-operations">
+					<p id="operations-error" class="sbar err" role="alert" hidden></p>
+					<label class="lbl" for="operation-search">Filter operations</label>
+					<input id="operation-search" class="input" type="search" autocomplete="off" spellcheck="false">
+					<div class="op-toolbar" role="group" aria-label="Expand or collapse the operations that are shown">
+						<button id="operations-expand" class="btn btn-small" type="button">Expand all</button>
+						<button id="operations-collapse" class="btn btn-small" type="button">Collapse all</button>
+					</div>
+					<div id="operations-list" class="op-list"></div>
+				</div>
+				<div id="panel-wsdl" class="tab-panel" role="tabpanel" aria-labelledby="tab-wsdl" hidden>
+					<div class="wsdl-actions">
+						<button id="wsdl-copy-url" class="btn" type="button">Copy WSDL URL</button>
+						<button id="wsdl-download" class="btn" type="button" disabled>Download WSDL</button>
+						<a id="wsdl-open" class="btn" target="_blank" rel="noopener noreferrer" hidden>Open raw WSDL</a>
+					</div>
+					<p id="wsdl-status" class="muted" role="status"></p>
+					<div id="wsdl-views" class="subtabs" role="tablist" aria-label="WSDL views" hidden>
+						<button id="wsdl-tab-outline" class="subtab" role="tab" type="button" aria-selected="true" aria-controls="wsdl-outline-panel">Outline</button>
+						<button id="wsdl-tab-raw" class="subtab" role="tab" type="button" aria-selected="false" aria-controls="wsdl-view" tabindex="-1">Raw</button>
+					</div>
+					<div id="wsdl-outline-panel" hidden>
+						<label class="lbl" for="wsdl-outline-filter">Filter the outline</label>
+						<input id="wsdl-outline-filter" class="input ol-filter" type="search" autocomplete="off" spellcheck="false" placeholder="Name, type, address or SOAPAction">
+						<p id="wsdl-outline-empty" class="muted" role="status" hidden>Nothing in the outline matches the filter.</p>
+						<div id="wsdl-outline"></div>
+					</div>
+					<pre id="wsdl-view" class="code" tabindex="0"></pre>
+				</div>
+			</section>
+		</main>
+	</div>
+	<dialog id="auth-dialog" class="dialog" aria-labelledby="auth-title">
+		<div class="dialog-body">
+			<div class="dialog-head">
+				<h2 id="auth-title">Authorize</h2>
+				<button id="auth-close" class="btn btn-small" type="button">Close</button>
+			</div>
+			<p class="sbar warn">Credentials are kept in memory only. They are cleared by Log out and when you leave or reload this page. Use HTTPS: anyone who can read the traffic, or who can use this page, can use the credentials.</p>
+			<p id="auth-note" class="muted" hidden></p>
+			<div id="auth-sections"></div>
+		</div>
+	</dialog>
+</body>
+</html>

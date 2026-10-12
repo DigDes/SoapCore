@@ -324,6 +324,7 @@ Read it, for example to expose a JSON catalog. This sample works on every suppor
 
 ```csharp
 using System.Linq;
+using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text.Json;
 using SoapCore;
@@ -389,6 +390,48 @@ Notes:
 * In middleware mode the endpoint is validated when the host builds the pipeline. An invalid configuration is recorded and then makes the application fail to start.
 * `TrailingServicePathTuner` rewrites paths per request and is not reflected in the registry.
 * A `SoapEndpointMiddleware` you construct yourself is not recorded. Call `Register` yourself if you need it listed.
+
+#### Exploring SOAP services with SoapCore.UI
+
+`SoapCore.UI` is a separate NuGet package that adds a Swagger-like explorer page to your application. It lists the endpoints known to `ISoapEndpointRegistry`, shows their operations and descriptions, generates sample SOAP envelopes from the WSDL (SOAP 1.1 and 1.2) that you edit as XML or in a typed form, and lets you authorize (bearer token, Basic, API key, WS-Security UsernameToken) and call the endpoints from the browser ("Try it out"). It has no server-side proxy and makes no external requests.
+
+```
+dotnet add package SoapCore.UI --prerelease
+```
+
+It needs `net8.0`, endpoint routing (`UseRouting` plus `UseEndpoints`, or `WebApplication`) and SoapCore 1.2.1.17 or later, the first release that has `ISoapEndpointRegistry`.
+
+```csharp
+using SoapCore;
+using SoapCore.UI;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSoapCore();
+builder.Services.AddSingleton<MyService>();
+builder.Services.AddSoapCoreUi(options => options.Title = "My services");
+
+var app = builder.Build();
+
+// WebApplication is both an IApplicationBuilder and an IEndpointRouteBuilder, so UseSoapEndpoint is ambiguous: cast to pick one.
+((IEndpointRouteBuilder)app).UseSoapEndpoint<MyService>(options =>
+{
+	options.Path = "/Service.svc";
+	options.SoapSerializer = SoapSerializer.DataContractSerializer;
+});
+
+// The explorer lists and calls your endpoints: map it in Development only, or protect it.
+if (app.Environment.IsDevelopment())
+{
+	app.MapSoapCoreUi();   // /soap-ui
+}
+
+app.Run();
+```
+
+Outside Development, protect the explorer with the standard conventions on the builder that `MapSoapCoreUi` returns, for example `app.MapSoapCoreUi().RequireAuthorization("SoapUiPolicy")`. They cover the explorer routes only, not your SOAP endpoints. Mapping the explorer also needs `HttpGetEnabled` on the SOAP endpoints (it is `true` by default), and in SoapCore that setting lets `GET {path}/{Operation}` invoke operations, so in production set `HttpGetEnabled = false` and `HttpPostEnabled = false` and do not map the explorer.
+
+The options, the Authorize panel, descriptions, the form view, the full security model, the limitations and troubleshooting are in the [SoapCore.UI package README](src/SoapCore.UI/README.md). A runnable sample with six endpoints, one of them protected to try the Authorize panel, is in [samples/ServerWithUi](samples/ServerWithUi).
 
 ### Not implemented
 WCF and legacy WebService supports many scenarios and lots of attributes. SoapCore only supports the most common patterns.

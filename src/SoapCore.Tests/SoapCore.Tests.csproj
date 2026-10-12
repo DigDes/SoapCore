@@ -40,6 +40,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="DeepEqual.SuperJMN" Version="2.0.0" />
+		<PackageReference Include="Jint" Version="4.17.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
 		<PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
 		<PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
@@ -60,6 +61,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\SoapCore\SoapCore.csproj" />
+		<ProjectReference Include="..\SoapCore.UI\SoapCore.UI.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
