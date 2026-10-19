@@ -1,0 +1,538 @@
+/* ========================================================
+   SoapCore Explorer: form view of the request envelope.
+   Only classes prefixed fe- are defined here. Colours, radii and fonts come from the
+   variables of style.css (the values after the commas are fallbacks), so light and dark
+   follow the page. No external resources, no imports.
+   ======================================================== */
+
+.fe-root {
+	min-width: 0;
+	color: var(--text, #1a1a18);
+	font-family: var(--font-sans, system-ui, -apple-system, 'Segoe UI', sans-serif);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.fe-root *,
+.fe-root *::before,
+.fe-root *::after {
+	box-sizing: border-box;
+}
+
+.fe-root :focus-visible {
+	outline: 2px solid var(--focus, #185fa5);
+	outline-offset: 2px;
+}
+
+.fe-root [hidden] {
+	display: none !important;
+}
+
+/* ----- messages -------------------------------------------- */
+.fe-message {
+	margin: 0;
+	padding: 12px 14px;
+	background: var(--bg-sec, #f5f5f4);
+	border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+	border-radius: var(--radius, 8px);
+	overflow-wrap: anywhere;
+}
+
+.fe-message-text {
+	margin: 0;
+}
+
+.fe-message .fe-note {
+	margin-top: 4px;
+}
+
+.fe-status {
+	margin: 0 0 10px;
+	padding: 8px 12px;
+	font-size: 13px;
+	background: var(--bg-warn, #faeeda);
+	color: var(--text-warn, #854f0b);
+	border-radius: var(--radius, 8px);
+	overflow-wrap: anywhere;
+}
+
+.fe-note {
+	margin: 0;
+	font-size: 12.5px;
+	color: var(--text-ter, #6b6a64);
+	overflow-wrap: anywhere;
+}
+
+.fe-warning {
+	color: var(--text-warn, #854f0b);
+}
+
+.fe-limit {
+	padding: 8px 12px;
+	background: var(--bg-warn, #faeeda);
+	color: var(--text-warn, #854f0b);
+	border-radius: var(--radius, 8px);
+}
+
+.fe-error {
+	margin: 0;
+	font-size: 12.5px;
+	color: var(--text-err, #a32d2d);
+	overflow-wrap: anywhere;
+}
+
+/* ----- the form and its groups ------------------------------ */
+.fe-form {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-width: 0;
+}
+
+.fe-group {
+	min-width: 0;
+	margin: 0;
+	padding: 8px 12px 10px;
+	background: var(--bg, #ffffff);
+	border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+	border-radius: var(--radius, 8px);
+}
+
+.fe-legend {
+	max-width: 100%;
+	padding: 0 6px;
+	overflow-wrap: anywhere;
+}
+
+.fe-legend .fe-badges,
+.fe-summary .fe-badges {
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+.fe-group.fe-deep,
+.fe-group.fe-other {
+	padding: 0;
+}
+
+.fe-summary {
+	padding: 8px 12px;
+	cursor: pointer;
+	overflow-wrap: anywhere;
+}
+
+.fe-group-body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-width: 0;
+}
+
+.fe-deep > .fe-group-body,
+.fe-other > .fe-group-body {
+	padding: 2px 12px 10px;
+}
+
+.fe-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 14px;
+}
+
+.fe-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+	padding-left: 10px;
+	border-left: 2px solid var(--border-med, rgba(0, 0, 0, 0.28));
+}
+
+.fe-add {
+	margin-top: 2px;
+}
+
+/* ----- rows -------------------------------------------------- */
+.fe-row {
+	display: grid;
+	grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) auto;
+	gap: 4px 12px;
+	align-items: start;
+	min-width: 0;
+}
+
+.fe-head {
+	grid-column: 1;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2px 6px;
+	min-width: 0;
+	padding-top: 5px;
+}
+
+.fe-label {
+	font-size: 13.5px;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.fe-control {
+	grid-column: 2;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 12px;
+	min-width: 0;
+}
+
+.fe-control .fe-input {
+	flex: 1 1 10rem;
+	min-width: 0;
+}
+
+.fe-control .fe-textarea {
+	flex-basis: 100%;
+}
+
+.fe-actions {
+	grid-column: 3;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 10px;
+	padding-top: 3px;
+}
+
+.fe-row > .fe-error,
+.fe-row > .fe-note {
+	grid-column: 2 / -1;
+}
+
+.fe-row > .fe-attrs {
+	grid-column: 1 / -1;
+}
+
+.fe-absent {
+	padding: 4px 10px;
+	border: 1px dashed var(--border-med, rgba(0, 0, 0, 0.28));
+	border-radius: var(--radius, 8px);
+}
+
+.fe-absent > .fe-head,
+.fe-absent > .fe-note {
+	grid-column: 1 / -1;
+}
+
+.fe-absent .fe-label {
+	font-weight: 500;
+	color: var(--text-sec, #5f5e5a);
+}
+
+.fe-is-nil .fe-input {
+	font-style: italic;
+}
+
+/* ----- attributes -------------------------------------------- */
+.fe-attrs {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 4px;
+	padding-top: 6px;
+	border-top: 1px dashed var(--border, rgba(0, 0, 0, 0.12));
+}
+
+.fe-attrs-title {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-sec, #5f5e5a);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+/* ----- badges ------------------------------------------------ */
+.fe-badges {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.fe-badge {
+	max-width: 100%;
+	padding: 1px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.5;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	border-radius: 99px;
+	background: var(--bg-info, #e6f1fb);
+	color: var(--text-info, #185fa5);
+}
+
+.fe-badge-type {
+	font-family: var(--font-mono, ui-monospace, Consolas, monospace);
+	font-weight: 500;
+	background: var(--bg-sec, #f5f5f4);
+	color: var(--text-sec, #5f5e5a);
+	border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+}
+
+.fe-badge-optional {
+	background: var(--bg-sec, #f5f5f4);
+	color: var(--text-sec, #5f5e5a);
+}
+
+.fe-badge-repeatable {
+	background: var(--bg-ok, #eaf3de);
+	color: var(--text-ok, #3b6d11);
+}
+
+.fe-badge-nillable,
+.fe-badge-choice {
+	background: var(--bg-warn, #faeeda);
+	color: var(--text-warn, #854f0b);
+}
+
+.fe-badge-required {
+	background: var(--bg-err, #fcebeb);
+	color: var(--text-err, #a32d2d);
+}
+
+/* ----- controls ---------------------------------------------- */
+.fe-input {
+	width: 100%;
+	padding: 6px 9px;
+	font: inherit;
+	font-size: 14px;
+	background: var(--bg, #ffffff);
+	color: var(--text, #1a1a18);
+	border: 1px solid var(--border-med, rgba(0, 0, 0, 0.28));
+	border-radius: var(--radius, 8px);
+}
+
+.fe-input:focus {
+	border-color: var(--focus, #185fa5);
+}
+
+.fe-input[aria-invalid="true"] {
+	border-color: var(--text-err, #a32d2d);
+	box-shadow: 0 0 0 1px var(--text-err, #a32d2d);
+}
+
+.fe-input:disabled,
+.fe-input[readonly] {
+	background: var(--bg-sec, #f5f5f4);
+	color: var(--text-sec, #5f5e5a);
+	cursor: not-allowed;
+}
+
+.fe-mono,
+.fe-textarea {
+	font-family: var(--font-mono, ui-monospace, Consolas, monospace);
+	font-size: 12.5px;
+	font-variant-ligatures: none;
+	font-feature-settings: 'liga' 0, 'calt' 0;
+}
+
+.fe-textarea {
+	resize: vertical;
+	line-height: 1.5;
+}
+
+.fe-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 28px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.fe-checkbox {
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	flex: none;
+	accent-color: var(--focus, #185fa5);
+}
+
+.fe-checkbox:disabled,
+.fe-checkbox:disabled + span {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.fe-button {
+	display: inline-flex;
+	align-items: center;
+	min-height: 30px;
+	padding: 4px 12px;
+	font: inherit;
+	font-size: 13px;
+	white-space: nowrap;
+	cursor: pointer;
+	color: var(--text, #1a1a18);
+	background: transparent;
+	border: 1px solid var(--border-med, rgba(0, 0, 0, 0.28));
+	border-radius: var(--radius, 8px);
+}
+
+.fe-button:hover:not(:disabled) {
+	background: var(--bg-sec, #f5f5f4);
+}
+
+.fe-button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+/* ----- content that is only listed --------------------------- */
+.fe-other-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.fe-other-item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 10px;
+	min-width: 0;
+}
+
+.fe-other-name {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.fe-other-text {
+	min-width: 0;
+	color: var(--text-sec, #5f5e5a);
+	overflow-wrap: anywhere;
+}
+
+/* ----- narrow screens ---------------------------------------- */
+@media (max-width: 640px) {
+	.fe-row {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.fe-head {
+		grid-column: 1 / -1;
+		padding-top: 0;
+	}
+
+	.fe-control {
+		grid-column: 1;
+	}
+
+	.fe-actions {
+		grid-column: 2;
+		padding-top: 0;
+	}
+
+	.fe-row > .fe-error,
+	.fe-row > .fe-note {
+		grid-column: 1 / -1;
+	}
+
+	.fe-group {
+		padding: 6px 6px 8px;
+	}
+
+	.fe-summary {
+		padding: 6px 8px;
+	}
+
+	.fe-deep > .fe-group-body,
+	.fe-other > .fe-group-body {
+		padding: 2px 6px 6px;
+	}
+
+	.fe-list {
+		padding-left: 4px;
+	}
+}
+
+@media (forced-colors: active) {
+	.fe-badge {
+		border: 1px solid CanvasText;
+	}
+
+	.fe-input[aria-invalid="true"] {
+		outline: 2px solid CanvasText;
+	}
+}
+
+/* ========================================================
+   Refinements: the palette of the page. Groups gain depth,
+   inputs get the focus ring, buttons match the page buttons.
+   ======================================================== */
+
+.fe-group {
+	border-radius: var(--radius-lg, 12px);
+}
+
+/* Nested groups alternate the surface, so the levels read at a glance. */
+.fe-group .fe-group {
+	background: var(--bg-sec, #f5f7fb);
+}
+
+.fe-group .fe-group .fe-group {
+	background: var(--bg, #ffffff);
+}
+
+.fe-legend {
+	font-size: 13.5px;
+	font-weight: 650;
+}
+
+.fe-badge {
+	border-radius: 6px;
+}
+
+.fe-badge-type {
+	font-size: 10.5px;
+}
+
+.fe-input {
+	border-color: var(--border-input, rgba(15, 23, 42, 0.4));
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fe-input:focus {
+	outline: none;
+	border-color: var(--accent, #2563eb);
+	box-shadow: 0 0 0 3px var(--ring, rgba(37, 99, 235, 0.18));
+}
+
+.fe-input[aria-invalid="true"],
+.fe-input[aria-invalid="true"]:focus {
+	border-color: var(--text-err, #b42318);
+	box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.16);
+}
+
+.fe-checkbox {
+	accent-color: var(--accent, #2563eb);
+}
+
+.fe-button {
+	font-weight: 500;
+	background: var(--bg, #ffffff);
+	box-shadow: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.06));
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.fe-button:hover:not(:disabled) {
+	border-color: var(--border-input, rgba(15, 23, 42, 0.4));
+}

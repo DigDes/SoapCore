@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Swagger-like explorer UI for SoapCore SOAP endpoints. Lists the endpoints known to ISoapEndpointRegistry, generates sample envelopes from the WSDL and calls them from the browser.</Description>
+		<Version>0.1.0-preview.1</Version>
+		<Authors>Digital Design</Authors>
+		<TargetFramework>net8.0</TargetFramework>
+		<PackageId>SoapCore.UI</PackageId>
+		<PackageTags>SOAP;ASP.NET Core;SoapCore;WSDL;UI;explorer</PackageTags>
+		<PackageProjectUrl>https://github.com/DigDes/SoapCore</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/DigDes/SoapCore</RepositoryUrl>
+		<AssemblyOriginatorKeyFile>..\SoapCore\SoapCore.snk</AssemblyOriginatorKeyFile>
+		<SignAssembly>true</SignAssembly>
+		<CodeAnalysisRuleSet>..\SoapCore.ruleset</CodeAnalysisRuleSet>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<SoapCoreMinimumVersion>1.2.1.17</SoapCoreMinimumVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="stylecop.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AdditionalFiles Include="stylecop.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SoapCore\SoapCore.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="EmbeddedUI\index.html" LogicalName="SoapCore.UI.EmbeddedUI.index.html" />
+		<EmbeddedResource Include="EmbeddedUI\app.js" LogicalName="SoapCore.UI.EmbeddedUI.app.js" />
+		<EmbeddedResource Include="EmbeddedUI\wsdl-parser.js" LogicalName="SoapCore.UI.EmbeddedUI.wsdl-parser.js" />
+		<EmbeddedResource Include="EmbeddedUI\form-editor.js" LogicalName="SoapCore.UI.EmbeddedUI.form-editor.js" />
+		<EmbeddedResource Include="EmbeddedUI\xml-view.js" LogicalName="SoapCore.UI.EmbeddedUI.xml-view.js" />
+		<EmbeddedResource Include="EmbeddedUI\style.css" LogicalName="SoapCore.UI.EmbeddedUI.style.css" />
+		<EmbeddedResource Include="EmbeddedUI\form-editor.css" LogicalName="SoapCore.UI.EmbeddedUI.form-editor.css" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<!-- Pack-time guard: the UI needs the ISoapEndpointRegistry that first ships after SoapCore 1.2.1.16. -->
+	<Target Name="EnsureSoapCoreHasRegistry" BeforeTargets="GenerateNuspec;_GetPackageVersionInfo" Condition="('$(GeneratePackageOnBuild)' == 'true' Or '$(_IsPacking)' == 'true') And '$(SkipSoapCoreVersionGuard)' != 'true'">
+		<XmlPeek XmlInputPath="..\SoapCore\SoapCore.csproj" Query="/Project/PropertyGroup/Version/text()">
+			<Output TaskParameter="Result" PropertyName="SoapCoreVersionText" />
+		</XmlPeek>
+		<Error Condition="'$(SoapCoreVersionText)' != '' And $([MSBuild]::VersionLessThan('$(SoapCoreVersionText)', '$(SoapCoreMinimumVersion)'))" Text="SoapCore.UI needs SoapCore $(SoapCoreMinimumVersion) or later (the first release that contains ISoapEndpointRegistry). src/SoapCore/SoapCore.csproj is at $(SoapCoreVersionText). Bump its Version before packing (maintainer release step), or pass -p:SkipSoapCoreVersionGuard=true for local verification only." />
+	</Target>
+</Project>

@@ -19,3 +19,10 @@ jobs:
             dotnet restore src
             dotnet pack --configuration Release --output nupkg src/SoapCore
             dotnet nuget push nupkg/*.nupkg --api-key ${{ secrets.NUGET_API }} -s https://api.nuget.org/v3/index.json
+    # SoapCore.UI is released by its own step, after SoapCore: a problem with the UI package cannot block the SoapCore release,
+    # and --skip-duplicate (a UI package whose version did not change is skipped) applies to the UI package only.
+    # The pack fails by design while src/SoapCore/SoapCore.csproj is older than the SoapCore version the UI needs.
+    - name: build and publish SoapCore.UI
+      run: |
+            dotnet pack --configuration Release --output nupkg-ui src/SoapCore.UI
+            dotnet nuget push nupkg-ui/*.nupkg --api-key ${{ secrets.NUGET_API }} -s https://api.nuget.org/v3/index.json --skip-duplicate

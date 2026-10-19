@@ -96,7 +96,11 @@ namespace SoapCore
 
 			var soapOptions = SoapOptions.FromSoapCoreOptions(opt, serviceType);
 
-			return builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
+			var result = builder.UseMiddleware<SoapEndpointMiddleware<T_MESSAGE>>(soapOptions);
+
+			RegisterSoapEndpoint(builder.ApplicationServices, soapOptions, typeof(T_MESSAGE));
+
+			return result;
 		}
 
 #if NETCOREAPP3_0_OR_GREATER
@@ -189,8 +193,12 @@ namespace SoapCore
 			routes.Map(soapOptions.Path?.TrimEnd('/') + "/mex", pipeline);
 			routes.Map(soapOptions.Path?.TrimEnd('/') + "/{methodName}", pipeline);
 
-			return routes.Map(soapOptions.Path, pipeline)
+			var conventionBuilder = routes.Map(soapOptions.Path, pipeline)
 				.WithDisplayName("SoapCore");
+
+			RegisterSoapEndpoint(routes.ServiceProvider, soapOptions, typeof(T_MESSAGE));
+
+			return conventionBuilder;
 		}
 
 		public static IEndpointConventionBuilder UseSoapEndpoint<T>(this IEndpointRouteBuilder routes, Action<SoapCoreOptions> options)
@@ -217,6 +225,12 @@ namespace SoapCore
 				return serializer;
 			});
 
+			return serviceCollection;
+		}
+
+		public static IServiceCollection AddSoapEndpointRegistry(this IServiceCollection serviceCollection)
+		{
+			serviceCollection.TryAddSingleton<ISoapEndpointRegistry, DefaultSoapEndpointRegistry>();
 			return serviceCollection;
 		}
 
@@ -299,6 +313,12 @@ namespace SoapCore
 		{
 			serviceCollection.Add(new ServiceDescriptor(typeof(IXmlSerializationHandler), typeof(TProcessor), lifetime));
 			return serviceCollection;
+		}
+
+		private static void RegisterSoapEndpoint(IServiceProvider serviceProvider, SoapOptions soapOptions, Type messageType)
+		{
+			// Opt-in: when no registry is registered nothing is allocated (the null-conditional skips the snapshot).
+			serviceProvider?.GetService<ISoapEndpointRegistry>()?.Register(SoapEndpointInfo.FromSoapOptions(soapOptions, messageType));
 		}
 	}
 }
