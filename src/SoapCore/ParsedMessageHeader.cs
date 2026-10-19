@@ -40,7 +40,17 @@ namespace SoapCore
 					continue;
 				}
 
-				writer.WriteAttributeString(attr.Name.LocalName, attr.Value);
+				var name = attr.Name;
+				var prefix = writer.LookupPrefix( name.Namespace.NamespaceName );
+
+				if( !string.IsNullOrEmpty( prefix ) )
+				{
+					writer.WriteAttributeString( prefix, name.LocalName, name.NamespaceName, attr.Value );
+				}
+				else
+				{
+					writer.WriteAttributeString( attr.Name.LocalName, attr.Value );
+				}
 			}
 
 			if (_content != null && _content.Length > 0)
