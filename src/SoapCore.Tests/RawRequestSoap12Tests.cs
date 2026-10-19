@@ -47,6 +47,56 @@ namespace SoapCore.Tests
 		}
 
 		[TestMethod]
+		public void Soap12PingWithNamespaceDeclarationsRepeatedOnBody()
+		{
+			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">
+  <soap12:Body xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">
+    <Ping xmlns=""http://tempuri.org/"">
+      <s>abc</s>
+    </Ping>
+  </soap12:Body>
+</soap12:Envelope>
+";
+			var bodyBytes = Encoding.UTF8.GetBytes(body);
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
+			{
+				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				{
+					res.EnsureSuccessStatusCode();
+				}
+			}
+		}
+
+		[TestMethod]
+		public void Soap12PingWithPrefixShadowedOnBody()
+		{
+			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap12:Envelope xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"" xmlns:tns=""http://example.org/not-tempuri"">
+  <soap12:Body xmlns:tns=""http://tempuri.org/"">
+    <tns:Ping>
+      <tns:s>abc</tns:s>
+    </tns:Ping>
+  </soap12:Body>
+</soap12:Envelope>
+";
+			var bodyBytes = Encoding.UTF8.GetBytes(body);
+			using (var host = CreateTestHost())
+			using (var client = host.CreateClient())
+			using (var content = new StringContent(body, Encoding.UTF8, "application/soap+xml"))
+			{
+				content.Headers.ContentType.Parameters.Add(new System.Net.Http.Headers.NameValueHeaderValue("action", "\"http://tempuri.org/ITestService/Ping\""));
+				using (var res = host.CreateRequest("/Service.svc").And(msg => msg.Content = content).PostAsync().Result)
+				{
+					res.EnsureSuccessStatusCode();
+				}
+			}
+		}
+
+		[TestMethod]
 		public void Soap12PingWithActionInEnvelopeHeader()
 		{
 			var body = @"<?xml version=""1.0"" encoding=""utf-8""?>
