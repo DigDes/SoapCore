@@ -112,7 +112,7 @@ namespace SoapCore
 			base.Dispose(disposing);
 		}
 
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
 		private static byte[] ConvertHexStringToBytes(string hexString) => Convert.FromHexString(hexString);
 #else
 		private static byte[] ConvertHexStringToBytes(string hexString)
