@@ -54,8 +54,8 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.Formats.Asn1" Version="9.0.2"/>
-		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.2" />
+		<PackageReference Include="System.Formats.Asn1" Version="9.0.21"/>
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
 	</ItemGroup>
 
 	<ItemGroup>
