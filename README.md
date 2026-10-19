@@ -303,6 +303,93 @@ instead of:
     </d3p1:StringList>
 ...
 ```
+
+#### Discovering SOAP endpoints with ISoapEndpointRegistry
+
+ASP.NET Core's `EndpointDataSource` only shows SoapCore's base route (display name `SoapCore`) and carries no service type, serializer or SOAP version. Endpoints added with `app.UseSoapEndpoint` (middleware mode) do not appear there at all.
+`ISoapEndpointRegistry` is an opt-in, SOAP-aware list of every endpoint configured with `UseSoapEndpoint`, in both middleware and endpoint-routing mode. It is useful for service catalogs, dashboards, WSDL aggregation, gateways and per-endpoint observability.
+When no registry is registered, SoapCore behaves exactly as before.
+
+Enable it in `ConfigureServices`:
+
+```csharp
+services.AddSoapCore();
+services.AddSoapEndpointRegistry(); // default thread-safe, in-memory registry
+
+// Or register your own implementation instead (it must be a singleton):
+// services.AddSingleton<ISoapEndpointRegistry, MyRegistry>();
+```
+
+Read it, for example to expose a JSON catalog. This sample works on every supported target framework (on .NET Standard targets, System.Text.Json comes with SoapCore):
+
+```csharp
+using System.Linq;
+using System.ServiceModel.Channels;
+using System.Text.Json;
+using SoapCore;
+using SoapCore.Extensibility;
+
+public void Configure(IApplicationBuilder app)
+{
+	app.UseSoapEndpoint<ServiceContractImpl>("/Service.svc", new SoapEncoderOptions(), SoapSerializer.DataContractSerializer);
+	app.UseSoapEndpoint<ServiceContractImpl>("/Service.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
+
+	app.Map("/soap-endpoints", catalog => catalog.Run(async context =>
+	{
+		var registry = context.RequestServices.GetRequiredService<ISoapEndpointRegistry>();
+		var endpoints = registry.GetAll().Select(e => new
+		{
+			e.Path,
+			Service = e.ServiceType.FullName, // System.Type is not JSON-serializable: project it
+			Serializer = e.Serializer.ToString(),
+			SoapVersions = e.MessageVersions.Select(v =>
+				v.Envelope == EnvelopeVersion.Soap12 ? "1.2" :
+				v.Envelope == EnvelopeVersion.Soap11 ? "1.1" : "none"),
+		});
+
+		context.Response.ContentType = "application/json";
+		await context.Response.WriteAsync(JsonSerializer.Serialize(endpoints));
+	}));
+}
+```
+
+To list operations with the same SOAPAction values the endpoint uses, build a `ServiceDescription` from the recorded values. It reflects over the service assembly, so build it once and cache it:
+
+```csharp
+using SoapCore.ServiceModel;
+
+var description = new ServiceDescription(endpoint.ServiceType, endpoint.GenerateSoapActionWithoutContractName);
+foreach (var operation in description.Operations)
+{
+	Console.WriteLine($"{endpoint.Path} {operation.Name} {operation.SoapAction}");
+}
+```
+
+Recorded values (`SoapEndpointInfo`):
+
+| Property | Description |
+|---|---|
+| `Path` | Path exactly as configured (not normalized) |
+| `ServiceType` | Service type passed to `UseSoapEndpoint`. Not unique: the same type can be hosted at several paths |
+| `MessageType` | `T_MESSAGE` used by the endpoint (`CustomMessage` by default) |
+| `Serializer` | `DataContractSerializer` or `XmlSerializer` (WSDL writer and default message serializer) |
+| `CustomSerializerType` | Handler type set with `UseCustomSerializer<T>()`, or null |
+| `CaseInsensitivePath` | Whether the path is matched case-insensitively |
+| `GenerateSoapActionWithoutContractName` | Affects generated SOAPAction values |
+| `MessageVersions` | Distinct SOAP / WS-Addressing versions of the configured encoders (SOAP 1.1 when none are configured) |
+
+Notes:
+
+* The registry must be a **singleton**: it is resolved from the root service provider while the pipeline is configured.
+* One entry is recorded per `UseSoapEndpoint` call, in call order (endpoint routing maps four routes per call but records one entry). Endpoints with the same path in different `UseWhen` branches are recorded separately.
+* Entries are a snapshot of the configuration at the time `UseSoapEndpoint` is called. Later changes to the options objects are not reflected.
+* Entries are recorded while the pipeline is configured. Read the registry in a request or after `IHostApplicationLifetime.ApplicationStarted` (`IApplicationLifetime` on ASP.NET Core 2.x). An `IHostedService` may start before the pipeline is configured.
+* `Path` does not include prefixes added around the endpoint (`app.Map(...)`, `UsePathBase(...)`). Add them yourself. The current request's `PathBase` is only the right prefix when the catalog and the SOAP endpoint share the same base.
+* `UseSoapEndpoint` inside a route group (`MapGroup`) is not supported: SoapCore compares the full request path with the configured `Path`, so the group prefix prevents a match. Such an endpoint is still recorded, with the configured, unprefixed path.
+* In middleware mode the endpoint is validated when the host builds the pipeline. An invalid configuration is recorded and then makes the application fail to start.
+* `TrailingServicePathTuner` rewrites paths per request and is not reflected in the registry.
+* A `SoapEndpointMiddleware` you construct yourself is not recorded. Call `Register` yourself if you need it listed.
+
 ### Not implemented
 WCF and legacy WebService supports many scenarios and lots of attributes. SoapCore only supports the most common patterns.
 Stuff that are not supported includes:
